@@ -10,10 +10,11 @@ Mizar network has the following advantages:
 - Extendable data plane for plugin features
 - Unified data plane for VM and container with VPC isolation
 
-The following illustrates Mizar's high level architecture.
+The following diagram illustrates Mizar's high level architecture.
 
 ![Mizar Overview](Mizar.png)
 
+Learn more about Mizar:
 - [Wiki](https://github.com/futurewei-cloud/Mizar/wiki)
 - [Getting Started](https://github.com/futurewei-cloud/Mizar/wiki)
 - [Contributing](/CONTRIBUTING.md)
