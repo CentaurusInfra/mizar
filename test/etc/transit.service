@@ -1,0 +1,13 @@
+[Unit]
+Description=Transit service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+ExecStart=/mnt/Transit/build/bin/transitd
+
+[Install]
+WantedBy=multi-user.target
