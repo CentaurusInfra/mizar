@@ -15,7 +15,7 @@ Please make sure to read and observe our [Code of Conduct](/CODE_OF_CONDUCT.md)
 
 We are here to help you! Once you familiarize yourself with Mizar, we will discuss your contribution and get your work reviewed and merged.
 
-If you have any questions, contact us on our [Slack Channel](https://mizar-group.slack.com/).
+If you have any questions, contact us on our [Slack Channel](https://join.slack.com/t/mizar-group/shared_invite/enQtNzUzOTYxOTM0ODY2LTE2OWYyN2Q2MjU3ZDFmNGUwZDlmYzNmNzk3MDRjNDMwMDQwMmQ3MDNlOWE3MzIzODAyYjQwZWMwYzY2ZmQzNmU).
 
 ## Contributing
 
@@ -30,7 +30,7 @@ This is a rough outline of what a contributor's workflow looks like:
 - Make sure commit messages are in the proper format (see below).
 - Push changes in a topic branch to a personal fork of the repository.
 - Submit a pull request to [mizar](https://github.com/futurewei-cloud/mizar).
-- The PR must receive an approval from two maintainers.
+- The PR must receive approvals from two team members including at least one maintainer.
 
 
 ### Directory Organization
