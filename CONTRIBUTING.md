@@ -54,7 +54,7 @@ Each directory includes a module.mk files that are referenced by the main Makefi
 ### Commits
 
 It is not enough that we have a header for the commits. The commit
-needs to have one paragraph describing what it does.  We shall avoid Multi-pages commits as much as possible, but we still understand the needs to do otherwise. The format of commit message is explained below.
+needs to have one paragraph describing what it does.  We shall avoid Multi-pages commit messages as much as possible, but we still understand the needs to do otherwise. The format of commit message is explained below.
 
 ### Format of the commit message
 
@@ -64,7 +64,7 @@ The subject line should feature the what and the body of the commit should descr
 ```
 scripts: add test codes for agent
 
-this add some unit test codes to imporve code coverage for agent
+this add some unit test codes to improve code coverage for agent
 
 Fixes #12
 ```
