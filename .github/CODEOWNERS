@@ -1,10 +1,1 @@
-* @zasherif
-
-# Contract with control plane
-src/rpcgen/ @er1cthe0ne @xieus
-
-# Functional and performance tests (prototyping control-plane workflow)
-test/ @phudtran @er1cthe0ne @xieus @haibinxie
-
-# Documentation and design documents
-*.md *.adoc @XiaoningDing @phudtran @er1cthe0ne @xieus @haibinxie 
+*       @zasherif @futurewei-cloud/mizar-opensource
