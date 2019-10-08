@@ -122,6 +122,56 @@ int trn_cli_get_vpc_subcmd(CLIENT *clnt, int argc, char *argv[])
 	return 0;
 }
 
+int trn_cli_delete_vpc_subcmd(CLIENT *clnt, int argc, char *argv[])
+{
+	ketopt_t om = KETOPT_INIT;
+	struct cli_conf_data_t conf;
+	cJSON *json_str = NULL;
+
+	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
+		return -EINVAL;
+	}
+
+	char *buf = conf.conf_str;
+	json_str = trn_cli_parse_json(buf);
+
+	if (json_str == NULL) {
+		return -EINVAL;
+	}
+
+	int *rc;
+	struct rpc_trn_vpc_key_t vpc_key;
+	char rpc[] = "delete_vpc_1";
+	vpc_key.interface = conf.intf;
+
+	int err = trn_cli_parse_vpc_key(json_str, &vpc_key);
+	cJSON_Delete(json_str);
+
+	if (err != 0) {
+		print_err("Error: parsing VPC config.\n");
+		return -EINVAL;
+	}
+
+	rc = delete_vpc_1(&vpc_key, clnt);
+	if (rc == (int *)NULL) {
+		print_err("RPC Error: client call failed: delete_vpc_1.\n");
+		return -EINVAL;
+	}
+
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal daemon error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
+	}
+
+	print_msg(
+		"delete_vpc_1 successfully deleted vpc %ld on interface %s.\n",
+		vpc_key.tunid, vpc_key.interface);
+
+	return 0;
+}
+
 void dump_vpc(struct rpc_trn_vpc_t *vpc)
 {
 	int i;

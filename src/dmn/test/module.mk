@@ -11,6 +11,7 @@ unittest:: test_dmn
 
 CLI_MOCKS += -Wl,--wrap=bpf_map_update_elem
 CLI_MOCKS += -Wl,--wrap=bpf_map_lookup_elem
+CLI_MOCKS += -Wl,--wrap=bpf_map_delete_elem
 CLI_MOCKS += -Wl,--wrap=bpf_prog_load_xattr
 CLI_MOCKS += -Wl,--wrap=bpf_set_link_xdp_fd
 CLI_MOCKS += -Wl,--wrap=bpf_obj_get_info_by_fd

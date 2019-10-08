@@ -97,6 +97,14 @@ int trn_get_endpoint(struct user_metadata_t *md, struct endpoint_key_t *epkey,
 int trn_get_vpc(struct user_metadata_t *md, struct vpc_key_t *vpckey,
 		struct vpc_t *vpc);
 
+int trn_delete_vpc(struct user_metadata_t *md, struct vpc_key_t *vpckey);
+
+int trn_delete_endpoint(struct user_metadata_t *md,
+			struct endpoint_key_t *epkey);
+
+int trn_delete_network(struct user_metadata_t *md,
+		       struct network_key_t *netkey);
+
 int trn_user_metadata_init(struct user_metadata_t *md, char *itf,
 			   char *kern_path, int xdp_flags);
 

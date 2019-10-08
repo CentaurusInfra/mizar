@@ -44,6 +44,11 @@ static const struct cmd {
 	{ "get-ep", trn_cli_get_ep_subcmd },
 	{ "get-agent-ep", trn_cli_get_agent_ep_subcmd },
 	{ "get-agent-metadata", trn_cli_get_agent_md_subcmd },
+	{ "delete-vpc", trn_cli_delete_vpc_subcmd },
+	{ "delete-net", trn_cli_delete_net_subcmd },
+	{ "delete-ep", trn_cli_delete_ep_subcmd },
+	{ "delete-agent-ep", trn_cli_delete_agent_ep_subcmd },
+	{ "delete-agent-metadata", trn_cli_delete_agent_md_subcmd },
 	{ 0 },
 };
 

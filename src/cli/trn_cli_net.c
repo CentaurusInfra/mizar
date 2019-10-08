@@ -122,6 +122,56 @@ int trn_cli_get_net_subcmd(CLIENT *clnt, int argc, char *argv[])
 	return 0;
 }
 
+int trn_cli_delete_net_subcmd(CLIENT *clnt, int argc, char *argv[])
+{
+	ketopt_t om = KETOPT_INIT;
+	cJSON *json_str = NULL;
+	struct cli_conf_data_t conf;
+
+	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
+		return -EINVAL;
+	}
+
+	char *buf = conf.conf_str;
+	json_str = trn_cli_parse_json(buf);
+
+	if (json_str == NULL) {
+		return -EINVAL;
+	}
+
+	int *rc;
+	rpc_trn_network_key_t net_key;
+	char rpc[] = "delete_net_1";
+	net_key.interface = conf.intf;
+
+	int err = trn_cli_parse_net_key(json_str, &net_key);
+	cJSON_Delete(json_str);
+
+	if (err != 0) {
+		print_err("Error: parsing network config.\n");
+		return -EINVAL;
+	}
+
+	rc = delete_net_1(&net_key, clnt);
+	if (rc == (int *)NULL) {
+		print_err("RPC Error: client call failed: delete_net_1.\n");
+		return -EINVAL;
+	}
+
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal daemon error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
+	}
+
+	print_msg(
+		"delete_net_1 successfully deleted network %d on interface %s\n",
+		net_key.netip, net_key.interface);
+
+	return 0;
+}
+
 void dump_net(struct rpc_trn_network_t *net)
 {
 	int i;

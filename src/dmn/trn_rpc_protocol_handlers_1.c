@@ -284,42 +284,123 @@ error:
 int *delete_vpc_1_svc(rpc_trn_vpc_key_t *argp, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	UNUSED(argp);
 	static int result;
+	result = 0;
+	int rc;
+	struct vpc_key_t vpckey;
 
-	/*
-	 * insert server code here
-	 */
-	result = RPC_TRN_NOT_IMPLEMENTED;
-	TRN_LOG_DEBUG("Not implemented");
+	TRN_LOG_DEBUG("delete_vpc_1 VPC tunid: %ld with on interface: %s",
+		      argp->tunid, argp->interface);
+
+	struct user_metadata_t *md = trn_itf_table_find(argp->interface);
+
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s",
+			      argp->interface);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	vpckey.tunnel_id = argp->tunid;
+
+	rc = trn_delete_vpc(md, &vpckey);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure deleting vpc %ld data on interface: %s",
+			      argp->tunid, argp->interface);
+		result = RPC_TRN_FATAL;
+		goto error;
+	}
+
+	result = 0;
+
+	return &result;
+error:
 	return &result;
 }
 
 int *delete_net_1_svc(rpc_trn_network_key_t *argp, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	UNUSED(argp);
-	static int result;
 
-	/*
-	 * insert server code here
-	 */
-	result = RPC_TRN_NOT_IMPLEMENTED;
-	TRN_LOG_DEBUG("Not implemented");
+	static int result;
+	result = 0;
+	int rc;
+	struct network_key_t netkey;
+	char buffer[INET_ADDRSTRLEN];
+	const char *parsed_ip =
+		inet_ntop(AF_INET, &argp->netip, buffer, sizeof(buffer));
+
+	TRN_LOG_DEBUG("delete_net_1 net tunid: %ld, netip: %s, "
+		      "prefixlen: %d, on interface %s",
+		      argp->tunid, parsed_ip, argp->prefixlen, argp->interface);
+
+	struct user_metadata_t *md = trn_itf_table_find(argp->interface);
+
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s",
+			      argp->interface);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	netkey.prefixlen = argp->prefixlen;
+	memcpy(netkey.nip, &argp->tunid, sizeof(argp->tunid));
+	netkey.nip[2] = argp->netip;
+
+	rc = trn_delete_network(md, &netkey);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR(
+			"Failure deleting net %ld, %d data on interface: %s",
+			argp->tunid, argp->netip, argp->interface);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	return &result;
+error:
 	return &result;
 }
 
 int *delete_ep_1_svc(rpc_trn_endpoint_key_t *argp, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	UNUSED(argp);
 	static int result;
+	result = 0;
+	int rc;
+	struct endpoint_key_t epkey;
+	char buffer[INET_ADDRSTRLEN];
+	const char *parsed_ip =
+		inet_ntop(AF_INET, &argp->ip, buffer, sizeof(buffer));
 
-	/*
-	 * insert server code here
-	 */
-	result = RPC_TRN_NOT_IMPLEMENTED;
-	TRN_LOG_DEBUG("Not implemented");
+	TRN_LOG_DEBUG("delete_ep_1 ep tunid: %ld, ip: 0x%x,"
+		      " on interface: %s",
+		      argp->tunid, parsed_ip, argp->interface);
+
+	struct user_metadata_t *md = trn_itf_table_find(argp->interface);
+
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s",
+			      argp->interface);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	memcpy(epkey.tunip, &argp->tunid, sizeof(argp->tunid));
+	epkey.tunip[2] = argp->ip;
+
+	rc = trn_delete_endpoint(md, &epkey);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure deleting ep %d on interface %s",
+			      epkey.tunip[2], argp->interface);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	return &result;
+error:
 	return &result;
 }
 
@@ -758,13 +839,38 @@ error:
 int *delete_agent_ep_1_svc(rpc_trn_endpoint_key_t *argp, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	UNUSED(argp);
 	static int result;
+	result = 0;
+	struct endpoint_key_t epkey;
+	int rc;
 
-	/*
-   * insert server code here
-   */
+	TRN_LOG_DEBUG("delete_agent_ep_1 ep tunid: %ld, ip: 0x%x,"
+		      " on interface:%s",
+		      argp->tunid, argp->ip, argp->interface);
 
+	struct agent_user_metadata_t *md = trn_vif_table_find(argp->interface);
+
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s",
+			      argp->interface);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	memcpy(epkey.tunip, &argp->tunid, sizeof(argp->tunid));
+	epkey.tunip[2] = argp->ip;
+
+	rc = trn_agent_delete_endpoint(md, &epkey);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Cannot delete agent ep %d on interface %s",
+			      epkey.tunip[2], argp->interface);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	return &result;
+error:
 	return &result;
 }
 
@@ -914,13 +1020,30 @@ error:
 int *delete_agent_md_1_svc(rpc_intf_t *argp, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	UNUSED(argp);
+
 	static int result;
+	result = 0;
+	int rc;
 
-	/*
-   * insert server code here
-   */
+	TRN_LOG_DEBUG("delete_agent_md_1 interface: [%s]", argp->interface);
+	struct agent_user_metadata_t *md = trn_vif_table_find(argp->interface);
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for [%s]",
+			      argp->interface);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
 
+	rc = trn_agent_delete_agent_metadata(md);
+	if (rc != 0) {
+		TRN_LOG_ERROR("Cannot delete agent metadata on interface %s",
+			      argp->interface);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	return &result;
+error:
 	return &result;
 }
 

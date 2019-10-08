@@ -126,6 +126,56 @@ int trn_cli_get_ep_subcmd(CLIENT *clnt, int argc, char *argv[])
 	return 0;
 }
 
+int trn_cli_delete_ep_subcmd(CLIENT *clnt, int argc, char *argv[])
+{
+	ketopt_t om = KETOPT_INIT;
+	struct cli_conf_data_t conf;
+	cJSON *json_str = NULL;
+
+	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
+		return -EINVAL;
+	}
+
+	char *buf = conf.conf_str;
+	json_str = trn_cli_parse_json(buf);
+
+	if (json_str == NULL) {
+		return -EINVAL;
+	}
+
+	int *rc;
+	rpc_trn_endpoint_key_t ep_key;
+	char rpc[] = "delete_ep_1";
+	ep_key.interface = conf.intf;
+
+	int err = trn_cli_parse_ep_key(json_str, &ep_key);
+	cJSON_Delete(json_str);
+
+	if (err != 0) {
+		print_err("Error: parsing endpoint config.\n");
+		return -EINVAL;
+	}
+
+	rc = delete_ep_1(&ep_key, clnt);
+	if (rc == (int *)NULL) {
+		print_err("RPC Error: client call failed: delete_ep_1.\n");
+		return -EINVAL;
+	}
+
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal daemon error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
+	}
+
+	print_msg(
+		"delete_ep_1 successfully deleted endpoint %d on interface %s.\n",
+		ep_key.ip, ep_key.interface);
+
+	return 0;
+}
+
 void dump_ep(struct rpc_trn_endpoint_t *ep)
 {
 	int i;

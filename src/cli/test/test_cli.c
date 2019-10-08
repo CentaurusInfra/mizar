@@ -164,6 +164,51 @@ rpc_trn_agent_metadata_t *__wrap_get_agent_md_1(rpc_intf_t *argp, CLIENT *clnt)
 	return retval;
 }
 
+int *__wrap_delete_vpc_1(rpc_trn_vpc_key_t *argp, CLIENT *clnt)
+{
+	check_expected_ptr(argp);
+	check_expected_ptr(clnt);
+	int *retval = mock_ptr_type(int *);
+	function_called();
+	return retval;
+}
+
+int *__wrap_delete_net_1(rpc_trn_network_key_t *argp, CLIENT *clnt)
+{
+	check_expected_ptr(argp);
+	check_expected_ptr(clnt);
+	int *retval = mock_ptr_type(int *);
+	function_called();
+	return retval;
+}
+
+int *__wrap_delete_ep_1(rpc_trn_endpoint_key_t *argp, CLIENT *clnt)
+{
+	check_expected_ptr(argp);
+	check_expected_ptr(clnt);
+	int *retval = mock_ptr_type(int *);
+	function_called();
+	return retval;
+}
+
+int *__wrap_delete_agent_ep_1(rpc_trn_endpoint_key_t *argp, CLIENT *clnt)
+{
+	check_expected_ptr(argp);
+	check_expected_ptr(clnt);
+	int *retval = mock_ptr_type(int *);
+	function_called();
+	return retval;
+}
+
+int *__wrap_delete_agent_md_1(rpc_intf_t *argp, CLIENT *clnt)
+{
+	check_expected_ptr(argp);
+	check_expected_ptr(clnt);
+	int *retval = mock_ptr_type(int *);
+	function_called();
+	return retval;
+}
+
 static inline int cmpfunc(const void *a, const void *b)
 {
 	return (*(int *)a - *(int *)b);
@@ -1512,6 +1557,335 @@ static void test_trn_cli_get_agent_md_subcmd(void **state)
 	assert_int_equal(rc, -EINVAL);
 }
 
+static void test_trn_cli_delete_vpc_subcmd(void **state)
+{
+	UNUSED(state);
+	int argc = 5;
+	int rc;
+
+	char itf[] = "eth0";
+	struct rpc_trn_vpc_key_t exp_vpc_key = {
+		.interface = itf,
+		.tunid = 3,
+	};
+	/* Test cases */
+	char *argv1[] = { "delete-vpc", "-i", "eth0", "-j",
+			  QUOTE({ "tunnel_id": "3" }) };
+
+	char *argv2[] = { "delete-vpc", "-i", "eth0", "-j",
+			  QUOTE({ "tunnel_id": 3 }) };
+
+	char *argv3[] = { "delete-vpc", "-i", "eth0", "-j",
+			  QUOTE({ "tunnel_id: 3" }) };
+
+	int delete_vpc_1_ret_val = 0;
+	/* Test call delete-vpc successfully */
+	TEST_CASE("delete_vpc_1 succeed with well formed vpc json input");
+	expect_function_call(__wrap_delete_vpc_1);
+	will_return(__wrap_delete_vpc_1, &delete_vpc_1_ret_val);
+	expect_check(__wrap_delete_vpc_1, argp, check_vpc_key_equal,
+		     &exp_vpc_key);
+	expect_any(__wrap_delete_vpc_1, clnt);
+	rc = trn_cli_delete_vpc_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, 0);
+
+	/* Test parse vpc input error*/
+	TEST_CASE("delete_vpc_1 is not called with non-string field");
+	rc = trn_cli_delete_vpc_subcmd(NULL, argc, argv2);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test parse vpc input error 2*/
+	TEST_CASE("delete_vpc_1 is not called malformed json");
+	rc = trn_cli_delete_vpc_subcmd(NULL, argc, argv3);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call delete_vpc_1 return error*/
+	delete_vpc_1_ret_val = -EINVAL;
+	TEST_CASE("delete-vpc subcommand fails if delete_vpc_1 returns error");
+	expect_function_call(__wrap_delete_vpc_1);
+	will_return(__wrap_delete_vpc_1, &delete_vpc_1_ret_val);
+	expect_any(__wrap_delete_vpc_1, argp);
+	expect_any(__wrap_delete_vpc_1, clnt);
+	rc = trn_cli_delete_vpc_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call delete_vpc_1 return NULL*/
+	TEST_CASE("delete-vpc subcommand fails if delete_vpc_1 returns NULL");
+	expect_function_call(__wrap_delete_vpc_1);
+	will_return(__wrap_delete_vpc_1, &delete_vpc_1_ret_val);
+	expect_any(__wrap_delete_vpc_1, argp);
+	expect_any(__wrap_delete_vpc_1, clnt);
+	rc = trn_cli_delete_vpc_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+}
+
+static void test_trn_cli_delete_net_subcmd(void **state)
+{
+	UNUSED(state);
+	int rc;
+	int argc = 5;
+	char itf[] = "eth0";
+
+	/* Test cases */
+	char *argv1[] = { "delete-net", "-i", "eth0", "-j", QUOTE({
+				  "tunnel_id": "3",
+				  "nip": "10.0.0.0",
+				  "prefixlen": "16"
+			  }) };
+
+	char *argv2[] = { "delete-net", "-i", "eth0", "-j", QUOTE({
+				  "tunnel_id": 3,
+				  "nip": "10.0.0.0",
+				  "prefixlen": "16"
+			  }) };
+
+	char *argv3[] = { "delete-net", "-i", "eth0", "-j", QUOTE({
+				  "tunnel_id": "3",
+				  "nip": "adsfwef",
+				  "prefixlen: 16"
+			  }) };
+
+	struct rpc_trn_network_key_t exp_net_key = {
+		.interface = itf,
+		.prefixlen = 16,
+		.tunid = 3,
+		.netip = 0xa,
+	};
+
+	int delete_net_1_ret_val = 0;
+	/* Test call delete-net successfully */
+	TEST_CASE("delete_net_1 succeed with well formed network json input");
+	expect_function_call(__wrap_delete_net_1);
+	will_return(__wrap_delete_net_1, &delete_net_1_ret_val);
+	expect_check(__wrap_delete_net_1, argp, check_net_key_equal,
+		     &exp_net_key);
+	expect_any(__wrap_delete_net_1, clnt);
+	rc = trn_cli_delete_net_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, 0);
+
+	/* Test parse net key input error*/
+	TEST_CASE("delete_net_1 is not called with non-string field");
+	rc = trn_cli_delete_net_subcmd(NULL, argc, argv2);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test parse net key input error 2*/
+	TEST_CASE("delete_net_1 is not called malformed json");
+	rc = trn_cli_delete_net_subcmd(NULL, argc, argv3);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call delete_net_1 return error*/
+	TEST_CASE("delete-net subcommand fails if delete_net_1 returns error");
+	delete_net_1_ret_val = -EINVAL;
+	expect_function_call(__wrap_delete_net_1);
+	will_return(__wrap_delete_net_1, &delete_net_1_ret_val);
+	expect_any(__wrap_delete_net_1, argp);
+	expect_any(__wrap_delete_net_1, clnt);
+	rc = trn_cli_delete_net_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call delete_net_1 return NULL*/
+	TEST_CASE("delete-net subcommand fails if delete_net_1 returns NULL");
+	expect_function_call(__wrap_delete_net_1);
+	will_return(__wrap_delete_net_1, NULL);
+	expect_any(__wrap_delete_net_1, argp);
+	expect_any(__wrap_delete_net_1, clnt);
+	rc = trn_cli_delete_net_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+}
+
+static void test_trn_cli_delete_ep_subcmd(void **state)
+{
+	UNUSED(state);
+	int rc;
+	int argc = 5;
+
+	char itf[] = "eth0";
+
+	/* Test cases */
+	char *argv1[] = { "delete-ep", "-i", "eth0", "-j",
+			  QUOTE({ "tunnel_id": "3", "ip": "10.0.0.1" }) };
+
+	char *argv2[] = { "delete-ep", "-i", "eth0", "-j",
+			  QUOTE({ "tunnel_id": 3, "ip": "10.0.0.1" }) };
+
+	char *argv3[] = { "delete-ep", "-i", "eth0", "-j",
+			  QUOTE({ "tunnel_id": "3" }) };
+
+	char *argv4[] = { "delete-ep", "-i", "eth0", "-j",
+			  QUOTE({ "tunnel_id": "3", "ip": [10.0.0.2] }) };
+
+	struct rpc_trn_endpoint_key_t exp_ep_key = {
+		.interface = itf,
+		.ip = 0x100000a,
+		.tunid = 3,
+	};
+
+	int delete_ep_1_ret_val = 0;
+	/* Test call delete_ep_1 successfully */
+	TEST_CASE("delete_ep_1 succeed with well formed endpoint json input");
+	expect_function_call(__wrap_delete_ep_1);
+	will_return(__wrap_delete_ep_1, &delete_ep_1_ret_val);
+	expect_check(__wrap_delete_ep_1, argp, check_ep_key_equal, &exp_ep_key);
+	expect_any(__wrap_delete_ep_1, clnt);
+	rc = trn_cli_delete_ep_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, 0);
+
+	/* Test parse ep input error*/
+	TEST_CASE("delete_ep_1 is not called with non-string field");
+	rc = trn_cli_delete_ep_subcmd(NULL, argc, argv2);
+	assert_int_equal(rc, -EINVAL);
+
+	TEST_CASE("delete_ep_1 is not called with missing required field");
+	rc = trn_cli_delete_ep_subcmd(NULL, argc, argv3);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test parse ep input error 2*/
+	TEST_CASE("delete_ep_1 is not called malformed json");
+	rc = trn_cli_delete_ep_subcmd(NULL, argc, argv4);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call delete_ep_1 return error*/
+	TEST_CASE("delete-ep subcommand fails if delete_ep_1 returns error");
+	delete_ep_1_ret_val = -EINVAL;
+	expect_function_call(__wrap_delete_ep_1);
+	will_return(__wrap_delete_ep_1, &delete_ep_1_ret_val);
+	expect_any(__wrap_delete_ep_1, argp);
+	expect_any(__wrap_delete_ep_1, clnt);
+	rc = trn_cli_delete_ep_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call delete_ep_1 return NULL*/
+	TEST_CASE("delete-ep subcommand fails if delete_ep_1 returns NULL");
+	expect_function_call(__wrap_delete_ep_1);
+	will_return(__wrap_delete_ep_1, NULL);
+	expect_any(__wrap_delete_ep_1, argp);
+	expect_any(__wrap_delete_ep_1, clnt);
+	rc = trn_cli_delete_ep_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+}
+
+static void test_trn_cli_delete_agent_ep_subcmd(void **state)
+{
+	UNUSED(state);
+	int rc;
+	int argc = 5;
+
+	char itf[] = "eth0";
+
+	/* Test cases */
+	char *argv1[] = { "delete-agent-ep", "-i", "eth0", "-j",
+			  QUOTE({ "tunnel_id": "3", "ip": "10.0.0.1" }) };
+
+	char *argv2[] = { "delete-agent-ep", "-i", "eth0", "-j",
+			  QUOTE({ "tunnel_id": 3, "ip": "10.0.0.1" }) };
+
+	char *argv3[] = { "delete-agent-ep", "-i", "eth0", "-j",
+			  QUOTE({ "tunnel_id": "3" }) };
+
+	char *argv4[] = { "delete-agent-ep", "-i", "eth0", "-j",
+			  QUOTE({ "tunnel_id": "3", "ip": [10.0.0.2] }) };
+
+	struct rpc_trn_endpoint_key_t exp_ep_key = {
+		.interface = itf,
+		.ip = 0x100000a,
+		.tunid = 3,
+	};
+
+	int delete_agent_ep_1_ret_val = 0;
+	/* Test call delete_agent_ep_1 successfully */
+	TEST_CASE(
+		"delete_agent_ep_1 succeed with well formed endpoint json input");
+	expect_function_call(__wrap_delete_agent_ep_1);
+	will_return(__wrap_delete_agent_ep_1, &delete_agent_ep_1_ret_val);
+	expect_check(__wrap_delete_agent_ep_1, argp, check_ep_key_equal,
+		     &exp_ep_key);
+	expect_any(__wrap_delete_agent_ep_1, clnt);
+	rc = trn_cli_delete_agent_ep_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, 0);
+
+	/* Test parse ep input error*/
+	TEST_CASE("delete_agent_ep_1 is not called with non-string field");
+	rc = trn_cli_delete_agent_ep_subcmd(NULL, argc, argv2);
+	assert_int_equal(rc, -EINVAL);
+
+	TEST_CASE(
+		"delete_agent_ep_1 is not called with missing required field");
+	rc = trn_cli_delete_agent_ep_subcmd(NULL, argc, argv3);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test parse ep input error 2*/
+	TEST_CASE("delete_agent_ep_1 is not called malformed json");
+	rc = trn_cli_delete_agent_ep_subcmd(NULL, argc, argv4);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call delete_ep_1 return error*/
+	TEST_CASE(
+		"delete-agent-ep subcommand fails if delete_agent_ep_1 returns error");
+	delete_agent_ep_1_ret_val = -EINVAL;
+	expect_function_call(__wrap_delete_agent_ep_1);
+	will_return(__wrap_delete_agent_ep_1, &delete_agent_ep_1_ret_val);
+	expect_any(__wrap_delete_agent_ep_1, argp);
+	expect_any(__wrap_delete_agent_ep_1, clnt);
+	rc = trn_cli_delete_agent_ep_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call delete_agent_ep_1 return NULL*/
+	TEST_CASE(
+		"delete-agent-ep subcommand fails if delete_agent_ep_1 returns NULL");
+	expect_function_call(__wrap_delete_agent_ep_1);
+	will_return(__wrap_delete_agent_ep_1, NULL);
+	expect_any(__wrap_delete_agent_ep_1, argp);
+	expect_any(__wrap_delete_agent_ep_1, clnt);
+	rc = trn_cli_delete_agent_ep_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+}
+
+static void test_trn_cli_delete_agent_md_subcmd(void **state)
+{
+	UNUSED(state);
+	int rc;
+	int argc = 5;
+
+	char itf[] = "eth0";
+
+	/* Test cases */
+	char *argv1[] = { "delete-agent-metadata", "-i", "eth0", "-j", QUOTE({
+				  "": "",
+			  }) };
+
+	rpc_intf_t exp_md_itf = { .interface = itf };
+	int delete_agent_md_1_ret_val = 0;
+	TEST_CASE(
+		"delete_agent_md succeed with well formed agent metadata json input");
+	expect_function_call(__wrap_delete_agent_md_1);
+	will_return(__wrap_delete_agent_md_1, &delete_agent_md_1_ret_val);
+	expect_check(__wrap_delete_agent_md_1, argp, check_md_itf_equal,
+		     &exp_md_itf);
+	expect_any(__wrap_delete_agent_md_1, clnt);
+	rc = trn_cli_delete_agent_md_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, 0);
+
+	TEST_CASE(
+		"delete-agent-metadata subcommand fails if rpc returns error");
+	delete_agent_md_1_ret_val = -EINVAL;
+	expect_function_call(__wrap_delete_agent_md_1);
+	will_return(__wrap_delete_agent_md_1, &delete_agent_md_1_ret_val);
+	expect_check(__wrap_delete_agent_md_1, argp, check_md_itf_equal,
+		     &exp_md_itf);
+	expect_any(__wrap_delete_agent_md_1, clnt);
+	rc = trn_cli_delete_agent_md_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+
+	TEST_CASE("delete-agent-metadata subcommand fails if rpc returns NULL");
+	expect_function_call(__wrap_delete_agent_md_1);
+	will_return(__wrap_delete_agent_md_1, NULL);
+	expect_check(__wrap_delete_agent_md_1, argp, check_md_itf_equal,
+		     &exp_md_itf);
+	expect_any(__wrap_delete_agent_md_1, clnt);
+	rc = trn_cli_delete_agent_md_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+}
+
 int main()
 {
 	const struct CMUnitTest tests[] = {
@@ -1528,7 +1902,12 @@ int main()
 		cmocka_unit_test(test_trn_cli_get_net_subcmd),
 		cmocka_unit_test(test_trn_cli_get_ep_subcmd),
 		cmocka_unit_test(test_trn_cli_get_agent_ep_subcmd),
-		cmocka_unit_test(test_trn_cli_get_agent_md_subcmd)
+		cmocka_unit_test(test_trn_cli_get_agent_md_subcmd),
+		cmocka_unit_test(test_trn_cli_delete_vpc_subcmd),
+		cmocka_unit_test(test_trn_cli_delete_net_subcmd),
+		cmocka_unit_test(test_trn_cli_delete_ep_subcmd),
+		cmocka_unit_test(test_trn_cli_delete_agent_ep_subcmd),
+		cmocka_unit_test(test_trn_cli_delete_agent_md_subcmd)
 	};
 	return cmocka_run_group_tests(tests, NULL, NULL);
 }

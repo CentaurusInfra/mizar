@@ -34,17 +34,22 @@ class droplet:
         self.trn_cli_unload_transit_xdp = f'''{self.trn_cli} unload-transit-xdp -i eth0 -j'''
         self.trn_cli_update_vpc = f'''{self.trn_cli} update-vpc -i eth0 -j'''
         self.trn_cli_get_vpc = f'''{self.trn_cli} get-vpc -i eth0 -j'''
+        self.trn_cli_delete_vpc = f'''{self.trn_cli} delete-vpc -i eth0 -j'''
         self.trn_cli_update_net = f'''{self.trn_cli} update-net -i eth0 -j'''
         self.trn_cli_get_net = f'''{self.trn_cli} get-net -i eth0 -j'''
+        self.trn_cli_delete_net = f'''{self.trn_cli} delete-net -i eth0 -j'''
         self.trn_cli_update_ep = f'''{self.trn_cli} update-ep -i eth0 -j'''
         self.trn_cli_get_ep = f'''{self.trn_cli} get-ep -i eth0 -j'''
+        self.trn_cli_delete_ep = f'''{self.trn_cli} delete-ep -i eth0 -j'''
 
         self.trn_cli_load_transit_agent_xdp = f'''{self.trn_cli} load-agent-xdp'''
         self.trn_cli_unload_transit_agent_xdp = f'''{self.trn_cli} unload-agent-xdp'''
         self.trn_cli_update_agent_metadata = f'''{self.trn_cli} update-agent-metadata'''
         self.trn_cli_get_agent_metadata = f'''{self.trn_cli} get-agent-metadata'''
+        self.trn_cli_delete_agent_metadata = f'''{self.trn_cli} delete-agent-metadata'''
         self.trn_cli_update_agent_ep = f'''{self.trn_cli} update-agent-ep'''
         self.trn_cli_get_agent_ep = f'''{self.trn_cli} get-agent-ep'''
+        self.trn_cli_delete_agent_ep = f'''{self.trn_cli} delete-agent-ep'''
 
         self.xdp_path = "/trn_xdp/trn_transit_xdp_ebpf_debug.o"
         self.pcap_file = "/bpffs/transit_xdp.pcap"
@@ -108,111 +113,113 @@ ip netns exec {ep.ns} ifconfig veth0 hw ether {ep.mac} ' ''')
         self.veth_peers.add(ep.veth_peer)
 
     def load_transit_xdp(self):
-        logger.info(
-            "[DROPLET {}]: load_transit_xdp {}".format(self.id, self.ip))
+        log_string = "[DROPLET {}]: load_transit_xdp {}".format(
+            self.id, self.ip)
         jsonconf = {
             "xdp_path": self.xdp_path,
             "pcapfile": self.pcap_file
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_load_transit_xdp} \'{jsonconf}\' '''
-        self.run(cmd)
+        self.exec_cli_rpc(log_string, jsonconf, cmd)
 
     def unload_transit_xdp(self):
-        logger.info(
-            "[DROPLET {}]: unload_transit_xdp {}".format(self.id, self.ip))
+        log_string = "[DROPLET {}]: unload_transit_xdp {}".format(
+            self.id, self.ip)
         jsonconf = '\'{}\''
         cmd = f'''{self.trn_cli_unload_transit_xdp} {jsonconf} '''
-        self.run(cmd)
+        self.exec_cli_rpc(log_string, jsonconf, cmd)
 
     def load_transit_agent_xdp(self, itf):
-        logger.info(
-            "[DROPLET {}]: load_transit_agent_xdp {}".format(self.id, itf))
+        log_string = "[DROPLET {}]: load_transit_agent_xdp {}".format(
+            self.id, itf)
         jsonconf = {
             "xdp_path": self.agent_xdp_path,
             "pcapfile": self.agent_pcap_file
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_load_transit_agent_xdp} -i \'{itf}\' -j \'{jsonconf}\' '''
-        self.run(cmd)
+        self.exec_cli_rpc(log_string, jsonconf, cmd)
 
     def unload_transit_agent_xdp(self, itf):
-        logger.info(
-            "[DROPLET {}]: unload_transit_agent_xdp {}".format(self.id, itf))
+        log_string = "[DROPLET {}]: unload_transit_agent_xdp {}".format(
+            self.id, itf)
         jsonconf = '\'{}\''
         cmd = f'''{self.trn_cli_unload_transit_agent_xdp} -i \'{itf}\' -j {jsonconf} '''
-        self.run(cmd)
+        self.exec_cli_rpc(log_string, jsonconf, cmd)
 
     def update_vpc(self, vpc):
-        logger.info(
-            "[DROPLET {}]: update_vpc {}".format(self.id, vpc.get_tunnel_id()))
-
+        log_string = "[DROPLET {}]: update_vpc {}".format(
+            self.id, vpc.get_tunnel_id())
         jsonconf = {
             "tunnel_id": vpc.get_tunnel_id(),
             "routers_ips": vpc.get_transit_routers_ips()
         }
-
         jsonconf = json.dumps(jsonconf)
-
         cmd = f'''{self.trn_cli_update_vpc} \'{jsonconf}\''''
-        self.run(cmd)
+        self.exec_cli_rpc(log_string, jsonconf, cmd)
 
     def get_vpc(self, vpc):
-        logger.info(
-            "[DROPLET {}]: get_vpc {}".format(self.id, vpc.get_tunnel_id()))
-
+        log_string = "[DROPLET {}]: get_vpc {}".format(
+            self.id, vpc.get_tunnel_id())
         jsonconf = {
             "tunnel_id": vpc.get_tunnel_id(),
         }
-
         jsonconf = json.dumps(jsonconf)
-
         cmd = f'''{self.trn_cli_get_vpc} \'{jsonconf}\''''
-        output = self.run(cmd)
-        logger.info(output[0])
-        logger.info(output[1])
+        self.exec_cli_rpc(log_string, jsonconf, cmd)
+
+    def delete_vpc(self, vpc):
+        log_string = "[DROPLET {}]: delete_vpc {}".format(
+            self.id, vpc.get_tunnel_id())
+        jsonconf = {
+            "tunnel_id": vpc.get_tunnel_id(),
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_delete_vpc} \'{jsonconf}\''''
+        self.exec_cli_rpc(log_string, jsonconf, cmd)
 
     def update_net(self, net):
-        logger.info(
-            "[DROPLET {}]: update_net {}".format(self.id, net.netid))
-
+        log_string = "[DROPLET {}]: update_net {}".format(self.id, net.netid)
         jsonconf = {
             "tunnel_id": net.get_tunnel_id(),
             "nip": net.get_nip(),
             "prefixlen": net.get_prefixlen(),
             "switches_ips": net.get_switches_ips()
         }
-
         jsonconf = json.dumps(jsonconf)
-
         cmd = f'''{self.trn_cli_update_net} \'{jsonconf}\''''
-        self.run(cmd)
+        self.exec_cli_rpc(log_string, jsonconf, cmd)
 
     def get_net(self, net):
-        logger.info(
-            "[DROPLET {}]: get_net {}".format(self.id, net.netid))
-
+        log_string = "[DROPLET {}]: get_net {}".format(self.id, net.netid)
         jsonconf = {
             "tunnel_id": net.get_tunnel_id(),
             "nip": net.get_nip(),
             "prefixlen": net.get_prefixlen(),
         }
-
         jsonconf = json.dumps(jsonconf)
-
         cmd = f'''{self.trn_cli_get_net} \'{jsonconf}\''''
-        output = self.run(cmd)
-        logger.info(output[0])
-        logger.info(output[1])
+        self.exec_cli_rpc(log_string, jsonconf, cmd)
+
+    def delete_net(self, net):
+        log_string = "[DROPLET {}]: delete_net {}".format(self.id, net.netid)
+        jsonconf = {
+            "tunnel_id": net.get_tunnel_id(),
+            "nip": net.get_nip(),
+            "prefixlen": net.get_prefixlen(),
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_delete_net} \'{jsonconf}\''''
+        self.exec_cli_rpc(log_string, jsonconf, cmd)
 
     def update_ep(self, ep):
         if ep.host is not None:
-            logger.info(
-                "[DROPLET {}]: update_ep {} hosted at {}".format(self.id, ep.ip, ep.host.id))
+            log_string = "[DROPLET {}]: update_ep {} hosted at {}".format(
+                self.id, ep.ip, ep.host.id)
         else:
-            logger.info(
-                "[DROPLET {}]: update_ep for a phantom ep {}".format(self.id, ep.ip))
-
+            log_string = "[DROPLET {}]: update_ep for a phantom ep {}".format(
+                self.id, ep.ip)
         peer = ""
 
         # Only detail veth info if the droplet is also a host
@@ -228,11 +235,9 @@ ip netns exec {ep.ns} ifconfig veth0 hw ether {ep.mac} ' ''')
             "remote_ips": ep.get_remote_ips(),
             "hosted_iface": peer
         }
-
         jsonconf = json.dumps(jsonconf)
-
         cmd = f'''{self.trn_cli_update_ep} \'{jsonconf}\''''
-        self.run(cmd)
+        self.exec_cli_rpc(log_string, jsonconf, cmd)
 
     def get_ep(self, ep, agent=False):
         jsonconf = {
@@ -240,50 +245,52 @@ ip netns exec {ep.ns} ifconfig veth0 hw ether {ep.mac} ' ''')
             "ip": ep.get_ip(),
         }
         jsonconf = json.dumps(jsonconf)
-
         if agent:
-            logger.info(
-                "[DROPLET {}]: get_agent_ep {} hosted at {}".format(self.id, ep.ip, ep.host.id))
+            log_string = "[DROPLET {}]: get_agent_ep {} hosted at {}".format(
+                self.id, ep.ip, ep.host.id)
             cmd = f'''{self.trn_cli_get_agent_ep} \'{jsonconf}\''''
         else:
-            logger.info(
-                "[DROPLET {}]: get_ep {} hosted at {}".format(self.id, ep.ip, ep.host.id))
+            log_string = "[DROPLET {}]: get_ep {} hosted at {}".format(
+                self.id, ep.ip, ep.host.id)
             cmd = f'''{self.trn_cli_get_ep} \'{jsonconf}\''''
+        self.exec_cli_rpc(log_string, jsonconf, cmd)
 
-        output = self.run(cmd)
-        logger.info(output[0])
-        logger.info(output[1])
+    def delete_ep(self, ep, agent=False):
+        jsonconf = {
+            "tunnel_id": ep.get_tunnel_id(),
+            "ip": ep.get_ip(),
+        }
+        jsonconf = json.dumps(jsonconf)
+        if agent:
+            log_string = "[DROPLET {}]: delete_agent_ep {} hosted at {}".format(
+                self.id, ep.ip, ep.host.id)
+            cmd = f'''{self.trn_cli_delete_agent_ep} \'{jsonconf}\''''
+        else:
+            log_string = "[DROPLET {}]: delete_ep {} hosted at {}".format(
+                self.id, ep.ip, ep.host.id)
+            cmd = f'''{self.trn_cli_delete_ep} \'{jsonconf}\''''
+        self.exec_cli_rpc(log_string, jsonconf, cmd)
 
     def get_agent_ep(self, ep):
         self.get_ep(ep, agent=True)
 
+    def delete_agent_ep(self, ep):
+        self.delete_ep(ep, agent=True)
+
     def update_substrate_ep(self, droplet):
-        logger.info(
-            "[DROPLET {}]: update_substrate_ep for droplet {}".format(self.id, droplet.ip))
-
+        log_string = "[DROPLET {}]: update_substrate_ep for droplet {}".format(
+            self.id, droplet.ip)
         jsonconf = droplet.get_substrate_ep_json()
-
         cmd = f'''{self.trn_cli_update_ep} \'{jsonconf}\''''
-        self.run(cmd)
-
-        jsonconf = {
-            "tunnel_id": "0",
-            "ip": droplet.ip,
-        }
-        jsonconf = json.dumps(jsonconf)
-        cmd = f'''{self.trn_cli_get_ep} \'{jsonconf}\''''
-        output = self.run(cmd)
-        logger.info(output[0])
-        logger.info(output[1])
+        self.exec_cli_rpc(log_string, jsonconf, cmd)
 
     def update_agent_ep(self, itf):
         logger.error(
             "[DROPLET {}]: not implemented, no use case for now!".format(self.id))
 
     def update_agent_metadata(self, itf, ep, net):
-        logger.info(
-            "[DROPLET {}]: update_agent_metadata on {} for endpoint {}".format(self.id, itf, ep.ip))
-
+        log_string = "[DROPLET {}]: update_agent_metadata on {} for endpoint {}".format(
+            self.id, itf, ep.ip)
         jsonconf = {
             "ep": {
                 "tunnel_id": ep.get_tunnel_id(),
@@ -307,38 +314,39 @@ ip netns exec {ep.ns} ifconfig veth0 hw ether {ep.mac} ' ''')
             }
         }
         jsonconf = json.dumps(jsonconf)
-
         cmd = f'''{self.trn_cli_update_agent_metadata} -i \'{itf}\' -j \'{jsonconf}\''''
-        self.run(cmd)
+        self.exec_cli_rpc(log_string, jsonconf, cmd)
 
-    def get_agent_metadata(self, itf, ep, net):
-        logger.info(
-            "[DROPLET {}]: get_agent_metadata on {} for endpoint {}".format(self.id, itf, ep.ip))
-
+    def get_agent_metadata(self, itf, ep):
+        log_string = "[DROPLET {}]: get_agent_metadata on {} for endpoint {}".format(
+            self.id, itf, ep.ip)
         jsonconf = {
             "": "",
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_get_agent_metadata} -i \'{itf}\' -j \'{jsonconf}\''''
-        output = self.run(cmd)
-        logger.info(output[0])
-        logger.info(output[1])
+        self.exec_cli_rpc(log_string, jsonconf, cmd)
 
-    def update_agent_substrate_ep(self, itf, droplet):
-        logger.info(
-            "[DROPLET {}]: update_agent_substrate_ep on {} for droplet {}".format(self.id, itf, droplet.ip))
-
-        jsonconf = droplet.get_substrate_ep_json()
-
-        cmd = f'''{self.trn_cli_update_agent_ep} -i \'{itf}\' -j \'{jsonconf}\''''
-        self.run(cmd)
-
+    def delete_agent_metadata(self, itf, ep):
+        log_string = "[DROPLET {}]: delete_agent_metadata on {} for endpoint {}".format(
+            self.id, itf, ep.ip)
         jsonconf = {
-            "tunnel_id": "0",
-            "ip": droplet.ip,
+            "": "",
         }
         jsonconf = json.dumps(jsonconf)
-        cmd = f'''{self.trn_cli_get_agent_ep} -i \'{itf}\' -j \'{jsonconf}\''''
+        cmd = f'''{self.trn_cli_delete_agent_metadata} -i \'{itf}\' -j \'{jsonconf}\''''
+        self.exec_cli_rpc(log_string, jsonconf, cmd)
+
+    def update_agent_substrate_ep(self, itf, droplet):
+        log_string = "[DROPLET {}]: update_agent_substrate_ep on {} for droplet {}".format(
+            self.id, itf, droplet.ip)
+
+        jsonconf = droplet.get_substrate_ep_json()
+        cmd = f'''{self.trn_cli_update_agent_ep} -i \'{itf}\' -j \'{jsonconf}\''''
+        self.exec_cli_rpc(log_string, jsonconf, cmd)
+
+    def exec_cli_rpc(self, log_string, jsonconf, cmd):
+        logger.info(log_string)
         output = self.run(cmd)
         logger.info(output[0])
         logger.info(output[1])
@@ -419,7 +427,8 @@ options:key={geneve_key}'''
             "remote_ips": [""],
             "hosted_iface": ""
         }
-        return json.dumps(jsonconf)
+        jsonconf = json.dumps(jsonconf)
+        return jsonconf
 
     def run_from_root(self, cmd):
         ret_value = run_cmd(cmd)

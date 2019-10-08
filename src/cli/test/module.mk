@@ -22,7 +22,11 @@ CLI_MOCKS += -Wl,--wrap=get_net_1
 CLI_MOCKS += -Wl,--wrap=get_ep_1
 CLI_MOCKS += -Wl,--wrap=get_agent_ep_1
 CLI_MOCKS += -Wl,--wrap=get_agent_md_1
-
+CLI_MOCKS += -Wl,--wrap=delete_vpc_1
+CLI_MOCKS += -Wl,--wrap=delete_net_1
+CLI_MOCKS += -Wl,--wrap=delete_ep_1
+CLI_MOCKS += -Wl,--wrap=delete_agent_ep_1
+CLI_MOCKS += -Wl,--wrap=delete_agent_md_1
 
 unittest:: test_cli
 

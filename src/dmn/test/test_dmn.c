@@ -65,6 +65,19 @@ int __wrap_bpf_map_lookup_elem(void *map, void *key, void *value)
 	return 0;
 }
 
+int __wrap_bpf_map_delete_elem(void *map, void *key)
+{
+	UNUSED(map);
+	UNUSED(key);
+
+	bool valid = mock_type(bool);
+	function_called();
+
+	if (valid)
+		return 0;
+	return 1;
+}
+
 int __wrap_bpf_prog_load_xattr(const struct bpf_prog_load_attr *attr,
 			       struct bpf_object **pobj, int *prog_fd)
 {
@@ -896,6 +909,144 @@ static void test_get_agent_md_1_svc(void **state)
 	assert_true(strlen(retval->interface) == 0);
 }
 
+static void test_delete_vpc_1_svc(void **state)
+{
+	UNUSED(state);
+	char itf[] = "lo";
+	struct rpc_trn_vpc_key_t vpc_key = { .interface = itf, .tunid = 3 };
+	int *rc;
+
+	/* Test delete_vpc_1 with valid vp_ckey */
+	will_return(__wrap_bpf_map_delete_elem, TRUE);
+	expect_function_call(__wrap_bpf_map_delete_elem);
+	rc = delete_vpc_1_svc(&vpc_key, NULL);
+	assert_int_equal(*rc, 0);
+
+	/* Test delete_vpc_1 with invalid vpc_key */
+	will_return(__wrap_bpf_map_delete_elem, FALSE);
+	expect_function_call(__wrap_bpf_map_delete_elem);
+	rc = delete_vpc_1_svc(&vpc_key, NULL);
+	assert_int_equal(*rc, RPC_TRN_FATAL);
+
+	/* Test delete_vpc_1 with invalid interface*/
+	vpc_key.interface = "";
+	rc = delete_vpc_1_svc(&vpc_key, NULL);
+	assert_int_equal(*rc, RPC_TRN_ERROR);
+}
+
+static void test_delete_net_1_svc(void **state)
+{
+	UNUSED(state);
+	char itf[] = "lo";
+	struct rpc_trn_network_key_t net_key = {
+		.interface = itf,
+		.prefixlen = 16,
+		.tunid = 3,
+		.netip = 0xa,
+	};
+	int *rc;
+
+	/* Test delete_net_1 with valid net_key */
+	will_return(__wrap_bpf_map_delete_elem, TRUE);
+	expect_function_call(__wrap_bpf_map_delete_elem);
+	rc = delete_net_1_svc(&net_key, NULL);
+	assert_int_equal(*rc, 0);
+
+	/* Test delete_net_1 with invalid net_key */
+	will_return(__wrap_bpf_map_delete_elem, FALSE);
+	expect_function_call(__wrap_bpf_map_delete_elem);
+	rc = delete_net_1_svc(&net_key, NULL);
+	assert_int_equal(*rc, RPC_TRN_ERROR);
+
+	/* Test delete_net_1 with invalid interface*/
+	net_key.interface = "";
+	rc = delete_net_1_svc(&net_key, NULL);
+	assert_int_equal(*rc, RPC_TRN_ERROR);
+}
+
+static void test_delete_ep_1_svc(void **state)
+{
+	UNUSED(state);
+	char itf[] = "lo";
+	struct rpc_trn_endpoint_key_t ep_key = {
+		.interface = itf,
+		.ip = 0x100000a,
+		.tunid = 3,
+	};
+	int *rc;
+
+	/* Test delete_ep_1 with valid ep_key */
+	will_return(__wrap_bpf_map_delete_elem, TRUE);
+	expect_function_call(__wrap_bpf_map_delete_elem);
+	rc = delete_ep_1_svc(&ep_key, NULL);
+	assert_int_equal(*rc, 0);
+
+	/* Test delete_ep_1 with invalid ep_key */
+	will_return(__wrap_bpf_map_delete_elem, FALSE);
+	expect_function_call(__wrap_bpf_map_delete_elem);
+	rc = delete_ep_1_svc(&ep_key, NULL);
+	assert_int_equal(*rc, RPC_TRN_ERROR);
+
+	/* Test delete_ep_1 with invalid interface*/
+	ep_key.interface = "";
+	rc = delete_ep_1_svc(&ep_key, NULL);
+	assert_int_equal(*rc, RPC_TRN_ERROR);
+}
+
+static void test_delete_agent_ep_1_svc(void **state)
+{
+	UNUSED(state);
+	char itf[] = "lo";
+	struct rpc_trn_endpoint_key_t ep_key = {
+		.interface = itf,
+		.ip = 0x100000a,
+		.tunid = 3,
+	};
+	int *rc;
+
+	/* Test delete_agent_ep_1 with valid ep_key */
+	will_return(__wrap_bpf_map_delete_elem, TRUE);
+	expect_function_call(__wrap_bpf_map_delete_elem);
+	rc = delete_agent_ep_1_svc(&ep_key, NULL);
+	assert_int_equal(*rc, 0);
+
+	/* Test delete_agent_ep_1 with invalid ep_key */
+	will_return(__wrap_bpf_map_delete_elem, FALSE);
+	expect_function_call(__wrap_bpf_map_delete_elem);
+	rc = delete_agent_ep_1_svc(&ep_key, NULL);
+	assert_int_equal(*rc, RPC_TRN_ERROR);
+
+	/* Test delete_agent_ep_1 with invalid interface*/
+	ep_key.interface = "";
+	rc = delete_agent_ep_1_svc(&ep_key, NULL);
+	assert_int_equal(*rc, RPC_TRN_ERROR);
+}
+
+static void test_delete_agent_md_1_svc(void **state)
+{
+	UNUSED(state);
+	int *rc;
+	char itf[] = "lo";
+	struct rpc_intf_t md_key = { .interface = itf };
+
+	/* Test delete_agent_md_1 with valid md_key */
+	will_return(__wrap_bpf_map_delete_elem, TRUE);
+	expect_function_call(__wrap_bpf_map_delete_elem);
+	rc = delete_agent_md_1_svc(&md_key, NULL);
+	assert_int_equal(*rc, 0);
+
+	/* Test delete_agent_md_1 with invalid md_key */
+	will_return(__wrap_bpf_map_delete_elem, FALSE);
+	expect_function_call(__wrap_bpf_map_delete_elem);
+	rc = delete_agent_md_1_svc(&md_key, NULL);
+	assert_int_equal(*rc, RPC_TRN_ERROR);
+
+	/* Test delete_agent_md_1 with invalid interface*/
+	md_key.interface = "";
+	rc = delete_agent_md_1_svc(&md_key, NULL);
+	assert_int_equal(*rc, RPC_TRN_ERROR);
+}
+
 /**
  * This is run once before all group tests
  */
@@ -935,6 +1086,12 @@ int main()
 		cmocka_unit_test(test_get_ep_1_svc),
 		cmocka_unit_test(test_get_agent_ep_1_svc),
 		cmocka_unit_test(test_get_agent_md_1_svc),
+		cmocka_unit_test(test_delete_vpc_1_svc),
+		cmocka_unit_test(test_delete_net_1_svc),
+		cmocka_unit_test(test_delete_ep_1_svc),
+		cmocka_unit_test(test_delete_agent_ep_1_svc),
+		cmocka_unit_test(test_delete_agent_md_1_svc),
+
 	};
 
 	int result = cmocka_run_group_tests(tests, groupSetup, groupTeardown);

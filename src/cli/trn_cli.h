@@ -87,6 +87,8 @@ int trn_cli_update_agent_ep_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_update_agent_md_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_get_agent_ep_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_get_agent_md_subcmd(CLIENT *clnt, int argc, char *argv[]);
+int trn_cli_delete_agent_ep_subcmd(CLIENT *clnt, int argc, char *argv[]);
+int trn_cli_delete_agent_md_subcmd(CLIENT *clnt, int argc, char *argv[]);
 
 void dump_vpc(struct rpc_trn_vpc_t *vpc);
 void dump_net(struct rpc_trn_network_t *net);

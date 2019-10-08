@@ -126,6 +126,54 @@ int trn_cli_get_agent_ep_subcmd(CLIENT *clnt, int argc, char *argv[])
 	return 0;
 }
 
+int trn_cli_delete_agent_ep_subcmd(CLIENT *clnt, int argc, char *argv[])
+{
+	ketopt_t om = KETOPT_INIT;
+	struct cli_conf_data_t conf;
+	cJSON *json_str = NULL;
+
+	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
+		return -EINVAL;
+	}
+
+	char *buf = conf.conf_str;
+	json_str = trn_cli_parse_json(buf);
+
+	if (json_str == NULL) {
+		return -EINVAL;
+	}
+
+	int *rc;
+	rpc_trn_endpoint_key_t ep_key;
+	char rpc[] = "delete_agent_ep_1";
+	ep_key.interface = conf.intf;
+
+	int err = trn_cli_parse_ep_key(json_str, &ep_key);
+	cJSON_Delete(json_str);
+
+	if (err != 0) {
+		print_err("Error: parsing endpoint config.\n");
+		return -EINVAL;
+	}
+	rc = delete_agent_ep_1(&ep_key, clnt);
+	if (rc == (int *)NULL) {
+		print_err("Error: call failed: delete_agent_ep_1.\n");
+		return -EINVAL;
+	}
+
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
+	}
+
+	print_msg(
+		"delete_agent_ep_1 successfully deleted endpoint %d on interface %s.\n",
+		ep_key.ip, ep_key.interface);
+	return 0;
+}
+
 int trn_cli_update_agent_md_subcmd(CLIENT *clnt, int argc, char *argv[])
 {
 	ketopt_t om = KETOPT_INIT;
@@ -219,6 +267,41 @@ int trn_cli_get_agent_md_subcmd(CLIENT *clnt, int argc, char *argv[])
 	print_msg(
 		"get_agent_md_1 successfully queried ep metadata on interface %s.\n",
 		agent_md->interface);
+	return 0;
+}
+
+int trn_cli_delete_agent_md_subcmd(CLIENT *clnt, int argc, char *argv[])
+{
+	ketopt_t om = KETOPT_INIT;
+	struct cli_conf_data_t conf;
+
+	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
+		return -EINVAL;
+	}
+
+	int *rc;
+	rpc_intf_t itf;
+	itf.interface = conf.intf;
+
+	char rpc[] = "delete_agent_md_1";
+
+	rc = delete_agent_md_1(&itf, clnt);
+	if (rc == (int *)NULL) {
+		print_err("Error: call failed: delete_agent_md_1.\n");
+		return -EINVAL;
+	}
+
+	if (*rc != 0) {
+		print_msg(
+			"Error: %s fatal error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
+	}
+
+	print_msg(
+		"delete_agent_md_1 successfully deleted ep metadata on interface %s.\n",
+		itf.interface);
+
 	return 0;
 }
 

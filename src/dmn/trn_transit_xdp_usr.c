@@ -166,6 +166,39 @@ int trn_get_vpc(struct user_metadata_t *md, struct vpc_key_t *vpckey,
 	return 0;
 }
 
+int trn_delete_network(struct user_metadata_t *md, struct network_key_t *netkey)
+{
+	netkey->prefixlen += 64; /* tunid size */
+	int err = bpf_map_delete_elem(md->networks_map_fd, netkey);
+	if (err) {
+		TRN_LOG_ERROR("Deleting network mapping failed (err:%d).", err);
+		return 1;
+	}
+	return 0;
+}
+
+int trn_delete_endpoint(struct user_metadata_t *md,
+			struct endpoint_key_t *epkey)
+{
+	int err = bpf_map_delete_elem(md->endpoints_map_fd, epkey);
+	if (err) {
+		TRN_LOG_ERROR("Deleting endpoint mapping failed (err:%d).",
+			      err);
+		return 1;
+	}
+	return 0;
+}
+
+int trn_delete_vpc(struct user_metadata_t *md, struct vpc_key_t *vpckey)
+{
+	int err = bpf_map_delete_elem(md->vpc_map_fd, vpckey);
+	if (err) {
+		TRN_LOG_ERROR("Deleting vpc mapping failed (err:%d).", err);
+		return 1;
+	}
+	return 0;
+}
+
 int trn_user_metadata_init(struct user_metadata_t *md, char *itf,
 			   char *kern_path, int xdp_flags)
 {

@@ -71,7 +71,17 @@ int trn_agent_get_agent_metadata(struct agent_user_metadata_t *umd,
 		TRN_LOG_ERROR("Querying agent metadata (err:%d).", err);
 		return 1;
 	}
+	return 0;
+}
 
+int trn_agent_delete_agent_metadata(struct agent_user_metadata_t *umd)
+{
+	int key = 0;
+	int err = bpf_map_delete_elem(umd->agentmetadata_map_fd, &key);
+	if (err) {
+		TRN_LOG_ERROR("Deleting agent metadata (err:%d).", err);
+		return 1;
+	}
 	return 0;
 }
 
@@ -104,6 +114,19 @@ int trn_agent_get_endpoint(struct agent_user_metadata_t *umd,
 	if (err) {
 		TRN_LOG_ERROR(
 			"Querying agent endpoint mapping failed (err:%d).",
+			err);
+		return 1;
+	}
+	return 0;
+}
+
+int trn_agent_delete_endpoint(struct agent_user_metadata_t *umd,
+			      struct endpoint_key_t *epkey)
+{
+	int err = bpf_map_delete_elem(umd->endpoints_map_fd, epkey);
+	if (err) {
+		TRN_LOG_ERROR(
+			"Deleting agent endpoint mapping failed (err:%d).",
 			err);
 		return 1;
 	}
