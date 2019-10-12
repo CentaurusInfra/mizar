@@ -2,7 +2,7 @@
 /**
  * @file trn_agent_xdp_usr.h
  * @author Sherif Abdelwahab (@zasherif)
- *
+ *         Phu Tran          (@phudtran)
  * @brief Transit daemon functions and helper macros
  *
  * @copyright Copyright (c) 2019 The Authors.
@@ -70,6 +70,7 @@
 		if (ep) {                                                      \
 			free(ep->key);                                         \
 			free(ep->data);                                        \
+			ep->data = NULL;                                       \
 			TRN_LOG_DEBUG("Deleted: [%s]", itf);                   \
 		}                                                              \
 	} while (0)

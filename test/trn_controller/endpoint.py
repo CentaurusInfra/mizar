@@ -41,6 +41,7 @@ class endpoint:
         self.mac = v[0]
         self.ns = tuntype + '_' + v[1]
         self.veth_peer = tuntype + '_' + v[2]
+        self.veth_allocated = True
         self.ip = ip
         self.prefixlen = prefixlen
         self.gw_ip = gw_ip
@@ -89,10 +90,30 @@ class endpoint:
         self.host.update_ep(self)
         self.ready = False
 
+    def unprovision(self):
+        if self.host is None:
+            return
+
+        if self.tuntype == 'vxn':
+            return
+        else:
+            self.transit_agent = None
+            self.host.delete_ep(self)
+            self.host.unprovision_simple_endpoint(self)
+            veth_allocator.getInstance().reclaim_veth(
+                self.mac, self.ns.replace(self.tuntype + '_', ''), self.veth_peer.replace(self.tuntype + '_', ''))
+            self.veth_allocated = False
+
+        self.ready = False
+
     def __del__(self):
+        return
         if (self.tuntype == 'gnv' and self.host):
-            self.host.unload_transit_agent_xdp(self.veth_peer)
-        veth_allocator.getInstance().reclaim_veth(self.mac, self.ns, self.veth_peer)
+            if self.transit_agent is not None:
+                self.host.unload_transit_agent_xdp(self.veth_peer)
+            if self.veth_allocated:
+                veth_allocator.getInstance().reclaim_veth(
+                    self.mac, self.ns.replace(self.tuntype + '_', ''), self.veth_peer.replace(self.tuntype + '_', ''))
 
     def get_tunnel_id(self):
         return str(self.vni)
@@ -127,6 +148,16 @@ class endpoint:
         if self.host is not None:
             self.transit_agent.update_agent_metadata(self, net)
         self.ready = True
+
+    def delete(self, net):
+        """
+        Deletes the endpoint information.
+        """
+        logger.info(
+            "[EP {}]: delete endpoint".format(self.ip))
+        if self.host is not None:
+            self.transit_agent.delete_agent_metadata(self, net)
+        self.unprovision()
 
     def do_ping(self, ip, count=1, wait=5):
         cmd = f'''{self.ping_cmd} -w {wait} -c {count} {ip}'''
@@ -194,4 +225,3 @@ class endpoint:
     def do_iperf3_client(self, ip, args=''):
         cmd = f'''{self.bash_cmd} 'iperf3 -c {ip} {args}' '''
         return self.host.run(cmd)
-

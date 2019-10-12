@@ -65,6 +65,30 @@ class vpc:
             self.transit_routers[id].update_net(net)
             net.update_vpc(self)
 
+    def remove_router(self, droplet):
+        """
+        Remove an existing transit router hosted at a droplet from the set of transit
+        routers.
+
+        1. Removes the router from the set of transit routers
+        2. Call delete_net on the transit router's droplet for each
+           network of the VPC. These calls removes the set of
+           transit switches of each network from the transit routers table with
+        3. Call update_vpc on each network of the VPC. This call allows
+           all transit switches of all networks to learn about the removed
+           router and stop sending packets to it. Thus, must be
+           called after all transit router's data has been removed.
+        """
+
+        logger.info("[VPC {}]: remove_router {}".format(self.vni, droplet.id))
+
+        id = droplet.id
+        removed_router = self.transit_routers.pop(id)
+        for net in self.networks.values():
+            removed_router.delete_net(net)
+        for net in self.networks.values():
+            net.update_vpc(self)
+
     def create_network(self, netid, cidr):
         """
         Creates a network in the VPC. Since the network does not have
@@ -74,6 +98,27 @@ class vpc:
         logger.info("[VPC {}]: create_network {}".format(self.vni, netid))
         self.networks[netid] = network(self.vni, netid, cidr)
         self.networks[netid].create_gw_endpoint()
+
+    def delete_network(self, netid, cidr):
+        """
+        Deletes a network in the VPC.
+        1. Removes the network from the set of networks
+        2. Deletes all endpoints including the gw_endpoint on the network
+        3. Removes all switches from network
+        4. Deletes the network from all routers in the VPC
+        """
+        logger.info("[VPC {}]: delete_network {}".format(self.vni, netid))
+        net = self.networks.pop(netid)
+
+        net.delete_gw_endpoint()
+        net_switches = list(net.transit_switches.values())
+        net_eps = list(net.endpoints.values())
+        for switch in net_switches:
+            self.remove_switch(netid, switch.droplet, net)
+        for ep in net_eps:
+            net.delete_simple_endpoint(ep.ip, ep.host, net_switches)
+        for router in self.transit_routers.values():
+            router.delete_net(net, net_switches)
 
     def add_switch(self, netid, droplet):
         """
@@ -96,6 +141,24 @@ class vpc:
         for r in self.transit_routers.values():
             r.update_net(self.networks[netid])
 
+    def remove_switch(self, netid, droplet, net=None):
+        """
+        Removes a switch from network identified by netid or network object.
+
+        1. Cascade the remove switch call to the network, which deletes
+           the data of the existing transit switch including the set of
+           transit routers of the VPC.
+        2. Call update_net on all the VPC's transit routers.
+        """
+
+        logger.info("[VPC {}]: remove_switch {}".format(self.vni, droplet.id))
+        if net is None:
+            net = self.networks[netid]
+        net.remove_switch(self, droplet)
+
+        for r in self.transit_routers.values():
+            r.update_net(net)
+
     def create_simple_endpoint(self, netid, ip, host):
         """
         Creates a new simple endpoint in a network within the vpc.
@@ -105,6 +168,16 @@ class vpc:
         logger.info(
             "[VPC {}]: create_simple_endpoint {}".format(self.vni, ip))
         return self.networks[netid].create_simple_endpoint(ip, host)
+
+    def delete_simple_endpoint(self, netid, ip, host):
+        """
+        Deletes a simple endpoint in a network within the vpc.
+        Since the routers need not to be updated with the endpoint
+        data, this call is just cascaded to the network.
+        """
+        logger.info(
+            "[VPC {}]: delete_simple_endpoint {}".format(self.vni, ip))
+        return self.networks[netid].delete_simple_endpoint(ip, host)
 
     def create_vxlan_endpoint(self, netid, ip, host):
         """

@@ -1,7 +1,8 @@
 # Copyright (c) 2019 The Authors.
 #
-# Authors: Haibin Michael Xie <@haibinxie>
-#          Sherif Abdelwahab <@zasherif>
+# Authors: Sherif Abdelwahab <@zasherif>
+#          Phu Tran          <@phudtran>
+#
 #
 #    Unless required by applicable law or agreed to in writing, software
 #    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
@@ -17,7 +18,7 @@ import unittest
 from time import sleep
 
 
-class test_basic_switch_perf(unittest.TestCase):
+class test_delete_endpoint(unittest.TestCase):
 
     def setUp(self):
         # Testing the following basic scenario
@@ -63,10 +64,17 @@ class test_basic_switch_perf(unittest.TestCase):
         self.ep_left = c.create_simple_endpoint(3, 1, "10.0.0.2", "left")
         self.ep_right = c.create_simple_endpoint(3, 1, "10.0.0.3", "right")
 
+        # Delete ep_left and create a ep_new in its place with a different IP
+        self.ep_left = c.delete_simple_endpoint(3, 1, "10.0.0.2", "left")
+        self.ep_new = c.create_simple_endpoint(3, 1, "10.0.0.4", "left")
+
     def tearDown(self):
         pass
 
-    def test_basic_switch_perf(self):
+    def test_basic_switch(self):
         logger.info(
-            "{} Testing basic switch perf! {}".format('='*20, '='*20))
-        do_iperf3_common_tests(self, self.ep_left, self.ep_right)
+            "{} Testing two endpoints on a switch can communicate! {}".format('='*20, '='*20))
+        do_common_tests(self, self.ep_new, self.ep_right)
+        logger.info(
+            "{} Testing ping fail for deleted endpoint! {}".format('='*20, '='*20))
+        do_ping_fail_test(self, self.ep_left, self.ep_right, False)

@@ -1,7 +1,8 @@
 # Copyright (c) 2019 The Authors.
 #
-# Authors: Sherif Abdelwahab <@zasherif>
+# Authors: Sherif Abdelwahab  <@zasherif>
 #          Haibin Michael Xie <@haibinxie>
+#          Phu Tran           <@phudtran>
 #
 #    Unless required by applicable law or agreed to in writing, software
 #    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
@@ -25,16 +26,16 @@ def do_ping_test(test, ep1, ep2):
     test.assertEqual(exit_code, 0)
 
 
-def do_ping_fail_test(test, ep1, ep2):
+def do_ping_fail_test(test, ep1, ep2, both_ways=True):
     logger.info("Test {}: {} do ping FAIL test {}".format(
         type(test).__name__, "="*10, "="*10))
     logger.info("Test: {} can NOT ping {}".format(ep2.ip, ep1.ip))
     exit_code = ep2.do_ping(ep1.ip)[0]
     test.assertNotEqual(exit_code, 0)
-
-    logger.info("Test: {} can NOT ping {}".format(ep1.ip, ep2.ip))
-    exit_code = ep1.do_ping(ep2.ip)[0]
-    test.assertNotEqual(exit_code, 0)
+    if both_ways:
+        logger.info("Test: {} can NOT ping {}".format(ep1.ip, ep2.ip))
+        exit_code = ep1.do_ping(ep2.ip)[0]
+        test.assertNotEqual(exit_code, 0)
 
 
 def do_http_test(test, ep1, ep2):
@@ -115,6 +116,7 @@ def do_long_tcp_test(test, ep1, ep2):
 
     test.do_scenario_reset()
 
+
 def do_iperf3_test(test, ep1, ep2, args=''):
     logger.info("Test {}: {} do iperf3 test with args '{}' {}".format(
         type(test).__name__, "="*10, args, "="*10))
@@ -126,20 +128,22 @@ def do_iperf3_test(test, ep1, ep2, args=''):
     logger.info("{}".format(exit_code).replace('\\n', '\n'))
     test.assertEqual(exit_code[0], 0)
 
-    return exit_code[1];
+    return exit_code[1]
+
 
 def do_iperf3_common_tests(test, ep1, ep2):
-    ep1.host.run('mkdir -p /mnt/Transit/perflog');
-    logfile = '/mnt/Transit/perflog/perf.log';
-    
+    ep1.host.run('mkdir -p /mnt/Transit/perflog')
+    logfile = '/mnt/Transit/perflog/perf.log'
+
     argv = {
-        '',                   # test TCP with default options 
+        '',                   # test TCP with default options
         '-P 100 -i 60',       # test TCP with 100 connections
         '-u',                 # test UDP with default options
         '-u -P 100 -i 60'     # test UDP with 100 connections
-        }
+    }
 
     for arg in argv:
-        args = '--logfile {} {}'.format(logfile, arg);
-        ep1.host.run('''echo 'run iperf3 with args {}' >> {}'''.format(args, logfile));
+        args = '--logfile {} {}'.format(logfile, arg)
+        ep1.host.run(
+            '''echo 'run iperf3 with args {}' >> {}'''.format(args, logfile))
         do_iperf3_test(test, ep1, ep2, args)

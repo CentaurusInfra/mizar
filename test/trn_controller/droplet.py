@@ -27,6 +27,7 @@ class droplet:
         self.ip = None
         self.mac = None
         self.veth_peers = set()
+        self.rpc_calls = []
 
         # transitd cli commands
         self.trn_cli = f'''/trn_bin/transit'''
@@ -80,6 +81,17 @@ class droplet:
         self._create_veth_pair(ep)
         self.load_transit_agent_xdp(ep.veth_peer)
 
+    def unprovision_simple_endpoint(self, ep):
+        """
+        Unloads the transit agent program on the veth peer, and
+        deletes the veth pair and the namespace for the endpoint
+        """
+        logger.info(
+            "[DROPLET {}]: unprovision_simple_endpoint {}".format(self.id, ep.ip))
+
+        self.unload_transit_agent_xdp(ep.veth_peer)
+        self._delete_veth_pair(ep)
+
     def provision_vxlan_endpoint(self, ep):
         logger.info(
             "[DROPLET {}]: provision_vxlan_endpoint {}".format(self.id, ep.ip))
@@ -111,6 +123,21 @@ ip netns exec {ep.ns} ifconfig veth0 hw ether {ep.mac} ' ''')
 
         self.run(script)
         self.veth_peers.add(ep.veth_peer)
+
+    def _delete_veth_pair(self, ep):
+        """
+        Deletes a veth pair.
+        """
+        logger.info(
+            "[DROPLET {}]: _delete_veth_pair {}".format(self.id, ep.ip))
+
+        script = (f''' bash -c '\
+rm -rf /tmp &&
+ip link delete {ep.veth_peer} && \
+ip netns del {ep.ns} \' ''')
+
+        self.run(script)
+        self.veth_peers.remove(ep.veth_peer)
 
     def load_transit_xdp(self):
         log_string = "[DROPLET {}]: load_transit_xdp {}".format(
@@ -256,6 +283,8 @@ ip netns exec {ep.ns} ifconfig veth0 hw ether {ep.mac} ' ''')
         self.exec_cli_rpc(log_string, jsonconf, cmd)
 
     def delete_ep(self, ep, agent=False):
+        if ep.host is None:
+            return
         jsonconf = {
             "tunnel_id": ep.get_tunnel_id(),
             "ip": ep.get_ip(),
@@ -282,6 +311,13 @@ ip netns exec {ep.ns} ifconfig veth0 hw ether {ep.mac} ' ''')
             self.id, droplet.ip)
         jsonconf = droplet.get_substrate_ep_json()
         cmd = f'''{self.trn_cli_update_ep} \'{jsonconf}\''''
+        self.exec_cli_rpc(log_string, jsonconf, cmd)
+
+    def delete_substrate_ep(self, droplet):
+        log_string = "[DROPLET {}]: delete_substrate_ep for droplet {}".format(
+            self.id, droplet.ip)
+        jsonconf = droplet.get_substrate_ep_json()
+        cmd = f'''{self.trn_cli_delete_ep} \'{jsonconf}\''''
         self.exec_cli_rpc(log_string, jsonconf, cmd)
 
     def update_agent_ep(self, itf):
@@ -345,11 +381,24 @@ ip netns exec {ep.ns} ifconfig veth0 hw ether {ep.mac} ' ''')
         cmd = f'''{self.trn_cli_update_agent_ep} -i \'{itf}\' -j \'{jsonconf}\''''
         self.exec_cli_rpc(log_string, jsonconf, cmd)
 
+    def delete_agent_substrate_ep(self, itf, droplet):
+        log_string = "[DROPLET {}]: delete_agent_substrate_ep on {} for droplet {}".format(
+            self.id, itf, droplet.ip)
+
+        jsonconf = droplet.get_substrate_ep_json()
+        cmd = f'''{self.trn_cli_delete_agent_ep} -i \'{itf}\' -j \'{jsonconf}\''''
+        self.exec_cli_rpc(log_string, jsonconf, cmd)
+
     def exec_cli_rpc(self, log_string, jsonconf, cmd):
         logger.info(log_string)
+        self.rpc_calls.append(cmd)
         output = self.run(cmd)
         logger.info(output[0])
         logger.info(output[1])
+
+    def dump_rpc_calls(self):
+        for cmd in self.rpc_calls:
+            logger.info("[DROPLET {}]: Command ran {}".format(self.id, cmd))
 
     def ovs_add_bridge(self, br):
         logger.info(
@@ -539,6 +588,7 @@ droplet_{self.ip}.pcap >/dev/null 2>&1 &\
             self.container.remove()
 
     def __del__(self):
+        return
         self.unload_transit_xdp()
 
         self.run("killall5 -2")

@@ -72,6 +72,38 @@ class controller:
             "[Controller]: create_simple_endpoint {}.{}.{}".format(vni, netid, ip))
         return self.vpcs[vni].create_simple_endpoint(netid, ip, self.droplets[host])
 
+    def delete_simple_endpoint(self, vni, netid, ip, host):
+        """
+        Deletes a simple endpoint from an existing network
+        """
+        logger.info(
+            "[Controller]: delete_simple_endpoint {}.{}.{}".format(vni, netid, ip))
+        return self.vpcs[vni].delete_simple_endpoint(netid, ip, self.droplets[host])
+
+    def delete_network(self, vni, netid, cidr, switches):
+        """
+        Deletes a network in a VPC identified by VNI.
+        1. Call delete_network on that VPC
+        """
+        logger.info("[Controller]: delete_network {}.{}".format(vni, netid))
+        self.vpcs[vni].delete_network(netid, cidr)
+
+    def delete_vpc(self, vni, cidr, routers):
+        """
+        Deletes the vpc with the unique VNI, CIDR block and optional list of
+        routers.
+        1. Removes the vpc from the VPCs dict
+        2. For that VPC, call remove_router for each router in the list
+        3. Call delete_network on all networks in the VPC
+        """
+
+        logger.info("[Controller]: remove_vpc {}".format(vni))
+        vpc = self.vpcs.pop(vni)
+        for net in list(vpc.networks.values()):
+            vpc.delete_network(net.netid, net.cidr)
+        for r in routers:
+            self.remove_router(vni, r, vpc)
+
     def create_vxlan_endpoint(self, vni, netid, ip, host):
         """
         Adds a vxlan endpoint to an existing network for backward
@@ -98,3 +130,23 @@ class controller:
         logger.info(
             "[Controller]: add_switch {} to network {}.{}".format(switch.id, vni, netid))
         self.vpcs[vni].add_switch(netid, switch)
+
+    def remove_switch(self, vni, netid, s, net=None):
+        """
+        Removes a switch from an existing network
+        """
+        switch = self.droplets[s]
+        logger.info(
+            "[Controller]: remove_switch {} from network {}.{}".format(switch.id, vni, netid))
+        self.vpcs[vni].remove_switch(netid, switch, net)
+
+    def remove_router(self, vni, r, vpc=None):
+        """
+        Removes an existing router from an existing VPC.
+        """
+        if vpc is None:
+            vpc = self.vpcs[vni]
+        router = self.droplets[r]
+        logger.info(
+            "[Controller]: remove_router {} from vpc {}".format(router.id, vni))
+        vpc.remove_router(router)

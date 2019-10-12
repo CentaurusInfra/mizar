@@ -20,7 +20,7 @@ class transit_agent:
 
     def update_agent_metadata(self, ep, net):
         """
-        Calls update_agent_metafata to update the agents with
+        Calls update_agent_metadata to update the agents with
         modifications in net transit switches or endpoint data.
 
         1. Update the list of transit switches of the endpoint's
@@ -38,3 +38,22 @@ class transit_agent:
 
         for s in self.transit_switches.values():
             self.droplet.update_agent_substrate_ep(self.veth_peer, s.droplet)
+
+    def delete_agent_metadata(self, ep, net):
+        """
+        Calls delete_agent_metadata to update the agents with
+        modifications in net transit switches or endpoint data.
+
+        1. Delete the list of transit switches of the endpoint's
+           network (delete_agent_metadata)
+        2. Delete the substrate endpoints with the switches mac/ip
+           addresses.
+        """
+        logger.info("[AGENT {}]: delete_agent_metadata {}".format(
+            self.id, net.netid))
+        self.droplet.delete_agent_metadata(self.veth_peer, ep)
+
+        for s in self.transit_switches.values():
+            self.droplet.delete_agent_substrate_ep(self.veth_peer, s.droplet)
+
+        self.transit_switches = {}

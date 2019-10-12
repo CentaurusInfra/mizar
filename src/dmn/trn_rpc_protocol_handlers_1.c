@@ -669,13 +669,11 @@ int *load_transit_agent_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf,
 	char *kern_path = xdp_intf->xdp_path;
 
 	struct agent_user_metadata_t *md = trn_vif_table_find(itf);
-
 	if (md) {
 		TRN_LOG_INFO("meatadata for interface %s already exist.", itf);
 	} else {
 		md = malloc(sizeof(struct agent_user_metadata_t));
 	}
-
 	if (!md) {
 		TRN_LOG_ERROR(
 			"Failure allocating memory for agent_user_metadata_t");
@@ -1033,8 +1031,11 @@ int *delete_agent_md_1_svc(rpc_intf_t *argp, struct svc_req *rqstp)
 		result = RPC_TRN_ERROR;
 		goto error;
 	}
-
-	rc = trn_agent_delete_agent_metadata(md);
+	struct agent_metadata_t amd;
+	memset(&amd, 0, sizeof(amd));
+	// We call update with a zeroed out struct
+	// This is becauses the agent metadata is stored as an array
+	rc = trn_agent_update_agent_metadata(md, &amd);
 	if (rc != 0) {
 		TRN_LOG_ERROR("Cannot delete agent metadata on interface %s",
 			      argp->interface);

@@ -62,6 +62,17 @@ class network:
         for switch in self.transit_switches.values():
             switch.update_vpc(vpc)
 
+    def delete_vpc(self, vpc):
+        """
+        Called when vpc data is removed from all switches.
+        Cascades a delete_vpc rpc to all transit switches of the network.
+        """
+        logger.info("[NETWORK {}]: delete_vpc {}".format(
+            self.netid, vpc.vni))
+
+        for switch in self.transit_switches.values():
+            switch.delete_vpc(vpc)
+
     def add_switch(self, vpc, droplet):
         """
         Adds a transit switch of this network hosted at the given droplet.
@@ -86,6 +97,31 @@ class network:
         for ep in self.endpoints.values():
             ep.update(self)
 
+    def remove_switch(self, vpc, droplet):
+        """
+        Removes a transit switch from the network hosted at this given droplet.
+        1. Removes the switch object from the list
+        2. Call delete_endpoint on the removed transit switch's droplet to
+           remove all endpoint's data within this network
+        2. Call delete VPC on the removed transit switch's droplet to
+           remove the list of transit routers of the VPC
+        4. Finally, call update on each endpoint's
+           transit agent to update the list of available switches.
+        """
+        logger.info("[NETWORK {}]: remove_switch {}".format(
+            self.netid, droplet.id))
+        id = droplet.id
+
+        removed_switch = self.transit_switches.pop(id)
+
+        for ep in self.endpoints.values():
+            removed_switch.delete_endpoint(ep)
+
+        removed_switch.delete_vpc(vpc)
+
+        for ep in self.endpoints.values():
+            ep.update(self)
+
     def create_gw_endpoint(self):
         """
         Allocates the first IP of the network CIDR range and
@@ -99,14 +135,33 @@ class network:
         logger.info("[NETWORK {}]: create_gw_endpoint {}".format(
             self.netid, ip))
 
-        self.endpoints[ip] = endpoint(self.vni, self.netid, ip=ip, prefixlen=self.cidr.prefixlen, gw_ip=None, host=None)
+        self.endpoints[ip] = endpoint(
+            self.vni, self.netid, ip=ip, prefixlen=self.cidr.prefixlen, gw_ip=None, host=None)
 
         # Now update the endpoint on the remaining switches
         for switch in self.transit_switches.values():
             switch.update_endpoint(self.endpoints[ip])
 
-        return self.endpoints[ip]
+    def delete_gw_endpoint(self):
+        """
+        Deletes a phantom endpoint (without a host).
+        """
+        ip = self.get_gw_ip()
 
+        if ip not in self.endpoints:
+            raise ValueError(
+                "Endpoint IP {} does not exist in the subnet.".format(ip))
+
+        logger.info("[NETWORK {}]: delete_gw_endpoint {}".format(
+            self.netid, ip))
+
+        ep = self.endpoints.pop(ip)
+
+        # Now delete the endpoint on the remaining switches
+        for switch in self.transit_switches.values():
+            switch.delete_endpoint(ep)
+
+        return ep
 
     def create_simple_endpoint(self, ip, host):
         """
@@ -132,7 +187,8 @@ class network:
 
         start = time.time()
 
-        self.endpoints[ip] = endpoint(self.vni, self.netid, ip=ip, prefixlen=self.cidr.prefixlen, gw_ip=self.get_gw_ip(), host=host)
+        self.endpoints[ip] = endpoint(
+            self.vni, self.netid, ip=ip, prefixlen=self.cidr.prefixlen, gw_ip=self.get_gw_ip(), host=host)
 
         switches[0].update_endpoint(self.endpoints[ip])
         self.endpoints[ip].update(temp_net)
@@ -161,7 +217,7 @@ class network:
         if (not host.ovs_is_exist(br)):
             host.ovs_add_bridge(br)
         self.endpoints[ip] = endpoint(
-            self.vni, self.netid, ip=ip, prefixlen=self.cidr.prefixlen, gw_ip=self.get_gw_ip(),host=host, tuntype='vxn', bridge=br)
+            self.vni, self.netid, ip=ip, prefixlen=self.cidr.prefixlen, gw_ip=self.get_gw_ip(), host=host, tuntype='vxn', bridge=br)
 
         # Create a geneve tunnel interface to one of the switches
         transit_itf = 'vxn_transit'
@@ -195,3 +251,47 @@ class network:
                         br, ep_i.bridge_port, out_port, ep_j.ip)
 
         return self.endpoints[ip]
+
+    def delete_simple_endpoint(self, ip, host, net_switches=None):
+        """
+        Creates a simple endpoint in the network.
+        1. First remove the endpoint object from the set of
+           endpoints
+        2. Call delete_endpoint on at least one transit switch of the
+           network (two or three switches may be a good idea in production!).
+        3. Call delete on each endpoint's transit agent within the
+           network.
+        """
+        logger.info("[NETWORK {}]: delete_simple_endpoint {}".format(
+            self.netid, ip))
+
+        if ip not in self.endpoints:
+            raise ValueError(
+                "Endpoint IP {} does not exist in network".format(ip))
+
+        switches = list(self.transit_switches.values())
+        if net_switches is not None:
+            switches = net_switches
+
+        # Create a temp network object of only one switch
+        temp_net = network(self.vni, self.netid, self.cidr)
+        temp_net.transit_switches[switches[0].id] = switches[0]
+
+        start = time.time()
+
+        ep = self.endpoints.pop(ip)
+
+        switches[0].delete_endpoint(ep)
+
+        end = time.time()
+        ep_ready_time = end-start
+        logger.info("[NETWORK {}]: endpoint {} deleted in {:5.4f} seconds (O(1)!).".format(
+            self.netid, ip, ep_ready_time))
+
+        # Now delete the endpoint on the remaining switches
+        for switch in switches[1:]:
+            switch.delete_endpoint(ep)
+
+        ep.delete(self)
+
+        return ep

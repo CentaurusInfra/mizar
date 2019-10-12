@@ -31,3 +31,20 @@ class transit_router:
         # Now update the mac address of the switches
         for s in net.transit_switches.values():
             self.droplet.update_substrate_ep(s.droplet)
+
+    def delete_net(self, net, net_switches=None):
+        """
+        Calls a delete_net rpc to the transit router's droplet.
+        Also calls delete_substrate_endpoint to
+        remove the mac addresses of the transit switches' droplets.
+        """
+        logger.info("[ROUTER {}]: delete_net {}".format(self.id, net.netid))
+        self.droplet.delete_net(net)
+
+        switches = net.transit_switches.values()
+        if net_switches is not None:
+            switches = net_switches
+
+        # Now delete the mac address of the switches
+        for s in switches:
+            self.droplet.delete_substrate_ep(s.droplet)

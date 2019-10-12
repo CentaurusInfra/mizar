@@ -50,3 +50,34 @@ class transit_switch:
         self.transit_routers = vpc.transit_routers
         for r in self.transit_routers.values():
             self.droplet.update_substrate_ep(r.droplet)
+
+    def delete_vpc(self, vpc):
+        """
+        Calls a delete_vpc rpc on the transit switch's droplet.
+        Also calls delete_substrate_ep to remove the
+        mac addresses of the transit routers' droplets.
+        """
+        logger.info("[SWITCH {}, {}]: update_vpc {}".format(
+            self.ip, self.id, vpc.vni))
+
+        # Now delete the mac addresses of the routers' droplet
+        self.transit_routers = vpc.transit_routers
+        for r in self.transit_routers.values():
+            self.droplet.delete_substrate_ep(r.droplet)
+
+        self.droplet.delete_vpc(vpc)
+
+    def delete_endpoint(self, ep):
+        """
+        Calls a delete_endpoint rpc to transit switch's droplet.
+        Also calls delete_substrate_ep to
+        remove the mac addresses of the endpoint's host.
+        """
+        logger.info(
+            "[SWITCH {}, {}]: delete_endpoint {}".format(self.ip, self.id, ep.ip))
+
+        self.droplet.delete_ep(ep)
+
+        # Now remove the mac address of the endpoint's host
+        if ep.host is not None:
+            self.droplet.delete_substrate_ep(ep.host)
