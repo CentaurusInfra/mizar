@@ -283,8 +283,7 @@ ip netns del {ep.ns} \' ''')
         self.exec_cli_rpc(log_string, jsonconf, cmd)
 
     def delete_ep(self, ep, agent=False):
-        if ep.host is None:
-            return
+
         jsonconf = {
             "tunnel_id": ep.get_tunnel_id(),
             "ip": ep.get_ip(),
@@ -295,9 +294,13 @@ ip netns del {ep.ns} \' ''')
                 self.id, ep.ip, ep.host.id)
             cmd = f'''{self.trn_cli_delete_agent_ep} \'{jsonconf}\''''
         else:
-            log_string = "[DROPLET {}]: delete_ep {} hosted at {}".format(
-                self.id, ep.ip, ep.host.id)
-            cmd = f'''{self.trn_cli_delete_ep} \'{jsonconf}\''''
+            if ep.host is not None:
+                log_string = "[DROPLET {}]: delete_ep {} hosted at {}".format(
+                    self.id, ep.ip, ep.host.id)
+            else:
+                log_string = "[DROPLET {}]: delete_ep for a phantom ep {}".format(
+                    self.id, ep.ip)
+        cmd = f'''{self.trn_cli_delete_ep} \'{jsonconf}\''''
         self.exec_cli_rpc(log_string, jsonconf, cmd)
 
     def get_agent_ep(self, ep):

@@ -68,11 +68,16 @@
 		e.key = itf;                                                   \
 		ep = hsearch(e, FIND);                                         \
 		if (ep) {                                                      \
-			free(ep->key);                                         \
-			free(ep->data);                                        \
-			ep->data = NULL;                                       \
+			TRN_FREE(ep->key);                                     \
+			TRN_FREE(ep->data);                                    \
 			TRN_LOG_DEBUG("Deleted: [%s]", itf);                   \
 		}                                                              \
+	} while (0)
+
+#define TRN_FREE(void *ptr)                                                    \
+	do {                                                                   \
+		free(ptr);                                                     \
+		ptr = NULL;                                                    \
 	} while (0)
 
 int trn_itf_table_init();

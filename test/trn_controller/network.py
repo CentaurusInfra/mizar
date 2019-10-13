@@ -270,6 +270,8 @@ class network:
                 "Endpoint IP {} does not exist in network".format(ip))
 
         switches = list(self.transit_switches.values())
+
+        # Switches have been removed from the network object
         if net_switches is not None:
             switches = net_switches
 
@@ -281,16 +283,18 @@ class network:
 
         ep = self.endpoints.pop(ip)
 
-        switches[0].delete_endpoint(ep)
+        # This is already done when we remove all the switches from the network object
+        if net_switches is None:
+            switches[0].delete_endpoint(ep)
 
-        end = time.time()
-        ep_ready_time = end-start
-        logger.info("[NETWORK {}]: endpoint {} deleted in {:5.4f} seconds (O(1)!).".format(
-            self.netid, ip, ep_ready_time))
+            end = time.time()
+            ep_ready_time = end-start
+            logger.info("[NETWORK {}]: endpoint {} deleted in {:5.4f} seconds (O(1)!).".format(
+                self.netid, ip, ep_ready_time))
 
-        # Now delete the endpoint on the remaining switches
-        for switch in switches[1:]:
-            switch.delete_endpoint(ep)
+            # Now delete the endpoint on the remaining switches
+            for switch in switches[1:]:
+                switch.delete_endpoint(ep)
 
         ep.delete(self)
 
