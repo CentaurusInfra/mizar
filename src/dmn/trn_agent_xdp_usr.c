@@ -53,9 +53,20 @@ int trn_agent_update_agent_metadata(struct agent_user_metadata_t *umd,
 				    struct agent_metadata_t *md)
 {
 	int key = 0;
+	int eth_idx = md->eth.iface_index;
+
 	int err = bpf_map_update_elem(umd->agentmetadata_map_fd, &key, md, 0);
 	if (err) {
 		TRN_LOG_ERROR("Configuring agent metadata (err:%d).", err);
+		return 1;
+	}
+
+	err = bpf_map_update_elem(umd->interfaces_map_fd, &key, &eth_idx, 0);
+
+	if (err) {
+		TRN_LOG_ERROR(
+			"Failed to update agent's interfaces map (err:%d).",
+			err);
 		return 1;
 	}
 
@@ -127,7 +138,8 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 	md->jmp_table = bpf_map__next(NULL, md->obj);
 	md->agentmetadata_map = bpf_map__next(md->jmp_table, md->obj);
 	md->endpoints_map = bpf_map__next(md->agentmetadata_map, md->obj);
-	md->xdpcap_hook_map = bpf_map__next(md->endpoints_map, md->obj);
+	md->interfaces_map = bpf_map__next(md->endpoints_map, md->obj);
+	md->xdpcap_hook_map = bpf_map__next(md->interfaces_map, md->obj);
 
 	if (!md->jmp_table || !md->agentmetadata_map ||
 	    !md->endpoints_map | !md->xdpcap_hook_map) {
@@ -138,6 +150,7 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 	md->jump_table_fd = bpf_map__fd(md->jmp_table);
 	md->agentmetadata_map_fd = bpf_map__fd(md->agentmetadata_map);
 	md->endpoints_map_fd = bpf_map__fd(md->endpoints_map);
+	md->interfaces_map_fd = bpf_map__fd(md->interfaces_map);
 
 	if (bpf_map__unpin(md->xdpcap_hook_map, md->pcapfile) == 0) {
 		TRN_LOG_INFO("unpin exiting pcap map file: %s", md->pcapfile);

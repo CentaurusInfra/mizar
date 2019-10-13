@@ -67,7 +67,8 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 		bpf_map__next(md->endpoints_map, md->obj);
 	md->interface_config_map =
 		bpf_map__next(md->hosted_endpoints_iface_map, md->obj);
-	md->xdpcap_hook_map = bpf_map__next(md->interface_config_map, md->obj);
+	md->interfaces_map = bpf_map__next(md->interface_config_map, md->obj);
+	md->xdpcap_hook_map = bpf_map__next(md->interfaces_map, md->obj);
 
 	if (!md->networks_map || !md->vpc_map || !md->endpoints_map ||
 	    !md->hosted_endpoints_iface_map || !md->interface_config_map ||
@@ -82,6 +83,7 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	md->interface_config_map_fd = bpf_map__fd(md->interface_config_map);
 	md->hosted_endpoints_iface_map_fd =
 		bpf_map__fd(md->hosted_endpoints_iface_map);
+	md->interfaces_map_fd = bpf_map__fd(md->interfaces_map);
 
 	if (bpf_map__unpin(md->xdpcap_hook_map, md->pcapfile) == 0) {
 		TRN_LOG_INFO("unpin exiting pcap map file: %s", md->pcapfile);
@@ -113,10 +115,23 @@ int trn_update_endpoint(struct user_metadata_t *md,
 			struct endpoint_key_t *epkey, struct endpoint_t *ep)
 {
 	int err = bpf_map_update_elem(md->endpoints_map_fd, epkey, ep, 0);
+	int eth_idx = ep->hosted_iface;
+
 	if (err) {
 		TRN_LOG_ERROR("Store endpoint mapping failed (err:%d).", err);
 		return 1;
 	}
+
+	if (eth_idx == -1)
+		return 0;
+
+	err = bpf_map_update_elem(md->interfaces_map_fd, &eth_idx, &eth_idx, 0);
+
+	if (err) {
+		TRN_LOG_ERROR("Failed to update interfaces map (err:%d).", err);
+		return 1;
+	}
+
 	return 0;
 }
 
@@ -254,11 +269,23 @@ int trn_user_metadata_init(struct user_metadata_t *md, char *itf,
 		return rc;
 	}
 	md->prog_id = md->info.id;
+
+	TRN_LOG_INFO("Program info; xlated: %d, jitted: %d",
+		     md->info.xlated_prog_len, md->info.jited_prog_len);
+
 	int k = 0;
 
 	rc = bpf_map_update_elem(md->interface_config_map_fd, &k, &md->eth, 0);
 	if (rc != 0) {
-		TRN_LOG_ERROR("Failed to store interface index.");
+		TRN_LOG_ERROR("Failed to store interface data.");
+		return 1;
+	}
+
+	rc = bpf_map_update_elem(md->interfaces_map_fd, &md->eth.iface_index,
+				 &md->eth.iface_index, 0);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failed to update interfaces map.");
 		return 1;
 	}
 

@@ -63,12 +63,14 @@ struct user_metadata_t {
 	int endpoints_map_fd;
 	int interface_config_map_fd;
 	int hosted_endpoints_iface_map_fd;
+	int interfaces_map_fd;
 
 	struct bpf_map *networks_map;
 	struct bpf_map *vpc_map;
 	struct bpf_map *endpoints_map;
 	struct bpf_map *hosted_endpoints_iface_map;
 	struct bpf_map *interface_config_map;
+	struct bpf_map *interfaces_map;
 	struct bpf_map *xdpcap_hook_map;
 
 	struct bpf_prog_info info;

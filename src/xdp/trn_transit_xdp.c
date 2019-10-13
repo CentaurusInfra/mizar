@@ -86,9 +86,11 @@ static __inline int trn_decapsulate_and_redirect(struct transit_packet *pkt,
 			__LINE__, bpf_ntohl(pkt->itf_ipv4));
 		return XDP_DROP;
 	}
+
 	bpf_debug("[Transit:%d:0x%x] REDIRECT: itf=[%d].\n", __LINE__,
 		  bpf_ntohl(pkt->itf_ipv4), ifindex);
-	return bpf_redirect(ifindex, 0);
+
+	return bpf_redirect_map(&interfaces_map, ifindex, 0);
 }
 
 static __inline int trn_router_handle_pkt(struct transit_packet *pkt,
@@ -519,7 +521,7 @@ int _transit(struct xdp_md *ctx)
 	/* The agent may tail-call this program, override XDP_TX to
 	 * redirect to egress instead */
 	if (action == XDP_TX)
-		action = bpf_redirect(pkt.itf_idx, 0);
+		action = bpf_redirect_map(&interfaces_map, pkt.itf_idx, 0);
 
 	if (action == XDP_PASS)
 		return xdpcap_exit(ctx, &xdpcap_hook, XDP_PASS);

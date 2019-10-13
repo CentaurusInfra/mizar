@@ -79,4 +79,12 @@ struct bpf_map_def SEC("maps") interface_config_map = {
 };
 BPF_ANNOTATE_KV_PAIR(interface_config_map, int, struct tunnel_iface_t);
 
+struct bpf_map_def SEC("maps") interfaces_map = {
+	.type = BPF_MAP_TYPE_DEVMAP,
+	.key_size = sizeof(int),
+	.value_size = sizeof(int),
+	.max_entries = 256,
+};
+BPF_ANNOTATE_KV_PAIR(interface_map, int, int);
+
 struct bpf_map_def SEC("maps") xdpcap_hook = XDPCAP_HOOK();

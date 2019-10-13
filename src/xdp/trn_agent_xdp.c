@@ -176,7 +176,7 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 
 	if (pkt->ip->saddr == pkt->ip->daddr) {
 		bpf_debug(
-			"[Agent:%ld.0x%x] TAILCALL: transit switch on same host. Tunnel to dst=[%d].\n",
+			"[Agent:%ld.0x%x] TAILCALL: transit switch on same host. Tunnel to dst=[0x%x].\n",
 			pkt->agent_ep_tunid, bpf_ntohl(pkt->agent_ep_ipv4),
 			bpf_htonl(pkt->ip->daddr));
 
@@ -185,10 +185,11 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	}
 
 	/* Send the packet on the egress of the tunneling interface */
-	bpf_debug("[Agent:%ld.0x%x] REDIRECT: Tunnel to dst=[%d].\n",
+	bpf_debug("[Agent:%ld.0x%x] REDIRECT: Tunnel to dst=[x%0x].\n",
 		  pkt->agent_ep_tunid, bpf_ntohl(pkt->agent_ep_ipv4),
 		  bpf_htonl(pkt->ip->daddr));
-	return bpf_redirect(metadata->eth.iface_index, 0);
+
+	return bpf_redirect_map(&interfaces_map, 0, 0);
 }
 
 static __inline int trn_redirect(struct transit_packet *pkt, __u32 inner_src_ip,
