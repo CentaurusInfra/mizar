@@ -94,8 +94,8 @@ class controller:
         Deletes the vpc with the unique VNI, CIDR block and optional list of
         routers.
         1. Removes the vpc from the VPCs dict
-        2. For that VPC, call remove_router for each router in the list
-        3. Call delete_network on all networks in the VPC
+        2. Call delete_network on all networks in the VPC
+        3. For that VPC, call remove_router for each router in the list
         """
 
         logger.info("[Controller]: remove_vpc {}".format(vni))
