@@ -1612,7 +1612,7 @@ static void test_trn_cli_delete_vpc_subcmd(void **state)
 	/* Test call delete_vpc_1 return NULL*/
 	TEST_CASE("delete-vpc subcommand fails if delete_vpc_1 returns NULL");
 	expect_function_call(__wrap_delete_vpc_1);
-	will_return(__wrap_delete_vpc_1, &delete_vpc_1_ret_val);
+	will_return(__wrap_delete_vpc_1, NULL);
 	expect_any(__wrap_delete_vpc_1, argp);
 	expect_any(__wrap_delete_vpc_1, clnt);
 	rc = trn_cli_delete_vpc_subcmd(NULL, argc, argv1);

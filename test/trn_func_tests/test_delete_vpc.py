@@ -95,12 +95,13 @@ class test_delete_vpc(unittest.TestCase):
         # Delete the vpc
         c.delete_vpc(3, cidr("16", "10.0.0.0"), ["router-1"])
 
-        for d in self.droplets.values():
-            d.dump_rpc_calls()
-            print()
-
     def tearDown(self):
         pass
 
-    def test_multi_net_same_vpc(self):
-        return
+    def test_delete_vpc(self):
+        for d in self.droplets.values():
+            d.dump_rpc_calls()
+            print()
+        logger.info(
+            "{} Testing vpc properly deleted! {}".format('='*20, '='*20))
+        do_validate_delete(self, list(self.droplets.values()))

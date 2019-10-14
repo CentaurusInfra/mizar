@@ -1030,16 +1030,9 @@ static void test_delete_agent_md_1_svc(void **state)
 	struct rpc_intf_t md_key = { .interface = itf };
 
 	/* Test delete_agent_md_1 with valid md_key */
-	will_return(__wrap_bpf_map_delete_elem, TRUE);
-	expect_function_call(__wrap_bpf_map_delete_elem);
+	expect_function_call(__wrap_bpf_map_update_elem);
 	rc = delete_agent_md_1_svc(&md_key, NULL);
 	assert_int_equal(*rc, 0);
-
-	/* Test delete_agent_md_1 with invalid md_key */
-	will_return(__wrap_bpf_map_delete_elem, FALSE);
-	expect_function_call(__wrap_bpf_map_delete_elem);
-	rc = delete_agent_md_1_svc(&md_key, NULL);
-	assert_int_equal(*rc, RPC_TRN_ERROR);
 
 	/* Test delete_agent_md_1 with invalid interface*/
 	md_key.interface = "";

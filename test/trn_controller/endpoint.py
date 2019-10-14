@@ -107,7 +107,6 @@ class endpoint:
         self.ready = False
 
     def __del__(self):
-        return
         if (self.tuntype == 'gnv' and self.host):
             if self.transit_agent is not None:
                 self.host.unload_transit_agent_xdp(self.veth_peer)
@@ -152,11 +151,11 @@ class endpoint:
     def delete(self, net):
         """
         Deletes the endpoint information.
+        We do not need to delete the agent metadate or agent substrate.
+        Unloading the agent will clear this information.
         """
         logger.info(
             "[EP {}]: delete endpoint".format(self.ip))
-        if self.host is not None:
-            self.transit_agent.delete_agent_metadata(self, net)
         self.unprovision()
 
     def do_ping(self, ip, count=1, wait=5):

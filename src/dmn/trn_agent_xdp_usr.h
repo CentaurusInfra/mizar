@@ -2,7 +2,7 @@
 /**
  * @file trn_agent_xdp_usr.h
  * @author Sherif Abdelwahab (@zasherif)
- * @       Phu Tran          (@phudtran)
+ *         Phu Tran          (@phudtran)
  *
  * @brief User space APIs and data structures to program transit
  * agent.

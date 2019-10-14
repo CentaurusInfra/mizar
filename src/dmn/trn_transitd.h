@@ -3,6 +3,7 @@
  * @file trn_agent_xdp_usr.h
  * @author Sherif Abdelwahab (@zasherif)
  *         Phu Tran          (@phudtran)
+ *
  * @brief Transit daemon functions and helper macros
  *
  * @copyright Copyright (c) 2019 The Authors.
@@ -68,13 +69,13 @@
 		e.key = itf;                                                   \
 		ep = hsearch(e, FIND);                                         \
 		if (ep) {                                                      \
-			TRN_FREE(ep->key);                                     \
+			free(ep->key);                                         \
 			TRN_FREE(ep->data);                                    \
 			TRN_LOG_DEBUG("Deleted: [%s]", itf);                   \
 		}                                                              \
 	} while (0)
 
-#define TRN_FREE(void *ptr)                                                    \
+#define TRN_FREE(ptr)                                                          \
 	do {                                                                   \
 		free(ptr);                                                     \
 		ptr = NULL;                                                    \

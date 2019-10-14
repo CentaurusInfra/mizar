@@ -147,3 +147,18 @@ def do_iperf3_common_tests(test, ep1, ep2):
         ep1.host.run(
             '''echo 'run iperf3 with args {}' >> {}'''.format(args, logfile))
         do_iperf3_test(test, ep1, ep2, args)
+
+
+def do_validate_delete(test, droplets):
+    exit_code = 0
+    for d in droplets:
+        for update in d.rpc_updates:
+            if update not in d.rpc_deletes.keys():
+                exit_code = 1
+                logger.error(
+                    "[{}]: No corresponding delete call was made for the update. {}".format(d.id, update))
+            if d.rpc_updates[update] > d.rpc_deletes[update]:
+                exit_code = 1
+                logger.error(
+                    "[{}]: The following update was made after delete was called. {}".format(d.id, update))
+    test.assertEqual(exit_code, 0)

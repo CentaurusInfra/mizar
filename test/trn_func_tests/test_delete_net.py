@@ -84,6 +84,12 @@ class test_delete_net(unittest.TestCase):
 
         c.create_vpc(3, cidr("16", "10.0.0.0"), ["router-1"])
         c.create_network(3, 10, cidr("24", "10.0.0.0"), ["switch-1"])
+
+        # Clear update information about "10.0.0.0" subnet
+        # When comparing update and delete RPC calls, we don't delete subnet "10.0.0.0".
+        # Thus, there is no corresponding delete_net in the droplet's rpc_deletes map
+        self.droplets["router-1"].clear_update_call_state()
+
         c.create_network(3, 20, cidr("24", "10.20.0.0"), ["switch-2"])
 
         self.ep1 = c.create_simple_endpoint(3, 10, "10.0.0.2", "d1")
@@ -95,30 +101,14 @@ class test_delete_net(unittest.TestCase):
         # Delete the network and its corresponding endpoints
         c.delete_network(3, 20, cidr("24", "10.20.0.0"), ["switch-2"])
 
-        # Create new network and endpoints in its place
-        c.create_network(3, 20, cidr("24", "10.30.0.0"), ["d3"])
-        self.ep_new_3 = c.create_simple_endpoint(3, 20, "10.30.0.4", "d4")
-        self.ep_new_4 = c.create_simple_endpoint(
-            3, 20, "10.30.0.5", "switch-2")
-
     def tearDown(self):
         pass
 
-    def test_multi_net_same_vpc(self):
+    def test_delete_net(self):
+        for d in self.droplets.values():
+            d.dump_rpc_calls()
+            print()
         logger.info(
-            "{} Testing endpoints in network 10.10.0.0/24 can communicate with each other! {}".format('='*20, '='*20))
-        do_common_tests(self, self.ep1, self.ep2)
-
-        logger.info(
-            "{} Testing endpoints in network 10.30.0.0/24 can communicate with each other! {}".format('='*20, '='*20))
-        do_common_tests(self, self.ep_new_3, self.ep_new_4)
-
-        logger.info(
-            "{} Testing endpoints in network 10.10.0.0/24 can communicate with endpoints in network 10.30.0.0/24! {}".format('='*20, '='*20))
-        do_common_tests(self, self.ep1, self.ep_new_3)
-        do_common_tests(self, self.ep2, self.ep_new_4)
-
-        logger.info(
-            "{} Testing endpoints in network 10.10.0.0/24 cannot communicate with deleted endpoints in network 10.20.0.0/24! {}".format('='*20, '='*20))
-        do_ping_fail_test(self, self.ep3, self.ep1, False)
-        do_ping_fail_test(self, self.ep4, self.ep2, False)
+            "{} Testing net properly deleted! {}".format('='*20, '='*20))
+        do_validate_delete(self, [self.droplets["switch-2"], self.droplets["d3"],
+                                  self.droplets["d4"], self.droplets["router-1"]])
