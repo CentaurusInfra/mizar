@@ -105,6 +105,40 @@ class droplet:
         self._create_veth_pair(ep)
         return self.ovs_add_port(ep.bridge, ep.veth_peer)
 
+    def _create_macvlan_pair(self, ep):
+        """
+        Creates a veth pair.
+        """
+        logger.info(
+            "[DROPLET {}]: _create_macvlan_pair {}".format(self.id, ep.ip))
+
+        northitf = ep.veth_peer + '_north'
+        southitf = ep.veth_peer
+
+        script = (f''' sudo bash -c '\
+mkdir -p /tmp/{ep.ns}_{ep.ip} && \
+echo {ep.ip} > /tmp/{ep.ns}_{ep.ip}/index.html && \
+ip netns add {ep.ns} && \
+ip link add {southitf} type veth peer name {northitf} && \
+ip link set dev {northitf} up mtu 9000 && \
+ip link set dev {southitf} up mtu 9000 && \
+ethtool -K {northitf} tso off gso off ufo off && \
+ethtool -K {southitf} tso off gso off ufo off && \
+ethtool --offload {northitf} rx off tx off && \
+ethtool --offload {southitf} rx off tx off && \
+sudo ip link add veth0 link {northitf} type macvlan mode passthru && \
+ifconfig veth0 hw ether {ep.mac} && \
+ip link set veth0 netns {ep.ns} && \
+ip netns exec {ep.ns} ip addr add {ep.ip}/{ep.prefixlen} dev veth0 && \
+ip netns exec {ep.ns} ip link set dev veth0 up mtu 1500 && \
+ip netns exec {ep.ns} sysctl -w net.ipv4.tcp_mtu_probing=2 && \
+ip netns exec {ep.ns} route add default gw {ep.gw_ip} &&  \
+ip netns exec {ep.ns} ifconfig lo up && \
+ip netns exec {ep.ns} ifconfig veth0 hw ether {ep.mac} ' ''')
+
+        self.run(script)
+        self.veth_peers.add(ep.veth_peer)
+
     def _create_veth_pair(self, ep):
         """
         Creates a veth pair. br0 must have been created.
