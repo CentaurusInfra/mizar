@@ -167,8 +167,7 @@ ip netns del {ep.ns} \' ''')
             "pcapfile": self.agent_pcap_file
         }
         jsonconf = json.dumps(jsonconf)
-        key = "load@" + itf
-        self.rpc_updates[key] = time.time()
+        self.rpc_updates[("load", itf)] = time.time()
         cmd = f'''{self.trn_cli_load_transit_agent_xdp} -i \'{itf}\' -j \'{jsonconf}\' '''
         self.exec_cli_rpc(log_string, cmd)
 
@@ -177,8 +176,7 @@ ip netns del {ep.ns} \' ''')
             self.id, itf)
         jsonconf = '\'{}\''
         cmd = f'''{self.trn_cli_unload_transit_agent_xdp} -i \'{itf}\' -j {jsonconf} '''
-        key = "load@" + itf
-        self.rpc_deletes[key] = time.time()
+        self.rpc_deletes[("load", itf)] = time.time()
         self.exec_cli_rpc(log_string, cmd)
 
     def update_vpc(self, vpc):
@@ -192,7 +190,7 @@ ip netns del {ep.ns} \' ''')
         jsonkey = {
             "tunnel_id": vpc.get_tunnel_id(),
         }
-        self.rpc_updates["vpc@" + json.dumps(jsonkey)] = time.time()
+        self.rpc_updates[("vpc", json.dumps(jsonkey))] = time.time()
         cmd = f'''{self.trn_cli_update_vpc} \'{jsonconf}\''''
         self.exec_cli_rpc(log_string, cmd)
 
@@ -213,7 +211,7 @@ ip netns del {ep.ns} \' ''')
             "tunnel_id": vpc.get_tunnel_id(),
         }
         jsonconf = json.dumps(jsonconf)
-        self.rpc_deletes["vpc@" + jsonconf] = time.time()
+        self.rpc_deletes[("vpc", jsonconf)] = time.time()
         cmd = f'''{self.trn_cli_delete_vpc} \'{jsonconf}\''''
         self.exec_cli_rpc(log_string, cmd)
 
@@ -231,7 +229,7 @@ ip netns del {ep.ns} \' ''')
             "nip": net.get_nip(),
             "prefixlen": net.get_prefixlen(),
         }
-        self.rpc_updates["net@" + json.dumps(jsonkey)] = time.time()
+        self.rpc_updates[("net", json.dumps(jsonkey))] = time.time()
         cmd = f'''{self.trn_cli_update_net} \'{jsonconf}\''''
         self.exec_cli_rpc(log_string, cmd)
 
@@ -254,7 +252,7 @@ ip netns del {ep.ns} \' ''')
             "prefixlen": net.get_prefixlen(),
         }
         jsonconf = json.dumps(jsonconf)
-        self.rpc_deletes["net@" + jsonconf] = time.time()
+        self.rpc_deletes[("net", jsonconf)] = time.time()
         cmd = f'''{self.trn_cli_delete_net} \'{jsonconf}\''''
         self.exec_cli_rpc(log_string, cmd)
 
@@ -285,7 +283,7 @@ ip netns del {ep.ns} \' ''')
             "tunnel_id": ep.get_tunnel_id(),
             "ip": ep.get_ip(),
         }
-        self.rpc_updates["ep@" + json.dumps(jsonkey)] = time.time()
+        self.rpc_updates[("ep", json.dumps(jsonkey))] = time.time()
         cmd = f'''{self.trn_cli_update_ep} \'{jsonconf}\''''
         self.exec_cli_rpc(log_string, cmd)
 
@@ -323,7 +321,7 @@ ip netns del {ep.ns} \' ''')
             else:
                 log_string = "[DROPLET {}]: delete_ep for a phantom ep {}".format(
                     self.id, ep.ip)
-        self.rpc_deletes["ep@" + jsonconf] = time.time()
+        self.rpc_deletes[("ep", jsonconf)] = time.time()
         cmd = f'''{self.trn_cli_delete_ep} \'{jsonconf}\''''
         self.exec_cli_rpc(log_string, cmd)
 
@@ -337,7 +335,7 @@ ip netns del {ep.ns} \' ''')
         log_string = "[DROPLET {}]: update_substrate_ep for droplet {}".format(
             self.id, droplet.ip)
         jsonconf = droplet.get_substrate_ep_json()
-        self.rpc_updates["ep_substrate@" + jsonconf] = time.time()
+        self.rpc_updates[("ep_substrate", jsonconf)] = time.time()
         cmd = f'''{self.trn_cli_update_ep} \'{jsonconf}\''''
         self.exec_cli_rpc(log_string, cmd)
 
@@ -345,7 +343,7 @@ ip netns del {ep.ns} \' ''')
         log_string = "[DROPLET {}]: delete_substrate_ep for droplet {}".format(
             self.id, droplet.ip)
         jsonconf = droplet.get_substrate_ep_json()
-        self.rpc_deletes["ep_substrate@" + jsonconf] = time.time()
+        self.rpc_deletes[("ep_substrate", jsonconf)] = time.time()
         cmd = f'''{self.trn_cli_delete_ep} \'{jsonconf}\''''
         self.exec_cli_rpc(log_string, cmd)
 

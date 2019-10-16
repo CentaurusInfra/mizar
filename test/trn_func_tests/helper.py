@@ -177,7 +177,6 @@ def do_validate_delete_test(test, droplets):
 
 # Helper function for verifying delete RPC was successful
 def do_run_get_rpc_test(test, droplet, call):
-    call = call.split("@")
     if call[0].strip() == "ep" or call[0].strip() == "ep_substrate":
         cmd = f'''{droplet.trn_cli_get_ep} \'{call[1]}\''''
         return droplet.run(cmd)[0]
