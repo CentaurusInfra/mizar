@@ -71,9 +71,6 @@ class test_recreate_endpoint(unittest.TestCase):
         pass
 
     def test_recreate_endpoint(self):
-        for d in self.droplets.values():
-            d.dump_rpc_calls()
-            print()
         logger.info(
             "{} Testing two endpoints on a switch can communicate! {}".format('='*20, '='*20))
         do_common_tests(self, self.ep_new, self.ep_right)

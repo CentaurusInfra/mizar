@@ -61,8 +61,10 @@ class test_delete_endpoint(unittest.TestCase):
         c.create_vpc(3, cidr("16", "10.0.0.0"), [])
         c.create_network(3, 1, cidr("16", "10.0.0.0"), ["switch"])
         self.ep_right = c.create_simple_endpoint(3, 1, "10.0.0.3", "right")
+        # Clear all droplet update state before we create and delete ep_left
         self.droplets["switch"].clear_update_call_state()
         self.droplets["right"].clear_update_call_state()
+
         self.ep_left = c.create_simple_endpoint(3, 1, "10.0.0.2", "left")
         self.ep_left = c.delete_simple_endpoint(3, 1, "10.0.0.2", "left")
 
@@ -72,9 +74,5 @@ class test_delete_endpoint(unittest.TestCase):
     def test_delete_endpoint(self):
         logger.info(
             "{} Testing endpoint properly deleted! {}".format('='*20, '='*20))
-        do_validate_delete(
+        do_validate_delete_test(
             self, self.droplets.values())
-
-        for d in self.droplets.values():
-            d.dump_rpc_calls()
-            print()

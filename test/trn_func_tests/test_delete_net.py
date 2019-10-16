@@ -105,10 +105,7 @@ class test_delete_net(unittest.TestCase):
         pass
 
     def test_delete_net(self):
-        for d in self.droplets.values():
-            d.dump_rpc_calls()
-            print()
         logger.info(
             "{} Testing net properly deleted! {}".format('='*20, '='*20))
-        do_validate_delete(self, [self.droplets["switch-2"], self.droplets["d3"],
-                                  self.droplets["d4"], self.droplets["router-1"]])
+        do_validate_delete_test(self, [self.droplets["switch-2"], self.droplets["d3"],
+                                       self.droplets["d4"], self.droplets["router-1"]])

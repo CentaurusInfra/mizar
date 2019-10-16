@@ -17,7 +17,7 @@ import unittest
 from time import sleep
 
 
-class test_delete_vpc(unittest.TestCase):
+class test_delete_one_at_a_time(unittest.TestCase):
 
     def setUp(self):
         # Testing the following multiple subnetwork scenario
@@ -92,13 +92,15 @@ class test_delete_vpc(unittest.TestCase):
         self.ep3 = c.create_simple_endpoint(3, 20, "10.20.0.4", "d3")
         self.ep4 = c.create_simple_endpoint(3, 20, "10.20.0.5", "d4")
 
-        # Delete the vpc
+        # Delete an endpoint in subnet, delete the parent subnet, then parent VPC.
+        self.ep3 = c.delete_simple_endpoint(3, 20, "10.20.0.4", "d3")
+        c.delete_network(3, 20, cidr("24", "10.20.0.0"), ["switch-2"])
         c.delete_vpc(3, cidr("16", "10.0.0.0"), ["router-1"])
 
     def tearDown(self):
         pass
 
-    def test_delete_vpc(self):
+    def test_delete_one_at_a_time(self):
         logger.info(
             "{} Testing vpc properly deleted! {}".format('='*20, '='*20))
         do_validate_delete_test(self, list(self.droplets.values()))

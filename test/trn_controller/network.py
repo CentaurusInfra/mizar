@@ -104,7 +104,7 @@ class network:
         1. Removes the switch object from the list
         2. Call delete_endpoint on the removed transit switch's droplet to
            remove all endpoint's data within this network
-        2. Call delete VPC on the removed transit switch's droplet to
+        3. Call delete VPC on the removed transit switch's droplet to
            remove the list of transit routers of the VPC
         4. Finally, call update on each endpoint's
            transit agent to update the list of available switches.
@@ -272,20 +272,15 @@ class network:
 
         switches = list(self.transit_switches.values())
 
-        # Switches have been removed from the network object
-        if net_switches is not None:
-            switches = net_switches
-
-        # Create a temp network object of only one switch
-        temp_net = network(self.vni, self.netid, self.cidr)
-        temp_net.transit_switches[switches[0].id] = switches[0]
-
-        start = time.time()
-
         ep = self.endpoints.pop(ip)
 
         # This is already done when we remove all the switches from the network object
         if net_switches is None:
+            # Create a temp network object of only one switch
+            temp_net = network(self.vni, self.netid, self.cidr)
+            temp_net.transit_switches[switches[0].id] = switches[0]
+
+            start = time.time()
             switches[0].delete_endpoint(ep)
 
             end = time.time()

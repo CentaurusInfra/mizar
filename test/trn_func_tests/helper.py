@@ -149,7 +149,13 @@ def do_iperf3_common_tests(test, ep1, ep2):
         do_iperf3_test(test, ep1, ep2, args)
 
 
-def do_validate_delete(test, droplets):
+def do_validate_delete_test(test, droplets):
+    """
+    Validates deletes RPC calls are correctly made after an update.
+    * Condition #1: All update calls have a corresponding delete.
+    * Condition #2: All delete calls happen AFTER their corresponding update call is made.
+    * Condition #3: All corresponding get RPC calls return an error after delete
+    """
     exit_code = 0
     for d in droplets:
         for update in d.rpc_updates:
@@ -161,4 +167,29 @@ def do_validate_delete(test, droplets):
                 exit_code = 1
                 logger.error(
                     "[{}]: The following update was made after delete was called. {}".format(d.id, update))
+            if do_run_get_rpc_test(test, d, update) == 0:
+                exit_code = 1
+                logger.error(
+                    "[{}]: Get RPC returned a valid object after delete. {}".format(d.id, update))
+                test.assertEqual(exit_code, 0)
     test.assertEqual(exit_code, 0)
+
+
+# Helper function for verifying delete RPC was successful
+def do_run_get_rpc_test(test, droplet, call):
+    call = call.split("@")
+    if call[0].strip() == "ep" or call[0].strip() == "ep_substrate":
+        cmd = f'''{droplet.trn_cli_get_ep} \'{call[1]}\''''
+        return droplet.run(cmd)[0]
+    elif call[0].strip() == "net":
+        cmd = f'''{droplet.trn_cli_get_net} \'{call[1]}\''''
+        return droplet.run(cmd)[0]
+    elif call[0].strip() == "vpc":
+        cmd = f'''{droplet.trn_cli_get_vpc} \'{call[1]}\''''
+        return droplet.run(cmd)[0]
+    elif call[0] == "load":  # We assume agent was loaded and unloaded correctly
+        return 1
+    else:
+        logger.error(
+            "[{}]: Unidentified rpc call: {}@{}".format(droplet.id, call[0], call[1]))
+        return 0
