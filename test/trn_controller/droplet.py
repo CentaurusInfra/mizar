@@ -150,14 +150,14 @@ ip netns del {ep.ns} \' ''')
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_load_transit_xdp} \'{jsonconf}\' '''
-        self.exec_cli_rpc(log_string, jsonconf, cmd)
+        self.exec_cli_rpc(log_string, cmd)
 
     def unload_transit_xdp(self):
         log_string = "[DROPLET {}]: unload_transit_xdp {}".format(
             self.id, self.ip)
         jsonconf = '\'{}\''
         cmd = f'''{self.trn_cli_unload_transit_xdp} {jsonconf} '''
-        self.exec_cli_rpc(log_string, jsonconf, cmd)
+        self.exec_cli_rpc(log_string, cmd)
 
     def load_transit_agent_xdp(self, itf):
         log_string = "[DROPLET {}]: load_transit_agent_xdp {}".format(
@@ -170,7 +170,7 @@ ip netns del {ep.ns} \' ''')
         key = "load@" + itf
         self.rpc_updates[key] = time.time()
         cmd = f'''{self.trn_cli_load_transit_agent_xdp} -i \'{itf}\' -j \'{jsonconf}\' '''
-        self.exec_cli_rpc(log_string, jsonconf, cmd)
+        self.exec_cli_rpc(log_string, cmd)
 
     def unload_transit_agent_xdp(self, itf):
         log_string = "[DROPLET {}]: unload_transit_agent_xdp {}".format(
@@ -179,7 +179,7 @@ ip netns del {ep.ns} \' ''')
         cmd = f'''{self.trn_cli_unload_transit_agent_xdp} -i \'{itf}\' -j {jsonconf} '''
         key = "load@" + itf
         self.rpc_deletes[key] = time.time()
-        self.exec_cli_rpc(log_string, jsonconf, cmd)
+        self.exec_cli_rpc(log_string, cmd)
 
     def update_vpc(self, vpc):
         log_string = "[DROPLET {}]: update_vpc {}".format(
@@ -194,7 +194,7 @@ ip netns del {ep.ns} \' ''')
         }
         self.rpc_updates["vpc@" + json.dumps(jsonkey)] = time.time()
         cmd = f'''{self.trn_cli_update_vpc} \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, jsonconf, cmd)
+        self.exec_cli_rpc(log_string, cmd)
 
     def get_vpc(self, vpc):
         log_string = "[DROPLET {}]: get_vpc {}".format(
@@ -204,7 +204,7 @@ ip netns del {ep.ns} \' ''')
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_get_vpc} \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, jsonconf, cmd)
+        self.exec_cli_rpc(log_string, cmd)
 
     def delete_vpc(self, vpc):
         log_string = "[DROPLET {}]: delete_vpc {}".format(
@@ -215,7 +215,7 @@ ip netns del {ep.ns} \' ''')
         jsonconf = json.dumps(jsonconf)
         self.rpc_deletes["vpc@" + jsonconf] = time.time()
         cmd = f'''{self.trn_cli_delete_vpc} \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, jsonconf, cmd)
+        self.exec_cli_rpc(log_string, cmd)
 
     def update_net(self, net):
         log_string = "[DROPLET {}]: update_net {}".format(self.id, net.netid)
@@ -233,7 +233,7 @@ ip netns del {ep.ns} \' ''')
         }
         self.rpc_updates["net@" + json.dumps(jsonkey)] = time.time()
         cmd = f'''{self.trn_cli_update_net} \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, jsonconf, cmd)
+        self.exec_cli_rpc(log_string, cmd)
 
     def get_net(self, net):
         log_string = "[DROPLET {}]: get_net {}".format(self.id, net.netid)
@@ -244,7 +244,7 @@ ip netns del {ep.ns} \' ''')
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_get_net} \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, jsonconf, cmd)
+        self.exec_cli_rpc(log_string, cmd)
 
     def delete_net(self, net):
         log_string = "[DROPLET {}]: delete_net {}".format(self.id, net.netid)
@@ -256,7 +256,7 @@ ip netns del {ep.ns} \' ''')
         jsonconf = json.dumps(jsonconf)
         self.rpc_deletes["net@" + jsonconf] = time.time()
         cmd = f'''{self.trn_cli_delete_net} \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, jsonconf, cmd)
+        self.exec_cli_rpc(log_string, cmd)
 
     def update_ep(self, ep):
         if ep.host is not None:
@@ -287,7 +287,7 @@ ip netns del {ep.ns} \' ''')
         }
         self.rpc_updates["ep@" + json.dumps(jsonkey)] = time.time()
         cmd = f'''{self.trn_cli_update_ep} \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, jsonconf, cmd)
+        self.exec_cli_rpc(log_string, cmd)
 
     def get_ep(self, ep, agent=False):
         jsonconf = {
@@ -303,7 +303,7 @@ ip netns del {ep.ns} \' ''')
             log_string = "[DROPLET {}]: get_ep {} hosted at {}".format(
                 self.id, ep.ip, ep.host.id)
             cmd = f'''{self.trn_cli_get_ep} \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, jsonconf, cmd)
+        self.exec_cli_rpc(log_string, cmd)
 
     def delete_ep(self, ep, agent=False):
 
@@ -325,7 +325,7 @@ ip netns del {ep.ns} \' ''')
                     self.id, ep.ip)
         self.rpc_deletes["ep@" + jsonconf] = time.time()
         cmd = f'''{self.trn_cli_delete_ep} \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, jsonconf, cmd)
+        self.exec_cli_rpc(log_string, cmd)
 
     def get_agent_ep(self, ep):
         self.get_ep(ep, agent=True)
@@ -339,7 +339,7 @@ ip netns del {ep.ns} \' ''')
         jsonconf = droplet.get_substrate_ep_json()
         self.rpc_updates["ep_substrate@" + jsonconf] = time.time()
         cmd = f'''{self.trn_cli_update_ep} \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, jsonconf, cmd)
+        self.exec_cli_rpc(log_string, cmd)
 
     def delete_substrate_ep(self, droplet):
         log_string = "[DROPLET {}]: delete_substrate_ep for droplet {}".format(
@@ -347,7 +347,7 @@ ip netns del {ep.ns} \' ''')
         jsonconf = droplet.get_substrate_ep_json()
         self.rpc_deletes["ep_substrate@" + jsonconf] = time.time()
         cmd = f'''{self.trn_cli_delete_ep} \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, jsonconf, cmd)
+        self.exec_cli_rpc(log_string, cmd)
 
     def update_agent_ep(self, itf):
         logger.error(
@@ -380,7 +380,7 @@ ip netns del {ep.ns} \' ''')
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_update_agent_metadata} -i \'{itf}\' -j \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, jsonconf, cmd)
+        self.exec_cli_rpc(log_string, cmd)
 
     def get_agent_metadata(self, itf, ep):
         log_string = "[DROPLET {}]: get_agent_metadata on {} for endpoint {}".format(
@@ -390,7 +390,7 @@ ip netns del {ep.ns} \' ''')
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_get_agent_metadata} -i \'{itf}\' -j \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, jsonconf, cmd)
+        self.exec_cli_rpc(log_string, cmd)
 
     def delete_agent_metadata(self, itf, ep):
         log_string = "[DROPLET {}]: delete_agent_metadata on {} for endpoint {}".format(
@@ -400,7 +400,7 @@ ip netns del {ep.ns} \' ''')
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_delete_agent_metadata} -i \'{itf}\' -j \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, jsonconf, cmd)
+        self.exec_cli_rpc(log_string, cmd)
 
     def update_agent_substrate_ep(self, itf, droplet):
         log_string = "[DROPLET {}]: update_agent_substrate_ep on {} for droplet {}".format(
@@ -408,7 +408,7 @@ ip netns del {ep.ns} \' ''')
 
         jsonconf = droplet.get_substrate_ep_json()
         cmd = f'''{self.trn_cli_update_agent_ep} -i \'{itf}\' -j \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, jsonconf, cmd)
+        self.exec_cli_rpc(log_string, cmd)
 
     def delete_agent_substrate_ep(self, itf, droplet):
         log_string = "[DROPLET {}]: delete_agent_substrate_ep on {} for droplet {}".format(
@@ -416,9 +416,9 @@ ip netns del {ep.ns} \' ''')
 
         jsonconf = droplet.get_substrate_ep_json()
         cmd = f'''{self.trn_cli_delete_agent_ep} -i \'{itf}\' -j \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, jsonconf, cmd)
+        self.exec_cli_rpc(log_string, cmd)
 
-    def exec_cli_rpc(self, log_string, jsonconf, cmd):
+    def exec_cli_rpc(self, log_string, cmd):
         logger.info(log_string)
         output = self.run(cmd)
         logger.info(output[0])
