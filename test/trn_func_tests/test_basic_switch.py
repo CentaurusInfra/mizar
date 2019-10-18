@@ -70,3 +70,4 @@ class test_basic_switch(unittest.TestCase):
         logger.info(
             "{} Testing two endpoints on a switch can communicate! {}".format('='*20, '='*20))
         do_common_tests(self, self.ep_left, self.ep_right)
+        do_check_failed_rpcs(self, self.droplets.values())

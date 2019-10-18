@@ -102,11 +102,20 @@ class test_vpc_delete_multi_net_multi_switches_routers(unittest.TestCase):
 
         self.ep3 = c.create_simple_endpoint(3, 20, "10.20.0.4", "d3")
         self.ep4 = c.create_simple_endpoint(3, 20, "10.20.0.5", "d4")
-
+        self.ep5 = c.create_simple_endpoint(3, 20, "10.20.0.6", "d4")
+        self.ep6 = c.create_simple_endpoint(3, 20, "10.20.0.7", "d5")
+        self.ep7 = c.create_simple_endpoint(3, 20, "10.20.0.8", "router-1")
+        self.ep8 = c.create_simple_endpoint(3, 20, "10.20.0.9", "router-2")
+        self.ep7 = c.create_simple_endpoint(3, 20, "10.20.0.10", "switch-1")
+        self.ep8 = c.create_simple_endpoint(3, 20, "10.20.0.11", "switch-4")
         c.delete_vpc(3, cidr("16", "10.0.0.0"),
                      ["router-1", "router-2", "d5"])
+        for d in self.droplets.values():
+            d.dump_rpc_calls()
+            print()
 
     def test_delete_vpc_multi_net_multi_switches_routers(self):
         logger.info(
             "{} Testing vpc properly deleted! {}".format('='*20, '='*20))
         do_validate_delete_test(self, list(self.droplets.values()))
+        do_check_failed_rpcs(self, self.droplets.values())

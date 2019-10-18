@@ -31,7 +31,6 @@ class transit_switch:
             "[SWITCH {}, {}]: update_endpoint {}".format(self.ip, self.id, ep.ip))
 
         self.droplet.update_ep(ep)
-
         # Now update the mac address of the endpoint's host
         if ep.host is not None:
             self.droplet.update_substrate_ep(ep.host)
@@ -62,7 +61,6 @@ class transit_switch:
             self.ip, self.id, vpc.vni))
 
         # Now delete the mac addresses of the routers' droplet
-        self.transit_routers = vpc.transit_routers
         for r in self.transit_routers.values():
             self.droplet.delete_substrate_ep(r.droplet)
 

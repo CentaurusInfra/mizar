@@ -29,7 +29,12 @@ class droplet:
         self.veth_peers = set()
         self.rpc_updates = {}
         self.rpc_deletes = {}
+        self.rpc_failures = {}
         self.phy_itf = phy_itf
+        self.vpc_updates = {}  # When droplet is a switch for two different networks
+        self.substrate_updates = {}  # When droplet is a host for multiple objects
+        self.endpoint_updates = {}  # When droplet is a switch host and ep host
+        # We don't need one for net because delete_net takes nip
 
         # transitd cli commands
         self.trn_cli = f'''/trn_bin/transit'''
@@ -91,8 +96,8 @@ class droplet:
         logger.info(
             "[DROPLET {}]: unprovision_simple_endpoint {}".format(self.id, ep.ip))
 
-        self.unload_transit_agent_xdp(ep.veth_peer)
         self._delete_veth_pair(ep)
+        self.unload_transit_agent_xdp(ep.veth_peer)
 
     def provision_vxlan_endpoint(self, ep):
         logger.info(
@@ -134,14 +139,14 @@ ip netns exec {ep.ns} ifconfig veth0 hw ether {ep.mac} ' ''')
             "[DROPLET {}]: _delete_veth_pair {}".format(self.id, ep.ip))
 
         script = (f''' bash -c '\
-rm -rf /tmp &&
+rm -rf /tmp/{ep.ns}_{ep.ip} &&
 ip link delete {ep.veth_peer} && \
 ip netns del {ep.ns} \' ''')
 
         self.run(script)
         self.veth_peers.remove(ep.veth_peer)
 
-    def load_transit_xdp(self):
+    def load_transit_xdp(self, expect_fail=False):
         log_string = "[DROPLET {}]: load_transit_xdp {}".format(
             self.id, self.ip)
         jsonconf = {
@@ -150,16 +155,16 @@ ip netns del {ep.ns} \' ''')
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_load_transit_xdp} \'{jsonconf}\' '''
-        self.exec_cli_rpc(log_string, cmd)
+        self.exec_cli_rpc(log_string, cmd, expect_fail)
 
-    def unload_transit_xdp(self):
+    def unload_transit_xdp(self, expect_fail=False):
         log_string = "[DROPLET {}]: unload_transit_xdp {}".format(
             self.id, self.ip)
         jsonconf = '\'{}\''
         cmd = f'''{self.trn_cli_unload_transit_xdp} {jsonconf} '''
-        self.exec_cli_rpc(log_string, cmd)
+        self.exec_cli_rpc(log_string, cmd, expect_fail)
 
-    def load_transit_agent_xdp(self, itf):
+    def load_transit_agent_xdp(self, itf, expect_fail=False):
         log_string = "[DROPLET {}]: load_transit_agent_xdp {}".format(
             self.id, itf)
         jsonconf = {
@@ -169,32 +174,35 @@ ip netns del {ep.ns} \' ''')
         jsonconf = json.dumps(jsonconf)
         self.rpc_updates[("load", itf)] = time.time()
         cmd = f'''{self.trn_cli_load_transit_agent_xdp} -i \'{itf}\' -j \'{jsonconf}\' '''
-        self.exec_cli_rpc(log_string, cmd)
+        self.exec_cli_rpc(log_string, cmd, expect_fail)
 
-    def unload_transit_agent_xdp(self, itf):
+    def unload_transit_agent_xdp(self, itf, expect_fail=False):
         log_string = "[DROPLET {}]: unload_transit_agent_xdp {}".format(
             self.id, itf)
         jsonconf = '\'{}\''
         cmd = f'''{self.trn_cli_unload_transit_agent_xdp} -i \'{itf}\' -j {jsonconf} '''
         self.rpc_deletes[("load", itf)] = time.time()
-        self.exec_cli_rpc(log_string, cmd)
+        self.exec_cli_rpc(log_string, cmd, expect_fail)
 
-    def update_vpc(self, vpc):
+    def update_vpc(self, vpc, expect_fail=False):
         log_string = "[DROPLET {}]: update_vpc {}".format(
             self.id, vpc.get_tunnel_id())
+
         jsonconf = {
             "tunnel_id": vpc.get_tunnel_id(),
             "routers_ips": vpc.get_transit_routers_ips()
         }
         jsonconf = json.dumps(jsonconf)
+
         jsonkey = {
             "tunnel_id": vpc.get_tunnel_id(),
         }
-        self.rpc_updates[("vpc", json.dumps(jsonkey))] = time.time()
+        key = ("vpc " + self.phy_itf, json.dumps(jsonkey))
         cmd = f'''{self.trn_cli_update_vpc} \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, cmd)
+        self.do_update_increment(
+            log_string, cmd, expect_fail, key, self.vpc_updates)
 
-    def get_vpc(self, vpc):
+    def get_vpc(self, vpc, expect_fail=False):
         log_string = "[DROPLET {}]: get_vpc {}".format(
             self.id, vpc.get_tunnel_id())
         jsonconf = {
@@ -202,20 +210,21 @@ ip netns del {ep.ns} \' ''')
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_get_vpc} \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, cmd)
+        self.exec_cli_rpc(log_string, cmd, expect_fail)
 
-    def delete_vpc(self, vpc):
+    def delete_vpc(self, vpc, expect_fail=False):
         log_string = "[DROPLET {}]: delete_vpc {}".format(
             self.id, vpc.get_tunnel_id())
         jsonconf = {
             "tunnel_id": vpc.get_tunnel_id(),
         }
         jsonconf = json.dumps(jsonconf)
-        self.rpc_deletes[("vpc", jsonconf)] = time.time()
+        key = ("vpc " + self.phy_itf, jsonconf)
         cmd = f'''{self.trn_cli_delete_vpc} \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, cmd)
+        self.do_delete_decrement(
+            log_string, cmd, expect_fail, key, self.vpc_updates)
 
-    def update_net(self, net):
+    def update_net(self, net, expect_fail=False):
         log_string = "[DROPLET {}]: update_net {}".format(self.id, net.netid)
         jsonconf = {
             "tunnel_id": net.get_tunnel_id(),
@@ -229,11 +238,12 @@ ip netns del {ep.ns} \' ''')
             "nip": net.get_nip(),
             "prefixlen": net.get_prefixlen(),
         }
-        self.rpc_updates[("net", json.dumps(jsonkey))] = time.time()
+        self.rpc_updates[("net " + self.phy_itf,
+                          json.dumps(jsonkey))] = time.time()
         cmd = f'''{self.trn_cli_update_net} \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, cmd)
+        self.exec_cli_rpc(log_string, cmd, expect_fail)
 
-    def get_net(self, net):
+    def get_net(self, net, expect_fail=False):
         log_string = "[DROPLET {}]: get_net {}".format(self.id, net.netid)
         jsonconf = {
             "tunnel_id": net.get_tunnel_id(),
@@ -242,9 +252,9 @@ ip netns del {ep.ns} \' ''')
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_get_net} \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, cmd)
+        self.exec_cli_rpc(log_string, cmd, expect_fail)
 
-    def delete_net(self, net):
+    def delete_net(self, net, expect_fail=False):
         log_string = "[DROPLET {}]: delete_net {}".format(self.id, net.netid)
         jsonconf = {
             "tunnel_id": net.get_tunnel_id(),
@@ -252,11 +262,11 @@ ip netns del {ep.ns} \' ''')
             "prefixlen": net.get_prefixlen(),
         }
         jsonconf = json.dumps(jsonconf)
-        self.rpc_deletes[("net", jsonconf)] = time.time()
+        self.rpc_deletes[("net " + self.phy_itf, jsonconf)] = time.time()
         cmd = f'''{self.trn_cli_delete_net} \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, cmd)
+        self.exec_cli_rpc(log_string, cmd, expect_fail)
 
-    def update_ep(self, ep):
+    def update_ep(self, ep, expect_fail=False):
         if ep.host is not None:
             log_string = "[DROPLET {}]: update_ep {} hosted at {}".format(
                 self.id, ep.ip, ep.host.id)
@@ -283,11 +293,12 @@ ip netns del {ep.ns} \' ''')
             "tunnel_id": ep.get_tunnel_id(),
             "ip": ep.get_ip(),
         }
-        self.rpc_updates[("ep", json.dumps(jsonkey))] = time.time()
+        key = ("ep " + self.phy_itf, json.dumps(jsonkey))
         cmd = f'''{self.trn_cli_update_ep} \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, cmd)
+        self.do_update_increment(
+            log_string, cmd, expect_fail, key, self.endpoint_updates)
 
-    def get_ep(self, ep, agent=False):
+    def get_ep(self, ep, agent=False, expect_fail=False):
         jsonconf = {
             "tunnel_id": ep.get_tunnel_id(),
             "ip": ep.get_ip(),
@@ -301,9 +312,9 @@ ip netns del {ep.ns} \' ''')
             log_string = "[DROPLET {}]: get_ep {} hosted at {}".format(
                 self.id, ep.ip, ep.host.id)
             cmd = f'''{self.trn_cli_get_ep} \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, cmd)
+        self.exec_cli_rpc(log_string, cmd, expect_fail)
 
-    def delete_ep(self, ep, agent=False):
+    def delete_ep(self, ep, agent=False, expect_fail=False):
 
         jsonconf = {
             "tunnel_id": ep.get_tunnel_id(),
@@ -314,44 +325,58 @@ ip netns del {ep.ns} \' ''')
             log_string = "[DROPLET {}]: delete_agent_ep {} hosted at {}".format(
                 self.id, ep.ip, ep.host.id)
             cmd = f'''{self.trn_cli_delete_agent_ep} \'{jsonconf}\''''
+            self.exec_cli_rpc(log_string, cmd, expect_fail)
         else:
+            cmd = f'''{self.trn_cli_delete_ep} \'{jsonconf}\''''
+            key = ("ep " + self.phy_itf, jsonconf)
             if ep.host is not None:
                 log_string = "[DROPLET {}]: delete_ep {} hosted at {}".format(
                     self.id, ep.ip, ep.host.id)
             else:
                 log_string = "[DROPLET {}]: delete_ep for a phantom ep {}".format(
                     self.id, ep.ip)
-        self.rpc_deletes[("ep", jsonconf)] = time.time()
-        cmd = f'''{self.trn_cli_delete_ep} \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, cmd)
+            self.do_delete_decrement(
+                log_string, cmd, expect_fail, key, self.endpoint_updates)
 
-    def get_agent_ep(self, ep):
-        self.get_ep(ep, agent=True)
+    def get_agent_ep(self, ep, expect_fail=False):
+        self.get_ep(ep, agent=True, expect_fail=expect_fail)
 
-    def delete_agent_ep(self, ep):
-        self.delete_ep(ep, agent=True)
+    def delete_agent_ep(self, ep, expect_fail=False):
+        self.delete_ep(ep, agent=True, expect_fail=expect_fail)
 
-    def update_substrate_ep(self, droplet):
+    def update_substrate_ep(self, droplet, expect_fail=False):
         log_string = "[DROPLET {}]: update_substrate_ep for droplet {}".format(
             self.id, droplet.ip)
         jsonconf = droplet.get_substrate_ep_json()
-        self.rpc_updates[("ep_substrate", jsonconf)] = time.time()
+        jsonkey = {
+            "tunnel_id": "0",
+            "ip": droplet.ip,
+        }
+        key = ("ep_substrate " + self.phy_itf,
+               json.dumps(jsonkey))
         cmd = f'''{self.trn_cli_update_ep} \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, cmd)
+        self.do_update_increment(
+            log_string, cmd, expect_fail, key, self.substrate_updates)
 
-    def delete_substrate_ep(self, droplet):
+    def delete_substrate_ep(self, droplet, expect_fail=False):
         log_string = "[DROPLET {}]: delete_substrate_ep for droplet {}".format(
             self.id, droplet.ip)
         jsonconf = droplet.get_substrate_ep_json()
-        self.rpc_deletes[("ep_substrate", jsonconf)] = time.time()
+        jsonkey = {
+            "tunnel_id": "0",
+            "ip": droplet.ip,
+        }
+        key = ("ep_substrate " + self.phy_itf,
+               json.dumps(jsonkey))
         cmd = f'''{self.trn_cli_delete_ep} \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, cmd)
+        self.do_delete_decrement(
+            log_string, cmd, expect_fail, key, self.substrate_updates)
 
-    def update_agent_ep(self, itf):
+    def update_agent_ep(self, itf, expect_fail=False):
         logger.error(
             "[DROPLET {}]: not implemented, no use case for now!".format(self.id))
 
-    def update_agent_metadata(self, itf, ep, net):
+    def update_agent_metadata(self, itf, ep, net, expect_fail=False):
         log_string = "[DROPLET {}]: update_agent_metadata on {} for endpoint {}".format(
             self.id, itf, ep.ip)
         jsonconf = {
@@ -378,9 +403,9 @@ ip netns del {ep.ns} \' ''')
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_update_agent_metadata} -i \'{itf}\' -j \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, cmd)
+        self.exec_cli_rpc(log_string, cmd, expect_fail)
 
-    def get_agent_metadata(self, itf, ep):
+    def get_agent_metadata(self, itf, ep, expect_fail=False):
         log_string = "[DROPLET {}]: get_agent_metadata on {} for endpoint {}".format(
             self.id, itf, ep.ip)
         jsonconf = {
@@ -388,9 +413,9 @@ ip netns del {ep.ns} \' ''')
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_get_agent_metadata} -i \'{itf}\' -j \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, cmd)
+        self.exec_cli_rpc(log_string, cmd, expect_fail)
 
-    def delete_agent_metadata(self, itf, ep):
+    def delete_agent_metadata(self, itf, ep, expect_fail=False):
         log_string = "[DROPLET {}]: delete_agent_metadata on {} for endpoint {}".format(
             self.id, itf, ep.ip)
         jsonconf = {
@@ -398,34 +423,41 @@ ip netns del {ep.ns} \' ''')
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_delete_agent_metadata} -i \'{itf}\' -j \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, cmd)
+        self.exec_cli_rpc(log_string, cmd, expect_fail)
 
-    def update_agent_substrate_ep(self, itf, droplet):
+    def update_agent_substrate_ep(self, itf, droplet, expect_fail=False):
         log_string = "[DROPLET {}]: update_agent_substrate_ep on {} for droplet {}".format(
             self.id, itf, droplet.ip)
 
         jsonconf = droplet.get_substrate_ep_json()
         cmd = f'''{self.trn_cli_update_agent_ep} -i \'{itf}\' -j \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, cmd)
+        self.exec_cli_rpc(log_string, cmd, expect_fail)
 
-    def delete_agent_substrate_ep(self, itf, droplet):
+    def delete_agent_substrate_ep(self, itf, droplet, expect_fail=False):
         log_string = "[DROPLET {}]: delete_agent_substrate_ep on {} for droplet {}".format(
             self.id, itf, droplet.ip)
 
         jsonconf = droplet.get_substrate_ep_json()
         cmd = f'''{self.trn_cli_delete_agent_ep} -i \'{itf}\' -j \'{jsonconf}\''''
-        self.exec_cli_rpc(log_string, cmd)
+        self.exec_cli_rpc(log_string, cmd, expect_fail)
 
-    def exec_cli_rpc(self, log_string, cmd):
+    def exec_cli_rpc(self, log_string, cmd, expect_fail):
         logger.info(log_string)
         output = self.run(cmd)
-        logger.info(output[0])
-        logger.info(output[1])
+        if not expect_fail and output[0] != 0:
+            self.rpc_failures[time.time()] = cmd
+        return output
 
+    # RPC call is stored as key
+    # Will overwrite with latest call if exact same call is made multiple times
     def dump_rpc_calls(self):
+        logger.info("{} {}, update commands ran. {}".format(
+            '='*20, len(self.rpc_updates.keys()), '='*20))
         for cmd in self.rpc_updates:
             logger.info("[DROPLET {}]: Update command ran: {} at {}".format(
                 self.id, cmd, self.rpc_updates[cmd]))
+        logger.info("{} {}, delete commands ran. {}".format(
+            '='*20, len(self.rpc_deletes.keys()), '='*20))
         for cmd in self.rpc_deletes:
             logger.info("[DROPLET {}]: Delete command ran: {} at {}".format(
                 self.id, cmd, self.rpc_deletes[cmd]))
@@ -627,3 +659,18 @@ droplet_{self.ip}.pcap >/dev/null 2>&1 &\
 
     def clear_update_call_state(self):
         self.rpc_updates = {}
+
+    def do_delete_decrement(self, log_string, cmd, expect_fail, key, update_counts):
+        if update_counts[key] > 0:
+            update_counts[key] -= 1
+            if update_counts[key] == 0:
+                self.rpc_deletes[key] = time.time()
+                self.exec_cli_rpc(log_string, cmd, expect_fail)
+
+    def do_update_increment(self, log_string, cmd, expect_fail, key, update_counts):
+        if key in update_counts.keys():
+            update_counts[key] += 1
+        else:
+            update_counts[key] = 1
+        self.rpc_updates[key] = time.time()
+        self.exec_cli_rpc(log_string, cmd, expect_fail)

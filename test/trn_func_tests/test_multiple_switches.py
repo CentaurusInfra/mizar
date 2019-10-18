@@ -73,3 +73,4 @@ class test_multiple_switches(unittest.TestCase):
         logger.info(
             "{} Testing two endpoints can communicate over multiple switches! {}".format('='*20, '='*20))
         do_common_tests(self, self.ep_left, self.ep_right)
+        do_check_failed_rpcs(self, self.droplets.values())

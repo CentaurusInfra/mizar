@@ -136,6 +136,8 @@ class controller:
         """
         Removes a switch from an existing network
         """
+        if net is None:
+            net = self.vpcs[vni].networks[netid]
         switch = self.droplets[s]
         logger.info(
             "[Controller]: remove_switch {} from network {}.{}".format(switch.id, vni, netid))

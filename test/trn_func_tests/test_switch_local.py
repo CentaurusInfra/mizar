@@ -72,3 +72,4 @@ class test_switch_local(unittest.TestCase):
         logger.info("{} Testing both endpoints are on same host as switch! {}".format(
             '='*20, '='*20))
         do_common_tests(self, self.ep2, self.ep3)
+        do_check_failed_rpcs(self, self.droplets.values())

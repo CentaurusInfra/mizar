@@ -153,7 +153,8 @@ def do_validate_delete_test(test, droplets):
     """
     Validates deletes RPC calls are correctly made after an update.
     * Condition #1: All update calls have a corresponding delete.
-    * Condition #2: All delete calls happen AFTER their corresponding update call is made.
+    # 2: All delete calls happen AFTER their corresponding update call is made.
+    * Condition
     * Condition #3: All corresponding get RPC calls return an error after delete
     """
     exit_code = 0
@@ -163,10 +164,12 @@ def do_validate_delete_test(test, droplets):
                 exit_code = 1
                 logger.error(
                     "[{}]: No corresponding delete call was made for the update. {}".format(d.id, update))
+                test.assertEqual(exit_code, 0)
             if d.rpc_updates[update] > d.rpc_deletes[update]:
                 exit_code = 1
                 logger.error(
                     "[{}]: The following update was made after delete was called. {}".format(d.id, update))
+                test.assertEqual(exit_code, 0)
             if do_run_get_rpc_test(test, d, update) == 0:
                 exit_code = 1
                 logger.error(
@@ -177,18 +180,38 @@ def do_validate_delete_test(test, droplets):
 
 # Helper function for verifying delete RPC was successful
 def do_run_get_rpc_test(test, droplet, call):
-    if call[0].strip() == "ep" or call[0].strip() == "ep_substrate":
+    if call[0] == "ep " + droplet.phy_itf or call[0] == "ep_substrate " + droplet.phy_itf:
+        log_string = "[DROPLET {}]: Expecting failure for RPC call.".format(
+            droplet.id)
         cmd = f'''{droplet.trn_cli_get_ep} \'{call[1]}\''''
-        return droplet.run(cmd)[0]
-    elif call[0].strip() == "net":
+        return droplet.exec_cli_rpc(log_string, cmd, True)[0]
+    elif call[0] == "net " + droplet.phy_itf:
+        log_string = "[DROPLET {}]: Expecting failure for RPC call.".format(
+            droplet.id)
         cmd = f'''{droplet.trn_cli_get_net} \'{call[1]}\''''
-        return droplet.run(cmd)[0]
-    elif call[0].strip() == "vpc":
+        return droplet.exec_cli_rpc(log_string, cmd, True)[0]
+    elif call[0] == "vpc " + droplet.phy_itf:
+        log_string = "[DROPLET {}]: Expecting failure for RPC call.".format(
+            droplet.id)
         cmd = f'''{droplet.trn_cli_get_vpc} \'{call[1]}\''''
-        return droplet.run(cmd)[0]
+        return droplet.exec_cli_rpc(log_string, cmd, True)[0]
     elif call[0] == "load":  # We assume agent was loaded and unloaded correctly
         return 1
     else:
         logger.error(
             "[{}]: Unidentified rpc call: {}@{}".format(droplet.id, call[0], call[1]))
         return 0
+
+
+def do_check_failed_rpcs(test, droplets):
+    exit_code = 0
+    logger.info(
+        "{} Checking for unexpected failed RPC calls {}".format('='*20, '='*20))
+    for d in droplets:
+        if len(d.rpc_failures.keys()) > 0:
+            exit_code = 1
+            for cmd in d.rpc_failures.keys():
+                logger.error("[DROPLET {}]: Unexpected failed command ran: {} at {}".format(
+                    d.id, d.rpc_failures[cmd], cmd))
+            print()
+    test.assertEqual(exit_code, 0)

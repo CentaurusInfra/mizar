@@ -122,3 +122,4 @@ class test_change_switch_router(unittest.TestCase):
         logger.info(
             "{} Testing a long connection is not impacted by adding switches and routers! {}".format('='*20, '='*20))
         do_long_tcp_test(self, self.ep1, self.ep4)
+        do_check_failed_rpcs(self, self.droplets.values())

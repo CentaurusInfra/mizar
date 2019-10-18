@@ -84,3 +84,4 @@ class test_vxlan_compatability(unittest.TestCase):
         logger.info(
             "{} Testing vxlan endpoint can communicate with geneve endpoint! {}".format('='*20, '='*20))
         do_common_tests(self, self.ep_vxlan_left, self.ep_right)
+        do_check_failed_rpcs(self, self.droplets.values())

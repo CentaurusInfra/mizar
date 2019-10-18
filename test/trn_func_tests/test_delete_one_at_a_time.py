@@ -104,3 +104,4 @@ class test_delete_one_at_a_time(unittest.TestCase):
         logger.info(
             "{} Testing vpc properly deleted! {}".format('='*20, '='*20))
         do_validate_delete_test(self, list(self.droplets.values()))
+        do_check_failed_rpcs(self, self.droplets.values())

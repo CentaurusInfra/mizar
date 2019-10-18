@@ -19,7 +19,7 @@ class transit_router:
         self.id = droplet.id
         self.networks = {}
 
-    def update_net(self, net):
+    def update_net(self, net, droplet, remove_switch=False):
         """
         Calls an update_net rpc to the transit router's droplet. After
         this the transit router has an updated list of the network's
@@ -29,9 +29,10 @@ class transit_router:
         logger.info("[ROUTER {}]: update_net {}".format(self.id, net.netid))
         self.droplet.update_net(net)
 
-        # Now update the mac address of the switches
-        for s in net.transit_switches.values():
-            self.droplet.update_substrate_ep(s.droplet)
+        if remove_switch:
+            self.droplet.delete_substrate_ep(droplet)
+        else:
+            self.droplet.update_substrate_ep(droplet)
 
     def delete_net(self, net, net_switches=None):
         """

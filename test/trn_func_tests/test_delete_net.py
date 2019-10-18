@@ -109,3 +109,4 @@ class test_delete_net(unittest.TestCase):
             "{} Testing net properly deleted! {}".format('='*20, '='*20))
         do_validate_delete_test(self, [self.droplets["switch-2"], self.droplets["d3"],
                                        self.droplets["d4"], self.droplets["router-1"]])
+        do_check_failed_rpcs(self, self.droplets.values())

@@ -108,3 +108,4 @@ class test_multi_net_same_vpc(unittest.TestCase):
             "{} Testing endpoints in network 10.10.0.0/24 can communicate with endpoints in network 10.20.0.0/24 ! {}".format('='*20, '='*20))
         do_common_tests(self, self.ep1, self.ep3)
         do_common_tests(self, self.ep2, self.ep4)
+        do_check_failed_rpcs(self, self.droplets.values())

@@ -82,3 +82,4 @@ class test_switch_multi_vpc(unittest.TestCase):
         logger.info(
             "{} Testing two endpoints on a different VPC can NOT communicate! {}".format('='*20, '='*20))
         do_ping_fail_test(self, self.ep1, self.ep2)
+        do_check_failed_rpcs(self, self.droplets.values())
