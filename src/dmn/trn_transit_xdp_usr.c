@@ -49,12 +49,21 @@ int trn_user_metadata_free(struct user_metadata_t *md)
 		TRN_LOG_ERROR("bpf_get_link_xdp_id failed");
 		return 1;
 	}
+
 	if (md->prog_id == curr_prog_id)
 		bpf_set_link_xdp_fd(md->ifindex, -1, md->xdp_flags);
 	else if (!curr_prog_id)
 		TRN_LOG_WARN("couldn't find a prog id on a given interface\n");
 	else
 		TRN_LOG_WARN("program on interface changed, not removing\n");
+
+	close(md->networks_map_fd);
+	close(md->vpc_map_fd);
+	close(md->endpoints_map_fd);
+	close(md->interface_config_map_fd);
+	close(md->hosted_endpoints_iface_map_fd);
+	close(md->interfaces_map_fd);
+
 	return 0;
 }
 

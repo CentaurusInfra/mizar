@@ -46,6 +46,11 @@ int trn_agent_user_metadata_free(struct agent_user_metadata_t *md)
 	else
 		TRN_LOG_WARN("program on interface changed, not removing.");
 
+	close(md->jump_table_fd);
+	close(md->agentmetadata_map_fd);
+	close(md->endpoints_map_fd);
+	close(md->interfaces_map_fd);
+
 	return 0;
 }
 
