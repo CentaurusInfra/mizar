@@ -120,24 +120,49 @@ int trn_update_network(struct user_metadata_t *md, struct network_key_t *netkey,
 	return 0;
 }
 
+static int get_unused_itf_index(struct user_metadata_t *md)
+{
+	// Simple search for an unused index for now
+	int i;
+	for (i = 0; i < TRAN_MAX_ITF; i++) {
+		if (md->itf_idx[i] == TRAN_UNUSED_ITF_IDX)
+			return i;
+	}
+	return -1;
+}
+
 int trn_update_endpoint(struct user_metadata_t *md,
 			struct endpoint_key_t *epkey, struct endpoint_t *ep)
 {
-	int err = bpf_map_update_elem(md->endpoints_map_fd, epkey, ep, 0);
-	int eth_idx = ep->hosted_iface;
+	int err, idx;
+
+	if (ep->hosted_iface != -1) {
+		idx = get_unused_itf_index(md);
+
+		if (idx == -1) {
+			TRN_LOG_ERROR(
+				"Failed to allocate an entry for interface map.");
+			return 1;
+		}
+
+		err = bpf_map_update_elem(md->interfaces_map_fd, &idx,
+					  &ep->hosted_iface, 0);
+
+		if (err) {
+			TRN_LOG_ERROR(
+				"Failed to update interfaces map (err:%d).",
+				err);
+			return 1;
+		}
+
+		md->itf_idx[idx] = ep->hosted_iface;
+		ep->hosted_iface = idx;
+	}
+
+	err = bpf_map_update_elem(md->endpoints_map_fd, epkey, ep, 0);
 
 	if (err) {
 		TRN_LOG_ERROR("Store endpoint mapping failed (err:%d).", err);
-		return 1;
-	}
-
-	if (eth_idx == -1)
-		return 0;
-
-	err = bpf_map_update_elem(md->interfaces_map_fd, &eth_idx, &eth_idx, 0);
-
-	if (err) {
-		TRN_LOG_ERROR("Failed to update interfaces map (err:%d).", err);
 		return 1;
 	}
 
@@ -204,12 +229,27 @@ int trn_delete_network(struct user_metadata_t *md, struct network_key_t *netkey)
 int trn_delete_endpoint(struct user_metadata_t *md,
 			struct endpoint_key_t *epkey)
 {
-	int err = bpf_map_delete_elem(md->endpoints_map_fd, epkey);
+	struct endpoint_t ep;
+
+	int err = bpf_map_lookup_elem(md->endpoints_map_fd, epkey, &ep);
+
+	if (err) {
+		TRN_LOG_ERROR("Querying endpoint for delete failed (err:%d).",
+			      err);
+		return 1;
+	}
+
+	if (ep.hosted_iface != -1) {
+		md->itf_idx[ep.hosted_iface] = TRAN_UNUSED_ITF_IDX;
+	}
+
+	err = bpf_map_delete_elem(md->endpoints_map_fd, epkey);
 	if (err) {
 		TRN_LOG_ERROR("Deleting endpoint mapping failed (err:%d).",
 			      err);
 		return 1;
 	}
+
 	return 0;
 }
 
@@ -282,19 +322,30 @@ int trn_user_metadata_init(struct user_metadata_t *md, char *itf,
 	TRN_LOG_INFO("Program info; xlated: %d, jitted: %d",
 		     md->info.xlated_prog_len, md->info.jited_prog_len);
 
+	int idx = get_unused_itf_index(md);
+
+	if (idx == -1) {
+		TRN_LOG_ERROR("Failed to allocate an entry for interface map.");
+		return 1;
+	}
+
+	rc = bpf_map_update_elem(md->interfaces_map_fd, &idx,
+				 &md->eth.iface_index, 0);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failed to update interfaces map with index: %d.",
+			      md->eth.iface_index);
+		return 1;
+	}
+
+	md->itf_idx[idx] = md->eth.iface_index;
+	md->eth.iface_index = idx;
+
 	int k = 0;
 
 	rc = bpf_map_update_elem(md->interface_config_map_fd, &k, &md->eth, 0);
 	if (rc != 0) {
 		TRN_LOG_ERROR("Failed to store interface data.");
-		return 1;
-	}
-
-	rc = bpf_map_update_elem(md->interfaces_map_fd, &md->eth.iface_index,
-				 &md->eth.iface_index, 0);
-
-	if (rc != 0) {
-		TRN_LOG_ERROR("Failed to update interfaces map.");
 		return 1;
 	}
 

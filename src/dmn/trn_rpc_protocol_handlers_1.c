@@ -582,6 +582,12 @@ int *load_transit_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf, struct svc_req *rqstp)
 
 	memset(md, 0, sizeof(struct user_metadata_t));
 
+	// Set all interface index slots to unused
+	int i;
+	for (i = 0; i < TRAN_MAX_ITF; i++) {
+		md->itf_idx[i] = TRAN_UNUSED_ITF_IDX;
+	}
+
 	strcpy(md->pcapfile, xdp_intf->pcapfile);
 	md->pcapfile[255] = '\0';
 	md->xdp_flags = XDP_FLAGS_SKB_MODE;

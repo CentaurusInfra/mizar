@@ -83,7 +83,7 @@ struct bpf_map_def SEC("maps") interfaces_map = {
 	.type = BPF_MAP_TYPE_DEVMAP,
 	.key_size = sizeof(int),
 	.value_size = sizeof(int),
-	.max_entries = 256,
+	.max_entries = TRAN_MAX_ITF,
 };
 BPF_ANNOTATE_KV_PAIR(interface_map, int, int);
 

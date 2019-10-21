@@ -162,8 +162,8 @@ transit switch of that network, OW forward to the transit router. */
 
 	if (routeridx > TRAN_MAX_NROUTER - 1) {
 		bpf_debug(
-			"[Transit:%d:] DROP (BUG): hash router index is greater than maximum number of routers!",
-			__LINE__);
+			"[Transit:%d:] DROP (BUG): hash router index %u is greater than maximum number of routers %u!",
+			__LINE__, routeridx, TRAN_MAX_NROUTER);
 		return XDP_DROP;
 	}
 

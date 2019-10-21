@@ -57,6 +57,7 @@ struct user_metadata_t {
 	int prog_fd;
 	__u32 prog_id;
 	char pcapfile[256];
+	int itf_idx[TRAN_MAX_ITF];
 
 	int networks_map_fd;
 	int vpc_map_fd;
