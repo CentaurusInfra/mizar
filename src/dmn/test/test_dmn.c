@@ -27,10 +27,18 @@
 #include <setjmp.h>
 #include <cmocka.h>
 #include <string.h>
+#include <sys/resource.h>
 
 #include "trn_log.h"
 #include "dmn/trn_transitd.h"
 #include "rpcgen/trn_rpc_protocol.h"
+
+int __wrap_setrlimit(int resource, const struct rlimit *rlim)
+{
+	UNUSED(resource);
+	UNUSED(rlim);
+	return 0;
+}
 
 int __wrap_bpf_map_update_elem(void *map, void *key, void *value,
 			       unsigned long long flags)
@@ -331,6 +339,7 @@ static void do_lo_xdp_load(void)
 
 	int *rc;
 	expect_function_call(__wrap_bpf_map_update_elem);
+	expect_function_call(__wrap_bpf_map_update_elem);
 	rc = load_transit_xdp_1_svc(&xdp_intf, NULL);
 	assert_int_equal(*rc, 0);
 }
@@ -436,7 +445,7 @@ static void test_update_ep_1_svc(void **state)
 	memcpy(ep1.mac, mac, sizeof(char) * 6);
 
 	int *rc;
-	expect_function_call(__wrap_bpf_map_update_elem);
+	expect_function_calls(__wrap_bpf_map_update_elem, 2);
 	rc = update_ep_1_svc(&ep1, NULL);
 	assert_int_equal(*rc, 0);
 }
@@ -504,7 +513,7 @@ static void test_update_agent_md_1_svc(void **state)
 	memcpy(md1.eth.mac, mac_eth, sizeof(char) * 6);
 
 	int *rc;
-	expect_function_calls(__wrap_bpf_map_update_elem, 2);
+	expect_function_calls(__wrap_bpf_map_update_elem, 3);
 	rc = update_agent_md_1_svc(&md1, NULL);
 	assert_int_equal(*rc, 0);
 
@@ -975,14 +984,34 @@ static void test_delete_ep_1_svc(void **state)
 	};
 	int *rc;
 
+	uint32_t remote[] = { 0x200000a };
+	char mac[6] = { 1, 2, 3, 4, 5, 6 };
+
+	struct endpoint_t ep_val;
+	ep_val.eptype = 1;
+	ep_val.nremote_ips = 1;
+	ep_val.remote_ips[0] = remote[0];
+	ep_val.hosted_iface = 1;
+	memcpy(ep_val.mac, mac, sizeof(mac));
+
 	/* Test delete_ep_1 with valid ep_key */
+	will_return(__wrap_bpf_map_lookup_elem, &ep_val);
+	will_return(__wrap_bpf_map_lookup_elem, NULL);
+	will_return(__wrap_bpf_map_lookup_elem, NULL);
+	will_return(__wrap_bpf_map_lookup_elem, NULL);
 	will_return(__wrap_bpf_map_delete_elem, TRUE);
+	expect_function_call(__wrap_bpf_map_lookup_elem);
 	expect_function_call(__wrap_bpf_map_delete_elem);
 	rc = delete_ep_1_svc(&ep_key, NULL);
 	assert_int_equal(*rc, 0);
 
 	/* Test delete_ep_1 with invalid ep_key */
+	will_return(__wrap_bpf_map_lookup_elem, &ep_val);
+	will_return(__wrap_bpf_map_lookup_elem, NULL);
+	will_return(__wrap_bpf_map_lookup_elem, NULL);
+	will_return(__wrap_bpf_map_lookup_elem, NULL);
 	will_return(__wrap_bpf_map_delete_elem, FALSE);
+	expect_function_call(__wrap_bpf_map_lookup_elem);
 	expect_function_call(__wrap_bpf_map_delete_elem);
 	rc = delete_ep_1_svc(&ep_key, NULL);
 	assert_int_equal(*rc, RPC_TRN_ERROR);
@@ -1030,7 +1059,7 @@ static void test_delete_agent_md_1_svc(void **state)
 	struct rpc_intf_t md_key = { .interface = itf };
 
 	/* Test delete_agent_md_1 with valid md_key */
-	expect_function_call(__wrap_bpf_map_update_elem);
+	expect_function_calls(__wrap_bpf_map_update_elem, 2);
 	rc = delete_agent_md_1_svc(&md_key, NULL);
 	assert_int_equal(*rc, 0);
 

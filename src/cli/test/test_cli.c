@@ -30,11 +30,19 @@
 #include "trn_log.h"
 #include <stdio.h>
 #include <stdbool.h>
+#include <sys/resource.h>
 
 static int clnt_perror_called = 0;
 
 static int update_net_1_rc = 0;
 static int *update_net_1_rc_ptr = &update_net_1_rc;
+
+int __wrap_setrlimit(int resource, const struct rlimit *rlim)
+{
+	UNUSED(resource);
+	UNUSED(rlim);
+	return 0;
+}
 
 int *__wrap_update_vpc_1(rpc_trn_vpc_t *vpc, CLIENT *clnt)
 {
@@ -1253,17 +1261,15 @@ static void test_trn_cli_get_net_subcmd(void **state)
 				  "prefixlen": "16"
 			  }) };
 
-	char *argv2[] = { "get-net", "-i", "eth0", "-j", QUOTE({
-				  "tunnel_id": 3,
-				  "nip": "10.0.0.0",
-				  "prefixlen": "16"
-			  }) };
+	char *argv2[] = {
+		"get-net", "-i", "eth0", "-j",
+		QUOTE({ "tunnel_id": 3, "nip": "10.0.0.0", "prefixlen": "16" })
+	};
 
-	char *argv3[] = { "get-net", "-i", "eth0", "-j", QUOTE({
-				  "tunnel_id": "3",
-				  "nip": "adsfwef",
-				  "prefixlen: 16"
-			  }) };
+	char *argv3[] = {
+		"get-net", "-i", "eth0", "-j",
+		QUOTE({ "tunnel_id": "3", "nip": "adsfwef", "prefixlen: 16" })
+	};
 
 	struct rpc_trn_network_key_t exp_net_key = {
 		.interface = itf,
@@ -1633,17 +1639,15 @@ static void test_trn_cli_delete_net_subcmd(void **state)
 				  "prefixlen": "16"
 			  }) };
 
-	char *argv2[] = { "delete-net", "-i", "eth0", "-j", QUOTE({
-				  "tunnel_id": 3,
-				  "nip": "10.0.0.0",
-				  "prefixlen": "16"
-			  }) };
+	char *argv2[] = {
+		"delete-net", "-i", "eth0", "-j",
+		QUOTE({ "tunnel_id": 3, "nip": "10.0.0.0", "prefixlen": "16" })
+	};
 
-	char *argv3[] = { "delete-net", "-i", "eth0", "-j", QUOTE({
-				  "tunnel_id": "3",
-				  "nip": "adsfwef",
-				  "prefixlen: 16"
-			  }) };
+	char *argv3[] = {
+		"delete-net", "-i", "eth0", "-j",
+		QUOTE({ "tunnel_id": "3", "nip": "adsfwef", "prefixlen: 16" })
+	};
 
 	struct rpc_trn_network_key_t exp_net_key = {
 		.interface = itf,

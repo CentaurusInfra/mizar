@@ -22,6 +22,7 @@ CLI_MOCKS += -Wl,--wrap=bpf_map__unpin
 CLI_MOCKS += -Wl,--wrap=bpf_get_link_xdp_id
 CLI_MOCKS += -Wl,--wrap=if_nametoindex
 CLI_MOCKS += -Wl,--wrap=if_indextoname
+CLI_MOCKS += -Wl,--wrap=setrlimit
 
 
 test_dmn: $(dmntestobj) $(rpcgen_svc_obj)

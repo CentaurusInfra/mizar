@@ -27,6 +27,7 @@ CLI_MOCKS += -Wl,--wrap=delete_net_1
 CLI_MOCKS += -Wl,--wrap=delete_ep_1
 CLI_MOCKS += -Wl,--wrap=delete_agent_ep_1
 CLI_MOCKS += -Wl,--wrap=delete_agent_md_1
+CLI_MOCKS += -Wl,--wrap=setrlimit
 
 unittest:: test_cli
 
