@@ -77,17 +77,17 @@ This release includes:
 This release continues to build features for scenario #1 while support scenario #2:
 
 * Performance improvement.
-* CNI Plugin for Mizar.
-* Integration with Kubernetes.
+* CNI plugin for Mizar.
+* Other integration work with Kubernetes.
+* Neutron plugin for Mizar. 
 * Scaled endpoint.
-* Fast Path.
 
 ## Release 0.7 (04/30/2020)
 
 This release continues to build features for scenario #1 and #2, and adds support for scenario #3:
 
-* Neutron Plugin for Mizar. 
 * Network policy support for Kubernetes.
+* Fast Path.
 * Security group.
 * Network ACL.
 * Routing Table and Inter-VPC routing.
