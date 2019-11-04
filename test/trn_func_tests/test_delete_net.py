@@ -99,7 +99,7 @@ class test_delete_net(unittest.TestCase):
         self.ep4 = c.create_simple_endpoint(3, 20, "10.20.0.5", "d4")
 
         # Delete the network and its corresponding endpoints
-        c.delete_network(3, 20, cidr("24", "10.20.0.0"), ["switch-2"])
+        c.delete_network(3, 20)
 
     def tearDown(self):
         pass

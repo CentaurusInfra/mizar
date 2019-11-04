@@ -16,7 +16,7 @@ import json
 
 
 class droplet:
-    def __init__(self, id, droplet_type='docker', phy_itf='eth0'):
+    def __init__(self, id, droplet_type='docker', phy_itf='eth0', benchmark=False):
         """
         Models a host that runs the transit XDP program. In the
         functional test this is simply a docker container.
@@ -31,10 +31,20 @@ class droplet:
         self.rpc_deletes = {}
         self.rpc_failures = {}
         self.phy_itf = phy_itf
-        self.vpc_updates = {}  # When droplet is a switch for two different networks
+        self.benchmark = benchmark
+        # When droplet is a switch for two different networks in the same vpc
+        self.known_nets = set()
+        self.vpc_updates = {}
         self.substrate_updates = {}  # When droplet is a host for multiple objects
         self.endpoint_updates = {}  # When droplet is a switch host and ep host
         # We don't need one for net because delete_net takes nip
+
+        if benchmark:
+            self.xdp_path = "/trn_xdp/trn_transit_xdp_ebpf.o"
+            self.agent_xdp_path = "/trn_xdp/trn_agent_xdp_ebpf.o"
+        else:
+            self.xdp_path = "/trn_xdp/trn_transit_xdp_ebpf_debug.o"
+            self.agent_xdp_path = "/trn_xdp/trn_agent_xdp_ebpf_debug.o"
 
         # transitd cli commands
         self.trn_cli = f'''/trn_bin/transit'''
@@ -71,7 +81,8 @@ class droplet:
         if self.droplet_type == 'docker':
             self._create_docker_container()
             self.load_transit_xdp()
-            self.start_pcap()
+            if not self.benchmark:
+                self.start_pcap()
             return
 
         logger.error("Unsupported droplet type!")
@@ -271,7 +282,7 @@ ip netns del {ep.ns} \' ''')
         self.rpc_deletes[("load", itf)] = time.time()
         self.exec_cli_rpc(log_string, cmd, expect_fail)
 
-    def update_vpc(self, vpc, expect_fail=False):
+    def update_vpc(self, vpc, netid, expect_fail=False):
         log_string = "[DROPLET {}]: update_vpc {}".format(
             self.id, vpc.get_tunnel_id())
 
@@ -280,14 +291,10 @@ ip netns del {ep.ns} \' ''')
             "routers_ips": vpc.get_transit_routers_ips()
         }
         jsonconf = json.dumps(jsonconf)
-
-        jsonkey = {
-            "tunnel_id": vpc.get_tunnel_id(),
-        }
-        key = ("vpc " + self.phy_itf, json.dumps(jsonkey))
+        if netid not in self.known_nets:
+            self.known_nets.add(netid)
         cmd = f'''{self.trn_cli_update_vpc} \'{jsonconf}\''''
-        self.do_update_increment(
-            log_string, cmd, expect_fail, key, self.vpc_updates)
+        self.exec_cli_rpc(log_string, cmd, expect_fail)
 
     def get_vpc(self, vpc, expect_fail=False):
         log_string = "[DROPLET {}]: get_vpc {}".format(
@@ -299,7 +306,7 @@ ip netns del {ep.ns} \' ''')
         cmd = f'''{self.trn_cli_get_vpc} \'{jsonconf}\''''
         self.exec_cli_rpc(log_string, cmd, expect_fail)
 
-    def delete_vpc(self, vpc, expect_fail=False):
+    def delete_vpc(self, vpc, netid, expect_fail=False):
         log_string = "[DROPLET {}]: delete_vpc {}".format(
             self.id, vpc.get_tunnel_id())
         jsonconf = {
@@ -308,6 +315,9 @@ ip netns del {ep.ns} \' ''')
         jsonconf = json.dumps(jsonconf)
         key = ("vpc " + self.phy_itf, jsonconf)
         cmd = f'''{self.trn_cli_delete_vpc} \'{jsonconf}\''''
+        if netid in self.known_nets:
+            self.known_nets.remove(netid)
+        self.vpc_updates[key] = len(self.known_nets)
         self.do_delete_decrement(
             log_string, cmd, expect_fail, key, self.vpc_updates)
 
@@ -707,11 +717,12 @@ cp /var/log/syslog /trn_test_out/syslog_{self.ip}
         container.exec_run("/trn_bin/transitd ",
                            detach=True)
 
-        # Enable debug and tracing for the kernel
-        container.exec_run(
-            "mount -t debugfs debugfs /sys/kernel/debug")
-        container.exec_run(
-            "echo 1 > /sys/kernel/debug/tracing/tracing_on")
+        if not self.benchmark:
+            # Enable debug and tracing for the kernel
+            container.exec_run(
+                "mount -t debugfs debugfs /sys/kernel/debug")
+            container.exec_run(
+                "echo 1 > /sys/kernel/debug/tracing/tracing_on")
 
         # Enable core dumps (just in case!!)
         container.exec_run("ulimit -u")

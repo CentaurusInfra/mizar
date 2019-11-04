@@ -66,8 +66,8 @@ class test_delete_multi_endpoint_same_host(unittest.TestCase):
         self.ep_right2 = c.create_simple_endpoint(3, 1, "10.0.0.4", "right")
         self.ep_left2 = c.create_simple_endpoint(3, 1, "10.0.0.5", "left")
 
-        self.ep_left = c.delete_simple_endpoint(3, 1, "10.0.0.2", "left")
-        self.ep_right = c.delete_simple_endpoint(3, 1, "10.0.0.3", "right")
+        self.ep_left = c.delete_simple_endpoint(3, 1, "10.0.0.2")
+        self.ep_right = c.delete_simple_endpoint(3, 1, "10.0.0.3")
 
     def tearDown(self):
         pass

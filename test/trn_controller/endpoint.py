@@ -107,10 +107,13 @@ class endpoint:
         self.ready = False
 
     def unprovision(self):
-        if self.host is None:
+        if self.tuntype == 'vxn':
             return
 
-        if self.tuntype == 'vxn':
+        if self.host is None:
+            veth_allocator.getInstance().reclaim_veth(
+                self.mac, self.ns.replace(self.tuntype + '_', ''), self.veth_peer.replace(self.tuntype + '_', ''))
+            self.veth_allocated = False
             return
         else:
             self.transit_agent = None
@@ -126,9 +129,10 @@ class endpoint:
         if (self.tuntype == 'gnv' and self.host):
             if self.transit_agent is not None:
                 self.host.unload_transit_agent_xdp(self.veth_peer)
-            if self.veth_allocated:
-                veth_allocator.getInstance().reclaim_veth(
-                    self.mac, self.ns.replace(self.tuntype + '_', ''), self.veth_peer.replace(self.tuntype + '_', ''))
+        if self.veth_allocated:
+            veth_allocator.getInstance().reclaim_veth(
+                self.mac, self.ns.replace(self.tuntype + '_', ''), self.veth_peer.replace(self.tuntype + '_', ''))
+            self.veth_allocated = False
 
     def get_tunnel_id(self):
         return str(self.vni)

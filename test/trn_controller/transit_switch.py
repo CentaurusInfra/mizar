@@ -19,6 +19,7 @@ class transit_switch:
         self.ip = self.droplet.ip
         self.endpoints = {}
         self.transit_routers = {}
+        self.known_hosts = []
 
     def update_endpoint(self, ep):
         """
@@ -46,9 +47,10 @@ class transit_switch:
             "[SWITCH {}, {}]: update_scaled_endpoint {}".format(self.ip, self.id, ep.ip))
 
         self.droplet.update_ep(ep)
-        self.droplet.load_transit_xdp_pipeline_stage(CONSTANTS.ON_XDP_SCALED_EP, ep.scaled_ep_obj)
+        self.droplet.load_transit_xdp_pipeline_stage(
+            CONSTANTS.ON_XDP_SCALED_EP, ep.scaled_ep_obj)
 
-    def update_vpc(self, vpc):
+    def update_vpc(self, vpc, droplet, netid, add=True):
         """
         Calls an update_vpc rpc to the transit switch's droplet. After
         this the switch has an updated list of the VPC's transit
@@ -57,14 +59,22 @@ class transit_switch:
         """
         logger.info("[SWITCH {}, {}]: update_vpc {}".format(
             self.ip, self.id, vpc.vni))
-        self.droplet.update_vpc(vpc)
+        self.droplet.update_vpc(vpc, netid)
 
         # Now update the mac addresses of the routers' droplet
         self.transit_routers = vpc.transit_routers
-        for r in self.transit_routers.values():
-            self.droplet.update_substrate_ep(r.droplet)
+        if add:
+            for r in self.transit_routers.values():
+                if r.droplet not in self.known_hosts:
+                    self.droplet.update_substrate_ep(r.droplet)
+                    self.known_hosts.append(r.droplet)
+        # When we do an update_vpc but remove a router.
+        else:
+            if droplet in self.known_hosts:
+                self.known_hosts.remove(droplet)
+                self.droplet.delete_substrate_ep(droplet)
 
-    def delete_vpc(self, vpc):
+    def delete_vpc(self, vpc, nid):
         """
         Calls a delete_vpc rpc on the transit switch's droplet.
         Also calls delete_substrate_ep to remove the
@@ -75,9 +85,11 @@ class transit_switch:
 
         # Now delete the mac addresses of the routers' droplet
         for r in self.transit_routers.values():
-            self.droplet.delete_substrate_ep(r.droplet)
+            if r.droplet in self.known_hosts:
+                self.known_hosts.remove(r.droplet)
+                self.droplet.delete_substrate_ep(r.droplet)
 
-        self.droplet.delete_vpc(vpc)
+        self.droplet.delete_vpc(vpc, nid)
 
     def delete_endpoint(self, ep):
         """
