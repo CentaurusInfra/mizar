@@ -66,6 +66,8 @@ class veth_allocator:
             self.ns.append(ns)
             self.veth_peer.append(veth_peer)
         else:
+            logger.info(
+                "reclaiming {}, {}, {}".format(mac, ns, veth_peer))
             self.macs.insert(0, mac)
             self.ns.insert(0, ns)
             self.veth_peer.insert(0, veth_peer)

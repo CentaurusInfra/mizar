@@ -16,10 +16,11 @@ import unittest
 from time import sleep
 
 
-class test_vpc_delete_multi_net_multi_switches_routers(unittest.TestCase):
+class test_delete_vpc_change_switch_router(unittest.TestCase):
 
     def setUp(self):
-        # Testing the following multiple subnetwork scenario
+        # Testing the following multiple subnetwork scenario, while
+        # adding switchs and routers during connection
         # +------------+      +------------+        +------------+      +------------+
         # |     D1     |      |     D2     |        |     D3     |      |     D4     |
         # | +--------+ |      | +--------+ |        | +--------+ |      | +--------+ |
@@ -86,32 +87,36 @@ class test_vpc_delete_multi_net_multi_switches_routers(unittest.TestCase):
             "router-2": droplet("router-2"),
         }
 
-        c = controller(self.droplets)
+        self.c = controller(self.droplets)
 
-        c.create_vpc(3, cidr("16", "10.0.0.0"),
-                     ["router-1", "router-2", "d5"])
+        self.c.create_vpc(3, cidr("16", "10.0.0.0"), ["router-1"])
 
-        c.create_network(3, 10, cidr("24", "10.0.0.0"),
-                         ["switch-1", "d3", "d5"])
+        self.c.create_network(3, 10, cidr("24", "10.0.0.0"), ["switch-1"])
 
-        c.create_network(3, 20, cidr("24", "10.20.0.0"),
-                         ["switch-4", "d2", "d5"])
+        self.c.create_network(3, 20, cidr("24", "10.20.0.0"), ["switch-4"])
 
-        self.ep1 = c.create_simple_endpoint(3, 10, "10.0.0.2", "d1")
-        self.ep2 = c.create_simple_endpoint(3, 10, "10.0.0.3", "d2")
+        self.ep1 = self.c.create_simple_endpoint(3, 10, "10.0.0.2", "d1")
+        self.ep2 = self.c.create_simple_endpoint(3, 10, "10.0.0.3", "d2")
 
-        self.ep3 = c.create_simple_endpoint(3, 20, "10.20.0.4", "d3")
-        self.ep4 = c.create_simple_endpoint(3, 20, "10.20.0.5", "d4")
-        self.ep5 = c.create_simple_endpoint(3, 20, "10.20.0.6", "d4")
-        self.ep6 = c.create_simple_endpoint(3, 20, "10.20.0.7", "d5")
-        self.ep7 = c.create_simple_endpoint(3, 20, "10.20.0.8", "router-1")
-        self.ep8 = c.create_simple_endpoint(3, 20, "10.20.0.9", "router-2")
-        self.ep7 = c.create_simple_endpoint(3, 20, "10.20.0.10", "switch-1")
-        self.ep8 = c.create_simple_endpoint(3, 20, "10.20.0.11", "switch-4")
-        c.delete_vpc(3, cidr("16", "10.0.0.0"))
+        self.ep3 = self.c.create_simple_endpoint(3, 20, "10.20.0.4", "d3")
+        self.ep4 = self.c.create_simple_endpoint(3, 20, "10.20.0.5", "d4")
 
-    def test_delete_vpc_multi_net_multi_switches_routers(self):
+        self.c.add_router(3, "router-2")
+        self.c.add_switch(3, 10, "d3")
+        self.c.add_switch(3, 10, "d5")
+        self.c.add_switch(3, 20, "d2")
+        self.c.add_switch(3, 20, "d5")
+        self.c.add_router(3, "d5")
+        self.c.remove_switch(3, 20, "d2")
+        self.c.remove_router(3, "d5")
+
+        self.c.delete_vpc(3, cidr("16", "10.0.0.0"))
+
+    def tearDown(self):
+        pass
+
+    def test_delete_vpc_change_switch_router(self):
         logger.info(
-            "{} Testing vpc properly deleted! {}".format('='*20, '='*20))
-        do_validate_delete_test(self, list(self.droplets.values()))
+            "{} Testing delete vpc with added/removed routers and switches! {}".format('='*20, '='*20))
+        # do_validate_delete_test(self, list(self.droplets.values()))
         do_check_failed_rpcs(self, self.droplets.values())

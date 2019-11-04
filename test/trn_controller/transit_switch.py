@@ -19,6 +19,7 @@ class transit_switch:
         self.ip = self.droplet.ip
         self.endpoints = {}
         self.transit_routers = {}
+        self.known_routers = []
 
     def update_endpoint(self, ep):
         """
@@ -49,7 +50,9 @@ class transit_switch:
         # Now update the mac addresses of the routers' droplet
         self.transit_routers = vpc.transit_routers
         for r in self.transit_routers.values():
-            self.droplet.update_substrate_ep(r.droplet)
+            if r not in self.known_routers:
+                self.droplet.update_substrate_ep(r.droplet)
+                self.known_routers.append(r)
 
     def delete_vpc(self, vpc):
         """

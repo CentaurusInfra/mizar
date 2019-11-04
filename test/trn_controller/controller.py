@@ -81,7 +81,7 @@ class controller:
             "[Controller]: delete_simple_endpoint {}.{}.{}".format(vni, netid, ip))
         return self.vpcs[vni].delete_simple_endpoint(netid, ip, self.droplets[host])
 
-    def delete_network(self, vni, netid, cidr, switches):
+    def delete_network(self, vni, netid, cidr):
         """
         Deletes a network in a VPC identified by VNI.
         1. Call delete_network on that VPC
@@ -89,7 +89,7 @@ class controller:
         logger.info("[Controller]: delete_network {}.{}".format(vni, netid))
         self.vpcs[vni].delete_network(netid, cidr)
 
-    def delete_vpc(self, vni, cidr, routers):
+    def delete_vpc(self, vni, cidr):
         """
         Deletes the vpc with the unique VNI, CIDR block and optional list of
         routers.
@@ -100,10 +100,11 @@ class controller:
 
         logger.info("[Controller]: remove_vpc {}".format(vni))
         vpc = self.vpcs.pop(vni)
-        for net in list(vpc.networks.values()):
+        networks = list(vpc.networks.values())
+        for net in reversed(networks):
             vpc.delete_network(net.netid, net.cidr)
-        for r in routers:
-            self.remove_router(vni, r, vpc)
+        for r in list(vpc.transit_routers.values()):
+            self.remove_router(vni, r.id, vpc)
 
     def create_vxlan_endpoint(self, vni, netid, ip, host):
         """

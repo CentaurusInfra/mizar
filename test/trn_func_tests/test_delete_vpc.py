@@ -93,7 +93,7 @@ class test_delete_vpc(unittest.TestCase):
         self.ep4 = c.create_simple_endpoint(3, 20, "10.20.0.5", "d4")
 
         # Delete the vpc
-        c.delete_vpc(3, cidr("16", "10.0.0.0"), ["router-1"])
+        c.delete_vpc(3, cidr("16", "10.0.0.0"))
 
     def tearDown(self):
         pass

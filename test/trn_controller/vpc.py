@@ -63,7 +63,7 @@ class vpc:
         self.transit_routers[id] = transit_router(droplet)
 
         for net in self.networks.values():
-            self.transit_routers[id].update_net(net, droplet)
+            self.transit_routers[id].update_net(net)
             net.update_vpc(self)
 
     def remove_router(self, droplet):
@@ -111,12 +111,11 @@ class vpc:
         logger.info("[VPC {}]: delete_network {}".format(self.vni, netid))
         net = self.networks.pop(netid)
 
-        net.delete_gw_endpoint()
         net_switches = list(net.transit_switches.values())
         net_eps = list(net.endpoints.values())
         for switch in net_switches:
             self.remove_switch(netid, switch.droplet, net)
-        for ep in net_eps:
+        for ep in reversed(net_eps):
             net.delete_simple_endpoint(ep.ip, ep.host, net_switches)
         for router in self.transit_routers.values():
             router.delete_net(net, net_switches)
@@ -140,7 +139,7 @@ class vpc:
         self.networks[netid].add_switch(self, droplet)
 
         for r in self.transit_routers.values():
-            r.update_net(self.networks[netid], droplet)
+            r.update_net(self.networks[netid])
 
     def remove_switch(self, netid, droplet, net=None):
         """
@@ -158,7 +157,7 @@ class vpc:
         net.remove_switch(self, droplet)
 
         for r in self.transit_routers.values():
-            r.update_net(net, droplet, True)
+            r.update_net(net)
 
     def create_simple_endpoint(self, netid, ip, host):
         """

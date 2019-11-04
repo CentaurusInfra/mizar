@@ -16,7 +16,7 @@ import json
 
 
 class droplet:
-    def __init__(self, id, droplet_type='docker', phy_itf='eth0'):
+    def __init__(self, id, droplet_type='docker', phy_itf='eth0', benchmark=False):
         """
         Models a host that runs the transit XDP program. In the
         functional test this is simply a docker container.
@@ -31,10 +31,18 @@ class droplet:
         self.rpc_deletes = {}
         self.rpc_failures = {}
         self.phy_itf = phy_itf
+        self.benchmark = benchmark
         self.vpc_updates = {}  # When droplet is a switch for two different networks
         self.substrate_updates = {}  # When droplet is a host for multiple objects
         self.endpoint_updates = {}  # When droplet is a switch host and ep host
         # We don't need one for net because delete_net takes nip
+
+        if benchmark:
+            self.xdp_path = "/trn_xdp/trn_transit_xdp_ebpf.o"
+            self.agent_xdp_path = "/trn_xdp/trn_agent_xdp_ebpf.o"
+        else:
+            self.xdp_path = "/trn_xdp/trn_transit_xdp_ebpf_debug.o"
+            self.agent_xdp_path = "/trn_xdp/trn_agent_xdp_ebpf_debug.o"
 
         # transitd cli commands
         self.trn_cli = f'''/trn_bin/transit'''
@@ -58,11 +66,8 @@ class droplet:
         self.trn_cli_update_agent_ep = f'''{self.trn_cli} update-agent-ep'''
         self.trn_cli_get_agent_ep = f'''{self.trn_cli} get-agent-ep'''
         self.trn_cli_delete_agent_ep = f'''{self.trn_cli} delete-agent-ep'''
-
-        self.xdp_path = "/trn_xdp/trn_transit_xdp_ebpf_debug.o"
         self.pcap_file = "/bpffs/transit_xdp.pcap"
 
-        self.agent_xdp_path = "/trn_xdp/trn_agent_xdp_ebpf_debug.o"
         self.agent_pcap_file = "/bpffs/agent_xdp.pcap"
         self.main_bridge = 'br0'
         self.bootstrap()
@@ -71,7 +76,8 @@ class droplet:
         if self.droplet_type == 'docker':
             self._create_docker_container()
             self.load_transit_xdp()
-            self.start_pcap()
+            if not self.benchmark:
+                self.start_pcap()
             return
 
         logger.error("Unsupported droplet type!")
@@ -96,8 +102,8 @@ class droplet:
         logger.info(
             "[DROPLET {}]: unprovision_simple_endpoint {}".format(self.id, ep.ip))
 
-        self._delete_veth_pair(ep)
         self.unload_transit_agent_xdp(ep.veth_peer)
+        self._delete_veth_pair(ep)
 
     def provision_vxlan_endpoint(self, ep):
         logger.info(
@@ -653,11 +659,12 @@ cp /var/log/syslog /trn_test_out/syslog_{self.ip}
         container.exec_run("/trn_bin/transitd ",
                            detach=True)
 
-        # Enable debug and tracing for the kernel
-        container.exec_run(
-            "mount -t debugfs debugfs /sys/kernel/debug")
-        container.exec_run(
-            "echo 1 > /sys/kernel/debug/tracing/tracing_on")
+        if not self.benchmark:
+            # Enable debug and tracing for the kernel
+            container.exec_run(
+                "mount -t debugfs debugfs /sys/kernel/debug")
+            container.exec_run(
+                "echo 1 > /sys/kernel/debug/tracing/tracing_on")
 
         # Enable core dumps (just in case!!)
         container.exec_run("ulimit -u")

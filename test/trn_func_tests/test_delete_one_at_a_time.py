@@ -94,8 +94,8 @@ class test_delete_one_at_a_time(unittest.TestCase):
 
         # Delete an endpoint in subnet, delete the parent subnet, then parent VPC.
         self.ep3 = c.delete_simple_endpoint(3, 20, "10.20.0.4", "d3")
-        c.delete_network(3, 20, cidr("24", "10.20.0.0"), ["switch-2"])
-        c.delete_vpc(3, cidr("16", "10.0.0.0"), ["router-1"])
+        c.delete_network(3, 20, cidr("24", "10.20.0.0"))
+        c.delete_vpc(3, cidr("16", "10.0.0.0"))
 
     def tearDown(self):
         pass
