@@ -50,15 +50,22 @@
 
 #include "trn_datamodel.h"
 
+struct ebpf_prog_user_t {
+	int prog_fd;
+	struct bpf_object *obj;
+};
+
 struct user_metadata_t {
 	struct tunnel_iface_t eth;
 	int ifindex;
 	__u32 xdp_flags;
 	int prog_fd;
 	__u32 prog_id;
+
 	char pcapfile[256];
 	int itf_idx[TRAN_MAX_ITF];
 
+	int jmp_table_fd;
 	int networks_map_fd;
 	int vpc_map_fd;
 	int endpoints_map_fd;
@@ -66,6 +73,7 @@ struct user_metadata_t {
 	int hosted_endpoints_iface_map_fd;
 	int interfaces_map_fd;
 
+	struct bpf_map *jmp_table_map;
 	struct bpf_map *networks_map;
 	struct bpf_map *vpc_map;
 	struct bpf_map *endpoints_map;
@@ -76,6 +84,8 @@ struct user_metadata_t {
 
 	struct bpf_prog_info info;
 	struct bpf_object *obj;
+
+	struct ebpf_prog_user_t ebpf_progs[TRAN_MAX_PROG];
 };
 
 int trn_user_metadata_free(struct user_metadata_t *md);

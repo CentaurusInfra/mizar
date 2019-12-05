@@ -46,7 +46,7 @@ int trn_agent_user_metadata_free(struct agent_user_metadata_t *md)
 	else
 		TRN_LOG_WARN("program on interface changed, not removing.");
 
-	close(md->jump_table_fd);
+	close(md->jmp_table_fd);
 	close(md->agentmetadata_map_fd);
 	close(md->endpoints_map_fd);
 	close(md->interfaces_map_fd);
@@ -92,9 +92,10 @@ int trn_agent_get_agent_metadata(struct agent_user_metadata_t *umd,
 
 int trn_agent_add_prog(struct agent_user_metadata_t *umd, int prog, int prog_fd)
 {
-	int err = bpf_map_update_elem(umd->jump_table_fd, &prog, &prog_fd, 0);
+	int err = bpf_map_update_elem(umd->jmp_table_fd, &prog, &prog_fd, 0);
 	if (err) {
-		TRN_LOG_ERROR("Configuring agent metadata (err:%d).", err);
+		TRN_LOG_ERROR("Error add prog to agent jmp table (err:%d).",
+			      err);
 		return 1;
 	}
 	return 0;
@@ -140,19 +141,19 @@ int trn_agent_delete_endpoint(struct agent_user_metadata_t *umd,
 
 int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 {
-	md->jmp_table = bpf_map__next(NULL, md->obj);
-	md->agentmetadata_map = bpf_map__next(md->jmp_table, md->obj);
+	md->jmp_table_map = bpf_map__next(NULL, md->obj);
+	md->agentmetadata_map = bpf_map__next(md->jmp_table_map, md->obj);
 	md->endpoints_map = bpf_map__next(md->agentmetadata_map, md->obj);
 	md->interfaces_map = bpf_map__next(md->endpoints_map, md->obj);
 	md->xdpcap_hook_map = bpf_map__next(md->interfaces_map, md->obj);
 
-	if (!md->jmp_table || !md->agentmetadata_map ||
+	if (!md->jmp_table_map || !md->agentmetadata_map ||
 	    !md->endpoints_map | !md->xdpcap_hook_map) {
 		TRN_LOG_ERROR("Failure finding maps objects.");
 		return 1;
 	}
 
-	md->jump_table_fd = bpf_map__fd(md->jmp_table);
+	md->jmp_table_fd = bpf_map__fd(md->jmp_table_map);
 	md->agentmetadata_map_fd = bpf_map__fd(md->agentmetadata_map);
 	md->endpoints_map_fd = bpf_map__fd(md->endpoints_map);
 	md->interfaces_map_fd = bpf_map__fd(md->interfaces_map);

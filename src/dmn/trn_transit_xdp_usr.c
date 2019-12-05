@@ -69,7 +69,8 @@ int trn_user_metadata_free(struct user_metadata_t *md)
 
 int trn_bpf_maps_init(struct user_metadata_t *md)
 {
-	md->networks_map = bpf_map__next(NULL, md->obj);
+	md->jmp_table_map = bpf_map__next(NULL, md->obj);
+	md->networks_map = bpf_map__next(md->jmp_table_map, md->obj);
 	md->vpc_map = bpf_map__next(md->networks_map, md->obj);
 	md->endpoints_map = bpf_map__next(md->vpc_map, md->obj);
 	md->hosted_endpoints_iface_map =
@@ -81,11 +82,12 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 
 	if (!md->networks_map || !md->vpc_map || !md->endpoints_map ||
 	    !md->hosted_endpoints_iface_map || !md->interface_config_map ||
-	    !md->xdpcap_hook_map) {
+	    !md->xdpcap_hook_map || !md->jmp_table_map) {
 		TRN_LOG_ERROR("Failure finding maps objects.");
 		return 1;
 	}
 
+	md->jmp_table_fd = bpf_map__fd(md->jmp_table_map);
 	md->networks_map_fd = bpf_map__fd(md->networks_map);
 	md->vpc_map_fd = bpf_map__fd(md->vpc_map);
 	md->endpoints_map_fd = bpf_map__fd(md->endpoints_map);
@@ -199,6 +201,36 @@ int trn_get_endpoint(struct user_metadata_t *md, struct endpoint_key_t *epkey,
 	if (err) {
 		TRN_LOG_ERROR("Querying endpoint mapping failed (err:%d).",
 			      err);
+		return 1;
+	}
+	return 0;
+}
+
+int trn_add_prog(struct user_metadata_t *md, unsigned int prog_idx,
+		 const char *prog_path)
+{
+	int err;
+	struct ebpf_prog_user_t *prog_usr_data = &md->ebpf_progs[prog_idx];
+	struct bpf_prog_load_attr prog_load_attr = { .prog_type =
+							     BPF_PROG_TYPE_XDP,
+						     .file = prog_path };
+
+	if (prog_idx > TRAN_MAX_PROG) {
+		TRN_LOG_ERROR("Error program index is out of range.");
+		return 1;
+	}
+
+	if (bpf_prog_load_xattr(&prog_load_attr, &prog_usr_data->obj,
+				&prog_usr_data->prog_fd)) {
+		TRN_LOG_ERROR("Error loading ebpf program: %s", prog_path);
+		return 1;
+	}
+
+	/* Now add the program to jump table */
+	err = bpf_map_update_elem(md->jmp_table_fd, &prog_idx,
+				  &prog_usr_data->prog_fd, 0);
+	if (err) {
+		TRN_LOG_ERROR("Error add prog to trn jmp table (err:%d).", err);
 		return 1;
 	}
 	return 0;
@@ -318,9 +350,6 @@ int trn_user_metadata_init(struct user_metadata_t *md, char *itf,
 		return rc;
 	}
 	md->prog_id = md->info.id;
-
-	TRN_LOG_INFO("Program info; xlated: %d, jitted: %d",
-		     md->info.xlated_prog_len, md->info.jited_prog_len);
 
 	int idx = get_unused_itf_index(md);
 

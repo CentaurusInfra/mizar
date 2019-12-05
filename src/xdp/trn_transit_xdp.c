@@ -523,20 +523,32 @@ int _transit(struct xdp_md *ctx)
 	if (action == XDP_TX)
 		action = bpf_redirect_map(&interfaces_map, pkt.itf_idx, 0);
 
-	if (action == XDP_PASS)
+	if (action == XDP_PASS) {
+		__u32 key = XDP_PASS_PROC;
+		bpf_tail_call(pkt.xdp, &jmp_table, key);
 		return xdpcap_exit(ctx, &xdpcap_hook, XDP_PASS);
+	}
 
-	if (action == XDP_DROP)
+	if (action == XDP_DROP) {
+		__u32 key = XDP_DROP_PROC;
+		bpf_tail_call(pkt.xdp, &jmp_table, key);
 		return xdpcap_exit(ctx, &xdpcap_hook, XDP_DROP);
+	}
 
-	if (action == XDP_TX)
+	if (action == XDP_TX) {
+		__u32 key = XDP_TX_PROC;
+		bpf_tail_call(pkt.xdp, &jmp_table, key);
 		return xdpcap_exit(ctx, &xdpcap_hook, XDP_TX);
+	}
 
 	if (action == XDP_ABORTED)
 		return xdpcap_exit(ctx, &xdpcap_hook, XDP_ABORTED);
 
-	if (action == XDP_REDIRECT)
+	if (action == XDP_REDIRECT) {
+		__u32 key = XDP_REDIRECT_PROC;
+		bpf_tail_call(pkt.xdp, &jmp_table, key);
 		return xdpcap_exit(ctx, &xdpcap_hook, XDP_REDIRECT);
+	}
 
 	return xdpcap_exit(ctx, &xdpcap_hook, XDP_PASS);
 }

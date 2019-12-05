@@ -34,6 +34,14 @@
 #define MAX_EP 65537
 #define MAX_VPC 8192
 
+struct bpf_map_def SEC("maps") jmp_table = {
+	.type = BPF_MAP_TYPE_PROG_ARRAY,
+	.key_size = sizeof(__u32),
+	.value_size = sizeof(__u32),
+	.max_entries = TRAN_MAX_PROG,
+};
+BPF_ANNOTATE_KV_PAIR(jmp_table, __u32, __u32);
+
 struct bpf_map_def SEC("maps") networks_map = {
 	.type = BPF_MAP_TYPE_LPM_TRIE,
 	.key_size = sizeof(struct network_key_t),

@@ -59,12 +59,12 @@ struct agent_user_metadata_t {
 	__u32 prog_id;
 	char pcapfile[256];
 
-	int jump_table_fd;
+	int jmp_table_fd;
 	int agentmetadata_map_fd;
 	int endpoints_map_fd;
 	int interfaces_map_fd;
 
-	struct bpf_map *jmp_table;
+	struct bpf_map *jmp_table_map;
 	struct bpf_map *agentmetadata_map;
 	struct bpf_map *endpoints_map;
 	struct bpf_map *interfaces_map;
