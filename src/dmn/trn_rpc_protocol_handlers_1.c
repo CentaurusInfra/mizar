@@ -1116,3 +1116,27 @@ error:
 	result.interface = "";
 	return &result;
 }
+
+int *load_transit_xdp_pipeline_stage_1_svc(rpc_trn_ebpf_prog_t *argp,
+					   struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	UNUSED(argp);
+	static int result;
+
+	/* insert server code here */
+
+	return &result;
+}
+
+int *unload_transit_xdp_pipeline_stage_1_svc(rpc_trn_ebpf_prog_t *argp,
+					     struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	UNUSED(argp);
+	static int result;
+
+	/* insert server code here */
+
+	return &result;
+}
