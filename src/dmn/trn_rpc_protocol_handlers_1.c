@@ -1125,6 +1125,8 @@ int *load_transit_xdp_pipeline_stage_1_svc(rpc_trn_ebpf_prog_t *argp,
 	static int result;
 
 	/* insert server code here */
+	result = RPC_TRN_NOT_IMPLEMENTED;
+	TRN_LOG_ERROR("load_transit_xdp_pipeline_stage_1_svc not implemented.");
 
 	return &result;
 }
@@ -1137,6 +1139,9 @@ int *unload_transit_xdp_pipeline_stage_1_svc(rpc_trn_ebpf_prog_t *argp,
 	static int result;
 
 	/* insert server code here */
+	result = RPC_TRN_NOT_IMPLEMENTED;
+	TRN_LOG_ERROR(
+		"unload_transit_xdp_pipeline_stage_1_svc not implemented.");
 
 	return &result;
 }

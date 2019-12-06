@@ -49,6 +49,7 @@ static const struct cmd {
 	{ "delete-ep", trn_cli_delete_ep_subcmd },
 	{ "delete-agent-ep", trn_cli_delete_agent_ep_subcmd },
 	{ "delete-agent-metadata", trn_cli_delete_agent_md_subcmd },
+	{ "load-pipeline-stage", trn_cli_load_pipeline_stage_subcmd },
 	{ 0 },
 };
 
