@@ -56,7 +56,8 @@ int _transit_redirect_proc(struct xdp_md *ctx)
 	int map_idx = 0;
 
 	void *networks_map, *vpc_map, *endpoints_map,
-		*hosted_endpoints_iface_map, *interface_config_map;
+		*hosted_endpoints_iface_map, *interface_config_map,
+		*interfaces_map;
 
 	networks_map = bpf_map_lookup_elem(&networks_map_ref, &map_idx);
 	if (!networks_map) {

@@ -38,6 +38,7 @@
 int trn_user_metadata_free(struct user_metadata_t *md)
 {
 	__u32 curr_prog_id = 0;
+	int i;
 
 	if (bpf_map__unpin(md->xdpcap_hook_map, md->pcapfile)) {
 		TRN_LOG_ERROR("Failed to unpin the pcap map file %s.",
@@ -57,12 +58,13 @@ int trn_user_metadata_free(struct user_metadata_t *md)
 	else
 		TRN_LOG_WARN("program on interface changed, not removing\n");
 
-	close(md->networks_map_fd);
-	close(md->vpc_map_fd);
-	close(md->endpoints_map_fd);
-	close(md->interface_config_map_fd);
-	close(md->hosted_endpoints_iface_map_fd);
-	close(md->interfaces_map_fd);
+	for (i = 0; i < TRAN_MAX_PROG; i++) {
+		if (!IS_ERR_OR_NULL(md->ebpf_progs[i].obj)) {
+			bpf_object__close(md->ebpf_progs[i].obj);
+		}
+	}
+
+	bpf_object__close(md->obj);
 
 	return 0;
 }
