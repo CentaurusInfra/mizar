@@ -49,7 +49,7 @@ int _version SEC("version") = 1;
 SEC("transit_drop_proc")
 int _transit_drop_proc(struct xdp_md *ctx)
 {
-	/* A simple program for now, no shared state */
+	/* A simple program for now, no shared state, and may be invoked on XDP_DROP */
 	bpf_debug("[Transit:%d:] drop PROC\n", __LINE__);
 	return XDP_DROP;
 }

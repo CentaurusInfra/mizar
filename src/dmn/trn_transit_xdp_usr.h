@@ -50,9 +50,25 @@
 
 #include "trn_datamodel.h"
 
-struct ebpf_prog_user_t {
+struct ebpf_prog_stage_t {
 	int prog_fd;
 	struct bpf_object *obj;
+
+	int networks_map_ref_fd;
+	int vpc_map_ref_fd;
+	int endpoints_map_ref_fd;
+	int interface_config_map_ref_fd;
+	int hosted_endpoints_iface_map_ref_fd;
+	int interfaces_map_ref_fd;
+	int xdpcap_hook_ref_fd;
+
+	struct bpf_map *networks_map_ref;
+	struct bpf_map *vpc_map_ref;
+	struct bpf_map *endpoints_map_ref;
+	struct bpf_map *hosted_endpoints_iface_map_ref;
+	struct bpf_map *interface_config_map_ref;
+	struct bpf_map *interfaces_map_ref;
+	struct bpf_map *xdpcap_hook_ref;
 };
 
 struct user_metadata_t {
@@ -85,7 +101,8 @@ struct user_metadata_t {
 	struct bpf_prog_info info;
 	struct bpf_object *obj;
 
-	struct ebpf_prog_user_t ebpf_progs[TRAN_MAX_PROG];
+	/* Array of programs at different stages. Currently supporting only one extra tail-call */
+	struct ebpf_prog_stage_t ebpf_progs[TRAN_MAX_PROG];
 };
 
 int trn_user_metadata_free(struct user_metadata_t *md);

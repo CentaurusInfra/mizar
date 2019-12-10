@@ -31,7 +31,7 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <linux/if.h>
-
+#include "extern/linux/err.h"
 #include "trn_transit_xdp_usr.h"
 #include "trn_log.h"
 
@@ -206,34 +206,170 @@ int trn_get_endpoint(struct user_metadata_t *md, struct endpoint_key_t *epkey,
 	return 0;
 }
 
+static int _trn_set_inner_map(struct ebpf_prog_stage_t *stage,
+			      struct bpf_map **map, const char *outer_map_name,
+			      int inner_map_fd)
+{
+	int err;
+	*map = bpf_object__find_map_by_name(stage->obj, outer_map_name);
+
+	if (!*map) {
+		TRN_LOG_ERROR("Failed to find map %s\n", outer_map_name);
+		return 1;
+	}
+
+	err = bpf_map__set_inner_map_fd(*map, inner_map_fd);
+	if (err) {
+		TRN_LOG_ERROR(
+			"Failed to set inner_map_fd for array of maps %s\n",
+			outer_map_name);
+		return 1;
+	}
+
+	TRN_LOG_INFO("_trn_set_inner_map %s, fd:%d\n", outer_map_name,
+		     inner_map_fd);
+	return 0;
+}
+
+static int _trn_update_inner_map_fd(const char *outer_map_name,
+				    struct bpf_map *outer_map,
+				    int *outer_map_fd, int inner_map_fd)
+{
+	int pos = 0;
+	*outer_map_fd = bpf_map__fd(outer_map);
+	int err = bpf_map_update_elem(*outer_map_fd, &pos, &inner_map_fd, 0);
+	TRN_LOG_INFO("_trn_update_inner_map_fd %s, outer_fd: %d, inner_fd:%d\n",
+		     outer_map_name, *outer_map_fd, inner_map_fd);
+	if (err) {
+		TRN_LOG_ERROR(
+			"Failed to update array map of maps outer_fd %d, inner_fd %d\n",
+			*outer_map_fd, inner_map_fd);
+		return 1;
+	}
+
+	return 0;
+}
+
 int trn_add_prog(struct user_metadata_t *md, unsigned int prog_idx,
 		 const char *prog_path)
 {
+	struct ebpf_prog_stage_t *stage = &md->ebpf_progs[prog_idx];
+	struct bpf_program *prog, *first_prog = NULL;
 	int err;
-	struct ebpf_prog_user_t *prog_usr_data = &md->ebpf_progs[prog_idx];
-	struct bpf_prog_load_attr prog_load_attr = { .prog_type =
-							     BPF_PROG_TYPE_XDP,
-						     .file = prog_path };
 
-	if (prog_idx > TRAN_MAX_PROG) {
-		TRN_LOG_ERROR("Error program index is out of range.");
+	stage->obj = bpf_object__open(prog_path);
+
+	if (IS_ERR_OR_NULL(stage->obj)) {
+		TRN_LOG_ERROR("Error openning bpf file: %s\n", prog_path);
 		return 1;
 	}
 
-	if (bpf_prog_load_xattr(&prog_load_attr, &prog_usr_data->obj,
-				&prog_usr_data->prog_fd)) {
-		TRN_LOG_ERROR("Error loading ebpf program: %s", prog_path);
-		return 1;
+	if (_trn_set_inner_map(stage, &stage->networks_map_ref,
+			       "networks_map_ref", md->networks_map_fd)) {
+		stage->networks_map_ref = NULL;
+		TRN_LOG_INFO("networks_map is not used by %s\n", prog_path);
 	}
+
+	if (_trn_set_inner_map(stage, &stage->vpc_map_ref, "vpc_map_ref",
+			       md->vpc_map_fd)) {
+		stage->vpc_map_ref = NULL;
+		TRN_LOG_INFO("vpc_map is not used by %s\n", prog_path);
+	}
+
+	if (_trn_set_inner_map(stage, &stage->endpoints_map_ref,
+			       "endpoints_map_ref", md->endpoints_map_fd)) {
+		stage->endpoints_map_ref = NULL;
+		TRN_LOG_INFO("endpoints_map is not used by %s\n", prog_path);
+	}
+
+	if (_trn_set_inner_map(stage, &stage->hosted_endpoints_iface_map_ref,
+			       "hosted_endpoints_iface_map_ref",
+			       md->hosted_endpoints_iface_map_fd)) {
+		stage->hosted_endpoints_iface_map_ref = NULL;
+		TRN_LOG_INFO("hosted_endpoints_iface_map is not used by %s\n",
+			     prog_path);
+	}
+
+	if (_trn_set_inner_map(stage, &stage->interface_config_map_ref,
+			       "interface_config_map_ref",
+			       md->interface_config_map_fd)) {
+		stage->interface_config_map_ref = NULL;
+		TRN_LOG_INFO("interface_config_map is not used by %s\n",
+			     prog_path);
+	}
+
+	if (_trn_set_inner_map(stage, &stage->interfaces_map_ref,
+			       "interfaces_map_ref", md->interfaces_map_fd)) {
+		stage->interfaces_map_ref = NULL;
+		TRN_LOG_INFO("interfaces_map is not used by %s\n", prog_path);
+	}
+
+	/* Only one prog is supported */
+	bpf_object__for_each_program(prog, stage->obj)
+	{
+		bpf_program__set_xdp(prog);
+		if (!first_prog)
+			first_prog = prog;
+	}
+
+	bpf_object__load(stage->obj);
+
+	if (!first_prog) {
+		TRN_LOG_ERROR("Failed to find XDP program in object file\n");
+		goto error;
+	}
+	stage->prog_fd = bpf_program__fd(first_prog);
 
 	/* Now add the program to jump table */
-	err = bpf_map_update_elem(md->jmp_table_fd, &prog_idx,
-				  &prog_usr_data->prog_fd, 0);
+	err = bpf_map_update_elem(md->jmp_table_fd, &prog_idx, &stage->prog_fd,
+				  0);
 	if (err) {
 		TRN_LOG_ERROR("Error add prog to trn jmp table (err:%d).", err);
-		return 1;
+		goto error;
 	}
+
+	if (stage->networks_map_ref &&
+	    _trn_update_inner_map_fd(
+		    "networks_map_ref", stage->networks_map_ref,
+		    &stage->networks_map_ref_fd, md->networks_map_fd))
+		goto error;
+
+	if (stage->vpc_map_ref &&
+	    _trn_update_inner_map_fd("vpc_map_ref", stage->vpc_map_ref,
+				     &stage->vpc_map_ref_fd, md->vpc_map_fd))
+		goto error;
+
+	if (stage->endpoints_map_ref &&
+	    _trn_update_inner_map_fd(
+		    "endpoints_map_ref", stage->endpoints_map_ref,
+		    &stage->endpoints_map_ref_fd, md->endpoints_map_fd))
+		goto error;
+
+	if (stage->hosted_endpoints_iface_map_ref &&
+	    _trn_update_inner_map_fd("hosted_endpoints_iface_map_ref",
+				     stage->hosted_endpoints_iface_map_ref,
+				     &stage->hosted_endpoints_iface_map_ref_fd,
+				     md->hosted_endpoints_iface_map_fd))
+		goto error;
+
+	if (stage->interface_config_map_ref &&
+	    _trn_update_inner_map_fd("interface_config_map_ref",
+				     stage->interface_config_map_ref,
+				     &stage->interface_config_map_ref_fd,
+				     md->interface_config_map_fd))
+		goto error;
+
+	if (stage->interfaces_map_ref &&
+	    _trn_update_inner_map_fd(
+		    "interfaces_map_ref", stage->interfaces_map_ref,
+		    &stage->interfaces_map_ref_fd, md->interfaces_map_fd))
+		goto error;
+
 	return 0;
+error:
+	TRN_LOG_ERROR("Error adding prog %s to stage.\n", prog_path);
+	bpf_object__close(stage->obj);
+	return 1;
 }
 
 int trn_get_vpc(struct user_metadata_t *md, struct vpc_key_t *vpckey,

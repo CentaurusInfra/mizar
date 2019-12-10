@@ -49,7 +49,7 @@ int _version SEC("version") = 1;
 SEC("transit_tx_proc")
 int _transit_tx_proc(struct xdp_md *ctx)
 {
-	/* A simple program for now, no shared state */
+	/* A simple program for now, no shared state, and may be invoked on XDP_TX */
 	bpf_debug("[Transit:%d:] tx PROC\n", __LINE__);
 	return XDP_TX;
 }
