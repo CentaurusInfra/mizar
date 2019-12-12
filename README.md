@@ -17,5 +17,5 @@ The following diagram illustrates Mizar's high level architecture.
 Learn more about Mizar:
 - [Wiki](https://github.com/futurewei-cloud/Mizar/wiki)
 - [Getting Started](https://github.com/futurewei-cloud/Mizar/wiki)
-- [Contributing](/CONTRIBUTING.md)
+- [Contributing](https://github.com/futurewei-cloud/mizar/wiki/Contributing)
 
