@@ -139,6 +139,12 @@ struct rpc_trn_ebpf_prog_t {
        string xdp_path<256>;
 };
 
+/* Defines an XDP program at stage */
+struct rpc_trn_ebpf_prog_stage_t {
+       string interface<20>;
+       rpc_trn_pipeline_stage stage;
+};
+
 /*----- Protocol. -----*/
 
 program RPC_TRANSIT_REMOTE_PROTOCOL {
@@ -168,7 +174,7 @@ program RPC_TRANSIT_REMOTE_PROTOCOL {
                 int UNLOAD_TRANSIT_AGENT_XDP(rpc_intf_t) = 19;
 
                 int LOAD_TRANSIT_XDP_PIPELINE_STAGE(rpc_trn_ebpf_prog_t) = 20;
-                int UNLOAD_TRANSIT_XDP_PIPELINE_STAGE(rpc_trn_ebpf_prog_t) = 21;
+                int UNLOAD_TRANSIT_XDP_PIPELINE_STAGE(rpc_trn_ebpf_prog_stage_t) = 21;
           } = 1;
 
 } =  0x20009051;

@@ -69,6 +69,8 @@ int trn_cli_parse_tun_intf(const cJSON *jsonobj,
 int trn_cli_parse_agent_md(const cJSON *jsonfile,
 			   struct rpc_trn_agent_metadata_t *agent_md);
 int trn_cli_parse_ebpf_prog(const cJSON *jsonobj, rpc_trn_ebpf_prog_t *prog);
+int trn_cli_parse_ebpf_prog_stage(const cJSON *jsonobj,
+				  rpc_trn_ebpf_prog_stage_t *stage);
 
 int trn_cli_update_vpc_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_update_net_subcmd(CLIENT *clnt, int argc, char *argv[]);
@@ -92,6 +94,7 @@ int trn_cli_delete_agent_ep_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_delete_agent_md_subcmd(CLIENT *clnt, int argc, char *argv[]);
 
 int trn_cli_load_pipeline_stage_subcmd(CLIENT *clnt, int argc, char *argv[]);
+int trn_cli_unload_pipeline_stage_subcmd(CLIENT *clnt, int argc, char *argv[]);
 
 void dump_vpc(struct rpc_trn_vpc_t *vpc);
 void dump_net(struct rpc_trn_network_t *net);

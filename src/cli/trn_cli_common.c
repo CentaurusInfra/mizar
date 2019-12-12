@@ -487,3 +487,31 @@ int trn_cli_parse_ebpf_prog(const cJSON *jsonobj, rpc_trn_ebpf_prog_t *prog)
 	}
 	return 0;
 }
+
+int trn_cli_parse_ebpf_prog_stage(const cJSON *jsonobj,
+				  rpc_trn_ebpf_prog_stage_t *prog_stage)
+{
+	cJSON *stage = cJSON_GetObjectItem(jsonobj, "stage");
+
+	if (stage == NULL) {
+		print_err("Error missing pipeline stage.\n");
+		return -EINVAL;
+	} else if (cJSON_IsString(stage)) {
+		const char *stage_str = stage->valuestring;
+
+		if (strcmp(stage_str, "ON_XDP_TX") == 0) {
+			prog_stage->stage = ON_XDP_TX;
+		} else if (strcmp(stage_str, "ON_XDP_PASS") == 0) {
+			prog_stage->stage = ON_XDP_PASS;
+		} else if (strcmp(stage_str, "ON_XDP_REDIRECT") == 0) {
+			prog_stage->stage = ON_XDP_REDIRECT;
+		} else if (strcmp(stage_str, "ON_XDP_DROP") == 0) {
+			prog_stage->stage = ON_XDP_DROP;
+		} else {
+			print_err("Unsupported pipeline stage %s.\n",
+				  stage_str);
+			return -EINVAL;
+		}
+	}
+	return 0;
+}

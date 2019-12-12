@@ -139,3 +139,8 @@ int trn_user_metadata_init(struct user_metadata_t *md, char *itf,
 			   char *kern_path, int xdp_flags);
 
 uint32_t trn_get_interface_ipv4(int itf_idx);
+
+int trn_add_prog(struct user_metadata_t *md, unsigned int prog_idx,
+		 const char *prog_path);
+
+int trn_remove_prog(struct user_metadata_t *md, unsigned int prog_idx);

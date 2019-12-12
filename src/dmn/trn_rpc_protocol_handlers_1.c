@@ -1121,27 +1121,90 @@ int *load_transit_xdp_pipeline_stage_1_svc(rpc_trn_ebpf_prog_t *argp,
 					   struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	UNUSED(argp);
+
 	static int result;
+	int rc;
+	struct user_metadata_t *md;
+	char *prog_path = argp->xdp_path;
+	unsigned int prog_idx = argp->stage;
 
-	/* insert server code here */
-	result = RPC_TRN_NOT_IMPLEMENTED;
-	TRN_LOG_ERROR("load_transit_xdp_pipeline_stage_1_svc not implemented.");
+	switch (prog_idx) {
+	case ON_XDP_TX:
+	case ON_XDP_PASS:
+	case ON_XDP_REDIRECT:
+	case ON_XDP_DROP:
+		break;
+	default:
+		TRN_LOG_ERROR("Unsupported program stage %s", argp->interface);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
 
+	md = trn_itf_table_find(argp->interface);
+
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s",
+			      argp->interface);
+		goto error;
+	}
+
+	rc = trn_add_prog(md, prog_idx, prog_path);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failed to insert XDP stage %d for interface %s",
+			      prog_idx, argp->interface);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	result = 0;
+	return &result;
+
+error:
 	return &result;
 }
 
-int *unload_transit_xdp_pipeline_stage_1_svc(rpc_trn_ebpf_prog_t *argp,
+int *unload_transit_xdp_pipeline_stage_1_svc(rpc_trn_ebpf_prog_stage_t *argp,
 					     struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	UNUSED(argp);
 	static int result;
+	int rc;
+	struct user_metadata_t *md;
+	unsigned int prog_idx = argp->stage;
 
-	/* insert server code here */
-	result = RPC_TRN_NOT_IMPLEMENTED;
-	TRN_LOG_ERROR(
-		"unload_transit_xdp_pipeline_stage_1_svc not implemented.");
+	switch (prog_idx) {
+	case ON_XDP_TX:
+	case ON_XDP_PASS:
+	case ON_XDP_REDIRECT:
+	case ON_XDP_DROP:
+		break;
+	default:
+		TRN_LOG_ERROR("Unsupported program stage %s", argp->interface);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
 
+	md = trn_itf_table_find(argp->interface);
+
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s",
+			      argp->interface);
+		goto error;
+	}
+
+	rc = trn_remove_prog(md, prog_idx);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failed to remove XDP stage %d for interface %s",
+			      prog_idx, argp->interface);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	result = 0;
+	return &result;
+
+error:
 	return &result;
 }

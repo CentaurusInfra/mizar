@@ -374,6 +374,17 @@ error:
 	return 1;
 }
 
+int trn_remove_prog(struct user_metadata_t *md, unsigned int prog_idx)
+{
+	int err;
+	err = bpf_map_delete_elem(md->jmp_table_fd, &prog_idx);
+	if (err) {
+		TRN_LOG_ERROR("Error add prog to trn jmp table (err:%d).", err);
+	}
+	bpf_object__close(md->ebpf_progs[prog_idx].obj);
+	return 0;
+}
+
 int trn_get_vpc(struct user_metadata_t *md, struct vpc_key_t *vpckey,
 		struct vpc_t *vpc)
 {
