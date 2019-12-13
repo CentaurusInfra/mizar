@@ -1133,6 +1133,7 @@ int *load_transit_xdp_pipeline_stage_1_svc(rpc_trn_ebpf_prog_t *argp,
 	case ON_XDP_PASS:
 	case ON_XDP_REDIRECT:
 	case ON_XDP_DROP:
+	case ON_XDP_SCALED_EP:
 		break;
 	default:
 		TRN_LOG_ERROR("Unsupported program stage %s", argp->interface);
@@ -1178,6 +1179,7 @@ int *unload_transit_xdp_pipeline_stage_1_svc(rpc_trn_ebpf_prog_stage_t *argp,
 	case ON_XDP_PASS:
 	case ON_XDP_REDIRECT:
 	case ON_XDP_DROP:
+	case ON_XDP_SCALED_EP:
 		break;
 	default:
 		TRN_LOG_ERROR("Unsupported program stage %s", argp->interface);

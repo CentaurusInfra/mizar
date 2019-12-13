@@ -225,6 +225,18 @@ static __inline int trn_switch_handle_pkt(struct transit_packet *pkt,
 		return trn_decapsulate_and_redirect(pkt, ep->hosted_iface);
 	}
 
+	if (ep->eptype == TRAN_SCALED_EP) {
+		bpf_debug(
+			"[Transit:%d:] This is a scaled endpoint, the transit switch will handle it!\n",
+			__LINE__);
+		__u32 key = XDP_SCALED_EP_PROC;
+		bpf_tail_call(pkt->xdp, &jmp_table, key);
+		bpf_debug(
+			"[Transit:%d:] DROP (BUG): Scaled endpoint stage is not loaded!\n",
+			__LINE__);
+		return XDP_DROP;
+	}
+
 	if (ep->nremote_ips == 0) {
 		bpf_debug(
 			"[Transit:%d:] DROP (BUG): Misconfigured endpoint with zero remote_ips!\n",

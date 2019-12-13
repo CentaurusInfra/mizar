@@ -39,16 +39,20 @@
 
 #define TRAN_SUBSTRT_EP 0
 #define TRAN_SIMPLE_EP 1
+#define TRAN_SCALED_EP 2
 
 #define TRAN_MAX_PROG 100
 /* XDP programs keys in transit agent */
 #define XDP_TRANSIT 0
 
 /* XDP programs keys in transit XDP */
-#define XDP_TX_PROC 0
-#define XDP_PASS_PROC 1
-#define XDP_REDIRECT_PROC 2
-#define XDP_DROP_PROC 3
+enum trn_xdp_stage_t {
+	XDP_TX_PROC = 0,
+	XDP_PASS_PROC,
+	XDP_REDIRECT_PROC,
+	XDP_DROP_PROC,
+	XDP_SCALED_EP_PROC
+};
 
 struct endpoint_key_t {
 	__u32 tunip[3];

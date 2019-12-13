@@ -119,16 +119,12 @@ struct rpc_trn_agent_metadata_t {
        rpc_trn_network_t net;
 };
 
-#define XDP_TX_PROC 0
-#define XDP_PASS_PROC 1
-#define XDP_REDIRECT_PROC 2
-#define XDP_DROP_PROC 3
-
 enum rpc_trn_pipeline_stage {
        ON_XDP_TX       = 0,
        ON_XDP_PASS     = 1,
        ON_XDP_REDIRECT = 2,
-       ON_XDP_DROP     = 3
+       ON_XDP_DROP     = 3,
+       ON_XDP_SCALED_EP = 4
        /* add stages */
 };
 

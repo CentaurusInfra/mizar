@@ -479,6 +479,8 @@ int trn_cli_parse_ebpf_prog(const cJSON *jsonobj, rpc_trn_ebpf_prog_t *prog)
 			prog->stage = ON_XDP_REDIRECT;
 		} else if (strcmp(stage_str, "ON_XDP_DROP") == 0) {
 			prog->stage = ON_XDP_DROP;
+		} else if (strcmp(stage_str, "ON_XDP_SCALED_EP") == 0) {
+			prog->stage = ON_XDP_SCALED_EP;
 		} else {
 			print_err("Unsupported pipeline stage %s.\n",
 				  stage_str);
@@ -507,6 +509,8 @@ int trn_cli_parse_ebpf_prog_stage(const cJSON *jsonobj,
 			prog_stage->stage = ON_XDP_REDIRECT;
 		} else if (strcmp(stage_str, "ON_XDP_DROP") == 0) {
 			prog_stage->stage = ON_XDP_DROP;
+		} else if (strcmp(stage_str, "ON_XDP_SCALED_EP") == 0) {
+			prog_stage->stage = ON_XDP_SCALED_EP;
 		} else {
 			print_err("Unsupported pipeline stage %s.\n",
 				  stage_str);
