@@ -88,6 +88,8 @@ struct user_metadata_t {
 	int interface_config_map_fd;
 	int hosted_endpoints_iface_map_fd;
 	int interfaces_map_fd;
+	int in_flow_mod_cache_fd;
+	int ep_remote_cache_fd;
 
 	struct bpf_map *jmp_table_map;
 	struct bpf_map *networks_map;
@@ -96,6 +98,8 @@ struct user_metadata_t {
 	struct bpf_map *hosted_endpoints_iface_map;
 	struct bpf_map *interface_config_map;
 	struct bpf_map *interfaces_map;
+	struct bpf_map *in_flow_mod_cache;
+	struct bpf_map *ep_remote_cache;
 	struct bpf_map *xdpcap_hook_map;
 
 	struct bpf_prog_info info;

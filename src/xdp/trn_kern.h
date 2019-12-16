@@ -124,7 +124,7 @@ struct transit_packet {
 	__u32 agent_ep_ipv4;
 
 	// TODO: Inner UDP or TCP
-};
+} __attribute__((packed));
 
 __ALWAYS_INLINE__
 static inline __u32 trn_get_inner_packet_hash(struct transit_packet *pkt)
