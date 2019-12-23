@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: transitd
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      job: transitd
+  template:
+    metadata:
+      labels:
+        job: transitd
+    spec:
+      hostPID: true
+      restartPolicy: Always
+      containers:
+      - image: phudtran/mizar:transitd
+        name: transitd
+        securityContext:
+          privileged: true

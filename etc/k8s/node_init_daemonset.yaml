@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: init
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      job: init
+  template:
+    metadata:
+      labels:
+        job: init
+    spec:
+      hostPID: true
+      restartPolicy: Always
+      containers:
+      - image: phudtran/mizar:node_init
+        name: init
+        securityContext:
+          privileged: true
