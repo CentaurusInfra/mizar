@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: load-transit-xdp
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      job: load-transit-xdp
+  template:
+    metadata:
+      labels:
+        job: load-transit-xdp
+    spec:
+      hostPID: true
+      restartPolicy: Always
+      containers:
+      - image: phudtran/mizar:load-transit-xdp
+        name: load-transit-xdp
+        securityContext:
+          privileged: true
