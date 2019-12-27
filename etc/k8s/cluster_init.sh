@@ -3,14 +3,15 @@
 set -euo pipefail
 
 function main() {
-    t=120
+    timeout=600
+
     # Initial setup for all nodes.
-    run_job node-init-daemonset.yaml node-init $t
+    run_job node-init-daemonset.yaml node-init $timeout
     # Start transitd on all nodes.
     kubectl apply -f transitd-daemonset.yaml
-    validate $running transitd-daemonset.yaml transitd $t
+    validate $running transitd-daemonset.yaml transitd $timeout
     # Load transit xdp program on main interface of all nodes.
-    run_job load-transit-xdp-daemonset.yaml load-transit-xdp $t
+    run_job load-transit-xdp-daemonset.yaml load-transit-xdp $timeout
 }
 
 function run_job() {
@@ -31,9 +32,9 @@ function validate() {
         echo -n "Waiting for pod:$POD"
         while [[ $SECONDS -lt $end ]]; do
             if [[ $1 == "running" ]]; then
-                check_running $POD
+                check_running $POD || break
             else
-                check_done $POD
+                check_done $POD || break
             fi
         done
         echo
@@ -53,19 +54,21 @@ function validate() {
 
 function check_done() {
     if [[ $(kubectl logs $1 --tail 1) == "done" ]]; then
-        break
+        return 1
     else
         sleep 2
         echo -n "."
+        return 0
     fi
 }
 
 function check_running() {
     if [[ $(kubectl get pod $1 -o go-template --template "{{.status.phase}}") == "Running" ]]; then
-        break
+        return 1
     else
         sleep 2
         echo -n "."
+        return 0
     fi
 }
 

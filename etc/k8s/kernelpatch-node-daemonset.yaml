@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kernelpatch-node
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      job: kernelpatch-node
+  template:
+    metadata:
+      labels:
+        job: kernelpatch-node
+    spec:
+      hostPID: true
+      restartPolicy: Always
+      containers:
+      - image: phudtran/mizar:kernelpatch-node
+        name: kernelpatch-node
+        securityContext:
+          privileged: true

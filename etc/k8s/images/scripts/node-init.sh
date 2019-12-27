@@ -1,4 +1,5 @@
 #!/bin/bash
+
 nsenter -t 1 -m -u -n -i rm -rf ~/mizar
 nsenter -t 1 -m -u -n -i apt-get update -y && nsenter -t 1 -m -u -n -i apt-get install -y \
     sudo \

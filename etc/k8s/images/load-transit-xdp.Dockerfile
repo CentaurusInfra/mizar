@@ -1,4 +1,4 @@
 FROM debian
-COPY scripts/load_transit_xdp.sh /
-RUN chmod u+x load_transit_xdp.sh
-CMD ["./load_transit_xdp.sh"]
+COPY scripts/load-transit-xdp.sh /
+RUN chmod u+x load-transit-xdp.sh
+CMD ["./load-transit-xdp.sh"]

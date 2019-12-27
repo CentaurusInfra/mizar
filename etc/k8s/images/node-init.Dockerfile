@@ -1,4 +1,4 @@
 FROM debian
-COPY scripts/node_init.sh /
-RUN chmod u+x node_init.sh
-CMD ["./node_init.sh"]
+COPY scripts/node-init.sh /
+RUN chmod u+x node-init.sh
+CMD ["./node-init.sh"]
