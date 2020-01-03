@@ -9,16 +9,24 @@ sudo apt-get install -y \
     python3 \
     python3-pip \
     libcmocka-dev \
-    lcov
+    lcov \
+    docker.io \
+    openvswitch-switch
 
-sudo apt install docker.io
 sudo pip3 install netaddr docker
-sudo systemctl unmask docker.service
-sudo systemctl unmask docker.socket
-sudo systemctl start docker
-sudo systemctl enable docker
 
-sudo pkill -9 transitd
+
+rm -f /bpffs
+rm -f /trn_xdp
+rm -f /usr/bin/transit
+rm -f /usr/bin/transitd
 rm -rf /home/ubuntu/mizar
 
-git clone --recurse-submodules -j8 https://github.com/futurewei-cloud/mizar.git /home/ubuntu/mizar
+systemctl stop transit
+systemctl disable transit
+rm -f /etc/systemd/system/transit.service
+
+systemctl unmask docker.service
+systemctl unmask docker.socket
+systemctl start docker
+systemctl enable docker

@@ -5,4 +5,8 @@
 /etc/init.d/openvswitch-switch restart
 ip link set dev eth0 up mtu 9000
 
-nohup /home/ubuntu/mizar/build/bin/transitd &
+cp /home/ubuntu/mizar/etc/transit.service /etc/systemd/system/
+
+sudo systemctl daemon-reload
+systemctl start transit
+systemctl enable transit

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pgrep transitd
+systemctl is-active --quiet transit
 
 if [ $? -eq 0 ]
 then

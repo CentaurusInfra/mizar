@@ -84,7 +84,7 @@ update_modules:
 
 install:
 	cp build/bin/* /usr/bin
-	ln -s build/xdp /trn_xdp
+	ln -s /home/ubuntu/mizar/build/xdp /trn_xdp
 	ln -s /sys/fs/bpf /bpffs
 
 -include $(patsubst %, %/module.mk, $(modules))
