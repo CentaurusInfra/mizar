@@ -15,7 +15,7 @@ spec:
       hostPID: true
       restartPolicy: Always
       containers:
-      - image: phudtran/mizar:transitd
+      - image: fwnetworking/mizar:transitd
         name: transitd
         securityContext:
           privileged: true

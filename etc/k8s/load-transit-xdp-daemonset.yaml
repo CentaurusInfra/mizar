@@ -15,7 +15,7 @@ spec:
       hostPID: true
       restartPolicy: Always
       containers:
-      - image: phudtran/mizar:load-transit-xdp
+      - image: fwnetworking/mizar:load-transit-xdp
         name: load-transit-xdp
         securityContext:
           privileged: true

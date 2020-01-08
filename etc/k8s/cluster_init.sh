@@ -10,7 +10,7 @@ function main() {
     run_job node-init-daemonset.yaml node-init $timeout
     # Start transitd on all nodes.
     kubectl apply -f transitd-daemonset.yaml
-    validate $running transitd-daemonset.yaml transitd $timeout
+    validate "running" transitd-daemonset.yaml transitd $timeout
     # Load transit xdp program on main interface of all nodes.
     run_job load-transit-xdp-daemonset.yaml load-transit-xdp $timeout
 }
