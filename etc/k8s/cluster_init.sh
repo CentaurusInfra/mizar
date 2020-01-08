@@ -6,6 +6,7 @@ function main() {
     timeout=600
 
     # Initial setup for all nodes.
+    run_job kernelpatch-node-daemonset.yaml kernelpatch-node $timeout
     run_job node-init-daemonset.yaml node-init $timeout
     # Start transitd on all nodes.
     kubectl apply -f transitd-daemonset.yaml
@@ -53,7 +54,7 @@ function validate() {
 }
 
 function check_done() {
-    if [[ $(kubectl logs $1 --tail 1) == "done" ]]; then
+    if [[ $(kubectl logs $1 --tail 1) == "mizar-complete" ]]; then
         return 1
     else
         sleep 2
