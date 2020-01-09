@@ -15,7 +15,8 @@ spec:
       hostPID: true
       restartPolicy: Always
       containers:
-      - image: fwnetworking/mizar:node-init
+      - image: fwnetworking/mizar:mizar-setup
         name: node-init
+        command: ["./node-init.sh"]
         securityContext:
           privileged: true

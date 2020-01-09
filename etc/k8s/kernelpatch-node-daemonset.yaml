@@ -15,7 +15,8 @@ spec:
       hostPID: true
       restartPolicy: Always
       containers:
-      - image: fwnetworking/mizar:kernelpatch-node
+      - image: fwnetworking/mizar:mizar-setup
         name: kernelpatch-node
+        command: ["./kernelpatch-node.sh"]
         securityContext:
           privileged: true
