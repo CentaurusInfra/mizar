@@ -31,4 +31,4 @@ nsenter -t 1 -m -u -n -i make -C /root/mizar && \
 nsenter -t 1 -m -u -n -i ln -snf /sys/fs/bpf /bpffs && \
 nsenter -t 1 -m -u -n -i ln -snf ~/mizar/build/bin /trn_bin && \
 nsenter -t 1 -m -u -n -i ln -snf ~/mizar/build/xdp /trn_xdp && \
-echo "mizar-complete" && sleep infinity
+echo "mizar-complete"

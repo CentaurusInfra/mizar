@@ -2,7 +2,7 @@
 
 kernel_ver=`nsenter -t 1 -m -u -n -i uname -r`
 if [ "$kernel_ver" == "5.2.0-mizar" ]; then
-    echo 'mizar-complete' && sleep infinity
+    echo 'mizar-complete'
 else
     kernel_dir=~/mizar-kernel
     nsenter -t 1 -m -u -n -i mkdir $kernel_dir
