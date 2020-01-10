@@ -76,7 +76,16 @@ CLANGFLAGS= -I.\
 CLANGFLAGS_DEBUG:= -DDEBUG -D__KERNEL__ -g -D__BPF_TRACING__ $(CLANGFLAGS)
 
 #all:  rpcgen transit transitd xdp
-all:: dirmake libbpf
+all:: dirmake libbpf update_modules
+
+.PHONY: update_modules
+update_modules:
+	git submodule update --init --recursive
+
+install:
+	cp build/bin/* /usr/bin
+	ln -s /home/ubuntu/mizar/build/xdp /trn_xdp
+	ln -s /sys/fs/bpf /bpffs
 
 -include $(patsubst %, %/module.mk, $(modules))
 
