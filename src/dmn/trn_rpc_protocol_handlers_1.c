@@ -997,7 +997,7 @@ int *update_agent_md_1_svc(rpc_trn_agent_metadata_t *agent_md,
 	amd.ep.hosted_iface = amd.eth.iface_index;
 	memcpy(amd.ep.mac, agent_md->ep.mac, 6 * sizeof(amd.ep.mac[0]));
 
-	rc = trn_agent_update_agent_metadata(md, &amd);
+	rc = trn_agent_update_agent_metadata(md, &amd, eth_md);
 
 	if (rc != 0) {
 		TRN_LOG_ERROR("Cannot update agent metadata on interface %s",
@@ -1037,11 +1037,8 @@ int *delete_agent_md_1_svc(rpc_intf_t *argp, struct svc_req *rqstp)
 		result = RPC_TRN_ERROR;
 		goto error;
 	}
-	struct agent_metadata_t amd;
-	memset(&amd, 0, sizeof(amd));
-	// We call update with a zeroed out struct
-	// This is becauses the agent metadata is stored as an array
-	rc = trn_agent_update_agent_metadata(md, &amd);
+
+	rc = trn_agent_delete_agent_metadata(md);
 	if (rc != 0) {
 		TRN_LOG_ERROR("Cannot delete agent metadata on interface %s",
 			      argp->interface);

@@ -45,6 +45,9 @@
 /* XDP programs keys in transit agent */
 #define XDP_TRANSIT 0
 
+/* Cache related const */
+#define TRAN_MAX_CACHE_SIZE 1000000
+
 /* XDP programs keys in transit XDP */
 enum trn_xdp_stage_t {
 	XDP_TX_PROC = 0,
