@@ -49,6 +49,41 @@ int _version SEC("version") = 1;
 #define SPORT_MIN 1024
 #define SPORT_BASE (SPORT_MAX - SPORT_MIN)
 
+static __inline int trn_select_transit_switch(struct transit_packet *pkt,
+					      struct agent_metadata_t *metadata,
+					      __be64 tun_id, __u32 in_src_ip,
+					      __u32 in_dst_ip, __u16 *s_port,
+					      __u32 *d_addr)
+{
+	/* Compute the source port and the transit switch address based on a hash
+   * of the inner ip */
+	__u32 inhash = jhash_2words(in_src_ip, in_dst_ip, INIT_JHASH_SEED);
+	*s_port = SPORT_MIN + (inhash % SPORT_BASE);
+
+	if (*s_port < SPORT_MIN || *s_port > SPORT_MAX) {
+		return 1;
+	}
+
+	if (metadata->net.nswitches == 0) {
+		bpf_debug(
+			"[Agent:%ld.0x%x] DROP (BUG): No transit switch to send packet to!\n",
+			pkt->agent_ep_tunid, bpf_ntohl(pkt->agent_ep_ipv4));
+		return 1;
+	}
+
+	__u32 sw_idx = inhash % metadata->net.nswitches;
+
+	if (sw_idx > TRAN_MAX_NSWITCH - 1) {
+		bpf_debug("[Agent:] DROP (BUG): Selected switch index [%d] "
+			  "is greater than maximum number of switches [%d]!\n",
+			  sw_idx, TRAN_MAX_NSWITCH);
+		return 1;
+	}
+
+	*d_addr = metadata->net.switches_ips[sw_idx];
+	return 0;
+}
+
 static __inline int trn_encapsulate(struct transit_packet *pkt,
 				    struct agent_metadata_t *metadata,
 				    __be64 tun_id, __u32 in_src_ip,
@@ -61,32 +96,9 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	__u64 c_sum = 0;
 	int old_size = pkt->data_end - pkt->data;
 
-	/* Compute the source port and the transit switch address based on a hash
-   * of the inner ip */
-	__u32 inhash = jhash_2words(in_src_ip, in_dst_ip, INIT_JHASH_SEED);
-	s_port = SPORT_MIN + (inhash % SPORT_BASE);
-
-	if (s_port < SPORT_MIN || s_port > SPORT_MAX) {
+	if (trn_select_transit_switch(pkt, metadata, tun_id, in_src_ip,
+				      in_dst_ip, &s_port, &d_addr))
 		return XDP_DROP;
-	}
-
-	if (metadata->net.nswitches == 0) {
-		bpf_debug(
-			"[Agent:%ld.0x%x] DROP (BUG): No transit switch to send packet to!\n",
-			pkt->agent_ep_tunid, bpf_ntohl(pkt->agent_ep_ipv4));
-		return XDP_DROP;
-	}
-
-	__u32 sw_idx = inhash % metadata->net.nswitches;
-
-	if (sw_idx > TRAN_MAX_NSWITCH - 1) {
-		bpf_debug("[Agent:] DROP (BUG): Selected switch index [%d] "
-			  "is greater than maximum number of switches [%d]!\n",
-			  sw_idx, TRAN_MAX_NSWITCH);
-		return XDP_DROP;
-	}
-
-	d_addr = metadata->net.switches_ips[sw_idx];
 
 	/* Get the endpoint of the transit switch for outer dst mac */
 	r_epkey.tunip[0] = 0;
