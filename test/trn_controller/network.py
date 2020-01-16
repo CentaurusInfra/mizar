@@ -17,7 +17,7 @@ import time
 
 
 class network:
-    def __init__(self, vni, netid, cidr):
+    def __init__(self, vni, netid, cidr, vpc_cidr):
         """
         A network is identified by a netid. Each network has a set of
         transit switches that rewrite tunneled packets to route them
@@ -33,6 +33,7 @@ class network:
         self.cidr = cidr
         self.transit_switches = {}
         self.endpoints = {}
+        self.vpc_cidr = vpc_cidr
 
     def get_gw_ip(self):
         return self.cidr.get_ip(1)
@@ -137,7 +138,7 @@ class network:
             self.netid, ip))
 
         self.endpoints[ip] = endpoint(
-            self.vni, self.netid, ip=ip, prefixlen=self.cidr.prefixlen, gw_ip=None, host=None)
+            self.vni, self.netid, ip=ip, vpc_cidr=self.vpc_cidr, net_cidr=self.cidr, gw_ip=None, host=None)
 
         # Now update the endpoint on the remaining switches
         for switch in self.transit_switches.values():
@@ -183,13 +184,13 @@ class network:
         switches = list(self.transit_switches.values())
 
         # Create a temp network object of only one switch
-        temp_net = network(self.vni, self.netid, self.cidr)
+        temp_net = network(self.vni, self.netid, self.cidr, self.vpc_cidr)
         temp_net.transit_switches[switches[0].id] = switches[0]
 
         start = time.time()
 
         self.endpoints[ip] = endpoint(
-            self.vni, self.netid, ip=ip, prefixlen=self.cidr.prefixlen, gw_ip=self.get_gw_ip(), host=host)
+            self.vni, self.netid, ip=ip, vpc_cidr=self.vpc_cidr, net_cidr=self.cidr, gw_ip=self.get_gw_ip(), host=host)
 
         switches[0].update_endpoint(self.endpoints[ip])
         self.endpoints[ip].update(temp_net)
@@ -218,7 +219,7 @@ class network:
         if (not host.ovs_is_exist(br)):
             host.ovs_add_bridge(br)
         self.endpoints[ip] = endpoint(
-            self.vni, self.netid, ip=ip, prefixlen=self.cidr.prefixlen, gw_ip=self.get_gw_ip(), host=host, tuntype='vxn', bridge=br)
+            self.vni, self.netid, ip=ip, vpc_cidr=self.vpc_cidr, net_cidr=self.cidr, gw_ip=self.get_gw_ip(), host=host, tuntype='vxn', bridge=br)
 
         # Create a geneve tunnel interface to one of the switches
         transit_itf = 'vxn_transit'
@@ -253,6 +254,18 @@ class network:
 
         return self.endpoints[ip]
 
+    def create_host_endpoint(self, ip, host):
+        logger.info("[NETWORK {}]: create_host_endpoint {}".format(
+            self.netid, ip))
+        self.endpoints[ip] = endpoint(
+            self.vni, self.netid, ip=ip, vpc_cidr=self.vpc_cidr, net_cidr=self.cidr, gw_ip=self.get_gw_ip(), host=host, host_ep=True)
+
+        # Now update the endpoint on the remaining switches
+        for switch in self.transit_switches.values():
+            switch.update_endpoint(self.endpoints[ip])
+        self.endpoints[ip].update(self)
+        return self.endpoints[ip]
+
     def delete_simple_endpoint(self, ip, host, net_switches=None):
         """
         Creates a simple endpoint in the network.
@@ -277,7 +290,7 @@ class network:
         # This is already done when we remove all the switches from the network object
         if net_switches is None:
             # Create a temp network object of only one switch
-            temp_net = network(self.vni, self.netid, self.cidr)
+            temp_net = network(self.vni, self.netid, self.cidr, self.vpc_cidr)
             temp_net.transit_switches[switches[0].id] = switches[0]
 
             start = time.time()

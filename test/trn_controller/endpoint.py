@@ -25,7 +25,7 @@ class endpoint:
     multiple vxlan tunnel keys, subneting, ... etc.
     """
 
-    def __init__(self, vni, netid, ip, prefixlen, gw_ip, host, tuntype='gnv', bridge='br0'):
+    def __init__(self, vni, netid, ip, vpc_cidr, net_cidr, gw_ip, host, tuntype='gnv', bridge='br0', host_ep=False):
         """
         Defines a simple endpoint in the VPC and network. Also defines
         a phantom endpoint that is not hosted on any host (switch only respond for ARP requests).
@@ -43,7 +43,9 @@ class endpoint:
         self.veth_peer = tuntype + '_' + v[2]
         self.veth_allocated = True
         self.ip = ip
-        self.prefixlen = prefixlen
+        self.prefixlen = net_cidr.prefixlen
+        self.netip = net_cidr.ip
+        self.vpc_cidr = vpc_cidr
         self.gw_ip = gw_ip
         self.eptype = 1  # Simple ep
         self.host = host
@@ -52,6 +54,13 @@ class endpoint:
         self.tunitf = 'tun_' + self.veth_peer  # Only for ovs
         self.bridge = bridge
         self.bridge_port = None
+        self.host_ep = host_ep
+        self.ns_exec = f'''ip netns exec {self.ns} '''
+        if host_ep:
+            self.veth_name = "host_" + self.veth_name
+            self.veth_peer = "host_" + self.veth_peer
+            self.ns = ""
+            self.ns_exec = ""
 
         self.provision()
 
@@ -63,13 +72,11 @@ class endpoint:
         self.udp_recv_file = f'''{self.output_dir}/{self.ns}_{self.ip}_udp_recv'''
         self.udp_sent_file = f'''{self.output_dir}/{self.ns}_{self.ip}_udp_sent'''
 
-        self.ns_exec = f'''ip netns exec {self.ns}'''
-
-        self.ping_cmd = f'''{self.ns_exec} ping'''
-        self.curl_cmd = f'''{self.ns_exec} curl'''
-        self.python_cmd = f'''{self.ns_exec} python3'''
-        self.diff_cmd = f'''{self.ns_exec} diff'''
-        self.bash_cmd = f'''{self.ns_exec} bash -c'''
+        self.ping_cmd = f'''{self.ns_exec}ping'''
+        self.curl_cmd = f'''{self.ns_exec}curl'''
+        self.python_cmd = f'''{self.ns_exec}python3'''
+        self.diff_cmd = f'''{self.ns_exec}diff'''
+        self.bash_cmd = f'''{self.ns_exec}bash -c'''
         self.httpd_cmd = f'''{self.bash_cmd} 'pushd /tmp/{self.ns}_{self.ip}; python3 -m http.server > /tmp/{self.ns}_{self.ip}/httpd.log 2>&1' '''
         self.tcp_server_cmd = f'''{self.bash_cmd} '(nc -l -p 9001 > {self.tcp_recv_file})' '''
         self.udp_server_cmd = f'''{self.bash_cmd} '(nc -u -l -p 5001 > {self.udp_recv_file})' '''
@@ -81,6 +88,9 @@ class endpoint:
 
         if self.tuntype == 'vxn':
             self.bridge_port = self.host.provision_vxlan_endpoint(self)
+        elif self.host_ep:
+            self.transit_agent = transit_agent(self.veth_peer, self.host)
+            self.host.provision_host_endpoint(self)
         else:
             self.transit_agent = transit_agent(self.veth_peer, self.host)
             self.host.provision_simple_endpoint(self)

@@ -73,6 +73,14 @@ class controller:
             "[Controller]: create_simple_endpoint {}.{}.{}".format(vni, netid, ip))
         return self.vpcs[vni].create_simple_endpoint(netid, ip, self.droplets[host])
 
+    def create_host_endpoint(self, vni, netid, ip, host):
+        """
+        Adds a host endpoint to an existing network
+        """
+        logger.info(
+            "[Controller]: create_host_endpoint {}.{}.{}".format(vni, netid, ip))
+        return self.vpcs[vni].create_host_endpoint(netid, ip, self.droplets[host])
+
     def delete_simple_endpoint(self, vni, netid, ip, host):
         """
         Deletes a simple endpoint from an existing network
