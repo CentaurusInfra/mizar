@@ -279,6 +279,9 @@ static __inline int trn_process_inner_arp(struct transit_packet *pkt)
 {
 	unsigned char *sha;
 	unsigned char *tha = NULL;
+	struct endpoint_t *ep;
+	struct endpoint_key_t epkey;
+	struct endpoint_t *remote_ep;
 	__u32 *sip, *tip;
 	__u64 csum = 0;
 
@@ -346,30 +349,56 @@ static __inline int trn_process_inner_arp(struct transit_packet *pkt)
 	}
 
 	__be64 tunnel_id = trn_vni_to_tunnel_id(pkt->geneve->vni);
-	struct endpoint_t *ep;
-	struct endpoint_key_t epkey;
 
 	__builtin_memcpy(&epkey.tunip[0], &tunnel_id, sizeof(tunnel_id));
 	epkey.tunip[2] = *tip;
 	ep = bpf_map_lookup_elem(&endpoints_map, &epkey);
 
-	if (ep && pkt->inner_arp->ar_op == bpf_htons(ARPOP_REQUEST)) {
-		/* Respond to ARP */
-		pkt->inner_arp->ar_op = bpf_htons(ARPOP_REPLY);
-		trn_set_arp_ha(tha, sha);
-		trn_set_arp_ha(sha, ep->mac);
-
-		__u32 tmp_ip = *sip;
-		*sip = *tip;
-		*tip = tmp_ip;
-
-		/* Set the sender mac address to the ep mac address */
-		trn_set_src_mac(pkt->inner_eth, ep->mac);
-
-		/* We need to lookup the endpoint again, since tip has changed */
-		epkey.tunip[2] = *tip;
-		ep = bpf_map_lookup_elem(&endpoints_map, &epkey);
+	if (!ep || pkt->inner_arp->ar_op != bpf_htons(ARPOP_REQUEST)) {
+		return trn_switch_handle_pkt(pkt, *sip, *tip);
 	}
+
+	/* Respond to ARP */
+	pkt->inner_arp->ar_op = bpf_htons(ARPOP_REPLY);
+	trn_set_arp_ha(tha, sha);
+	trn_set_arp_ha(sha, ep->mac);
+
+	__u32 tmp_ip = *sip;
+	*sip = *tip;
+	*tip = tmp_ip;
+
+	/* Set the sender mac address to the ep mac address */
+	trn_set_src_mac(pkt->inner_eth, ep->mac);
+
+	if (ep->eptype == TRAN_SIMPLE_EP) {
+		/*Get the remote_ep address based on the value of the outer dest IP */
+		epkey.tunip[0] = 0;
+		epkey.tunip[1] = 0;
+		epkey.tunip[2] = ep->remote_ips[0];
+		remote_ep = bpf_map_lookup_elem(&endpoints_map, &epkey);
+
+		if (!remote_ep) {
+			bpf_debug("[Transit:%d:] (BUG) DROP: "
+				  "Failed to find remote MAC address\n",
+				  __LINE__);
+			return XDP_DROP;
+		}
+
+		/* For a simple endpoint, Write the RTS option on behalf of the target endpoint */
+		pkt->rts_opt->rts_data.ip = ep->remote_ips[0];
+		__builtin_memcpy(pkt->rts_opt->rts_data.mac, remote_ep->mac,
+				 6 * sizeof(unsigned char));
+	} else {
+		pkt->rts_opt->type = 0;
+		pkt->rts_opt->length = 0;
+		pkt->rts_opt->rts_data.ip = 0;
+		__builtin_memset(pkt->rts_opt->rts_data.mac, 0,
+				 6 * sizeof(unsigned char));
+	}
+
+	/* We need to lookup the endpoint again, since tip has changed */
+	epkey.tunip[2] = *tip;
+	ep = bpf_map_lookup_elem(&endpoints_map, &epkey);
 
 	return trn_switch_handle_pkt(pkt, *sip, *tip);
 }
