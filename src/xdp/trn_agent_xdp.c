@@ -114,12 +114,18 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	}
 
 	/* Readjust the packet size to fit the outer headers */
-	int outer_hdr_size = sizeof(*pkt->geneve) + sizeof(*pkt->udp) +
-			     sizeof(*pkt->ip) + sizeof(*pkt->eth);
-	int outer_ip_payload = sizeof(*pkt->geneve) + sizeof(*pkt->udp) +
-			       sizeof(*pkt->ip) + old_size;
-	int outer_udp_payload =
-		sizeof(*pkt->geneve) + sizeof(*pkt->udp) + old_size;
+	int gnv_rts_opt_size = sizeof(*pkt->rts_opt);
+	int gnv_opt_size = gnv_rts_opt_size;
+	int gnv_hdr_size = sizeof(*pkt->geneve) + gnv_opt_size;
+	int udp_hdr_size = sizeof(*pkt->udp);
+	int ip_hdr_size = sizeof(*pkt->ip);
+	int eth_hdr_size = sizeof(*pkt->eth);
+
+	int outer_hdr_size =
+		gnv_hdr_size + udp_hdr_size + ip_hdr_size + eth_hdr_size;
+	int outer_ip_payload =
+		gnv_hdr_size + udp_hdr_size + ip_hdr_size + old_size;
+	int outer_udp_payload = gnv_hdr_size + udp_hdr_size + old_size;
 
 	if (bpf_xdp_adjust_head(pkt->xdp, 0 - outer_hdr_size)) {
 		bpf_debug(
@@ -132,14 +138,16 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	pkt->data_end = (void *)(long)pkt->xdp->data_end;
 
 	pkt->eth = pkt->data;
-	pkt->eth_off = sizeof(*pkt->eth);
+	pkt->eth_off = eth_hdr_size;
 
-	pkt->ip = (void *)pkt->eth + sizeof(*pkt->eth);
-	pkt->udp = (void *)pkt->ip + sizeof(*pkt->ip);
-	pkt->geneve = (void *)pkt->udp + sizeof(*pkt->udp);
+	pkt->ip = (void *)pkt->eth + eth_hdr_size;
+	pkt->udp = (void *)pkt->ip + ip_hdr_size;
+	pkt->geneve = (void *)pkt->udp + udp_hdr_size;
+	pkt->rts_opt = (void *)&pkt->geneve->options[0];
 
 	if (pkt->eth + 1 > pkt->data_end || pkt->ip + 1 > pkt->data_end ||
-	    pkt->udp + 1 > pkt->data_end || pkt->geneve + 1 > pkt->data_end) {
+	    pkt->udp + 1 > pkt->data_end || pkt->geneve + 1 > pkt->data_end ||
+	    pkt->rts_opt + 1 > pkt->data_end) {
 		bpf_debug("[Agent:%ld.0x%x] ABORTED: Bad offset [%d]\n",
 			  pkt->agent_ep_tunid, bpf_ntohl(pkt->agent_ep_ipv4),
 			  __LINE__);
@@ -153,7 +161,7 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	trn_set_src_mac(pkt->data, metadata->eth.mac);
 
 	pkt->ip->version = 4;
-	pkt->ip->ihl = sizeof(*pkt->ip) >> 2;
+	pkt->ip->ihl = ip_hdr_size >> 2;
 	pkt->ip->frag_off = 0;
 	pkt->ip->protocol = IPPROTO_UDP;
 	pkt->ip->check = 0;
@@ -172,7 +180,8 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	pkt->udp->dest = GEN_DSTPORT;
 	pkt->udp->len = bpf_htons(outer_udp_payload);
 
-	pkt->geneve->opt_len = 0;
+	__builtin_memset(pkt->geneve, 0, gnv_hdr_size);
+	pkt->geneve->opt_len = gnv_opt_size / 4;
 	pkt->geneve->ver = 0;
 	pkt->geneve->rsvd1 = 0;
 	pkt->geneve->rsvd2 = 0;
@@ -180,6 +189,14 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	pkt->geneve->critical = 0;
 	pkt->geneve->proto_type = bpf_htons(ETH_P_TEB);
 	trn_tunnel_id_to_vni(tun_id, pkt->geneve->vni);
+
+	pkt->rts_opt->opt_class = TRN_GNV_OPT_CLASS;
+	pkt->rts_opt->type = TRN_GNV_RTS_OPT_TYPE;
+	pkt->rts_opt->length = sizeof(pkt->rts_opt->rts_data) / 4;
+	pkt->rts_opt->rts_data.match_flow = 0;
+	pkt->rts_opt->rts_data.ip = metadata->eth.ip;
+	__builtin_memcpy(pkt->rts_opt->rts_data.mac, metadata->eth.mac,
+			 6 * sizeof(unsigned char));
 
 	/* If the source and dest address of the tunneled packet is the
 	 * same, then this host is also a transit switch. Just invoke the

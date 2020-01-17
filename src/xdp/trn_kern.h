@@ -50,9 +50,29 @@
 #define GEN_DSTPORT 0xc117
 #define INIT_JHASH_SEED 0xdeadbeef
 
+#define TRN_GNV_OPT_CLASS 0x0111
+#define TRN_GNV_RTS_OPT_TYPE 0x48
+
 #ifndef __inline
 #define __inline inline __attribute__((always_inline))
 #endif
+
+struct trn_gnv_rts_data {
+	__u8 match_flow : 1;
+	__u32 ip;
+	unsigned char mac[6];
+} __attribute__((packed, aligned(4)));
+
+struct trn_gnv_rts_opt {
+	__be16 opt_class;
+	__u8 type;
+	__u8 length : 5;
+	__u8 r3 : 1;
+	__u8 r2 : 1;
+	__u8 r1 : 1;
+	/* opt data */
+	struct trn_gnv_rts_data rts_data;
+} __attribute__((packed, aligned(4)));
 
 struct geneve_opt {
 	__be16 opt_class;
@@ -105,6 +125,9 @@ struct transit_packet {
 
 	/* Geneve */
 	struct genevehdr *geneve;
+	struct trn_gnv_rts_opt *rts_opt;
+	int gnv_hdr_len;
+	int gnv_opt_len;
 
 	/* Inner ethernet */
 	struct ethhdr *inner_eth;

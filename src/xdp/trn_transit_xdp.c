@@ -77,8 +77,9 @@ static __inline int trn_rewrite_remote_mac(struct transit_packet *pkt)
 static __inline int trn_decapsulate_and_redirect(struct transit_packet *pkt,
 						 int ifindex)
 {
-	int outer_header_size = sizeof(*pkt->geneve) + sizeof(*pkt->udp) +
-				sizeof(*pkt->ip) + sizeof(*pkt->eth);
+	int outer_header_size = sizeof(*pkt->geneve) + pkt->gnv_opt_len +
+				sizeof(*pkt->udp) + sizeof(*pkt->ip) +
+				sizeof(*pkt->eth);
 
 	if (bpf_xdp_adjust_head(pkt->xdp, 0 + outer_header_size)) {
 		bpf_debug(
@@ -375,7 +376,7 @@ static __inline int trn_process_inner_arp(struct transit_packet *pkt)
 
 static __inline int trn_process_inner_eth(struct transit_packet *pkt)
 {
-	pkt->inner_eth = (void *)pkt->geneve + sizeof(*pkt->geneve);
+	pkt->inner_eth = (void *)pkt->geneve + pkt->gnv_hdr_len;
 	pkt->inner_eth_off = sizeof(*pkt->inner_eth);
 
 	if (pkt->inner_eth + 1 > pkt->data_end) {
@@ -406,8 +407,6 @@ static __inline int trn_process_inner_eth(struct transit_packet *pkt)
 
 static __inline int trn_process_geneve(struct transit_packet *pkt)
 {
-	int opts_len;
-
 	pkt->geneve = (void *)pkt->udp + sizeof(*pkt->udp);
 	if (pkt->geneve + 1 > pkt->data_end) {
 		bpf_debug("[Transit:%d:0x%x] ABORTED: Bad offset\n", __LINE__,
@@ -423,10 +422,11 @@ static __inline int trn_process_geneve(struct transit_packet *pkt)
 		return XDP_PASS;
 	}
 
-	opts_len = pkt->geneve->opt_len * 4;
-	struct geneve_opt *opt = &pkt->geneve->options[0];
+	pkt->gnv_opt_len = pkt->geneve->opt_len * 4;
+	pkt->gnv_hdr_len = sizeof(*pkt->geneve) + pkt->gnv_opt_len;
+	pkt->rts_opt = (void *)&pkt->geneve->options[0];
 
-	if (opt + 1 > pkt->data_end) {
+	if (pkt->rts_opt + 1 > pkt->data_end) {
 		bpf_debug("[Transit:%d:0x%x] ABORTED: Bad offset\n", __LINE__,
 			  bpf_ntohl(pkt->itf_ipv4));
 		return XDP_ABORTED;
