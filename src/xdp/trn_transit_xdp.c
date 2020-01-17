@@ -74,6 +74,32 @@ static __inline int trn_rewrite_remote_mac(struct transit_packet *pkt)
 	return XDP_TX;
 }
 
+static __inline void trn_update_ep_host_cache(struct transit_packet *pkt,
+					      __be64 tunnel_id,
+					      __u32 inner_src_ip)
+{
+	/* If RTS option is present, it always refer to the source endpoint's host.
+	 * If the source endpoint is not known to this host, cache the host ip/mac in the
+	 * en_host_cache.
+	*/
+
+	struct endpoint_t *src_ep;
+	struct endpoint_key_t src_epkey;
+
+	if (pkt->rts_opt->type == TRN_GNV_RTS_OPT_TYPE) {
+		__builtin_memcpy(&src_epkey.tunip[0], &tunnel_id,
+				 sizeof(tunnel_id));
+		src_epkey.tunip[2] = inner_src_ip;
+		src_ep = bpf_map_lookup_elem(&endpoints_map, &src_epkey);
+
+		if (!src_ep) {
+			/* Add the RTS info to the ep_host_cache */
+			bpf_map_update_elem(&ep_host_cache, &src_epkey,
+					    &pkt->rts_opt->rts_data.host, 0);
+		}
+	}
+}
+
 static __inline int trn_decapsulate_and_redirect(struct transit_packet *pkt,
 						 int ifindex)
 {
@@ -223,6 +249,12 @@ static __inline int trn_switch_handle_pkt(struct transit_packet *pkt,
 			"[Transit::0x%x] REDIRECT: {in.src=0x%x, in.dst=0x%x}\n",
 			bpf_ntohl(pkt->itf_ipv4), bpf_ntohl(inner_src_ip),
 			bpf_ntohl(inner_dst_ip));
+
+		/* If this is the endpoint host, check first if the source has RTS opt included.
+		* This is a no-fail operation.
+		*/
+		trn_update_ep_host_cache(pkt, tunnel_id, inner_src_ip);
+
 		return trn_decapsulate_and_redirect(pkt, ep->hosted_iface);
 	}
 
@@ -385,15 +417,14 @@ static __inline int trn_process_inner_arp(struct transit_packet *pkt)
 		}
 
 		/* For a simple endpoint, Write the RTS option on behalf of the target endpoint */
-		pkt->rts_opt->rts_data.ip = ep->remote_ips[0];
-		__builtin_memcpy(pkt->rts_opt->rts_data.mac, remote_ep->mac,
-				 6 * sizeof(unsigned char));
+		pkt->rts_opt->rts_data.host.ip = ep->remote_ips[0];
+		__builtin_memcpy(pkt->rts_opt->rts_data.host.mac,
+				 remote_ep->mac, 6 * sizeof(unsigned char));
 	} else {
 		pkt->rts_opt->type = 0;
 		pkt->rts_opt->length = 0;
-		pkt->rts_opt->rts_data.ip = 0;
-		__builtin_memset(pkt->rts_opt->rts_data.mac, 0,
-				 6 * sizeof(unsigned char));
+		__builtin_memset(&pkt->rts_opt->rts_data.host, 0,
+				 sizeof(struct remote_endpoint_t));
 	}
 
 	/* We need to lookup the endpoint again, since tip has changed */

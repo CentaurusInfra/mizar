@@ -194,8 +194,8 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	pkt->rts_opt->type = TRN_GNV_RTS_OPT_TYPE;
 	pkt->rts_opt->length = sizeof(pkt->rts_opt->rts_data) / 4;
 	pkt->rts_opt->rts_data.match_flow = 0;
-	pkt->rts_opt->rts_data.ip = metadata->eth.ip;
-	__builtin_memcpy(pkt->rts_opt->rts_data.mac, metadata->eth.mac,
+	pkt->rts_opt->rts_data.host.ip = metadata->eth.ip;
+	__builtin_memcpy(pkt->rts_opt->rts_data.host.mac, metadata->eth.mac,
 			 6 * sizeof(unsigned char));
 
 	/* If the source and dest address of the tunneled packet is the

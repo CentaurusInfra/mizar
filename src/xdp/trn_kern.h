@@ -59,8 +59,7 @@
 
 struct trn_gnv_rts_data {
 	__u8 match_flow : 1;
-	__u32 ip;
-	unsigned char mac[6];
+	struct remote_endpoint_t host;
 } __attribute__((packed, aligned(4)));
 
 struct trn_gnv_rts_opt {
