@@ -89,27 +89,64 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 				    __be64 tun_id, __u32 in_src_ip,
 				    __u32 in_dst_ip)
 {
+	struct remote_endpoint_t *dst_r_ep;
 	struct endpoint_t *r_ep;
 	struct endpoint_key_t r_epkey;
+	unsigned char *d_mac;
 	__u16 s_port;
 	__u32 d_addr;
 	__u64 c_sum = 0;
 	int old_size = pkt->data_end - pkt->data;
 
-	if (trn_select_transit_switch(pkt, metadata, tun_id, in_src_ip,
-				      in_dst_ip, &s_port, &d_addr))
-		return XDP_DROP;
+	/* First attempt to see if destination ep's host is cached */
+	int map_idx = 0;
+	void *ep_host_cache;
+	struct endpoint_key_t dst_epkey;
 
-	/* Get the endpoint of the transit switch for outer dst mac */
-	r_epkey.tunip[0] = 0;
-	r_epkey.tunip[1] = 0;
-	r_epkey.tunip[2] = d_addr;
-	r_ep = bpf_map_lookup_elem(&endpoints_map, &r_epkey);
-
-	if (!r_ep) {
-		bpf_debug("[Agent:%ld.0x%x] DROP (BUG): Missing mac "
-			  " information for transit switches!\n",
+	ep_host_cache = bpf_map_lookup_elem(&ep_host_cache_ref, &map_idx);
+	if (!ep_host_cache) {
+		bpf_debug("[Agent:%ld.0x%x] Failed to find ep_host_cache\n",
 			  pkt->agent_ep_tunid, bpf_ntohl(pkt->agent_ep_ipv4));
+		return XDP_DROP;
+	}
+
+	__builtin_memcpy(&dst_epkey.tunip[0], &tun_id, sizeof(tun_id));
+	dst_epkey.tunip[2] = in_dst_ip;
+
+	dst_r_ep = bpf_map_lookup_elem(ep_host_cache, &dst_epkey);
+
+	if (dst_r_ep) {
+		d_addr = dst_r_ep->ip;
+		d_mac = dst_r_ep->mac;
+
+		bpf_debug(
+			"[Agent:%ld.0x%x] Host of 0x%x, found sending directly!\n",
+			pkt->agent_ep_tunid, bpf_ntohl(pkt->agent_ep_ipv4),
+			bpf_ntohl(in_dst_ip));
+
+	} else if (!trn_select_transit_switch(pkt, metadata, tun_id, in_src_ip,
+					      in_dst_ip, &s_port, &d_addr)) {
+		/* Get the endpoint of the transit switch for outer dst mac */
+		bpf_debug(
+			"[Agent:%ld.0x%x] Sending dst 0x%x, to transit switch!\n",
+			pkt->agent_ep_tunid, bpf_ntohl(pkt->agent_ep_ipv4),
+			bpf_ntohl(in_dst_ip));
+		r_epkey.tunip[0] = 0;
+		r_epkey.tunip[1] = 0;
+		r_epkey.tunip[2] = d_addr;
+		r_ep = bpf_map_lookup_elem(&endpoints_map, &r_epkey);
+
+		if (!r_ep) {
+			bpf_debug("[Agent:%ld.0x%x] DROP (BUG): Missing mac "
+				  " information for transit switches!\n",
+				  pkt->agent_ep_tunid,
+				  bpf_ntohl(pkt->agent_ep_ipv4));
+			return XDP_DROP;
+		}
+
+		d_mac = r_ep->mac;
+
+	} else {
 		return XDP_DROP;
 	}
 
@@ -157,7 +194,7 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	/* Populate the outer header fields */
 	pkt->eth->h_proto = bpf_htons(ETH_P_IP);
 
-	trn_set_dst_mac(pkt->data, r_ep->mac);
+	trn_set_dst_mac(pkt->data, d_mac);
 	trn_set_src_mac(pkt->data, metadata->eth.mac);
 
 	pkt->ip->version = 4;

@@ -178,8 +178,8 @@ transit switch of that network, OW forward to the transit router. */
 
 	if (!vpc) {
 		bpf_debug(
-			"[Transit:%d:] DROP (BUG): Missing VPC router data!\n",
-			__LINE__);
+			"[Transit:%d:0x%x] DROP (BUG): Missing VPC router data!\n",
+			__LINE__, bpf_ntohl(pkt->itf_ipv4));
 		return XDP_DROP;
 	}
 
@@ -386,9 +386,16 @@ static __inline int trn_process_inner_arp(struct transit_packet *pkt)
 	epkey.tunip[2] = *tip;
 	ep = bpf_map_lookup_elem(&endpoints_map, &epkey);
 
-	if (!ep || pkt->inner_arp->ar_op != bpf_htons(ARPOP_REQUEST)) {
+	/* Don't respond to arp if endpoint is not found, or it is local to host */
+	if (!ep || ep->hosted_iface != -1 ||
+	    pkt->inner_arp->ar_op != bpf_htons(ARPOP_REQUEST)) {
+		bpf_debug("[Transit:%d:0x%x] ARP dest is not known\n", __LINE__,
+			  bpf_ntohl(pkt->itf_ipv4));
 		return trn_switch_handle_pkt(pkt, *sip, *tip);
 	}
+
+	bpf_debug("[Transit:%d:0x%x] respond to ARP\n", __LINE__,
+		  bpf_ntohl(pkt->itf_ipv4));
 
 	/* Respond to ARP */
 	pkt->inner_arp->ar_op = bpf_htons(ARPOP_REPLY);
@@ -410,9 +417,11 @@ static __inline int trn_process_inner_arp(struct transit_packet *pkt)
 		remote_ep = bpf_map_lookup_elem(&endpoints_map, &epkey);
 
 		if (!remote_ep) {
-			bpf_debug("[Transit:%d:] (BUG) DROP: "
-				  "Failed to find remote MAC address\n",
-				  __LINE__);
+			bpf_debug(
+				"[Transit:%d:] (BUG) DROP: "
+				"Failed to find remote MAC address of ep: 0x%x @ 0x%x\n",
+				__LINE__, bpf_ntohl(*tip),
+				bpf_ntohl(ep->remote_ips[0]));
 			return XDP_DROP;
 		}
 
