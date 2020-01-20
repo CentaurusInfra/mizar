@@ -12,7 +12,7 @@
 from test.trn_controller.endpoint import endpoint
 from test.trn_controller.transit_router import transit_router
 from test.trn_controller.transit_switch import transit_switch
-from test.trn_controller.common import cidr, logger
+from test.trn_controller.common import cidr, logger, CONSTANTS
 import time
 
 
@@ -164,6 +164,35 @@ class network:
             switch.delete_endpoint(ep)
 
         return ep
+
+    def create_scaled_endpoint(self, ip, backends):
+        """
+        Creates a scaled endpoint in the network.
+        1. First create the endpoint object and add it to the set of
+           endpoints
+        2. Call update_endpoint on all transit switch of the
+           network.
+        """
+        logger.info("[NETWORK {}]: create_scaled_endpoint {}".format(
+            self.netid, ip))
+
+        if ip in self.endpoints:
+            raise ValueError("Endpoint IP {} is already in use.".format(ip))
+
+        switches = list(self.transit_switches.values())
+
+        self.endpoints[ip] = endpoint(
+            self.vni, self.netid, ip=ip, prefixlen=self.cidr.prefixlen, gw_ip=self.get_gw_ip(),
+            eptype=CONSTANTS.TRAN_SCALED_EP, host=None, backends=backends)
+
+        # Now update the endpoint on the remaining switches
+        for switch in switches:
+            switch.update_scaled_endpoint(self.endpoints[ip])
+
+        # Update the endpoint again with the full switches
+        self.endpoints[ip].update(self)
+
+        return self.endpoints[ip]
 
     def create_simple_endpoint(self, ip, host):
         """

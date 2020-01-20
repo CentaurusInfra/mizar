@@ -10,7 +10,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from test.trn_controller.common import cidr, logger, veth_allocator
+from test.trn_controller.common import cidr, logger, veth_allocator, CONSTANTS
 from test.trn_controller.transit_agent import transit_agent
 from time import sleep
 
@@ -25,7 +25,8 @@ class endpoint:
     multiple vxlan tunnel keys, subneting, ... etc.
     """
 
-    def __init__(self, vni, netid, ip, vpc_cidr, net_cidr, gw_ip, host, tuntype='gnv', bridge='br0', host_ep=False):
+    def __init__(self, vni, netid, ip, prefixlen, gw_ip, host, tuntype='gnv', bridge='br0', eptype=CONSTANTS.TRAN_SIMPLE_EP, backends=None,
+        scaled_ep_obj='/trn_xdp/trn_transit_scaled_endpoint_ebpf_debug.o'):
         """
         Defines a simple endpoint in the VPC and network. Also defines
         a phantom endpoint that is not hosted on any host (switch only respond for ARP requests).
@@ -47,7 +48,7 @@ class endpoint:
         self.netip = net_cidr.ip
         self.vpc_cidr = vpc_cidr
         self.gw_ip = gw_ip
-        self.eptype = 1  # Simple ep
+        self.eptype = eptype
         self.host = host
         self.transit_agent = None
         self.tuntype = tuntype
@@ -61,6 +62,8 @@ class endpoint:
             self.veth_peer = "host_" + self.veth_peer
             self.ns = ""
             self.ns_exec = ""
+        self.backends = backends
+        self.scaled_ep_obj = scaled_ep_obj
 
         self.provision()
 
@@ -83,7 +86,7 @@ class endpoint:
         self.iperf3_server_cmd = f'''{self.bash_cmd} 'iperf3 -s > /tmp/{self.ns}_{self.ip}/iperf_server.log 2>&1' '''
 
     def provision(self):
-        if self.host is None:
+        if self.host is None or self.eptype is not CONSTANTS.TRAN_SIMPLE_EP:
             return
 
         if self.tuntype == 'vxn':
@@ -143,9 +146,13 @@ class endpoint:
         return self.veth_name
 
     def get_remote_ips(self):
-        if self.host is None:
-            return []
-        return [str(self.host.ip)]
+        remote_ips = []
+        if self.eptype is CONSTANTS.TRAN_SCALED_EP:
+            remote_ips = self.backends and [str(be.ip) for be in self.backends]
+        else:
+            remote_ips = self.host and [str(self.host.ip)]
+
+        return remote_ips
 
     def update(self, net):
         """
@@ -154,7 +161,7 @@ class endpoint:
         """
         logger.info(
             "[EP {}]: prepare endpoint".format(self.ip))
-        if self.host is not None:
+        if self.host is not None and self.eptype is CONSTANTS.TRAN_SIMPLE_EP:
             self.transit_agent.update_agent_metadata(self, net)
         self.ready = True
 

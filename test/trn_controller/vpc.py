@@ -190,6 +190,16 @@ class vpc:
             "[VPC {}]: delete_simple_endpoint {}".format(self.vni, ip))
         return self.networks[netid].delete_simple_endpoint(ip, host)
 
+    def create_scaled_endpoint(self, netid, ip, backends):
+        """
+        Creates a new scaled endpoint in a network within the vpc.
+        Since the routers need not to be updated with the endpoint
+        data, this call is just cascaded to the network.
+        """
+        logger.info(
+            "[VPC {}]: create_scaled_endpoint {}".format(self.vni, ip))
+        return self.networks[netid].create_scaled_endpoint(ip, backends)
+
     def create_vxlan_endpoint(self, netid, ip, host):
         """
         Creates a vxlan port on the host for backward compatability tests.

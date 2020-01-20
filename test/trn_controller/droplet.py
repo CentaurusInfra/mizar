@@ -49,6 +49,7 @@ class droplet:
         self.trn_cli_update_ep = f'''{self.trn_cli} update-ep -i {self.phy_itf} -j'''
         self.trn_cli_get_ep = f'''{self.trn_cli} get-ep -i {self.phy_itf} -j'''
         self.trn_cli_delete_ep = f'''{self.trn_cli} delete-ep -i {self.phy_itf} -j'''
+        self.trn_cli_load_pipeline_stage = f'''{self.trn_cli} load-pipeline-stage -i {self.phy_itf} -j'''
 
         self.trn_cli_load_transit_agent_xdp = f'''{self.trn_cli} load-agent-xdp'''
         self.trn_cli_unload_transit_agent_xdp = f'''{self.trn_cli} unload-agent-xdp'''
@@ -75,6 +76,20 @@ class droplet:
             return
 
         logger.error("Unsupported droplet type!")
+
+    def load_transit_xdp_pipeline_stage(self, stage, object, expect_fail=False):
+        """
+        Loads an XDP program at stage!
+        """
+        log_string = "[DROPLET {}]: load_transit_xdp_pipeline_stage {}".format(stage, object)
+
+        jsonconf = {
+            "xdp_path": object,
+            "stage": stage
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_load_pipeline_stage} \'{jsonconf}\' '''
+        self.exec_cli_rpc(log_string, cmd, expect_fail)
 
     def provision_simple_endpoint(self, ep):
         """

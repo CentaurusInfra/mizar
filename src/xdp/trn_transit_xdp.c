@@ -389,7 +389,7 @@ static __inline int trn_process_inner_arp(struct transit_packet *pkt)
 	/* Don't respond to arp if endpoint is not found, or it is local to host */
 	if (!ep || ep->hosted_iface != -1 ||
 	    pkt->inner_arp->ar_op != bpf_htons(ARPOP_REQUEST)) {
-		bpf_debug("[Transit:%d:0x%x] ARP dest is not known\n", __LINE__,
+		bpf_debug("[Transit:%d:0x%x] Bypass ARP handling\n", __LINE__,
 			  bpf_ntohl(pkt->itf_ipv4));
 		return trn_switch_handle_pkt(pkt, *sip, *tip);
 	}
