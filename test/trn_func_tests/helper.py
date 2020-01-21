@@ -11,6 +11,8 @@
 #    under the License.
 
 from test.trn_controller.common import logger
+from scapy.all import rdpcap, IP, ARP, ICMP
+from scapy.contrib.geneve import GENEVE
 from time import sleep
 
 
@@ -215,3 +217,57 @@ def do_check_failed_rpcs(test, droplets):
                     d.id, d.rpc_failures[cmd], cmd))
             print()
     test.assertEqual(exit_code, 0)
+
+
+def do_validate_geneve_icmp_count(test, packets, count, droplet):
+    """
+    This function validates the number of geneve packets in a list of packets
+    against a given count.
+    """
+    total_geneve_icmp = 0
+    total_geneve_arp = 0
+    for pkt in packets:
+        # Checking src and dst due to docker promiscuous mode
+        if GENEVE in pkt and (pkt[IP].src == droplet.ip or pkt[IP].dst == droplet.ip):
+            if ICMP in pkt:
+                total_geneve_icmp += 1
+            if ARP in pkt:
+                total_geneve_arp += 1
+    packets.summary()
+    logger.info("{} Total geneve[ICMP]: {} {}".format(
+        '*'*5, total_geneve_icmp, '*'*5))
+    logger.info("{} Total geneve[ARP]: {} {}".format(
+        '*'*5, total_geneve_arp, '*'*5))
+    test.assertEqual(total_geneve_icmp, count)
+    if total_geneve_icmp == 0:  # If 0 geneve ICMPs, there must be an ARP
+        test.assertEqual(total_geneve_arp, 1)
+
+
+def do_validate_fast_path_net(test, ep1, ep2, switch_host):
+    """
+    This function validates the functionality of the fast path for a network.
+    1. Xdpcap dumps to a pcap file with a timeout of 5 seconds.
+    2. A ping test is conducted between the two given endpoints.
+    3. All geneve icmp packets are counted on each of the three objects.
+    4. The packet counts are validated against an expected count.
+    """
+    switch_host.dump_pcap(switch_host.pcap_file)
+    ep1.host.dump_pcap(ep1.host.agent_pcap_file[ep1.veth_peer])
+    ep2.host.dump_pcap(ep2.host.agent_pcap_file[ep2.veth_peer])
+    do_ping_test(test, ep1, ep2)
+    sleep(5)  # Wait for xdpcap to timeout
+    ep1_pkts = rdpcap("test/trn_func_tests/output/" + ep1.host.ip + "_" +
+                      ep1.host.agent_pcap_file[ep1.veth_peer] + "_dump.pcap")
+    ep2_pkts = rdpcap("test/trn_func_tests/output/" + ep2.host.ip + "_" +
+                      ep2.host.agent_pcap_file[ep2.veth_peer] + "_dump.pcap")
+    switch_pkts = rdpcap("test/trn_func_tests/output/" + switch_host.ip + "_" +
+                         switch_host.pcap_file + "_dump.pcap")
+
+    logger.info("{} ep1_packets {}".format('='*20, '='*20))
+    # One ping is sent, endpoints sees 2 ICMPS: ICMP request, ICMP reply
+    do_validate_geneve_icmp_count(test, ep1_pkts, 2, ep1.host)
+    logger.info("{} ep2_packets {}".format('='*20, '='*20))
+    do_validate_geneve_icmp_count(test, ep2_pkts, 2, ep2.host)
+    logger.info("{} switch_packets {}".format('='*20, '='*20))
+    # One ping is sent, switch sees 0 ICMPs.
+    do_validate_geneve_icmp_count(test, switch_pkts, 0, switch_host)

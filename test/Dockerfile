@@ -1,6 +1,6 @@
 FROM ubuntu:latest
 RUN apt-get update -y && apt-get install -y \
-	sudo \
+        sudo \
         rpcbind \
         rsyslog \
         build-essential \
@@ -17,5 +17,6 @@ RUN apt-get update -y && apt-get install -y \
         python3-pip \
         netcat \
         libcmocka-dev \
-        lcov
+        lcov \
+        libpcap-dev
 RUN pip3 install httpserver netaddr

@@ -61,10 +61,9 @@ class droplet:
         self.trn_cli_delete_agent_ep = f'''{self.trn_cli} delete-agent-ep'''
 
         self.xdp_path = "/trn_xdp/trn_transit_xdp_ebpf_debug.o"
-        self.pcap_file = "/bpffs/transit_xdp.pcap"
-
         self.agent_xdp_path = "/trn_xdp/trn_agent_xdp_ebpf_debug.o"
-        self.agent_pcap_file = "/bpffs/agent_xdp.pcap"
+        self.pcap_file = "eth0_transit_pcap"
+        self.agent_pcap_file = {}
         self.main_bridge = 'br0'
         self.bootstrap()
 
@@ -81,7 +80,8 @@ class droplet:
         """
         Loads an XDP program at stage!
         """
-        log_string = "[DROPLET {}]: load_transit_xdp_pipeline_stage {}".format(stage, object)
+        log_string = "[DROPLET {}]: load_transit_xdp_pipeline_stage {}".format(
+            stage, object)
 
         jsonconf = {
             "xdp_path": object,
@@ -114,6 +114,8 @@ class droplet:
 
         self._create_host_veth_pair(ep)
         self.load_transit_agent_xdp(ep.veth_peer)
+        pcap_file = ep.veth_peer + "_transit_agent_pcap"
+        self.agent_pcap_file[ep.veth_peer] = pcap_file
 
     def unprovision_simple_endpoint(self, ep):
         """
@@ -122,9 +124,9 @@ class droplet:
         """
         logger.info(
             "[DROPLET {}]: unprovision_simple_endpoint {}".format(self.id, ep.ip))
-
-        self._delete_veth_pair(ep)
         self.unload_transit_agent_xdp(ep.veth_peer)
+        self._delete_veth_pair(ep)
+        self.agent_pcap_file.pop(ep.veth_peer)
 
     def provision_vxlan_endpoint(self, ep):
         logger.info(
@@ -758,3 +760,19 @@ droplet_{self.ip}.pcap >/dev/null 2>&1 &\
             update_counts[key] = 1
         self.rpc_updates[key] = time.time()
         self.exec_cli_rpc(log_string, cmd, expect_fail)
+
+    def dump_num_calls(self):
+        for cmd in self.vpc_updates:
+            logger.info("[DROPLET {}]: vpc_updates commands ran: {}  {}".format(
+                self.id, cmd, self.vpc_updates[cmd]))
+        for cmd in self.substrate_updates:
+            logger.info("[DROPLET {}]: substrate_updates commands ran: {}  {}".format(
+                self.id, cmd, self.substrate_updates[cmd]))
+        for cmd in self.endpoint_updates:
+            logger.info("[DROPLET {}]: endpoint_updates commands ran: {}  {}".format(
+                self.id, cmd, self.endpoint_updates[cmd]))
+
+    def dump_pcap(self, pcapfile):
+        cmd = "timeout 5 /mnt/Transit/tools/xdpcap /bpffs/" + pcapfile + \
+            " /trn_test_out/" + self.ip + "_" + pcapfile + "_dump.pcap"
+        self.run(cmd, True)
