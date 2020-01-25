@@ -314,14 +314,18 @@ static int _trn_agent_set_inner_map(struct bpf_object *obj,
 static void _trn_refresh_default_maps(void)
 {
 	if (def_fwd_flow_mod_cache_map_fd == -1)
-		def_fwd_flow_mod_cache_map_fd = bpf_create_map(
-			BPF_MAP_TYPE_LRU_HASH, sizeof(struct ipv4_tuple_t),
-			sizeof(struct ipv4_tuple_t), TRAN_MAX_CACHE_SIZE, 0);
+		def_fwd_flow_mod_cache_map_fd =
+			bpf_create_map(BPF_MAP_TYPE_LRU_HASH,
+				       sizeof(struct ipv4_tuple_t),
+				       sizeof(struct scaled_endpoint_remote_t),
+				       TRAN_MAX_CACHE_SIZE, 0);
 
 	if (def_rev_flow_mod_cache_map_fd == -1)
-		def_rev_flow_mod_cache_map_fd = bpf_create_map(
-			BPF_MAP_TYPE_LRU_HASH, sizeof(struct ipv4_tuple_t),
-			sizeof(struct ipv4_tuple_t), TRAN_MAX_CACHE_SIZE, 0);
+		def_rev_flow_mod_cache_map_fd =
+			bpf_create_map(BPF_MAP_TYPE_LRU_HASH,
+				       sizeof(struct ipv4_tuple_t),
+				       sizeof(struct scaled_endpoint_remote_t),
+				       TRAN_MAX_CACHE_SIZE, 0);
 
 	if (def_ep_flow_host_cache_map_fd == -1)
 		def_ep_flow_host_cache_map_fd =

@@ -107,8 +107,6 @@ struct agent_metadata_t {
 } __attribute__((packed));
 
 struct ipv4_tuple_t {
-	/* Addresses */
-	__u8 protocol;
 	__u32 saddr;
 	__u32 daddr;
 
@@ -116,10 +114,26 @@ struct ipv4_tuple_t {
 	__u16 sport;
 	__u16 dport;
 
+	/* Addresses */
+	__u8 protocol;
+
 	/*TODO: include TCP flags, no use case for the moment! */
 } __attribute__((packed));
 
 struct remote_endpoint_t {
 	__u32 ip;
 	unsigned char mac[6];
+} __attribute__((packed));
+
+struct scaled_endpoint_remote_t {
+	/* Addresses */
+	__u32 saddr;
+	__u32 daddr;
+
+	/* ports */
+	__u16 sport;
+	__u16 dport;
+
+	unsigned char h_source[6];
+	unsigned char h_dest[6];
 } __attribute__((packed));

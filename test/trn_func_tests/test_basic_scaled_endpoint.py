@@ -62,13 +62,13 @@ class test_basic_switch(unittest.TestCase):
         c = controller(self.droplets)
 
         c.create_vpc(3, cidr("16", "10.0.0.0"), [])
-        c.create_network(3, 1, cidr("16", "10.0.0.0"), ["d4", "d5"])
+        c.create_network(3, 1, cidr("16", "10.0.0.0"), ["d4"])
         self.ep0 = c.create_simple_endpoint(3, 1, "10.0.0.2", "d0")
         self.ep1 = c.create_simple_endpoint(3, 1, "10.0.0.3", "d1")
         self.ep2 = c.create_simple_endpoint(3, 1, "10.0.0.4", "d2")
         self.ep3 = c.create_simple_endpoint(3, 1, "10.0.0.5", "d3")
 
-        self.sep = c.create_scaled_endpoint(3,1, "10.0.0.6", [self.ep2, self.ep3])
+        self.sep = c.create_scaled_endpoint(3,1, "10.0.0.6", [self.ep2])
 
     def tearDown(self):
         pass
@@ -76,5 +76,9 @@ class test_basic_switch(unittest.TestCase):
     def test_basic_switch(self):
         logger.info(
             "{} Testing two endpoints on a switch can communicate! {}".format('='*20, '='*20))
+        self.ep2.do_httpd()
+        self.ep3.do_httpd()
+        while 1:
+            pass
 
 

@@ -98,20 +98,20 @@ BPF_ANNOTATE_KV_PAIR(interface_map, int, int);
 struct bpf_map_def SEC("maps") fwd_flow_mod_cache = {
 	.type = BPF_MAP_TYPE_LRU_HASH,
 	.key_size = sizeof(struct ipv4_tuple_t),
-	.value_size = sizeof(struct ipv4_tuple_t),
+	.value_size = sizeof(struct scaled_endpoint_remote_t),
 	.max_entries = TRAN_MAX_CACHE_SIZE,
 };
 BPF_ANNOTATE_KV_PAIR(fwd_flow_mod_cache, struct ipv4_tuple_t,
-		     struct ipv4_tuple_t);
+		     struct scaled_endpoint_remote_t);
 
 struct bpf_map_def SEC("maps") rev_flow_mod_cache = {
 	.type = BPF_MAP_TYPE_LRU_HASH,
 	.key_size = sizeof(struct ipv4_tuple_t),
-	.value_size = sizeof(struct ipv4_tuple_t),
+	.value_size = sizeof(struct scaled_endpoint_remote_t),
 	.max_entries = TRAN_MAX_CACHE_SIZE,
 };
 BPF_ANNOTATE_KV_PAIR(rev_flow_mod_cache, struct ipv4_tuple_t,
-		     struct ipv4_tuple_t);
+		     struct scaled_endpoint_remote_t);
 
 struct bpf_map_def SEC("maps") ep_flow_host_cache = {
 	.type = BPF_MAP_TYPE_LRU_HASH,

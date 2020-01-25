@@ -52,7 +52,6 @@ static __inline int trn_scaled_ep_decide(struct transit_packet *pkt)
 	void *endpoints_map;
 	struct endpoint_t *ep;
 	struct endpoint_key_t epkey;
-	__u32 d_addr;
 	int map_idx = 0;
 	__u32 remote_idx;
 	__be64 tunnel_id = trn_vni_to_tunnel_id(pkt->geneve->vni);
@@ -65,7 +64,7 @@ static __inline int trn_scaled_ep_decide(struct transit_packet *pkt)
 	}
 
 	__builtin_memcpy(&epkey.tunip[0], &tunnel_id, sizeof(tunnel_id));
-	epkey.tunip[2] = pkt->inner_ip->daddr;
+	epkey.tunip[2] = pkt->inner_ipv4_tuple.daddr;
 
 	/* Get the scaled endpoint configuration */
 	ep = bpf_map_lookup_elem(endpoints_map, &epkey);
@@ -78,13 +77,14 @@ static __inline int trn_scaled_ep_decide(struct transit_packet *pkt)
 	}
 
 	/* Simple hashing for now! */
-	__u32 inhash = jhash_2words(pkt->inner_ip->saddr, pkt->inner_ip->daddr,
-				    INIT_JHASH_SEED);
+	__u32 inhash =
+		jhash_2words(pkt->inner_ipv4_tuple.saddr,
+			     pkt->inner_ipv4_tuple.sport, INIT_JHASH_SEED);
 
 	if (ep->nremote_ips == 0) {
 		bpf_debug(
 			"[Scaled_EP] DROP: no backend attached to scaled endpoint 0x%x!\n",
-			bpf_ntohl(pkt->inner_ip->daddr));
+			bpf_ntohl(pkt->inner_ipv4_tuple.daddr));
 		return XDP_DROP;
 	}
 
@@ -98,12 +98,92 @@ static __inline int trn_scaled_ep_decide(struct transit_packet *pkt)
 		return XDP_ABORTED;
 	}
 
-	d_addr = ep->remote_ips[remote_idx];
+	pkt->scaled_ep_opt->opt_class = TRN_GNV_OPT_CLASS;
+	pkt->scaled_ep_opt->type = TRN_GNV_SCALED_EP_OPT_TYPE;
+	pkt->scaled_ep_opt->length = sizeof(struct trn_gnv_scaled_ep_data) / 4;
+	pkt->scaled_ep_opt->scaled_ep_data.msg_type = TRN_SCALED_EP_MODIFY;
 
-	bpf_debug("[Scaled_EP:%d:] scaled endpoint to 0x%x!!\n", __LINE__,
-		  bpf_ntohl(d_addr));
+	pkt->scaled_ep_opt->scaled_ep_data.target.daddr =
+		ep->remote_ips[remote_idx];
 
-	return XDP_DROP;
+	pkt->scaled_ep_opt->scaled_ep_data.target.saddr =
+		pkt->inner_ipv4_tuple.saddr;
+
+	pkt->scaled_ep_opt->scaled_ep_data.target.sport =
+		pkt->inner_ipv4_tuple.sport;
+
+	pkt->scaled_ep_opt->scaled_ep_data.target.dport =
+		pkt->inner_ipv4_tuple.dport;
+
+	__builtin_memcpy(&pkt->scaled_ep_opt->scaled_ep_data.target.h_source,
+			 pkt->inner_eth->h_source,
+			 ETH_ALEN * sizeof(pkt->inner_eth->h_source[0]));
+
+	__builtin_memcpy(&pkt->scaled_ep_opt->scaled_ep_data.target.h_dest,
+			 pkt->inner_eth->h_dest,
+			 ETH_ALEN * sizeof(pkt->inner_eth->h_dest[0]));
+
+	/*Reset rts for now, todo: add endpoint host in an rts opt to minimize hop counts*/
+	trn_reset_rts_opt(pkt);
+
+	trn_set_src_dst_ip_csum(pkt, pkt->ip->daddr, pkt->ip->saddr);
+
+	trn_swap_src_dst_mac(pkt->data);
+
+	bpf_debug("[Scaled_EP:%d:] ** scaled endpoint to 0x%x!!\n", __LINE__,
+		  bpf_ntohl(pkt->scaled_ep_opt->scaled_ep_data.target.daddr));
+	return XDP_TX;
+}
+
+static __inline int trn_sep_process_inner_udp(struct transit_packet *pkt)
+{
+	pkt->inner_udp = (void *)pkt->inner_ip + sizeof(*pkt->inner_ip);
+
+	if (pkt->inner_udp + 1 > pkt->data_end) {
+		bpf_debug("[Scaled_EP:%d:0x%x] ABORTED: Bad offset\n", __LINE__,
+			  bpf_ntohl(pkt->itf_ipv4));
+		return XDP_ABORTED;
+	}
+
+	bpf_debug("[Scaled_EP:%d:0x%x] Process UDP \n", __LINE__,
+		  bpf_ntohl(pkt->itf_ipv4));
+
+	pkt->inner_ipv4_tuple.sport = pkt->inner_udp->source;
+	pkt->inner_ipv4_tuple.dport = pkt->inner_udp->dest;
+
+	return trn_scaled_ep_decide(pkt);
+}
+
+static __inline int trn_sep_process_inner_tcp(struct transit_packet *pkt)
+{
+	pkt->inner_tcp = (void *)pkt->inner_ip + sizeof(*pkt->inner_ip);
+
+	if (pkt->inner_tcp + 1 > pkt->data_end) {
+		bpf_debug("[Scaled_EP:%d:0x%x] ABORTED: Bad offset\n", __LINE__,
+			  bpf_ntohl(pkt->itf_ipv4));
+		return XDP_ABORTED;
+	}
+
+	pkt->inner_ipv4_tuple.sport = pkt->inner_tcp->source;
+	pkt->inner_ipv4_tuple.dport = pkt->inner_tcp->dest;
+
+	bpf_debug("[Scaled_EP:%d:0x%x] Process TCP\n", __LINE__,
+		  bpf_ntohl(pkt->itf_ipv4));
+
+	return trn_scaled_ep_decide(pkt);
+}
+
+static __inline int trn_sep_process_inner_icmp(struct transit_packet *pkt)
+{
+	bpf_debug(
+		"[Scaled_EP:%d:] scaled endpoint 0x%x does not handle ICMP!!\n",
+		__LINE__, bpf_ntohl(pkt->inner_ip->daddr));
+
+	// TODO: return XDP_DROP
+	pkt->inner_ipv4_tuple.sport = 0;
+	pkt->inner_ipv4_tuple.dport = 0;
+
+	return trn_scaled_ep_decide(pkt);
 }
 
 static __inline int trn_sep_process_inner_ip(struct transit_packet *pkt)
@@ -116,7 +196,26 @@ static __inline int trn_sep_process_inner_ip(struct transit_packet *pkt)
 		return XDP_ABORTED;
 	}
 
-	return trn_scaled_ep_decide(pkt);
+	pkt->inner_ipv4_tuple.saddr = pkt->inner_ip->saddr;
+	pkt->inner_ipv4_tuple.daddr = pkt->inner_ip->daddr;
+	pkt->inner_ipv4_tuple.protocol = pkt->inner_ip->protocol;
+
+	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
+		return trn_sep_process_inner_udp(pkt);
+	}
+
+	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_TCP) {
+		return trn_sep_process_inner_tcp(pkt);
+	}
+
+	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_ICMP) {
+		return trn_sep_process_inner_icmp(pkt);
+	}
+
+	bpf_debug("[Scaled_EP:%d:0x%x] Unsupported inner protocol \n", __LINE__,
+		  bpf_ntohl(pkt->itf_ipv4));
+
+	return XDP_DROP;
 }
 
 static __inline int trn_sep_process_inner_eth(struct transit_packet *pkt)
@@ -160,7 +259,13 @@ static __inline int trn_sep_process_geneve(struct transit_packet *pkt)
 		return XDP_ABORTED;
 	}
 
-	// TODO: process options
+	pkt->scaled_ep_opt = (void *)pkt->rts_opt + sizeof(*pkt->rts_opt);
+
+	if (pkt->scaled_ep_opt + 1 > pkt->data_end) {
+		bpf_debug("[Scaled_EP:%d:0x%x] ABORTED: Bad offset\n", __LINE__,
+			  bpf_ntohl(pkt->itf_ipv4));
+		return XDP_ABORTED;
+	}
 
 	return trn_sep_process_inner_eth(pkt);
 }
@@ -189,6 +294,9 @@ static __inline int trn_sep_process_ip(struct transit_packet *pkt)
 			  bpf_ntohl(pkt->itf_ipv4));
 		return XDP_ABORTED;
 	}
+
+	if (!pkt->ip->ttl)
+		return XDP_DROP;
 
 	return trn_sep_process_udp(pkt);
 }
