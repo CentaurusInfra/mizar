@@ -83,7 +83,7 @@ class veth_allocator:
 
 
 def run_cmd(cmd_list):
-    result = subprocess.Popen(cmd_list)
-    text = result.communicate()[0]
+    result = subprocess.Popen(cmd_list, shell=True, stdout=subprocess.PIPE)
+    text = result.stdout.read().decode()
     returncode = result.returncode
     return (returncode, text)

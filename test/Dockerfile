@@ -17,6 +17,5 @@ RUN apt-get update -y && apt-get install -y \
         python3-pip \
         netcat \
         libcmocka-dev \
-        lcov \
-        libpcap-dev
+        lcov
 RUN pip3 install httpserver netaddr

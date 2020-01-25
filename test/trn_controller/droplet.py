@@ -699,7 +699,7 @@ cp /var/log/syslog /trn_test_out/syslog_{self.ip}
         container.exec_run("ln -s /mnt/Transit/build/xdp /trn_xdp")
         container.exec_run("ln -s /sys/fs/bpf /bpffs")
         container.exec_run(
-            "ln - s /mnt/Transit/test/trn_func_tests/output /trn_test_out")
+            "ln -s /mnt/Transit/test/trn_func_tests/output /trn_test_out")
 
         # Run the transitd in the background
         container.exec_run("/trn_bin/transitd ",
@@ -772,7 +772,14 @@ droplet_{self.ip}.pcap >/dev/null 2>&1 &\
             logger.info("[DROPLET {}]: endpoint_updates commands ran: {}  {}".format(
                 self.id, cmd, self.endpoint_updates[cmd]))
 
-    def dump_pcap(self, pcapfile):
-        cmd = "timeout 5 /mnt/Transit/tools/xdpcap /bpffs/" + pcapfile + \
-            " /trn_test_out/" + self.ip + "_" + pcapfile + "_dump.pcap"
-        self.run(cmd, True)
+    def dump_pcap(self, pcapfile, timeout=5):
+        """
+        Does tcpdumps to a pcap file for "n" seconds on the host veth device
+        corresponding to the eth0 interface inside the docker container.
+        """
+        veth_index = self.run(
+            "cat /sys/class/net/eth0/iflink")[1].strip()
+        veth = self.run_from_root(
+            "grep -l " + veth_index + " /sys/class/net/veth*/ifindex")[1].split("/")[4]
+        run_cmd("timeout " + str(timeout) + " tcpdump -i " + veth + " -w test/trn_func_tests/output/" +
+                self.ip + "_" + pcapfile + "_dump.pcap >/dev/null 2>&1 &")
