@@ -225,6 +225,14 @@ static inline void trn_ipv4_csum_inline(void *iph, __u64 *csum)
 }
 
 __ALWAYS_INLINE__
+static inline void trn_update_l4_csum(__u64 *csum, __be32 old_addr,
+				      __be32 new_addr)
+{
+	*csum = (~*csum & 0xffff) + ~old_addr + new_addr;
+	*csum = trn_csum_fold_helper(*csum);
+}
+
+__ALWAYS_INLINE__
 static inline void trn_set_arp_ha(void *ha, unsigned char *mac)
 {
 	unsigned short *p = ha;
@@ -355,12 +363,51 @@ static inline void trn_set_src_dst_ip_csum(struct transit_packet *pkt,
 }
 
 __ALWAYS_INLINE__
+static inline void trn_inner_l4_csum_update(struct transit_packet *pkt,
+					    __u32 old_addr, __u32 new_addr)
+{
+	if (new_addr == old_addr)
+		return;
+
+	if (pkt->inner_ip->protocol == IPPROTO_UDP) {
+		if (pkt->inner_udp + 1 > pkt->data_end) {
+			return;
+		}
+
+		__u64 cs = pkt->inner_udp->check;
+		trn_update_l4_csum(&cs, old_addr, new_addr);
+		pkt->inner_udp->check = cs;
+	}
+
+	if (pkt->inner_ip->protocol == IPPROTO_TCP) {
+		if (pkt->inner_tcp + 1 > pkt->data_end) {
+			return;
+		}
+
+		__u64 cs = pkt->inner_tcp->check;
+		trn_update_l4_csum(&cs, old_addr, new_addr);
+		pkt->inner_tcp->check = cs;
+	}
+}
+
+__ALWAYS_INLINE__
 static inline void trn_set_src_dst_inner_ip_csum(struct transit_packet *pkt,
 						 __u32 saddr, __u32 daddr)
 {
+	if (pkt->inner_ip + 1 > pkt->data_end) {
+		return;
+	}
+
+	__u32 old_saddr = pkt->inner_ip->saddr;
+	__u32 old_daddr = pkt->inner_ip->daddr;
+
 	__u64 csum = 0;
 	trn_set_src_ip(pkt->inner_ip, pkt->data_end, saddr);
+	trn_inner_l4_csum_update(pkt, old_saddr, saddr);
+
 	trn_set_dst_ip(pkt->inner_ip, pkt->data_end, daddr);
+	trn_inner_l4_csum_update(pkt, old_daddr, daddr);
+
 	csum = 0;
 	pkt->inner_ip->check = 0;
 	trn_ipv4_csum_inline(pkt->inner_ip, &csum);
