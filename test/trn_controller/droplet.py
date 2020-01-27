@@ -88,6 +88,18 @@ class droplet:
         self._create_veth_pair(ep)
         self.load_transit_agent_xdp(ep.veth_peer)
 
+    def provision_host_endpoint(self, ep):
+        """
+        Creates a veth pair and in the root namespace for the endpoint and loads
+        the transit agent program on the veth peer running in the root
+        namespace.
+        """
+        logger.info(
+            "[DROPLET {}]: provision_simple_endpoint {}".format(self.id, ep.ip))
+
+        self._create_host_veth_pair(ep)
+        self.load_transit_agent_xdp(ep.veth_peer)
+
     def unprovision_simple_endpoint(self, ep):
         """
         Unloads the transit agent program on the veth peer, and
@@ -164,6 +176,28 @@ ip netns exec {ep.ns} ifconfig veth0 hw ether {ep.mac} ' ''')
 
         self.run(script)
         self.veth_peers.add(ep.veth_peer)
+
+    def _create_host_veth_pair(self, ep):
+        """
+        Creates a veth pair in the root namespace
+        """
+        logger.info(
+            "[DROPLET {}]: _create_host_veth_pair {}".format(self.id, ep.ip))
+
+        script = (f''' sudo bash -c '\
+mkdir -p /tmp/{ep.ns}_{ep.ip} && \
+echo {ep.ip} > /tmp/{ep.ns}_{ep.ip}/index.html && \
+ip link add {ep.veth_name} type veth peer name {ep.veth_peer} && \
+ip link set dev {ep.veth_name} up && \
+ip addr add {ep.ip}/{ep.prefixlen} dev {ep.veth_name} && \
+ethtool -K {ep.veth_name} tso off gso off ufo off && \
+ethtool --offload {ep.veth_name} rx off tx off && \
+ip link set dev {ep.veth_peer} up mtu 9000 && \
+ip route add {ep.vpc_cidr.ip}/{ep.vpc_cidr.prefixlen} dev {ep.veth_name} && \
+ifconfig {ep.veth_name} hw ether {ep.mac} ' ''')
+
+        self.run(script)
+        self.veth_peers.add(ep.veth_name)
 
     def _delete_veth_pair(self, ep):
         """
@@ -638,6 +672,7 @@ cp /var/log/syslog /trn_test_out/syslog_{self.ip}
         container.exec_run("/etc/init.d/rpcbind restart")
         container.exec_run("/etc/init.d/rsyslog restart")
         container.exec_run("ip link set dev eth0 up mtu 9000")
+        container.exec_run("sysctl -w net.ipv4.tcp_mtu_probing=2")
 
         # We may need ovs for compatability tests
         container.exec_run("/etc/init.d/openvswitch-switch restart")
