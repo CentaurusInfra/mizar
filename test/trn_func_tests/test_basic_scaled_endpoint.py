@@ -78,7 +78,5 @@ class test_basic_switch(unittest.TestCase):
             "{} Testing two endpoints on a switch can communicate! {}".format('='*20, '='*20))
         self.ep2.do_httpd()
         self.ep3.do_httpd()
-        while 1:
-            pass
 
 
