@@ -11,21 +11,22 @@
 #    under the License.
 
 from test.trn_controller.common import logger
-from scapy.all import rdpcap, IP, ARP, ICMP
-from scapy.contrib.geneve import GENEVE
 from time import sleep
+from scapy.all import rdpcap, IP, ARP, ICMP, TCP, UDP, Raw
+from scapy.layers.http import HTTP
+from scapy.contrib.geneve import GENEVE
 
 
-def do_ping_test(test, ep1, ep2):
+def do_ping_test(test, ep1, ep2, both_ways=True):
     logger.info("Test {}: {} do ping test {}".format(
         type(test).__name__, "="*10, "="*10))
-    logger.info("Test: {} can ping {}".format(ep2.ip, ep1.ip))
-    exit_code = ep2.do_ping(ep1.ip)[0]
-    test.assertEqual(exit_code, 0)
-
     logger.info("Test: {} can ping {}".format(ep1.ip, ep2.ip))
     exit_code = ep1.do_ping(ep2.ip)[0]
     test.assertEqual(exit_code, 0)
+    if both_ways:
+        logger.info("Test: {} can ping {}".format(ep2.ip, ep1.ip))
+        exit_code = ep2.do_ping(ep1.ip)[0]
+        test.assertEqual(exit_code, 0)
 
 
 def do_ping_fail_test(test, ep1, ep2, both_ways=True):
@@ -155,7 +156,7 @@ def do_validate_delete_test(test, droplets):
     """
     Validates deletes RPC calls are correctly made after an update.
     * Condition #1: All update calls have a corresponding delete.
-    #2: All delete calls happen AFTER their corresponding update call is made.
+    # 2: All delete calls happen AFTER their corresponding update call is made.
     * Condition
     * Condition #3: All corresponding get RPC calls return an error after delete
     """
@@ -219,24 +220,6 @@ def do_check_failed_rpcs(test, droplets):
     test.assertEqual(exit_code, 0)
 
 
-def do_print_icmp_packet_info(test, pkt):
-    """
-    Function for dumping icmp packet info for debugging purposes.
-    """
-    if pkt[ICMP].type == 0:
-        icmp_type = "echo reply"
-    elif pkt[ICMP].type == 8:
-        icmp_type = "echo request"
-    print("ICMP type " + icmp_type)
-    print("Outer packet ttl: " + str(pkt[IP].ttl))
-    print("Inner packet ttl: " + str(pkt[GENEVE][IP].ttl))
-    print("Outer packet src: " + str(pkt[IP].src))
-    print("Inner packet src: " + str(pkt[GENEVE][IP].src))
-    print("Outer packet dst: " + str(pkt[IP].dst))
-    print("Inner packet dst: " + str(pkt[GENEVE][IP].dst))
-    print()
-
-
 def do_validate_geneve_icmp_fast_path(test, packets, count, droplet, exp_ttl=64):
     """
     This function validates the number of geneve packets in a list of packets
@@ -265,7 +248,7 @@ def do_validate_geneve_icmp_fast_path(test, packets, count, droplet, exp_ttl=64)
 def do_validate_fast_path(test, ep1, ep2, net1_switch_host, router_host=None, net2_switch_host=None):
     """
     This function validates the functionality of the fast path.
-    1. Xdpcap dumps to a pcap file with a timeout of 5 seconds.
+    1. Tcpdumps to a pcap file with a timeout of 5 seconds.
     2. A ping test is conducted between the two given endpoints.
     3. All geneve icmp packets are counted on each of the objects.
     4. The packet counts are validated against an expected count.
@@ -275,17 +258,17 @@ def do_validate_fast_path(test, ep1, ep2, net1_switch_host, router_host=None, ne
     exp_switch_pkt_count = 0
     exp_router_pkt_count = 0
 
-    net1_switch_host.dump_pcap(net1_switch_host.pcap_file)
-    ep1.host.dump_pcap(ep1.host.agent_pcap_file[ep1.veth_peer])
-    ep2.host.dump_pcap(ep2.host.agent_pcap_file[ep2.veth_peer])
+    net1_switch_host.dump_pcap_on_host(net1_switch_host.pcap_file)
+    ep1.host.dump_pcap_on_host(ep1.host.agent_pcap_file[ep1.veth_peer])
+    ep2.host.dump_pcap_on_host(ep2.host.agent_pcap_file[ep2.veth_peer])
     if router_host:  # Fast Path VPC case
-        router_host.dump_pcap(router_host.pcap_file)
-        net2_switch_host.dump_pcap(net2_switch_host.pcap_file)
+        router_host.dump_pcap_on_host(router_host.pcap_file)
+        net2_switch_host.dump_pcap_on_host(net2_switch_host.pcap_file)
         exp_ep_ttl = 63
-        exp_ep_pkt_count = 2
-        exp_router_pkt_count = 4
+        exp_ep_pkt_count = 4
+        exp_router_pkt_count = 8
     sleep(1)  # Wait for tcpdump to start
-    do_ping_test(test, ep1, ep2)
+    do_common_tests(test, ep1, ep2)
     sleep(5)  # Wait for tcpdump to timeout
 
     ep1_pkts = rdpcap("test/trn_func_tests/output/" + ep1.host.ip + "_" +
@@ -318,3 +301,129 @@ def do_validate_fast_path(test, ep1, ep2, net1_switch_host, router_host=None, ne
         logger.info("{} net2_switch_packets {}".format('='*20, '='*20))
         do_validate_geneve_icmp_fast_path(
             test, net2_switch_pkts, exp_switch_pkt_count, net2_switch_host)
+
+
+def do_start_backend_servers(test, backend):
+    for ep in backend:
+        ep.do_httpd()
+        ep.do_tcp_serve()
+        ep.do_udp_serve()
+
+
+def do_start_clients(test, client, server):
+    client.do_curl("http://{}:8000 -Ss -m 1".format(server.ip))[0]
+    client.do_tcp_client(server.ip, detach=True)
+    client.do_udp_client(server.ip, detach=True)
+
+
+def do_test_scaled_ep(test, client, server, backend):
+    """
+    This function validates the functionality of the scaled endpoint.
+    1. Tcpdumps to a pcap file with a timeout of 5 seconds.
+    2. Test HTTP, ICMP, TCP, and UDP between client and scaled endpoint.
+    3. Validate that the client has sent packets with the 4 protocol layers.
+    4. Validate that the backend has recieved packets with the 4 protocol layers.
+    """
+    client.host.dump_pcap_on_host(
+        client.host.agent_pcap_file[client.veth_peer], 10)
+    for ep in backend:
+        ep.host.dump_pcap_on_host(ep.host.agent_pcap_file[ep.veth_peer], 10)
+    sleep(1)  # Wait for tcpdump to start
+    do_ping_test(test, client, server, False)
+    do_start_backend_servers(test, backend)
+    do_start_clients(test, client, server)
+    sleep(10)  # Wait for tcpdump to timeout
+    backend_packets = {}
+    client_pkts = rdpcap("test/trn_func_tests/output/" + client.host.ip + "_" +
+                         client.host.agent_pcap_file[client.veth_peer] + "_dump.pcap")
+    for ep in backend:
+        backend_packets[ep.host.ip] = (rdpcap("test/trn_func_tests/output/" + ep.host.ip + "_" +
+                                              ep.host.agent_pcap_file[ep.veth_peer] + "_dump.pcap"))
+    test.assertEqual(do_check_proto(test, {client.host.ip: client_pkts}), 4)
+    test.assertEqual(do_check_proto(test, backend_packets), 4)
+
+
+def do_check_proto(test, hosts):
+    """
+    This function checks for protocol layers from a dictionary of packets
+    """
+    icmp_check = 0
+    http_check = 0
+    tcp_check = 0
+    udp_check = 0
+    for host_ip in hosts.keys():
+        for pkt in hosts[host_ip]:
+            if GENEVE in pkt:
+                parse(test, pkt)
+                if ICMP in pkt[GENEVE] and (pkt[IP].src == host_ip or pkt[IP].dst == host_ip):
+                    icmp_check = 1
+                elif UDP in pkt[GENEVE] and (pkt[IP].src == host_ip or pkt[IP].dst == host_ip):
+                    udp_check = 1
+                elif TCP in pkt[GENEVE] and (pkt[IP].src == host_ip or pkt[IP].dst == host_ip):
+                    tcp_check = 1
+                    if pkt[TCP].dport == 8000 or pkt[TCP].sport == 8000:
+                        http_check = 1
+    return icmp_check + http_check + tcp_check + udp_check
+
+
+def parse(test, pkt):
+    if pkt.haslayer(TCP) and pkt.getlayer(TCP).dport == 80 and pkt.haslayer(Raw):
+        print(pkt.getlayer(Raw).load)
+
+
+def debug_print_icmp_packet_info(test, pkt):
+    """
+    Function for dumping icmp packet info for debugging purposes.
+    """
+    if pkt[ICMP].type == 0:
+        icmp_type = "echo reply"
+    elif pkt[ICMP].type == 8:
+        icmp_type = "echo request"
+    print("ICMP type " + icmp_type)
+    print("Outer packet ttl: " + str(pkt[IP].ttl))
+    print("Inner packet ttl: " + str(pkt[GENEVE][IP].ttl))
+    print("Outer packet src: " + str(pkt[IP].src))
+    print("Inner packet src: " + str(pkt[GENEVE][IP].src))
+    print("Outer packet dst: " + str(pkt[IP].dst))
+    print("Inner packet dst: " + str(pkt[GENEVE][IP].dst))
+    print()
+
+
+def debug_dump_icmp_scaled_endpoint(test, client, server, backend, switch_host):
+    """
+    Debug scaled endpoint helper for dumping icmp packet information
+    """
+    client.host.dump_pcap_on_host(
+        client.host.agent_pcap_file[client.veth_peer])
+    switch_host.dump_pcap_on_host(switch_host.pcap_file)
+    for ep in backend:
+        ep.host.dump_pcap_on_host(ep.host.agent_pcap_file[ep.veth_peer])
+    sleep(1)  # Wait for tcpdump to start
+    do_ping_test(test, client, server, False)
+    sleep(5)  # Wait for tcpdump to timeout
+    backend_packets = {}
+    client_pkts = rdpcap("test/trn_func_tests/output/" + client.host.ip + "_" +
+                         client.host.agent_pcap_file[client.veth_peer] + "_dump.pcap")
+    switch_pkts = rdpcap("test/trn_func_tests/output/" + switch_host.ip + "_" +
+                         switch_host.pcap_file + "_dump.pcap")
+    for ep in backend:
+        backend_packets[ep.host.ip] = (rdpcap("test/trn_func_tests/output/" + ep.host.ip + "_" +
+                                              ep.host.agent_pcap_file[ep.veth_peer] + "_dump.pcap"))
+    logger.info("{} Client Packets: {} {}".format(
+        '='*20, client.host.ip, '='*20))
+    for pkt in client_pkts:
+        if ICMP in pkt and (pkt[IP].src == client.host.ip or pkt[IP].dst == client.host.ip):
+            debug_print_icmp_packet_info(test, pkt)
+    logger.info("{} Switch Packets: {} {}".format(
+        '='*20, switch_host.ip, '='*20))
+    for pkt in switch_pkts:
+        if ICMP in pkt and (pkt[IP].src == switch_host.ip or pkt[IP].dst == switch_host.ip):
+            debug_print_icmp_packet_info(test, pkt)
+    for host_ip in backend_packets.keys():
+        if backend_packets[host_ip]:
+            logger.info("{} Backend Packets {}: {}".format(
+                '='*20, host_ip, '='*20))
+        for packets in backend_packets[host_ip]:
+            for pkt in packets:
+                if ICMP in pkt and (pkt[IP].src == host_ip or pkt[IP].dst == host_ip):
+                    debug_print_icmp_packet_info(test, pkt)

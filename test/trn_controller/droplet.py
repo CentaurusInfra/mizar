@@ -772,14 +772,14 @@ droplet_{self.ip}.pcap >/dev/null 2>&1 &\
             logger.info("[DROPLET {}]: endpoint_updates commands ran: {}  {}".format(
                 self.id, cmd, self.endpoint_updates[cmd]))
 
-    def dump_pcap(self, pcapfile, timeout=5):
+    def dump_pcap_on_host(self, pcapfile, timeout=5):
         """
-        Does tcpdumps to a pcap file for "n" seconds on the host veth device
+        Does tcpdump to a pcap file for "n" seconds on the host veth device
         corresponding to the eth0 interface inside the docker container.
         """
         veth_index = self.run(
             "cat /sys/class/net/eth0/iflink")[1].strip()
         veth = self.run_from_root(
             "grep -l " + veth_index + " /sys/class/net/veth*/ifindex")[1].split("/")[4]
-        run_cmd("timeout " + str(timeout) + " tcpdump -i " + veth + " -w test/trn_func_tests/output/" +
+        run_cmd("timeout " + str(timeout) + " tcpdump -nn -A -i " + veth + " -w test/trn_func_tests/output/" +
                 self.ip + "_" + pcapfile + "_dump.pcap >/dev/null 2>&1 &")
