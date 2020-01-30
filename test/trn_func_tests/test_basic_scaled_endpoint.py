@@ -45,15 +45,8 @@ class test_basic_switch(unittest.TestCase):
         pass
 
     def test_basic_switch(self):
-        logger.info(
-            "{} Testing two endpoints on a switch can communicate! {}".format('='*20, '='*20))
-<<<<<<< HEAD
-        self.ep2.do_httpd()
-        self.ep3.do_httpd()
-
-
-=======
-        do_test_scaled_ep(
-            self, self.ep0, self.sep, self.sep_backend)
+        do_test_scaled_ep_basic(self, self.ep0, self.sep, self.sep_backend)
+        do_test_scaled_ep_basic(self, self.ep0, self.sep, self.sep_backend)
+        do_test_scaled_ep_diff_conn(self, self.ep0, self.sep, self.sep_backend)
+        do_test_scaled_ep_same_conn(self, self.ep0, self.sep, self.sep_backend)
         do_check_failed_rpcs(self, self.droplets.values())
->>>>>>> c7aa1fd... Added functional test for scaled ep

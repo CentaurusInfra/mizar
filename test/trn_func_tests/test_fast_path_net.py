@@ -37,7 +37,7 @@ class test_fast_path_net(unittest.TestCase):
 
     def test_fast_path_net(self):
         logger.info(
-            "{} Testing two endpoints on a switch can communicate! {}".format('='*20, '='*20))
+            "{} Testing network fast path! {}".format('='*20, '='*20))
         do_validate_fast_path(self, self.ep_left,
                               self.ep_right, self.droplets["switch"])
         do_check_failed_rpcs(self, self.droplets.values())

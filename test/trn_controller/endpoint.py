@@ -85,6 +85,9 @@ class endpoint:
         self.udp_server_cmd = f'''{self.bash_cmd} '(nc -u -l -p 5001 > {self.udp_recv_file})' '''
         self.iperf3_server_cmd = f'''{self.bash_cmd} 'iperf3 -s > /tmp/{self.ns}_{self.ip}/iperf_server.log 2>&1' '''
 
+        self.tcp_serv_idle_cmd = f'''{self.bash_cmd} './mnt/Transit/tools/tcp_server.py' '''
+        self.tcp_client_idle_cmd = f'''{self.bash_cmd} './mnt/Transit/tools/tcp_client.py '''
+
     def provision(self):
         if self.host is None or self.eptype is not CONSTANTS.TRAN_SIMPLE_EP:
             return
@@ -241,3 +244,9 @@ class endpoint:
     def do_iperf3_client(self, ip, args=''):
         cmd = f'''{self.bash_cmd} 'iperf3 -c {ip} {args}' '''
         return self.host.run(cmd)
+
+    def do_tcp_serve_idle(self, detach=True):
+        return self.host.run(self.tcp_serv_idle_cmd, detach=detach)
+
+    def do_tcp_client_idle(self, ip, message_count=2, delay=5, detach=True):
+        return self.host.run(self.tcp_client_idle_cmd + str(ip) + " " + str(message_count) + " " + str(delay) + "'", detach=detach)
