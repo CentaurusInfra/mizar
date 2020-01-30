@@ -408,14 +408,15 @@ def do_test_scaled_ep_diff_conn(test, client, server, backend):
     """
     logger.info(
         "{} Testing scaled endpoint multiple TCP connections! {}".format('='*20, '='*20))
+    total_connections = 10
     ep_to_host_map = {}
     do_start_pcap_scaled_ep(test, client, server, backend, 10)
     for ep in backend:
         ep.do_tcp_serve_idle()
         ep_to_host_map[ep.host.ip] = ep.ip
-    for __ in range(0, 2):  # Three seperate connections
+    for __ in range(0, total_connections):
         client.do_tcp_client_idle(
-            server.ip, 1, 1, detach=False)
+            server.ip, 1, 1)
     sleep(10)
     backend_packets = {}
     for ep in backend:

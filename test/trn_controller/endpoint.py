@@ -25,8 +25,8 @@ class endpoint:
     multiple vxlan tunnel keys, subneting, ... etc.
     """
 
-    def __init__(self, vni, netid, ip, prefixlen, gw_ip, host, tuntype='gnv', bridge='br0', eptype=CONSTANTS.TRAN_SIMPLE_EP, backends=None,
-        scaled_ep_obj='/trn_xdp/trn_transit_scaled_endpoint_ebpf_debug.o'):
+    def __init__(self, vni, netid, ip, vpc_cidr, net_cidr, gw_ip, host, tuntype='gnv', bridge='br0', host_ep=False, eptype=CONSTANTS.TRAN_SIMPLE_EP, backends=None,
+                 scaled_ep_obj='/trn_xdp/trn_transit_scaled_endpoint_ebpf_debug.o'):
         """
         Defines a simple endpoint in the VPC and network. Also defines
         a phantom endpoint that is not hosted on any host (switch only respond for ARP requests).

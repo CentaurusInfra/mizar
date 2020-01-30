@@ -102,6 +102,8 @@ class droplet:
 
         self._create_veth_pair(ep)
         self.load_transit_agent_xdp(ep.veth_peer)
+        pcap_file = ep.veth_peer + "_transit_agent_pcap"
+        self.agent_pcap_file[ep.veth_peer] = pcap_file
 
     def provision_host_endpoint(self, ep):
         """

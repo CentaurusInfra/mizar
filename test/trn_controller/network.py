@@ -182,7 +182,7 @@ class network:
         switches = list(self.transit_switches.values())
 
         self.endpoints[ip] = endpoint(
-            self.vni, self.netid, ip=ip, prefixlen=self.cidr.prefixlen, gw_ip=self.get_gw_ip(),
+            self.vni, self.netid, ip=ip, vpc_cidr=self.vpc_cidr, net_cidr=self.cidr, gw_ip=self.get_gw_ip(),
             eptype=CONSTANTS.TRAN_SCALED_EP, host=None, backends=backends)
 
         # Now update the endpoint on the remaining switches
