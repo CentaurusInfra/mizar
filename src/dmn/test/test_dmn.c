@@ -164,6 +164,70 @@ const char *__wrap_if_indextoname(unsigned int ifindex, char *buf)
 		return "lo";
 }
 
+struct bpf_object *__wrap_bpf_object__open(const char *path)
+{
+	UNUSED(path);
+	return (struct bpf_object *)1;
+}
+
+int __wrap_bpf_create_map(enum bpf_map_type map_type, int key_size,
+			  int value_size, int max_entries)
+{
+	UNUSED(map_type);
+	UNUSED(key_size);
+	UNUSED(value_size);
+	UNUSED(max_entries);
+	return 0;
+}
+
+int __wrap_bpf_program__fd(const struct bpf_program *prog)
+{
+	UNUSED(prog);
+	return 1;
+}
+
+int __wrap_bpf_object__load(struct bpf_object *obj)
+{
+	UNUSED(obj);
+	return 0;
+}
+
+struct bpf_map *
+__wrap_bpf_object__find_map_by_name(const struct bpf_object *obj,
+				    const char *name)
+{
+	UNUSED(obj);
+	UNUSED(name);
+	return (struct bpf_map *)1;
+}
+int __wrap_bpf_map__set_inner_map_fd(struct bpf_map *map, int fd)
+{
+	UNUSED(map);
+	UNUSED(fd);
+	return 0;
+}
+
+int __wrap_bpf_program__set_xdp(struct bpf_program *prog)
+{
+	UNUSED(prog);
+	return 0;
+}
+
+struct bpf_program *__wrap_bpf_program__next(struct bpf_program *prev,
+					     const struct bpf_object *obj)
+{
+	UNUSED(obj);
+	if (prev == NULL) {
+		return (struct bpf_program *)1;
+	} else
+		return NULL;
+}
+
+void __wrap_bpf_object__close(struct bpf_object *object)
+{
+	UNUSED(object);
+	return;
+}
 static inline int cmpfunc(const void *a, const void *b)
 {
 	return (*(int *)a - *(int *)b);
@@ -513,7 +577,7 @@ static void test_update_agent_md_1_svc(void **state)
 	memcpy(md1.eth.mac, mac_eth, sizeof(char) * 6);
 
 	int *rc;
-	expect_function_calls(__wrap_bpf_map_update_elem, 3);
+	expect_function_calls(__wrap_bpf_map_update_elem, 7);
 	rc = update_agent_md_1_svc(&md1, NULL);
 	assert_int_equal(*rc, 0);
 
@@ -1059,7 +1123,7 @@ static void test_delete_agent_md_1_svc(void **state)
 	struct rpc_intf_t md_key = { .interface = itf };
 
 	/* Test delete_agent_md_1 with valid md_key */
-	expect_function_calls(__wrap_bpf_map_update_elem, 2);
+	expect_function_calls(__wrap_bpf_map_update_elem, 6);
 	rc = delete_agent_md_1_svc(&md_key, NULL);
 	assert_int_equal(*rc, 0);
 

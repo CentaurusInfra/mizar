@@ -49,7 +49,5 @@ class test_scaled_endpoint_many_protocols(unittest.TestCase):
         pass
 
     def test_scaled_endpoint_many_protocols(self):
-        self.ep2.do_httpd()
-        self.ep3.do_httpd()
         do_test_scaled_ep_basic(self, self.ep0, self.sep, self.sep_backend)
         do_check_failed_rpcs(self, self.droplets.values())

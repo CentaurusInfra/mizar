@@ -20,6 +20,15 @@ CLI_MOCKS += -Wl,--wrap=bpf_map__fd
 CLI_MOCKS += -Wl,--wrap=bpf_map__pin
 CLI_MOCKS += -Wl,--wrap=bpf_map__unpin
 CLI_MOCKS += -Wl,--wrap=bpf_get_link_xdp_id
+CLI_MOCKS += -Wl,--wrap=bpf_object__open
+CLI_MOCKS += -Wl,--wrap=bpf_create_map
+CLI_MOCKS += -Wl,--wrap=bpf_program__fd
+CLI_MOCKS += -Wl,--wrap=bpf_object__load
+CLI_MOCKS += -Wl,--wrap=bpf_object__find_map_by_name
+CLI_MOCKS += -Wl,--wrap=bpf_map__set_inner_map_fd
+CLI_MOCKS += -Wl,--wrap=bpf_program__set_xdp
+CLI_MOCKS += -Wl,--wrap=bpf_program__next
+CLI_MOCKS += -Wl,--wrap=bpf_object__close
 CLI_MOCKS += -Wl,--wrap=if_nametoindex
 CLI_MOCKS += -Wl,--wrap=if_indextoname
 CLI_MOCKS += -Wl,--wrap=setrlimit

@@ -96,7 +96,7 @@ struct tunnel_iface_t {
 	int iface_index;
 	__u32 ip;
 	unsigned char mac[6];
-} __attribute__((packed));
+} __attribute__((packed, aligned(4)));
 
 struct agent_metadata_t {
 	struct tunnel_iface_t eth;
