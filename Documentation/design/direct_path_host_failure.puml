@@ -1,0 +1,12 @@
+@startuml
+autonumber
+participant "EP_A at Host A" as a
+participant "Failed host B" as b
+participant "Transit Switch" as S
+a ->x b: **direct-path bit** + Packet-1 to b
+a -> a: //add B to active_health_check//
+a ->x b: active health check
+a -> a: //mark host B unhealthy and invalidate endpoint_host_cache//
+a -> S: **RTS Opt (a @ Host A)** + Packet-1 (retransmitted) to b
+... ~~Packets droped or a new path established~~ ...
+@enduml
