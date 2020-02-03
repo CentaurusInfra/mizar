@@ -48,6 +48,7 @@
 
 #include "extern/cJSON.h"
 
+#include "trn_transit_xdp_usr.h"
 #include "trn_datamodel.h"
 
 struct agent_user_metadata_t {
@@ -59,15 +60,28 @@ struct agent_user_metadata_t {
 	__u32 prog_id;
 	char pcapfile[256];
 
-	int jump_table_fd;
+	int jmp_table_fd;
 	int agentmetadata_map_fd;
 	int endpoints_map_fd;
 	int interfaces_map_fd;
+	int fwd_flow_mod_cache_ref_fd;
+	int rev_flow_mod_cache_ref_fd;
+	int ep_flow_host_cache_ref_fd;
+	int ep_host_cache_ref_fd;
 
-	struct bpf_map *jmp_table;
+	int fwd_flow_mod_cache_map_fd;
+	int rev_flow_mod_cache_map_fd;
+	int ep_flow_host_cache_map_fd;
+	int ep_host_cache_map_fd;
+
+	struct bpf_map *jmp_table_map;
 	struct bpf_map *agentmetadata_map;
 	struct bpf_map *endpoints_map;
 	struct bpf_map *interfaces_map;
+	struct bpf_map *fwd_flow_mod_cache_ref;
+	struct bpf_map *rev_flow_mod_cache_ref;
+	struct bpf_map *ep_flow_host_cache_ref;
+	struct bpf_map *ep_host_cache_ref;
 	struct bpf_map *xdpcap_hook_map;
 
 	struct bpf_prog_info info;
@@ -77,7 +91,10 @@ struct agent_user_metadata_t {
 int trn_agent_user_metadata_free(struct agent_user_metadata_t *md);
 
 int trn_agent_update_agent_metadata(struct agent_user_metadata_t *umd,
-				    struct agent_metadata_t *md);
+				    struct agent_metadata_t *md,
+				    struct user_metadata_t *eth_md);
+
+int trn_agent_delete_agent_metadata(struct agent_user_metadata_t *umd);
 
 int trn_agent_get_agent_metadata(struct agent_user_metadata_t *umd,
 				 struct agent_metadata_t *md);

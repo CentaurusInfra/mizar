@@ -113,6 +113,14 @@ class controller:
         for r in routers:
             self.remove_router(vni, r, vpc)
 
+    def create_scaled_endpoint(self, vni, netid, ip, backends):
+        """
+        Adds a scaled endpoint to an existing network
+        """
+        logger.info(
+            "[Controller]: create_scaled_endpoint {}.{}.{}".format(vni, netid, ip))
+        return self.vpcs[vni].create_scaled_endpoint(netid, ip, backends)
+
     def create_vxlan_endpoint(self, vni, netid, ip, host):
         """
         Adds a vxlan endpoint to an existing network for backward

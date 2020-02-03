@@ -1,0 +1,13 @@
+@startuml
+autonumber
+participant "EP_A at Host A" as a
+participant "EP_B at Host B" as b
+participant "Transit Switch" as S
+a -> S: **RTS Opt (a @ Host A)** + ARP Query (Who has b)
+S -> a: **RTS Opt (b @ Host B)** + ARP Reply (b at MAC(b))
+a -> a: //update endpoint_host_cache at A//
+a -> b: **direct-path bit** + Packet to b
+b -> b: //update endpoint_host_cache at B//
+b -> a: **direct-path bit** + Packet to a
+a -> b: **direct-path bit** + Packet to b
+@enduml

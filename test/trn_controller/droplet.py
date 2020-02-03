@@ -49,6 +49,7 @@ class droplet:
         self.trn_cli_update_ep = f'''{self.trn_cli} update-ep -i {self.phy_itf} -j'''
         self.trn_cli_get_ep = f'''{self.trn_cli} get-ep -i {self.phy_itf} -j'''
         self.trn_cli_delete_ep = f'''{self.trn_cli} delete-ep -i {self.phy_itf} -j'''
+        self.trn_cli_load_pipeline_stage = f'''{self.trn_cli} load-pipeline-stage -i {self.phy_itf} -j'''
 
         self.trn_cli_load_transit_agent_xdp = f'''{self.trn_cli} load-agent-xdp'''
         self.trn_cli_unload_transit_agent_xdp = f'''{self.trn_cli} unload-agent-xdp'''
@@ -60,10 +61,9 @@ class droplet:
         self.trn_cli_delete_agent_ep = f'''{self.trn_cli} delete-agent-ep'''
 
         self.xdp_path = "/trn_xdp/trn_transit_xdp_ebpf_debug.o"
-        self.pcap_file = "/bpffs/transit_xdp.pcap"
-
         self.agent_xdp_path = "/trn_xdp/trn_agent_xdp_ebpf_debug.o"
-        self.agent_pcap_file = "/bpffs/agent_xdp.pcap"
+        self.pcap_file = "eth0_transit_pcap"
+        self.agent_pcap_file = {}
         self.main_bridge = 'br0'
         self.bootstrap()
 
@@ -76,6 +76,21 @@ class droplet:
 
         logger.error("Unsupported droplet type!")
 
+    def load_transit_xdp_pipeline_stage(self, stage, object, expect_fail=False):
+        """
+        Loads an XDP program at stage!
+        """
+        log_string = "[DROPLET {}]: load_transit_xdp_pipeline_stage {}".format(
+            stage, object)
+
+        jsonconf = {
+            "xdp_path": object,
+            "stage": stage
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_load_pipeline_stage} \'{jsonconf}\' '''
+        self.exec_cli_rpc(log_string, cmd, expect_fail)
+
     def provision_simple_endpoint(self, ep):
         """
         Creates a veth pair and a namespace for the endpoint and loads
@@ -87,6 +102,8 @@ class droplet:
 
         self._create_veth_pair(ep)
         self.load_transit_agent_xdp(ep.veth_peer)
+        pcap_file = ep.veth_peer + "_transit_agent_pcap"
+        self.agent_pcap_file[ep.veth_peer] = pcap_file
 
     def provision_host_endpoint(self, ep):
         """
@@ -99,6 +116,8 @@ class droplet:
 
         self._create_host_veth_pair(ep)
         self.load_transit_agent_xdp(ep.veth_peer)
+        pcap_file = ep.veth_peer + "_transit_agent_pcap"
+        self.agent_pcap_file[ep.veth_peer] = pcap_file
 
     def unprovision_simple_endpoint(self, ep):
         """
@@ -107,9 +126,9 @@ class droplet:
         """
         logger.info(
             "[DROPLET {}]: unprovision_simple_endpoint {}".format(self.id, ep.ip))
-
-        self._delete_veth_pair(ep)
         self.unload_transit_agent_xdp(ep.veth_peer)
+        self._delete_veth_pair(ep)
+        self.agent_pcap_file.pop(ep.veth_peer)
 
     def provision_vxlan_endpoint(self, ep):
         logger.info(
@@ -682,7 +701,7 @@ cp /var/log/syslog /trn_test_out/syslog_{self.ip}
         container.exec_run("ln -s /mnt/Transit/build/xdp /trn_xdp")
         container.exec_run("ln -s /sys/fs/bpf /bpffs")
         container.exec_run(
-            "ln - s /mnt/Transit/test/trn_func_tests/output /trn_test_out")
+            "ln -s /mnt/Transit/test/trn_func_tests/output /trn_test_out")
 
         # Run the transitd in the background
         container.exec_run("/trn_bin/transitd ",
@@ -743,3 +762,26 @@ droplet_{self.ip}.pcap >/dev/null 2>&1 &\
             update_counts[key] = 1
         self.rpc_updates[key] = time.time()
         self.exec_cli_rpc(log_string, cmd, expect_fail)
+
+    def dump_num_calls(self):
+        for cmd in self.vpc_updates:
+            logger.info("[DROPLET {}]: vpc_updates commands ran: {}  {}".format(
+                self.id, cmd, self.vpc_updates[cmd]))
+        for cmd in self.substrate_updates:
+            logger.info("[DROPLET {}]: substrate_updates commands ran: {}  {}".format(
+                self.id, cmd, self.substrate_updates[cmd]))
+        for cmd in self.endpoint_updates:
+            logger.info("[DROPLET {}]: endpoint_updates commands ran: {}  {}".format(
+                self.id, cmd, self.endpoint_updates[cmd]))
+
+    def dump_pcap_on_host(self, pcapfile, timeout=5):
+        """
+        Does tcpdump to a pcap file for "n" seconds on the host veth device
+        corresponding to the eth0 interface inside the docker container.
+        """
+        veth_index = self.run(
+            "cat /sys/class/net/eth0/iflink")[1].strip()
+        veth = self.run_from_root(
+            "grep -l " + veth_index + " /sys/class/net/veth*/ifindex")[1].split("/")[4]
+        run_cmd("timeout " + str(timeout) + " tcpdump -nn -A -i " + veth + " -w test/trn_func_tests/output/" +
+                self.ip + "_" + pcapfile + "_dump.pcap >/dev/null 2>&1 &")

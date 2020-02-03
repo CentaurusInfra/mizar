@@ -26,6 +26,7 @@
 #include <linux/bpf.h>
 #include <linux/ip.h>
 #include <linux/udp.h>
+#include <linux/tcp.h>
 #include <stddef.h>
 
 #include "extern/bpf_helpers.h"
@@ -50,9 +51,48 @@
 #define GEN_DSTPORT 0xc117
 #define INIT_JHASH_SEED 0xdeadbeef
 
+#define TRN_GNV_OPT_CLASS 0x0111
+#define TRN_GNV_RTS_OPT_TYPE 0x48
+#define TRN_GNV_SCALED_EP_OPT_TYPE 0x49
+
+/* Scaled endpoint messages type */
+#define TRN_SCALED_EP_MODIFY 0x4d // (M: Modify)
+
 #ifndef __inline
 #define __inline inline __attribute__((always_inline))
 #endif
+
+struct trn_gnv_scaled_ep_data {
+	__u8 msg_type;
+	struct scaled_endpoint_remote_t target;
+} __attribute__((packed, aligned(4)));
+
+struct trn_gnv_scaled_ep_opt {
+	__be16 opt_class;
+	__u8 type;
+	__u8 length : 5;
+	__u8 r3 : 1;
+	__u8 r2 : 1;
+	__u8 r1 : 1;
+	/* opt data */
+	struct trn_gnv_scaled_ep_data scaled_ep_data;
+} __attribute__((packed, aligned(4)));
+
+struct trn_gnv_rts_data {
+	__u8 match_flow : 1;
+	struct remote_endpoint_t host;
+} __attribute__((packed, aligned(4)));
+
+struct trn_gnv_rts_opt {
+	__be16 opt_class;
+	__u8 type;
+	__u8 length : 5;
+	__u8 r3 : 1;
+	__u8 r2 : 1;
+	__u8 r1 : 1;
+	/* opt data */
+	struct trn_gnv_rts_data rts_data;
+} __attribute__((packed, aligned(4)));
 
 struct geneve_opt {
 	__be16 opt_class;
@@ -105,6 +145,10 @@ struct transit_packet {
 
 	/* Geneve */
 	struct genevehdr *geneve;
+	struct trn_gnv_rts_opt *rts_opt;
+	struct trn_gnv_scaled_ep_opt *scaled_ep_opt;
+	int gnv_hdr_len;
+	int gnv_opt_len;
 
 	/* Inner ethernet */
 	struct ethhdr *inner_eth;
@@ -118,13 +162,22 @@ struct transit_packet {
 	struct iphdr *inner_ip;
 	__u8 inner_ttl;
 
+	/* Inner udp */
+	struct udphdr *inner_udp;
+
+	/* Inner tcp */
+	struct tcphdr *inner_tcp;
+
+	/* inner ipv4 tuple */
+	struct ipv4_tuple_t inner_ipv4_tuple;
+
 	/* Agent metadata */
 	struct agent_metadata_t *agent_md;
 	__be64 agent_ep_tunid;
 	__u32 agent_ep_ipv4;
 
 	// TODO: Inner UDP or TCP
-};
+} __attribute__((packed));
 
 __ALWAYS_INLINE__
 static inline __u32 trn_get_inner_packet_hash(struct transit_packet *pkt)
@@ -168,6 +221,14 @@ static inline void trn_ipv4_csum_inline(void *iph, __u64 *csum)
 	for (int i = 0; i<sizeof(struct iphdr)>> 1; i++) {
 		*csum += *next_iph_u16++;
 	}
+	*csum = trn_csum_fold_helper(*csum);
+}
+
+__ALWAYS_INLINE__
+static inline void trn_update_l4_csum(__u64 *csum, __be32 old_addr,
+				      __be32 new_addr)
+{
+	*csum = (~*csum & 0xffff) + ~old_addr + new_addr;
 	*csum = trn_csum_fold_helper(*csum);
 }
 
@@ -299,4 +360,94 @@ static inline void trn_set_src_dst_ip_csum(struct transit_packet *pkt,
 
 	bpf_debug("Modified IP Address, src: 0x%x, dst: 0x%x, csum: 0x%x\n",
 		  pkt->ip->saddr, pkt->ip->daddr, pkt->ip->check);
+}
+
+__ALWAYS_INLINE__
+static inline void trn_inner_l4_csum_update(struct transit_packet *pkt,
+					    __u32 old_addr, __u32 new_addr)
+{
+	if (new_addr == old_addr)
+		return;
+
+	if (pkt->inner_ip->protocol == IPPROTO_UDP) {
+		if (pkt->inner_udp + 1 > pkt->data_end) {
+			return;
+		}
+
+		__u64 cs = pkt->inner_udp->check;
+		trn_update_l4_csum(&cs, old_addr, new_addr);
+		pkt->inner_udp->check = cs;
+	}
+
+	if (pkt->inner_ip->protocol == IPPROTO_TCP) {
+		if (pkt->inner_tcp + 1 > pkt->data_end) {
+			return;
+		}
+
+		__u64 cs = pkt->inner_tcp->check;
+		trn_update_l4_csum(&cs, old_addr, new_addr);
+		pkt->inner_tcp->check = cs;
+	}
+}
+
+__ALWAYS_INLINE__
+static inline void trn_set_src_dst_inner_ip_csum(struct transit_packet *pkt,
+						 __u32 saddr, __u32 daddr)
+{
+	if (pkt->inner_ip + 1 > pkt->data_end) {
+		return;
+	}
+
+	__u32 old_saddr = pkt->inner_ip->saddr;
+	__u32 old_daddr = pkt->inner_ip->daddr;
+
+	__u64 csum = 0;
+	trn_set_src_ip(pkt->inner_ip, pkt->data_end, saddr);
+	trn_inner_l4_csum_update(pkt, old_saddr, saddr);
+
+	trn_set_dst_ip(pkt->inner_ip, pkt->data_end, daddr);
+	trn_inner_l4_csum_update(pkt, old_daddr, daddr);
+
+	csum = 0;
+	pkt->inner_ip->check = 0;
+	trn_ipv4_csum_inline(pkt->inner_ip, &csum);
+	pkt->inner_ip->check = csum;
+
+	bpf_debug(
+		"Modified Inner IP Address, src: 0x%x, dst: 0x%x, csum: 0x%x\n",
+		pkt->inner_ip->saddr, pkt->inner_ip->daddr,
+		pkt->inner_ip->check);
+}
+
+__ALWAYS_INLINE__
+static inline void trn_reverse_ipv4_tuple(struct ipv4_tuple_t *tuple)
+{
+	__u32 tmp_addr = tuple->saddr;
+	__u16 tmp_port = tuple->sport;
+
+	tuple->saddr = tuple->daddr;
+	tuple->sport = tuple->dport;
+
+	tuple->daddr = tmp_addr;
+	tuple->dport = tmp_port;
+}
+
+__ALWAYS_INLINE__
+static inline void trn_reset_rts_opt(struct transit_packet *pkt)
+
+{
+	pkt->rts_opt->type = 0;
+	pkt->rts_opt->length = 0;
+	__builtin_memset(&pkt->rts_opt->rts_data, 0,
+			 sizeof(struct trn_gnv_rts_data));
+}
+
+__ALWAYS_INLINE__
+static inline void trn_reset_scaled_ep_opt(struct transit_packet *pkt)
+
+{
+	pkt->scaled_ep_opt->type = 0;
+	pkt->scaled_ep_opt->length = 0;
+	__builtin_memset(&pkt->scaled_ep_opt->scaled_ep_data, 0,
+			 sizeof(struct trn_gnv_scaled_ep_data));
 }

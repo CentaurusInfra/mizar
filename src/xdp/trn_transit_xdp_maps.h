@@ -34,6 +34,14 @@
 #define MAX_EP 65537
 #define MAX_VPC 8192
 
+struct bpf_map_def SEC("maps") jmp_table = {
+	.type = BPF_MAP_TYPE_PROG_ARRAY,
+	.key_size = sizeof(__u32),
+	.value_size = sizeof(__u32),
+	.max_entries = TRAN_MAX_PROG,
+};
+BPF_ANNOTATE_KV_PAIR(jmp_table, __u32, __u32);
+
 struct bpf_map_def SEC("maps") networks_map = {
 	.type = BPF_MAP_TYPE_LPM_TRIE,
 	.key_size = sizeof(struct network_key_t),
@@ -86,5 +94,41 @@ struct bpf_map_def SEC("maps") interfaces_map = {
 	.max_entries = TRAN_MAX_ITF,
 };
 BPF_ANNOTATE_KV_PAIR(interface_map, int, int);
+
+struct bpf_map_def SEC("maps") fwd_flow_mod_cache = {
+	.type = BPF_MAP_TYPE_LRU_HASH,
+	.key_size = sizeof(struct ipv4_tuple_t),
+	.value_size = sizeof(struct scaled_endpoint_remote_t),
+	.max_entries = TRAN_MAX_CACHE_SIZE,
+};
+BPF_ANNOTATE_KV_PAIR(fwd_flow_mod_cache, struct ipv4_tuple_t,
+		     struct scaled_endpoint_remote_t);
+
+struct bpf_map_def SEC("maps") rev_flow_mod_cache = {
+	.type = BPF_MAP_TYPE_LRU_HASH,
+	.key_size = sizeof(struct ipv4_tuple_t),
+	.value_size = sizeof(struct scaled_endpoint_remote_t),
+	.max_entries = TRAN_MAX_CACHE_SIZE,
+};
+BPF_ANNOTATE_KV_PAIR(rev_flow_mod_cache, struct ipv4_tuple_t,
+		     struct scaled_endpoint_remote_t);
+
+struct bpf_map_def SEC("maps") ep_flow_host_cache = {
+	.type = BPF_MAP_TYPE_LRU_HASH,
+	.key_size = sizeof(struct ipv4_tuple_t),
+	.value_size = sizeof(struct remote_endpoint_t),
+	.max_entries = TRAN_MAX_CACHE_SIZE,
+};
+BPF_ANNOTATE_KV_PAIR(ep_flow_host_cache, struct ipv4_tuple_t,
+		     struct remote_endpoint_t);
+
+struct bpf_map_def SEC("maps") ep_host_cache = {
+	.type = BPF_MAP_TYPE_LRU_HASH,
+	.key_size = sizeof(struct endpoint_key_t),
+	.value_size = sizeof(struct remote_endpoint_t),
+	.max_entries = TRAN_MAX_CACHE_SIZE,
+};
+BPF_ANNOTATE_KV_PAIR(ep_host_cache, struct endpoint_key_t,
+		     struct remote_endpoint_t);
 
 struct bpf_map_def SEC("maps") xdpcap_hook = XDPCAP_HOOK();

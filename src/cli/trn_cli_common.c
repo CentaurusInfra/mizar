@@ -452,3 +452,70 @@ int trn_cli_read_conf_str(ketopt_t *om, int argc, char *argv[],
 	}
 	return 0;
 }
+
+int trn_cli_parse_ebpf_prog(const cJSON *jsonobj, rpc_trn_ebpf_prog_t *prog)
+{
+	cJSON *xdp_path = cJSON_GetObjectItem(jsonobj, "xdp_path");
+	cJSON *stage = cJSON_GetObjectItem(jsonobj, "stage");
+
+	if (xdp_path == NULL) {
+		print_err("Missing path for xdp program to load.\n");
+		return -EINVAL;
+	} else if (cJSON_IsString(xdp_path)) {
+		strcpy(prog->xdp_path, xdp_path->valuestring);
+	}
+
+	if (stage == NULL) {
+		print_err("Error missing pipeline stage.\n");
+		return -EINVAL;
+	} else if (cJSON_IsString(stage)) {
+		const char *stage_str = stage->valuestring;
+
+		if (strcmp(stage_str, "ON_XDP_TX") == 0) {
+			prog->stage = ON_XDP_TX;
+		} else if (strcmp(stage_str, "ON_XDP_PASS") == 0) {
+			prog->stage = ON_XDP_PASS;
+		} else if (strcmp(stage_str, "ON_XDP_REDIRECT") == 0) {
+			prog->stage = ON_XDP_REDIRECT;
+		} else if (strcmp(stage_str, "ON_XDP_DROP") == 0) {
+			prog->stage = ON_XDP_DROP;
+		} else if (strcmp(stage_str, "ON_XDP_SCALED_EP") == 0) {
+			prog->stage = ON_XDP_SCALED_EP;
+		} else {
+			print_err("Unsupported pipeline stage %s.\n",
+				  stage_str);
+			return -EINVAL;
+		}
+	}
+	return 0;
+}
+
+int trn_cli_parse_ebpf_prog_stage(const cJSON *jsonobj,
+				  rpc_trn_ebpf_prog_stage_t *prog_stage)
+{
+	cJSON *stage = cJSON_GetObjectItem(jsonobj, "stage");
+
+	if (stage == NULL) {
+		print_err("Error missing pipeline stage.\n");
+		return -EINVAL;
+	} else if (cJSON_IsString(stage)) {
+		const char *stage_str = stage->valuestring;
+
+		if (strcmp(stage_str, "ON_XDP_TX") == 0) {
+			prog_stage->stage = ON_XDP_TX;
+		} else if (strcmp(stage_str, "ON_XDP_PASS") == 0) {
+			prog_stage->stage = ON_XDP_PASS;
+		} else if (strcmp(stage_str, "ON_XDP_REDIRECT") == 0) {
+			prog_stage->stage = ON_XDP_REDIRECT;
+		} else if (strcmp(stage_str, "ON_XDP_DROP") == 0) {
+			prog_stage->stage = ON_XDP_DROP;
+		} else if (strcmp(stage_str, "ON_XDP_SCALED_EP") == 0) {
+			prog_stage->stage = ON_XDP_SCALED_EP;
+		} else {
+			print_err("Unsupported pipeline stage %s.\n",
+				  stage_str);
+			return -EINVAL;
+		}
+	}
+	return 0;
+}

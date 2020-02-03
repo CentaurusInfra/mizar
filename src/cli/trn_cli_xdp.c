@@ -23,6 +23,110 @@
  */
 #include "trn_cli.h"
 
+int trn_cli_unload_pipeline_stage_subcmd(CLIENT *clnt, int argc, char *argv[])
+{
+	ketopt_t om = KETOPT_INIT;
+	struct cli_conf_data_t conf;
+	cJSON *json_str = NULL;
+
+	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
+		return -EINVAL;
+	}
+
+	char *buf = conf.conf_str;
+	json_str = trn_cli_parse_json(buf);
+
+	if (json_str == NULL) {
+		return -EINVAL;
+	}
+
+	int *rc;
+	rpc_trn_ebpf_prog_stage_t stage;
+	char rpc[] = "unload_transit_xdp_pipeline_stage_1";
+	stage.interface = conf.intf;
+
+	int err = trn_cli_parse_ebpf_prog_stage(json_str, &stage);
+	cJSON_Delete(json_str);
+
+	if (err != 0) {
+		print_err("Error: parsing ebpf program stage.\n");
+		return -EINVAL;
+	}
+
+	rc = unload_transit_xdp_pipeline_stage_1(&stage, clnt);
+	if (rc == (int *)NULL) {
+		print_err(
+			"Error: call failed: unload_transit_xdp_pipeline_stage_1.\n");
+		return -EINVAL;
+	}
+
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
+	}
+
+	print_msg(
+		"unload_transit_xdp_pipeline_stage_1 successfully removed program on interface %s at stage %d.\n",
+		stage.interface, stage.stage);
+
+	return 0;
+}
+
+int trn_cli_load_pipeline_stage_subcmd(CLIENT *clnt, int argc, char *argv[])
+{
+	ketopt_t om = KETOPT_INIT;
+	struct cli_conf_data_t conf;
+	cJSON *json_str = NULL;
+
+	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
+		return -EINVAL;
+	}
+
+	char *buf = conf.conf_str;
+	json_str = trn_cli_parse_json(buf);
+
+	if (json_str == NULL) {
+		return -EINVAL;
+	}
+
+	int *rc;
+	rpc_trn_ebpf_prog_t ebpf_prog;
+	char rpc[] = "load_transit_xdp_pipeline_stage_1";
+	char xdp_path[1024];
+	ebpf_prog.xdp_path = xdp_path;
+	ebpf_prog.interface = conf.intf;
+
+	int err = trn_cli_parse_ebpf_prog(json_str, &ebpf_prog);
+	cJSON_Delete(json_str);
+
+	if (err != 0) {
+		print_err("Error: parsing ebpf program config.\n");
+		return -EINVAL;
+	}
+
+	rc = load_transit_xdp_pipeline_stage_1(&ebpf_prog, clnt);
+	if (rc == (int *)NULL) {
+		print_err(
+			"Error: call failed: load_transit_xdp_pipeline_stage_1.\n");
+		return -EINVAL;
+	}
+
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
+	}
+
+	print_msg(
+		"load_transit_xdp_pipeline_stage_1 successfully added program on interface %s at stage %d.\n",
+		ebpf_prog.interface, ebpf_prog.stage);
+
+	return 0;
+}
+
 int trn_cli_load_transit_subcmd(CLIENT *clnt, int argc, char *argv[])
 {
 	ketopt_t om = KETOPT_INIT;

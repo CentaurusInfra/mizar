@@ -9,7 +9,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from test.trn_controller.common import logger
+from test.trn_controller.common import logger, CONSTANTS
 
 
 class transit_switch:
@@ -34,6 +34,19 @@ class transit_switch:
         # Now update the mac address of the endpoint's host
         if ep.host is not None:
             self.droplet.update_substrate_ep(ep.host)
+
+    def update_scaled_endpoint(self, ep):
+        """
+        Calls an update_endpoint rpc to transit switch's droplet.
+        After this the switch can forward tunneled packets to the
+        endpoint's host. Also calls update_substrate_ep to
+        populate the mac addresses of the endpoint's host.
+        """
+        logger.info(
+            "[SWITCH {}, {}]: update_scaled_endpoint {}".format(self.ip, self.id, ep.ip))
+
+        self.droplet.update_ep(ep)
+        self.droplet.load_transit_xdp_pipeline_stage(CONSTANTS.ON_XDP_SCALED_EP, ep.scaled_ep_obj)
 
     def update_vpc(self, vpc):
         """

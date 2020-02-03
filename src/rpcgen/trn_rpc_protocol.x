@@ -119,6 +119,28 @@ struct rpc_trn_agent_metadata_t {
        rpc_trn_network_t net;
 };
 
+enum rpc_trn_pipeline_stage {
+       ON_XDP_TX       = 0,
+       ON_XDP_PASS     = 1,
+       ON_XDP_REDIRECT = 2,
+       ON_XDP_DROP     = 3,
+       ON_XDP_SCALED_EP = 4
+       /* add stages */
+};
+
+/* Defines an XDP program at xdp_path to be loaded at index prog_index */
+struct rpc_trn_ebpf_prog_t {
+       string interface<20>;
+       rpc_trn_pipeline_stage stage;
+       string xdp_path<256>;
+};
+
+/* Defines an XDP program at stage */
+struct rpc_trn_ebpf_prog_stage_t {
+       string interface<20>;
+       rpc_trn_pipeline_stage stage;
+};
+
 /*----- Protocol. -----*/
 
 program RPC_TRANSIT_REMOTE_PROTOCOL {
@@ -146,6 +168,9 @@ program RPC_TRANSIT_REMOTE_PROTOCOL {
 
                 int UNLOAD_TRANSIT_XDP(rpc_intf_t) = 18;
                 int UNLOAD_TRANSIT_AGENT_XDP(rpc_intf_t) = 19;
+
+                int LOAD_TRANSIT_XDP_PIPELINE_STAGE(rpc_trn_ebpf_prog_t) = 20;
+                int UNLOAD_TRANSIT_XDP_PIPELINE_STAGE(rpc_trn_ebpf_prog_stage_t) = 21;
           } = 1;
 
 } =  0x20009051;

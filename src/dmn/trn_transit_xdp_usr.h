@@ -50,32 +50,67 @@
 
 #include "trn_datamodel.h"
 
+struct ebpf_prog_stage_t {
+	int prog_fd;
+	struct bpf_object *obj;
+
+	int networks_map_ref_fd;
+	int vpc_map_ref_fd;
+	int endpoints_map_ref_fd;
+	int interface_config_map_ref_fd;
+	int hosted_endpoints_iface_map_ref_fd;
+	int interfaces_map_ref_fd;
+	int xdpcap_hook_ref_fd;
+
+	struct bpf_map *networks_map_ref;
+	struct bpf_map *vpc_map_ref;
+	struct bpf_map *endpoints_map_ref;
+	struct bpf_map *hosted_endpoints_iface_map_ref;
+	struct bpf_map *interface_config_map_ref;
+	struct bpf_map *interfaces_map_ref;
+	struct bpf_map *xdpcap_hook_ref;
+};
+
 struct user_metadata_t {
 	struct tunnel_iface_t eth;
 	int ifindex;
 	__u32 xdp_flags;
 	int prog_fd;
 	__u32 prog_id;
+
 	char pcapfile[256];
 	int itf_idx[TRAN_MAX_ITF];
 
+	int jmp_table_fd;
 	int networks_map_fd;
 	int vpc_map_fd;
 	int endpoints_map_fd;
 	int interface_config_map_fd;
 	int hosted_endpoints_iface_map_fd;
 	int interfaces_map_fd;
+	int fwd_flow_mod_cache_fd;
+	int rev_flow_mod_cache_fd;
+	int ep_flow_host_cache_fd;
+	int ep_host_cache_fd;
 
+	struct bpf_map *jmp_table_map;
 	struct bpf_map *networks_map;
 	struct bpf_map *vpc_map;
 	struct bpf_map *endpoints_map;
 	struct bpf_map *hosted_endpoints_iface_map;
 	struct bpf_map *interface_config_map;
 	struct bpf_map *interfaces_map;
+	struct bpf_map *fwd_flow_mod_cache;
+	struct bpf_map *rev_flow_mod_cache;
+	struct bpf_map *ep_flow_host_cache;
+	struct bpf_map *ep_host_cache;
 	struct bpf_map *xdpcap_hook_map;
 
 	struct bpf_prog_info info;
 	struct bpf_object *obj;
+
+	/* Array of programs at different stages. Currently supporting only one extra tail-call */
+	struct ebpf_prog_stage_t ebpf_progs[TRAN_MAX_PROG];
 };
 
 int trn_user_metadata_free(struct user_metadata_t *md);
@@ -112,3 +147,8 @@ int trn_user_metadata_init(struct user_metadata_t *md, char *itf,
 			   char *kern_path, int xdp_flags);
 
 uint32_t trn_get_interface_ipv4(int itf_idx);
+
+int trn_add_prog(struct user_metadata_t *md, unsigned int prog_idx,
+		 const char *prog_path);
+
+int trn_remove_prog(struct user_metadata_t *md, unsigned int prog_idx);

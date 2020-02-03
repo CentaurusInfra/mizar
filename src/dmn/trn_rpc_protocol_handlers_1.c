@@ -997,7 +997,7 @@ int *update_agent_md_1_svc(rpc_trn_agent_metadata_t *agent_md,
 	amd.ep.hosted_iface = amd.eth.iface_index;
 	memcpy(amd.ep.mac, agent_md->ep.mac, 6 * sizeof(amd.ep.mac[0]));
 
-	rc = trn_agent_update_agent_metadata(md, &amd);
+	rc = trn_agent_update_agent_metadata(md, &amd, eth_md);
 
 	if (rc != 0) {
 		TRN_LOG_ERROR("Cannot update agent metadata on interface %s",
@@ -1037,11 +1037,8 @@ int *delete_agent_md_1_svc(rpc_intf_t *argp, struct svc_req *rqstp)
 		result = RPC_TRN_ERROR;
 		goto error;
 	}
-	struct agent_metadata_t amd;
-	memset(&amd, 0, sizeof(amd));
-	// We call update with a zeroed out struct
-	// This is becauses the agent metadata is stored as an array
-	rc = trn_agent_update_agent_metadata(md, &amd);
+
+	rc = trn_agent_delete_agent_metadata(md);
 	if (rc != 0) {
 		TRN_LOG_ERROR("Cannot delete agent metadata on interface %s",
 			      argp->interface);
@@ -1114,5 +1111,99 @@ rpc_trn_agent_metadata_t *get_agent_md_1_svc(rpc_intf_t *argp,
 
 error:
 	result.interface = "";
+	return &result;
+}
+
+int *load_transit_xdp_pipeline_stage_1_svc(rpc_trn_ebpf_prog_t *argp,
+					   struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+
+	static int result;
+	int rc;
+	struct user_metadata_t *md;
+	char *prog_path = argp->xdp_path;
+	unsigned int prog_idx = argp->stage;
+
+	switch (prog_idx) {
+	case ON_XDP_TX:
+	case ON_XDP_PASS:
+	case ON_XDP_REDIRECT:
+	case ON_XDP_DROP:
+	case ON_XDP_SCALED_EP:
+		break;
+	default:
+		TRN_LOG_ERROR("Unsupported program stage %s", argp->interface);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	md = trn_itf_table_find(argp->interface);
+
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s",
+			      argp->interface);
+		goto error;
+	}
+
+	rc = trn_add_prog(md, prog_idx, prog_path);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failed to insert XDP stage %d for interface %s",
+			      prog_idx, argp->interface);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	result = 0;
+	return &result;
+
+error:
+	return &result;
+}
+
+int *unload_transit_xdp_pipeline_stage_1_svc(rpc_trn_ebpf_prog_stage_t *argp,
+					     struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result;
+	int rc;
+	struct user_metadata_t *md;
+	unsigned int prog_idx = argp->stage;
+
+	switch (prog_idx) {
+	case ON_XDP_TX:
+	case ON_XDP_PASS:
+	case ON_XDP_REDIRECT:
+	case ON_XDP_DROP:
+	case ON_XDP_SCALED_EP:
+		break;
+	default:
+		TRN_LOG_ERROR("Unsupported program stage %s", argp->interface);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	md = trn_itf_table_find(argp->interface);
+
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s",
+			      argp->interface);
+		goto error;
+	}
+
+	rc = trn_remove_prog(md, prog_idx);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failed to remove XDP stage %d for interface %s",
+			      prog_idx, argp->interface);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	result = 0;
+	return &result;
+
+error:
 	return &result;
 }

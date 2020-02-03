@@ -24,7 +24,7 @@ sudo apt-get install -y \
     lcov
 
 sudo apt install docker.io
-sudo pip3 install netaddr docker
+sudo pip3 install netaddr docker scapy
 sudo systemctl unmask docker.service
 sudo systemctl unmask docker.socket
 sudo systemctl start docker

@@ -49,32 +49,26 @@ int _version SEC("version") = 1;
 #define SPORT_MIN 1024
 #define SPORT_BASE (SPORT_MAX - SPORT_MIN)
 
-static __inline int trn_encapsulate(struct transit_packet *pkt,
-				    struct agent_metadata_t *metadata,
-				    __be64 tun_id, __u32 in_src_ip,
-				    __u32 in_dst_ip)
+static __inline int trn_select_transit_switch(struct transit_packet *pkt,
+					      struct agent_metadata_t *metadata,
+					      __be64 tun_id, __u32 in_src_ip,
+					      __u32 in_dst_ip, __u16 *s_port,
+					      __u32 *d_addr)
 {
-	struct endpoint_t *r_ep;
-	struct endpoint_key_t r_epkey;
-	__u16 s_port;
-	__u32 d_addr;
-	__u64 c_sum = 0;
-	int old_size = pkt->data_end - pkt->data;
-
 	/* Compute the source port and the transit switch address based on a hash
    * of the inner ip */
 	__u32 inhash = jhash_2words(in_src_ip, in_dst_ip, INIT_JHASH_SEED);
-	s_port = SPORT_MIN + (inhash % SPORT_BASE);
+	*s_port = SPORT_MIN + (inhash % SPORT_BASE);
 
-	if (s_port < SPORT_MIN || s_port > SPORT_MAX) {
-		return XDP_DROP;
+	if (*s_port < SPORT_MIN || *s_port > SPORT_MAX) {
+		return 1;
 	}
 
 	if (metadata->net.nswitches == 0) {
 		bpf_debug(
 			"[Agent:%ld.0x%x] DROP (BUG): No transit switch to send packet to!\n",
 			pkt->agent_ep_tunid, bpf_ntohl(pkt->agent_ep_ipv4));
-		return XDP_DROP;
+		return 1;
 	}
 
 	__u32 sw_idx = inhash % metadata->net.nswitches;
@@ -83,31 +77,94 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 		bpf_debug("[Agent:] DROP (BUG): Selected switch index [%d] "
 			  "is greater than maximum number of switches [%d]!\n",
 			  sw_idx, TRAN_MAX_NSWITCH);
-		return XDP_DROP;
+		return 1;
 	}
 
-	d_addr = metadata->net.switches_ips[sw_idx];
+	*d_addr = metadata->net.switches_ips[sw_idx];
+	return 0;
+}
 
-	/* Get the endpoint of the transit switch for outer dst mac */
-	r_epkey.tunip[0] = 0;
-	r_epkey.tunip[1] = 0;
-	r_epkey.tunip[2] = d_addr;
-	r_ep = bpf_map_lookup_elem(&endpoints_map, &r_epkey);
+static __inline int trn_encapsulate(struct transit_packet *pkt,
+				    struct agent_metadata_t *metadata,
+				    __be64 tun_id, __u32 in_src_ip,
+				    __u32 in_dst_ip)
+{
+	struct remote_endpoint_t *dst_r_ep;
+	struct endpoint_t *r_ep;
+	struct endpoint_key_t r_epkey;
+	unsigned char *d_mac;
+	__u16 s_port;
+	__u32 d_addr;
+	__u64 c_sum = 0;
+	int old_size = pkt->data_end - pkt->data;
 
-	if (!r_ep) {
-		bpf_debug("[Agent:%ld.0x%x] DROP (BUG): Missing mac "
-			  " information for transit switches!\n",
+	/* First attempt to see if destination ep's host is cached */
+	int map_idx = 0;
+	void *ep_host_cache;
+	struct endpoint_key_t dst_epkey;
+
+	ep_host_cache = bpf_map_lookup_elem(&ep_host_cache_ref, &map_idx);
+	if (!ep_host_cache) {
+		bpf_debug("[Agent:%ld.0x%x] Failed to find ep_host_cache\n",
 			  pkt->agent_ep_tunid, bpf_ntohl(pkt->agent_ep_ipv4));
 		return XDP_DROP;
 	}
 
+	__builtin_memcpy(&dst_epkey.tunip[0], &tun_id, sizeof(tun_id));
+	dst_epkey.tunip[2] = in_dst_ip;
+
+	dst_r_ep = bpf_map_lookup_elem(ep_host_cache, &dst_epkey);
+
+	if (dst_r_ep) {
+		d_addr = dst_r_ep->ip;
+		d_mac = dst_r_ep->mac;
+
+		bpf_debug(
+			"[Agent:%ld.0x%x] Host of 0x%x, found sending directly!\n",
+			pkt->agent_ep_tunid, bpf_ntohl(pkt->agent_ep_ipv4),
+			bpf_ntohl(in_dst_ip));
+
+	} else if (!trn_select_transit_switch(pkt, metadata, tun_id, in_src_ip,
+					      in_dst_ip, &s_port, &d_addr)) {
+		/* Get the endpoint of the transit switch for outer dst mac */
+		bpf_debug(
+			"[Agent:%ld.0x%x] Sending dst 0x%x, to transit switch!\n",
+			pkt->agent_ep_tunid, bpf_ntohl(pkt->agent_ep_ipv4),
+			bpf_ntohl(in_dst_ip));
+		r_epkey.tunip[0] = 0;
+		r_epkey.tunip[1] = 0;
+		r_epkey.tunip[2] = d_addr;
+		r_ep = bpf_map_lookup_elem(&endpoints_map, &r_epkey);
+
+		if (!r_ep) {
+			bpf_debug("[Agent:%ld.0x%x] DROP (BUG): Missing mac "
+				  " information for transit switches!\n",
+				  pkt->agent_ep_tunid,
+				  bpf_ntohl(pkt->agent_ep_ipv4));
+			return XDP_DROP;
+		}
+
+		d_mac = r_ep->mac;
+
+	} else {
+		return XDP_DROP;
+	}
+
 	/* Readjust the packet size to fit the outer headers */
-	int outer_hdr_size = sizeof(*pkt->geneve) + sizeof(*pkt->udp) +
-			     sizeof(*pkt->ip) + sizeof(*pkt->eth);
-	int outer_ip_payload = sizeof(*pkt->geneve) + sizeof(*pkt->udp) +
-			       sizeof(*pkt->ip) + old_size;
-	int outer_udp_payload =
-		sizeof(*pkt->geneve) + sizeof(*pkt->udp) + old_size;
+	int gnv_rts_opt_size = sizeof(*pkt->rts_opt);
+	int gnv_scaled_ep_opt_size = sizeof(*pkt->scaled_ep_opt);
+
+	int gnv_opt_size = gnv_rts_opt_size + gnv_scaled_ep_opt_size;
+	int gnv_hdr_size = sizeof(*pkt->geneve) + gnv_opt_size;
+	int udp_hdr_size = sizeof(*pkt->udp);
+	int ip_hdr_size = sizeof(*pkt->ip);
+	int eth_hdr_size = sizeof(*pkt->eth);
+
+	int outer_hdr_size =
+		gnv_hdr_size + udp_hdr_size + ip_hdr_size + eth_hdr_size;
+	int outer_ip_payload =
+		gnv_hdr_size + udp_hdr_size + ip_hdr_size + old_size;
+	int outer_udp_payload = gnv_hdr_size + udp_hdr_size + old_size;
 
 	if (bpf_xdp_adjust_head(pkt->xdp, 0 - outer_hdr_size)) {
 		bpf_debug(
@@ -120,14 +177,18 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	pkt->data_end = (void *)(long)pkt->xdp->data_end;
 
 	pkt->eth = pkt->data;
-	pkt->eth_off = sizeof(*pkt->eth);
+	pkt->eth_off = eth_hdr_size;
 
-	pkt->ip = (void *)pkt->eth + sizeof(*pkt->eth);
-	pkt->udp = (void *)pkt->ip + sizeof(*pkt->ip);
-	pkt->geneve = (void *)pkt->udp + sizeof(*pkt->udp);
+	pkt->ip = (void *)pkt->eth + eth_hdr_size;
+	pkt->udp = (void *)pkt->ip + ip_hdr_size;
+	pkt->geneve = (void *)pkt->udp + udp_hdr_size;
+	pkt->rts_opt = (void *)&pkt->geneve->options[0];
+	pkt->scaled_ep_opt = (void *)pkt->rts_opt + sizeof(*pkt->rts_opt);
 
 	if (pkt->eth + 1 > pkt->data_end || pkt->ip + 1 > pkt->data_end ||
-	    pkt->udp + 1 > pkt->data_end || pkt->geneve + 1 > pkt->data_end) {
+	    pkt->udp + 1 > pkt->data_end || pkt->geneve + 1 > pkt->data_end ||
+	    pkt->rts_opt + 1 > pkt->data_end ||
+	    pkt->scaled_ep_opt + 1 > pkt->data_end) {
 		bpf_debug("[Agent:%ld.0x%x] ABORTED: Bad offset [%d]\n",
 			  pkt->agent_ep_tunid, bpf_ntohl(pkt->agent_ep_ipv4),
 			  __LINE__);
@@ -137,11 +198,11 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	/* Populate the outer header fields */
 	pkt->eth->h_proto = bpf_htons(ETH_P_IP);
 
-	trn_set_dst_mac(pkt->data, r_ep->mac);
+	trn_set_dst_mac(pkt->data, d_mac);
 	trn_set_src_mac(pkt->data, metadata->eth.mac);
 
 	pkt->ip->version = 4;
-	pkt->ip->ihl = sizeof(*pkt->ip) >> 2;
+	pkt->ip->ihl = ip_hdr_size >> 2;
 	pkt->ip->frag_off = 0;
 	pkt->ip->protocol = IPPROTO_UDP;
 	pkt->ip->check = 0;
@@ -160,7 +221,8 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	pkt->udp->dest = GEN_DSTPORT;
 	pkt->udp->len = bpf_htons(outer_udp_payload);
 
-	pkt->geneve->opt_len = 0;
+	__builtin_memset(pkt->geneve, 0, gnv_hdr_size);
+	pkt->geneve->opt_len = gnv_opt_size / 4;
 	pkt->geneve->ver = 0;
 	pkt->geneve->rsvd1 = 0;
 	pkt->geneve->rsvd2 = 0;
@@ -168,6 +230,20 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	pkt->geneve->critical = 0;
 	pkt->geneve->proto_type = bpf_htons(ETH_P_TEB);
 	trn_tunnel_id_to_vni(tun_id, pkt->geneve->vni);
+
+	pkt->rts_opt->opt_class = TRN_GNV_OPT_CLASS;
+	pkt->rts_opt->type = TRN_GNV_RTS_OPT_TYPE;
+	pkt->rts_opt->length = sizeof(pkt->rts_opt->rts_data) / 4;
+	pkt->rts_opt->rts_data.match_flow = 0;
+	pkt->rts_opt->rts_data.host.ip = metadata->eth.ip;
+	__builtin_memcpy(pkt->rts_opt->rts_data.host.mac, metadata->eth.mac,
+			 6 * sizeof(unsigned char));
+
+	pkt->scaled_ep_opt->opt_class = TRN_GNV_OPT_CLASS;
+	pkt->scaled_ep_opt->type = 0;
+	pkt->scaled_ep_opt->length = 0;
+	__builtin_memset(&pkt->scaled_ep_opt->scaled_ep_data, 0,
+			 sizeof(struct trn_gnv_scaled_ep_data));
 
 	/* If the source and dest address of the tunneled packet is the
 	 * same, then this host is also a transit switch. Just invoke the
@@ -213,9 +289,69 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 		return XDP_ABORTED;
 	}
 
-	ipproto = pkt->inner_ip->protocol;
-	pkt->inner_ttl = pkt->inner_ip->ttl;
-	// TODO: switch parse inner UDP/TCP
+	int map_idx = 0;
+	void *fwd_flow_mod_cache =
+		bpf_map_lookup_elem(&fwd_flow_mod_cache_ref, &map_idx);
+	if (!fwd_flow_mod_cache) {
+		bpf_debug(
+			"[Agent:%ld.0x%x] Failed to find fwd_flow_mod_cache\n",
+			pkt->agent_ep_tunid, bpf_ntohl(pkt->agent_ep_ipv4));
+		return XDP_DROP;
+	}
+
+	pkt->inner_ipv4_tuple.saddr = pkt->inner_ip->saddr;
+	pkt->inner_ipv4_tuple.daddr = pkt->inner_ip->daddr;
+	pkt->inner_ipv4_tuple.protocol = pkt->inner_ip->protocol;
+	pkt->inner_ipv4_tuple.sport = 0;
+	pkt->inner_ipv4_tuple.dport = 0;
+
+	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_TCP) {
+		pkt->inner_tcp = (void *)pkt->inner_ip + sizeof(*pkt->inner_ip);
+
+		if (pkt->inner_tcp + 1 > pkt->data_end) {
+			bpf_debug("[Agent:%ld.0x%x] ABORTED: Bad offset [%d]\n",
+				  pkt->agent_ep_tunid,
+				  bpf_ntohl(pkt->agent_ep_ipv4), __LINE__);
+			return XDP_ABORTED;
+		}
+
+		pkt->inner_ipv4_tuple.sport = pkt->inner_tcp->source;
+		pkt->inner_ipv4_tuple.dport = pkt->inner_tcp->dest;
+	}
+
+	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
+		pkt->inner_udp = (void *)pkt->inner_ip + sizeof(*pkt->inner_ip);
+
+		if (pkt->inner_udp + 1 > pkt->data_end) {
+			bpf_debug("[Agent:%ld.0x%x] ABORTED: Bad offset [%d]\n",
+				  pkt->agent_ep_tunid,
+				  bpf_ntohl(pkt->agent_ep_ipv4), __LINE__);
+			return XDP_ABORTED;
+		}
+
+		pkt->inner_ipv4_tuple.sport = pkt->inner_udp->source;
+		pkt->inner_ipv4_tuple.dport = pkt->inner_udp->dest;
+	}
+
+	/* Check if we need to apply a forward flow update */
+
+	struct ipv4_tuple_t in_tuple;
+	struct scaled_endpoint_remote_t *out_tuple;
+	__builtin_memcpy(&in_tuple, &pkt->inner_ipv4_tuple,
+			 sizeof(struct ipv4_tuple_t));
+
+	out_tuple = bpf_map_lookup_elem(fwd_flow_mod_cache, &in_tuple);
+
+	if (out_tuple) {
+		/* Modify the inner packet accordingly */
+		trn_set_src_dst_inner_ip_csum(pkt, out_tuple->saddr,
+					      out_tuple->daddr);
+		trn_set_dst_mac(pkt->inner_eth, out_tuple->h_dest);
+	} else {
+		bpf_debug("[Agent:%ld.0x%x] No dest IP address found! [%d]\n",
+			  pkt->agent_ep_tunid, bpf_ntohl(in_tuple.daddr),
+			  __LINE__);
+	}
 
 	return trn_redirect(pkt, pkt->inner_ip->saddr, pkt->inner_ip->daddr);
 }

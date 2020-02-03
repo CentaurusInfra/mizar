@@ -39,13 +39,27 @@
 
 #define TRAN_SUBSTRT_EP 0
 #define TRAN_SIMPLE_EP 1
+#define TRAN_SCALED_EP 2
 
-/* XDP programs keys */
+#define TRAN_MAX_PROG 100
+/* XDP programs keys in transit agent */
 #define XDP_TRANSIT 0
+
+/* Cache related const */
+#define TRAN_MAX_CACHE_SIZE 1000000
+
+/* XDP programs keys in transit XDP */
+enum trn_xdp_stage_t {
+	XDP_TX_PROC = 0,
+	XDP_PASS_PROC,
+	XDP_REDIRECT_PROC,
+	XDP_DROP_PROC,
+	XDP_SCALED_EP_PROC
+};
 
 struct endpoint_key_t {
 	__u32 tunip[3];
-};
+} __attribute__((packed));
 
 struct endpoint_t {
 	__u32 eptype;
@@ -53,36 +67,36 @@ struct endpoint_t {
 	__u32 remote_ips[TRAN_MAX_REMOTES];
 	int hosted_iface;
 	unsigned char mac[6];
-};
+} __attribute__((packed));
 
 struct network_key_t {
 	__u32 prefixlen; /* up to 32 for AF_INET, 128 for AF_INET6*/
 	__u32 nip[3];
-};
+} __attribute__((packed));
 
 struct network_t {
 	__u32 prefixlen; /* up to 32 for AF_INET, 128 for AF_INET6 */
 	__u32 nip[3];
 	__u32 nswitches;
 	__u32 switches_ips[TRAN_MAX_NSWITCH];
-};
+} __attribute__((packed));
 
 struct vpc_key_t {
 	union {
 		__be64 tunnel_id;
 	};
-};
+} __attribute__((packed));
 
 struct vpc_t {
 	__u32 nrouters;
 	__u32 routers_ips[TRAN_MAX_NROUTER];
-};
+} __attribute__((packed));
 
 struct tunnel_iface_t {
 	int iface_index;
 	__u32 ip;
 	unsigned char mac[6];
-};
+} __attribute__((packed, aligned(4)));
 
 struct agent_metadata_t {
 	struct tunnel_iface_t eth;
@@ -90,4 +104,36 @@ struct agent_metadata_t {
 	struct network_t net;
 	struct endpoint_key_t epkey;
 	struct endpoint_t ep;
-};
+} __attribute__((packed));
+
+struct ipv4_tuple_t {
+	__u32 saddr;
+	__u32 daddr;
+
+	/* ports */
+	__u16 sport;
+	__u16 dport;
+
+	/* Addresses */
+	__u8 protocol;
+
+	/*TODO: include TCP flags, no use case for the moment! */
+} __attribute__((packed));
+
+struct remote_endpoint_t {
+	__u32 ip;
+	unsigned char mac[6];
+} __attribute__((packed));
+
+struct scaled_endpoint_remote_t {
+	/* Addresses */
+	__u32 saddr;
+	__u32 daddr;
+
+	/* ports */
+	__u16 sport;
+	__u16 dport;
+
+	unsigned char h_source[6];
+	unsigned char h_dest[6];
+} __attribute__((packed));

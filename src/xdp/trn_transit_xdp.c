@@ -74,11 +74,38 @@ static __inline int trn_rewrite_remote_mac(struct transit_packet *pkt)
 	return XDP_TX;
 }
 
+static __inline void trn_update_ep_host_cache(struct transit_packet *pkt,
+					      __be64 tunnel_id,
+					      __u32 inner_src_ip)
+{
+	/* If RTS option is present, it always refer to the source endpoint's host.
+	 * If the source endpoint is not known to this host, cache the host ip/mac in the
+	 * en_host_cache.
+	*/
+
+	struct endpoint_t *src_ep;
+	struct endpoint_key_t src_epkey;
+
+	if (pkt->rts_opt->type == TRN_GNV_RTS_OPT_TYPE) {
+		__builtin_memcpy(&src_epkey.tunip[0], &tunnel_id,
+				 sizeof(tunnel_id));
+		src_epkey.tunip[2] = inner_src_ip;
+		src_ep = bpf_map_lookup_elem(&endpoints_map, &src_epkey);
+
+		if (!src_ep) {
+			/* Add the RTS info to the ep_host_cache */
+			bpf_map_update_elem(&ep_host_cache, &src_epkey,
+					    &pkt->rts_opt->rts_data.host, 0);
+		}
+	}
+}
+
 static __inline int trn_decapsulate_and_redirect(struct transit_packet *pkt,
 						 int ifindex)
 {
-	int outer_header_size = sizeof(*pkt->geneve) + sizeof(*pkt->udp) +
-				sizeof(*pkt->ip) + sizeof(*pkt->eth);
+	int outer_header_size = sizeof(*pkt->geneve) + pkt->gnv_opt_len +
+				sizeof(*pkt->udp) + sizeof(*pkt->ip) +
+				sizeof(*pkt->eth);
 
 	if (bpf_xdp_adjust_head(pkt->xdp, 0 + outer_header_size)) {
 		bpf_debug(
@@ -151,8 +178,8 @@ transit switch of that network, OW forward to the transit router. */
 
 	if (!vpc) {
 		bpf_debug(
-			"[Transit:%d:] DROP (BUG): Missing VPC router data!\n",
-			__LINE__);
+			"[Transit:%d:0x%x] DROP (BUG): Missing VPC router data!\n",
+			__LINE__, bpf_ntohl(pkt->itf_ipv4));
 		return XDP_DROP;
 	}
 
@@ -175,7 +202,7 @@ transit switch of that network, OW forward to the transit router. */
 
 static __inline int trn_switch_handle_pkt(struct transit_packet *pkt,
 					  __u32 inner_src_ip,
-					  __u32 inner_dst_ip)
+					  __u32 inner_dst_ip, __u32 orig_src_ip)
 {
 	/* dump debug received packet header info */
 	bpf_debug("[Transit::0x%x] RX: {src=0x%x, dst=0x%x}/\n",
@@ -222,7 +249,25 @@ static __inline int trn_switch_handle_pkt(struct transit_packet *pkt,
 			"[Transit::0x%x] REDIRECT: {in.src=0x%x, in.dst=0x%x}\n",
 			bpf_ntohl(pkt->itf_ipv4), bpf_ntohl(inner_src_ip),
 			bpf_ntohl(inner_dst_ip));
+
+		/* If this is the endpoint host, check first if the source has RTS opt included.
+		* This is a no-fail operation.
+		*/
+		trn_update_ep_host_cache(pkt, tunnel_id, orig_src_ip);
+
 		return trn_decapsulate_and_redirect(pkt, ep->hosted_iface);
+	}
+
+	if (ep->eptype == TRAN_SCALED_EP) {
+		bpf_debug(
+			"[Transit:%d:] This is a scaled endpoint, the transit switch will handle it!\n",
+			__LINE__);
+		__u32 key = XDP_SCALED_EP_PROC;
+		bpf_tail_call(pkt->xdp, &jmp_table, key);
+		bpf_debug(
+			"[Transit:%d:] DROP (BUG): Scaled endpoint stage is not loaded!\n",
+			__LINE__);
+		return XDP_DROP;
 	}
 
 	if (ep->nremote_ips == 0) {
@@ -244,6 +289,71 @@ static __inline int trn_switch_handle_pkt(struct transit_packet *pkt,
 	return trn_rewrite_remote_mac(pkt);
 }
 
+static __inline int trn_handle_scaled_ep_modify(struct transit_packet *pkt)
+{
+	bpf_debug("[Transit:%d:0x%x] recived MOD to 0x%x!\n", __LINE__,
+		  bpf_ntohl(pkt->itf_ipv4),
+		  bpf_ntohl(pkt->scaled_ep_opt->scaled_ep_data.target.daddr));
+
+	__be64 tunnel_id = trn_vni_to_tunnel_id(pkt->geneve->vni);
+	struct scaled_endpoint_remote_t out_tuple;
+	struct ipv4_tuple_t in_tuple;
+
+	struct scaled_endpoint_remote_t rev_out_tuple;
+	struct ipv4_tuple_t rev_in_tuple;
+
+	__builtin_memcpy(&out_tuple, &pkt->scaled_ep_opt->scaled_ep_data.target,
+			 sizeof(struct scaled_endpoint_remote_t));
+
+	__builtin_memcpy(&in_tuple, &pkt->inner_ipv4_tuple,
+			 sizeof(struct ipv4_tuple_t));
+
+	/* First update the forward flow mod cache*/
+	bpf_map_update_elem(&fwd_flow_mod_cache, &in_tuple, &out_tuple, 0);
+
+	/* The RTS option now has the host info of the out_tuple */
+	//trn_update_ep_host_cache(pkt, tunnel_id, out_tuple.daddr);
+
+	/* Prepare the inner packet for forwarding*/
+	//TODO: for now only change the IP addresses (no ports)
+	trn_set_src_dst_inner_ip_csum(pkt, out_tuple.saddr, out_tuple.daddr);
+
+	/* Prepare the outer packet for forwarding*/
+	trn_reset_rts_opt(pkt);
+	trn_reset_scaled_ep_opt(pkt);
+	trn_set_src_dst_ip_csum(pkt, pkt->ip->daddr, pkt->ip->saddr);
+	trn_swap_src_dst_mac(pkt->data);
+
+	/* Now reverse the tuple and update the reverse flow mod */
+	rev_in_tuple.saddr = out_tuple.daddr;
+	rev_in_tuple.daddr = out_tuple.saddr;
+	rev_in_tuple.protocol = in_tuple.protocol;
+	rev_in_tuple.sport = out_tuple.dport;
+	rev_in_tuple.dport = out_tuple.sport;
+
+	rev_out_tuple.daddr = in_tuple.saddr;
+	rev_out_tuple.saddr = in_tuple.daddr;
+	rev_out_tuple.sport = in_tuple.dport;
+	rev_out_tuple.dport = in_tuple.sport;
+
+	__builtin_memcpy(&rev_out_tuple.h_source, pkt->inner_eth->h_dest,
+			 ETH_ALEN * sizeof(pkt->inner_eth->h_dest[0]));
+
+	__builtin_memcpy(&rev_out_tuple.h_dest, pkt->inner_eth->h_source,
+			 ETH_ALEN * sizeof(pkt->inner_eth->h_source[0]));
+
+	bpf_map_update_elem(&rev_flow_mod_cache, &rev_in_tuple, &rev_out_tuple,
+			    0);
+
+	bpf_debug("[Transit:%d:0x%x] recived MOD to 0x%x!\n", __LINE__,
+		  bpf_ntohl(pkt->itf_ipv4), bpf_ntohl(out_tuple.daddr));
+
+	bpf_debug("[Transit:%d:0x%x] recived MOD from 0x%x!\n", __LINE__,
+		  bpf_ntohl(pkt->itf_ipv4), bpf_ntohl(in_tuple.daddr));
+
+	return XDP_TX;
+}
+
 static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 {
 	pkt->inner_ip = (void *)pkt->inner_eth + pkt->inner_eth_off;
@@ -255,17 +365,73 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 		return XDP_ABORTED;
 	}
 
-	ipproto = pkt->inner_ip->protocol;
+	pkt->inner_ipv4_tuple.saddr = pkt->inner_ip->saddr;
+	pkt->inner_ipv4_tuple.daddr = pkt->inner_ip->daddr;
+	pkt->inner_ipv4_tuple.protocol = pkt->inner_ip->protocol;
+	pkt->inner_ipv4_tuple.sport = 0;
+	pkt->inner_ipv4_tuple.dport = 0;
 
-	// TODO: switch parse inner UDP/TCP
+	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_TCP) {
+		pkt->inner_tcp = (void *)pkt->inner_ip + sizeof(*pkt->inner_ip);
+
+		if (pkt->inner_tcp + 1 > pkt->data_end) {
+			bpf_debug("[Transit:%d:0x%x] ABORTED: Bad offset\n",
+				  __LINE__, bpf_ntohl(pkt->itf_ipv4));
+			return XDP_ABORTED;
+		}
+
+		pkt->inner_ipv4_tuple.sport = pkt->inner_tcp->source;
+		pkt->inner_ipv4_tuple.dport = pkt->inner_tcp->dest;
+	}
+
+	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
+		pkt->inner_udp = (void *)pkt->inner_ip + sizeof(*pkt->inner_ip);
+
+		if (pkt->inner_udp + 1 > pkt->data_end) {
+			bpf_debug("[Transit:%d:0x%x] ABORTED: Bad offset\n",
+				  __LINE__, bpf_ntohl(pkt->itf_ipv4));
+			return XDP_ABORTED;
+		}
+
+		bpf_debug("[Scaled_EP:%d:0x%x] Process UDP \n", __LINE__,
+			  bpf_ntohl(pkt->itf_ipv4));
+
+		pkt->inner_ipv4_tuple.sport = pkt->inner_udp->source;
+		pkt->inner_ipv4_tuple.dport = pkt->inner_udp->dest;
+	}
+
+	if (pkt->scaled_ep_opt->type == TRN_GNV_SCALED_EP_OPT_TYPE &&
+	    pkt->scaled_ep_opt->scaled_ep_data.msg_type ==
+		    TRN_SCALED_EP_MODIFY) {
+		return trn_handle_scaled_ep_modify(pkt);
+	}
+
+	/* Check if we need to apply a reverse flow update */
+	struct ipv4_tuple_t inner;
+	struct scaled_endpoint_remote_t *inner_mod;
+	__builtin_memcpy(&inner, &pkt->inner_ipv4_tuple,
+			 sizeof(struct ipv4_tuple_t));
+
+	inner_mod = bpf_map_lookup_elem(&rev_flow_mod_cache, &inner);
+	__u32 orig_src_ip = pkt->inner_ip->saddr;
+	if (inner_mod) {
+		/* Modify the inner packet accordingly */
+		trn_set_src_dst_inner_ip_csum(pkt, inner_mod->saddr,
+					      inner_mod->daddr);
+		trn_set_src_mac(pkt->inner_eth, inner_mod->h_source);
+	}
+
 	return trn_switch_handle_pkt(pkt, pkt->inner_ip->saddr,
-				     pkt->inner_ip->daddr);
+				     pkt->inner_ip->daddr, orig_src_ip);
 }
 
 static __inline int trn_process_inner_arp(struct transit_packet *pkt)
 {
 	unsigned char *sha;
 	unsigned char *tha = NULL;
+	struct endpoint_t *ep;
+	struct endpoint_key_t epkey;
+	struct endpoint_t *remote_ep;
 	__u32 *sip, *tip;
 	__u64 csum = 0;
 
@@ -333,37 +499,70 @@ static __inline int trn_process_inner_arp(struct transit_packet *pkt)
 	}
 
 	__be64 tunnel_id = trn_vni_to_tunnel_id(pkt->geneve->vni);
-	struct endpoint_t *ep;
-	struct endpoint_key_t epkey;
 
 	__builtin_memcpy(&epkey.tunip[0], &tunnel_id, sizeof(tunnel_id));
 	epkey.tunip[2] = *tip;
 	ep = bpf_map_lookup_elem(&endpoints_map, &epkey);
 
-	if (ep && pkt->inner_arp->ar_op == bpf_htons(ARPOP_REQUEST)) {
-		/* Respond to ARP */
-		pkt->inner_arp->ar_op = bpf_htons(ARPOP_REPLY);
-		trn_set_arp_ha(tha, sha);
-		trn_set_arp_ha(sha, ep->mac);
-
-		__u32 tmp_ip = *sip;
-		*sip = *tip;
-		*tip = tmp_ip;
-
-		/* Set the sender mac address to the ep mac address */
-		trn_set_src_mac(pkt->inner_eth, ep->mac);
-
-		/* We need to lookup the endpoint again, since tip has changed */
-		epkey.tunip[2] = *tip;
-		ep = bpf_map_lookup_elem(&endpoints_map, &epkey);
+	/* Don't respond to arp if endpoint is not found, or it is local to host */
+	if (!ep || ep->hosted_iface != -1 ||
+	    pkt->inner_arp->ar_op != bpf_htons(ARPOP_REQUEST)) {
+		bpf_debug("[Transit:%d:0x%x] Bypass ARP handling\n", __LINE__,
+			  bpf_ntohl(pkt->itf_ipv4));
+		return trn_switch_handle_pkt(pkt, *sip, *tip, *sip);
 	}
 
-	return trn_switch_handle_pkt(pkt, *sip, *tip);
+	bpf_debug("[Transit:%d:0x%x] respond to ARP\n", __LINE__,
+		  bpf_ntohl(pkt->itf_ipv4));
+
+	/* Respond to ARP */
+	pkt->inner_arp->ar_op = bpf_htons(ARPOP_REPLY);
+	trn_set_arp_ha(tha, sha);
+	trn_set_arp_ha(sha, ep->mac);
+
+	__u32 tmp_ip = *sip;
+	*sip = *tip;
+	*tip = tmp_ip;
+
+	/* Set the sender mac address to the ep mac address */
+	trn_set_src_mac(pkt->inner_eth, ep->mac);
+
+	if (ep->eptype == TRAN_SIMPLE_EP) {
+		/*Get the remote_ep address based on the value of the outer dest IP */
+		epkey.tunip[0] = 0;
+		epkey.tunip[1] = 0;
+		epkey.tunip[2] = ep->remote_ips[0];
+		remote_ep = bpf_map_lookup_elem(&endpoints_map, &epkey);
+
+		if (!remote_ep) {
+			bpf_debug(
+				"[Transit:%d:] (BUG) DROP: "
+				"Failed to find remote MAC address of ep: 0x%x @ 0x%x\n",
+				__LINE__, bpf_ntohl(*tip),
+				bpf_ntohl(ep->remote_ips[0]));
+			return XDP_DROP;
+		}
+
+		/* For a simple endpoint, Write the RTS option on behalf of the target endpoint */
+		pkt->rts_opt->rts_data.host.ip = ep->remote_ips[0];
+		__builtin_memcpy(pkt->rts_opt->rts_data.host.mac,
+				 remote_ep->mac, 6 * sizeof(unsigned char));
+	} else {
+		bpf_debug("[Transit:%d:0x%x] skip RTS writing!\n", __LINE__,
+			  bpf_ntohl(pkt->itf_ipv4));
+		trn_reset_rts_opt(pkt);
+	}
+
+	/* We need to lookup the endpoint again, since tip has changed */
+	epkey.tunip[2] = *tip;
+	ep = bpf_map_lookup_elem(&endpoints_map, &epkey);
+
+	return trn_switch_handle_pkt(pkt, *sip, *tip, *sip);
 }
 
 static __inline int trn_process_inner_eth(struct transit_packet *pkt)
 {
-	pkt->inner_eth = (void *)pkt->geneve + sizeof(*pkt->geneve);
+	pkt->inner_eth = (void *)pkt->geneve + pkt->gnv_hdr_len;
 	pkt->inner_eth_off = sizeof(*pkt->inner_eth);
 
 	if (pkt->inner_eth + 1 > pkt->data_end) {
@@ -394,8 +593,6 @@ static __inline int trn_process_inner_eth(struct transit_packet *pkt)
 
 static __inline int trn_process_geneve(struct transit_packet *pkt)
 {
-	int opts_len;
-
 	pkt->geneve = (void *)pkt->udp + sizeof(*pkt->udp);
 	if (pkt->geneve + 1 > pkt->data_end) {
 		bpf_debug("[Transit:%d:0x%x] ABORTED: Bad offset\n", __LINE__,
@@ -411,16 +608,38 @@ static __inline int trn_process_geneve(struct transit_packet *pkt)
 		return XDP_PASS;
 	}
 
-	opts_len = pkt->geneve->opt_len * 4;
-	struct geneve_opt *opt = &pkt->geneve->options[0];
+	pkt->gnv_opt_len = pkt->geneve->opt_len * 4;
+	pkt->gnv_hdr_len = sizeof(*pkt->geneve) + pkt->gnv_opt_len;
+	pkt->rts_opt = (void *)&pkt->geneve->options[0];
 
-	if (opt + 1 > pkt->data_end) {
+	if (pkt->rts_opt + 1 > pkt->data_end) {
 		bpf_debug("[Transit:%d:0x%x] ABORTED: Bad offset\n", __LINE__,
 			  bpf_ntohl(pkt->itf_ipv4));
 		return XDP_ABORTED;
 	}
 
+	if (pkt->rts_opt->opt_class != TRN_GNV_OPT_CLASS) {
+		bpf_debug(
+			"[Scaled_EP:%d:0x%x] ABORTED: Unsupported Geneve option class\n",
+			__LINE__, bpf_ntohl(pkt->itf_ipv4));
+		return XDP_ABORTED;
+	}
+
 	// TODO: process options
+	pkt->scaled_ep_opt = (void *)pkt->rts_opt + sizeof(*pkt->rts_opt);
+
+	if (pkt->scaled_ep_opt + 1 > pkt->data_end) {
+		bpf_debug("[Scaled_EP:%d:0x%x] ABORTED: Bad offset\n", __LINE__,
+			  bpf_ntohl(pkt->itf_ipv4));
+		return XDP_ABORTED;
+	}
+
+	if (pkt->scaled_ep_opt->opt_class != TRN_GNV_OPT_CLASS) {
+		bpf_debug(
+			"[Scaled_EP:%d:0x%x] ABORTED: Unsupported Geneve option class\n",
+			__LINE__, bpf_ntohl(pkt->itf_ipv4));
+		return XDP_ABORTED;
+	}
 
 	return trn_process_inner_eth(pkt);
 }
@@ -461,6 +680,9 @@ static __inline int trn_process_ip(struct transit_packet *pkt)
 			  bpf_ntohl(pkt->itf_ipv4));
 		return XDP_PASS;
 	}
+
+	if (!pkt->ip->ttl)
+		return XDP_DROP;
 
 	/* Only process packets designated to this interface!
 	 * In functional tests - relying on docker0 - we see such packets!
@@ -523,20 +745,32 @@ int _transit(struct xdp_md *ctx)
 	if (action == XDP_TX)
 		action = bpf_redirect_map(&interfaces_map, pkt.itf_idx, 0);
 
-	if (action == XDP_PASS)
+	if (action == XDP_PASS) {
+		__u32 key = XDP_PASS_PROC;
+		bpf_tail_call(pkt.xdp, &jmp_table, key);
 		return xdpcap_exit(ctx, &xdpcap_hook, XDP_PASS);
+	}
 
-	if (action == XDP_DROP)
+	if (action == XDP_DROP) {
+		__u32 key = XDP_DROP_PROC;
+		bpf_tail_call(pkt.xdp, &jmp_table, key);
 		return xdpcap_exit(ctx, &xdpcap_hook, XDP_DROP);
+	}
 
-	if (action == XDP_TX)
+	if (action == XDP_TX) {
+		__u32 key = XDP_TX_PROC;
+		bpf_tail_call(pkt.xdp, &jmp_table, key);
 		return xdpcap_exit(ctx, &xdpcap_hook, XDP_TX);
+	}
 
 	if (action == XDP_ABORTED)
 		return xdpcap_exit(ctx, &xdpcap_hook, XDP_ABORTED);
 
-	if (action == XDP_REDIRECT)
+	if (action == XDP_REDIRECT) {
+		__u32 key = XDP_REDIRECT_PROC;
+		bpf_tail_call(pkt.xdp, &jmp_table, key);
 		return xdpcap_exit(ctx, &xdpcap_hook, XDP_REDIRECT);
+	}
 
 	return xdpcap_exit(ctx, &xdpcap_hook, XDP_PASS);
 }
