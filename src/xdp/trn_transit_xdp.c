@@ -2,6 +2,7 @@
 /**
  * @file trn_transit_xdp.c
  * @author Sherif Abdelwahab (@zasherif)
+ *         Phu Tran          (@phudtran)
  *
  * @brief Implements the Transit XDP program (switching and routing logic)
  *
@@ -135,6 +136,35 @@ transit switch of that network, OW forward to the transit router. */
 	__builtin_memcpy(&nkey.nip[0], &tunnel_id, sizeof(tunnel_id));
 	nkey.nip[2] = inner_dst_ip;
 	net = bpf_map_lookup_elem(&networks_map, &nkey);
+
+	/* Cache lookup for known ep */
+	struct remote_endpoint_t *dst_r_ep;
+	struct endpoint_key_t dst_epkey;
+	__builtin_memcpy(&dst_epkey.tunip[0], &tunnel_id, sizeof(tunnel_id));
+	dst_epkey.tunip[2] = inner_dst_ip;
+	dst_r_ep = bpf_map_lookup_elem(&ep_host_cache, &dst_epkey);
+
+	/* Only rewrite RTS and update cache when router host */
+	if (net) {
+		trn_update_ep_host_cache(pkt, tunnel_id, inner_src_ip);
+		pkt->rts_opt->rts_data.host.ip = pkt->ip->daddr;
+		__builtin_memcpy(pkt->rts_opt->rts_data.host.mac,
+				 pkt->eth->h_dest, 6 * sizeof(unsigned char));
+	}
+
+	if (dst_r_ep) {
+		if (!pkt->ip->ttl)
+			return XDP_DROP;
+		bpf_debug(
+			"[Transit:%ld.0x%x] Host of 0x%x, found sending directly from the router!\n",
+			pkt->agent_ep_tunid, bpf_ntohl(pkt->agent_ep_ipv4),
+			bpf_ntohl(inner_dst_ip));
+
+		trn_set_src_dst_ip_csum(pkt, pkt->ip->daddr, dst_r_ep->ip);
+		trn_set_src_mac(pkt->data, pkt->eth->h_dest);
+		trn_set_dst_mac(pkt->data, dst_r_ep->mac);
+		return XDP_TX;
+	}
 
 	bpf_debug("[Transit::] LPM lookup key [0x%x:0x%x]!\n", nkey.prefixlen,
 		  nkey.nip[2]);
