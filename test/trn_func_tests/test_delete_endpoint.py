@@ -66,7 +66,7 @@ class test_delete_endpoint(unittest.TestCase):
         self.droplets["right"].clear_update_call_state()
 
         self.ep_left = c.create_simple_endpoint(3, 1, "10.0.0.2", "left")
-        self.ep_left = c.delete_simple_endpoint(3, 1, "10.0.0.2", "left")
+        self.ep_left = c.delete_simple_endpoint(3, 1, "10.0.0.2")
 
     def tearDown(self):
         pass

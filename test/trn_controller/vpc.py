@@ -64,7 +64,7 @@ class vpc:
 
         for net in self.networks.values():
             self.transit_routers[id].update_net(net, droplet)
-            net.update_vpc(self)
+            net.update_vpc(self, droplet, True)
 
     def remove_router(self, droplet):
         """
@@ -88,7 +88,7 @@ class vpc:
         for net in self.networks.values():
             removed_router.delete_net(net)
         for net in self.networks.values():
-            net.update_vpc(self)
+            net.update_vpc(self, droplet, False)
 
     def create_network(self, netid, cidr):
         """
@@ -100,7 +100,7 @@ class vpc:
         self.networks[netid] = network(self.vni, netid, cidr, self.cidr)
         self.networks[netid].create_gw_endpoint()
 
-    def delete_network(self, netid, cidr):
+    def delete_network(self, netid):
         """
         Deletes a network in the VPC.
         1. Removes the network from the set of networks
@@ -111,13 +111,12 @@ class vpc:
         logger.info("[VPC {}]: delete_network {}".format(self.vni, netid))
         net = self.networks.pop(netid)
 
-        net.delete_gw_endpoint()
         net_switches = list(net.transit_switches.values())
         net_eps = list(net.endpoints.values())
         for switch in net_switches:
             self.remove_switch(netid, switch.droplet, net)
-        for ep in net_eps:
-            net.delete_simple_endpoint(ep.ip, ep.host, net_switches)
+        for ep in reversed(net_eps):
+            net.delete_simple_endpoint(ep.ip, net_switches)
         for router in self.transit_routers.values():
             router.delete_net(net, net_switches)
 
@@ -158,7 +157,7 @@ class vpc:
         net.remove_switch(self, droplet)
 
         for r in self.transit_routers.values():
-            r.update_net(net, droplet, True)
+            r.update_net(net, droplet, False)
 
     def create_simple_endpoint(self, netid, ip, host):
         """
@@ -180,7 +179,7 @@ class vpc:
             "[VPC {}]: create_host_endpoint {}".format(self.vni, ip))
         return self.networks[netid].create_host_endpoint(ip, host)
 
-    def delete_simple_endpoint(self, netid, ip, host):
+    def delete_simple_endpoint(self, netid, ip):
         """
         Deletes a simple endpoint in a network within the vpc.
         Since the routers need not to be updated with the endpoint
@@ -188,7 +187,7 @@ class vpc:
         """
         logger.info(
             "[VPC {}]: delete_simple_endpoint {}".format(self.vni, ip))
-        return self.networks[netid].delete_simple_endpoint(ip, host)
+        return self.networks[netid].delete_simple_endpoint(ip)
 
     def create_scaled_endpoint(self, netid, ip, backends):
         """

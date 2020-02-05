@@ -36,6 +36,11 @@
 		e.data = (void *)md;                                                                \
 		ep = hsearch(e, FIND);                                                              \
 		if (ep) {                                                                           \
+			if (ep->data) {                                                             \
+				TRN_LOG_DEBUG("overwriting metadata at [%s]",                       \
+					      itf);                                                 \
+				TRN_FREE(ep->data);                                                 \
+			}                                                                           \
 			ep->data = (void *)md;                                                      \
 		} else {                                                                            \
 			TRN_LOG_DEBUG(                                                              \

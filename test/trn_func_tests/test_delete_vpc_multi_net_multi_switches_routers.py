@@ -19,60 +19,6 @@ from time import sleep
 class test_vpc_delete_multi_net_multi_switches_routers(unittest.TestCase):
 
     def setUp(self):
-        # Testing the following multiple subnetwork scenario
-        # +------------+      +------------+        +------------+      +------------+
-        # |     D1     |      |     D2     |        |     D3     |      |     D4     |
-        # | +--------+ |      | +--------+ |        | +--------+ |      | +--------+ |
-        # | |  ns1   | |      | |  ns2   | |        | |  ns3   | |      | |  ns4   | |
-        # | |        | |      | |        | |        | |        | |      | |        | |
-        # | +--------+ |      | +--------+ |        | +--------+ |      | +--------+ |
-        # | | veth0  | |      | | veth0  | |        | | veth0  | |      | | veth0  | |
-        # | |10.0.0.1| |      | |10.0.0.2| |        | |20.0.0.1| |      | |20.0.0.2| |
-        # | +--------+ |      | +--------+ |        | +--------+ |      | +--------+ |
-        # |      |     |      |      |     |        |      |     |      |      |     |
-        # |      |     |      |      |     |        |      |     |      |      |     |
-        # |      |     |      |      |     |        |      |     |      |      |     |
-        # | +--------+ |      | +--------+ |        | +--------+ |      | +--------+ |
-        # | |Transit | |      | |Transit | |        | |Transit | |      | |Transit | |
-        # | | Agent  | |      | | Agent  | |        | | Agent  | |      | | Agent  | |
-        # | | peer1  | |      | | peer2  | |        | | peer3  | |      | | peer4  | |
-        # | +--------+ |      | +--------+ |        | +--------+ |      | +--------+ |
-        # +------------+      +------------+        +------------+      +------------+
-        # |Transit XDP |      |Transit XDP |        |Transit XDP |      |Transit XDP |
-        # |    eth0    |      |    eth0    |        |    eth0    |      |    eth0    |
-        # +------------+      +------------+        +------------+      +------------+
-        #       |                   |                     |                   |
-        #       |   +------------+  |                     |   +------------+  |
-        #       |   |  Switch1   |  |                     |   |  Switch4   |  |
-        #       |   |  Switch2   |  |                     |   |  Switch5   |  |
-        #       |   |  Switch3   |  |                     |   |  Switch6   |  |
-        #       |   |10.0.0.0/16 |  |                     |   |20.0.0.0/16 |  |
-        #       |   |            |  |                     |   |            |  |
-        #       +---|            |--+                     +---|            |--+
-        #           |            |                            |            |
-        #           |            |                            |            |
-        #           +------------+                            +------------+
-        #           |Transit XDP |                            |Transit XDP |
-        #           |    eth0    |                            |    eth0    |
-        #           +------------+                            +------------+
-        #                  |              +------------+             |
-        #                  |              |  Router1   |             |
-        #                  |              |  Router2   |             |
-        #                  |              |  Router3   |             |
-        #                  |              |            |             |
-        #                  |              |    VPC3    |             |
-        #                  +--------------|            |-------------+
-        #                                 |            |
-        #                                 |            |
-        #                                 +------------+
-        #                                 |Transit XDP |
-        #                                 |    eth0    |
-        #                                 +------------+
-
-        # a. Switch 3, Switch6 and Router3 are all hosted on the same
-        # host
-        # b. Switch 2 is hosted on D3
-        # c. Switch 5 is hosted on D2
 
         self.droplets = {
             "d1": droplet("d1"),
@@ -108,11 +54,7 @@ class test_vpc_delete_multi_net_multi_switches_routers(unittest.TestCase):
         self.ep8 = c.create_simple_endpoint(3, 20, "10.20.0.9", "router-2")
         self.ep7 = c.create_simple_endpoint(3, 20, "10.20.0.10", "switch-1")
         self.ep8 = c.create_simple_endpoint(3, 20, "10.20.0.11", "switch-4")
-        c.delete_vpc(3, cidr("16", "10.0.0.0"),
-                     ["router-1", "router-2", "d5"])
-        for d in self.droplets.values():
-            d.dump_rpc_calls()
-            print()
+        c.delete_vpc(3)
 
     def test_delete_vpc_multi_net_multi_switches_routers(self):
         logger.info(

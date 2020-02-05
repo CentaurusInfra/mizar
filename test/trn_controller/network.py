@@ -53,7 +53,7 @@ class network:
     def get_switches_ips(self):
         return [str(s.ip) for s in self.transit_switches.values()]
 
-    def update_vpc(self, vpc):
+    def update_vpc(self, vpc, droplet, add):
         """
         Called when vpc data changes (e.g router is added to the VPC).
         Cascades an update_vpc rpc to all transit switches of the network.
@@ -62,7 +62,7 @@ class network:
             self.netid, vpc.vni))
 
         for switch in self.transit_switches.values():
-            switch.update_vpc(vpc)
+            switch.update_vpc(vpc, droplet, self.netid, add)
 
     def delete_vpc(self, vpc):
         """
@@ -73,7 +73,8 @@ class network:
             self.netid, vpc.vni))
 
         for switch in self.transit_switches.values():
-            switch.delete_vpc(vpc)
+            switch.delete_vpc(vpc, self.netid)
+        self.transit_switches.clear()
 
     def add_switch(self, vpc, droplet):
         """
@@ -91,7 +92,7 @@ class network:
             self.netid, droplet.id))
         id = droplet.id
         self.transit_switches[id] = transit_switch(droplet)
-        self.transit_switches[id].update_vpc(vpc)
+        self.transit_switches[id].update_vpc(vpc, droplet, self.netid)
 
         for ep in self.endpoints.values():
             self.transit_switches[id].update_endpoint(ep)
@@ -115,11 +116,10 @@ class network:
         id = droplet.id
 
         removed_switch = self.transit_switches.pop(id)
+        removed_switch.delete_vpc(vpc, self.netid)
 
         for ep in self.endpoints.values():
             removed_switch.delete_endpoint(ep)
-
-        removed_switch.delete_vpc(vpc)
 
         for ep in self.endpoints.values():
             ep.update(self)
@@ -295,7 +295,7 @@ class network:
         self.endpoints[ip].update(self)
         return self.endpoints[ip]
 
-    def delete_simple_endpoint(self, ip, host, net_switches=None):
+    def delete_simple_endpoint(self, ip, net_switches=None):
         """
         Creates a simple endpoint in the network.
         1. First remove the endpoint object from the set of

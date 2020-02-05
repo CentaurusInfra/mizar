@@ -64,7 +64,7 @@ class test_recreate_endpoint(unittest.TestCase):
         self.ep_right = c.create_simple_endpoint(3, 1, "10.0.0.3", "right")
 
         # Delete ep_left and create a ep_new in its place with a different IP
-        self.ep_left = c.delete_simple_endpoint(3, 1, "10.0.0.2", "left")
+        self.ep_left = c.delete_simple_endpoint(3, 1, "10.0.0.2")
         self.ep_new = c.create_simple_endpoint(3, 1, "10.0.0.4", "left")
 
     def tearDown(self):
