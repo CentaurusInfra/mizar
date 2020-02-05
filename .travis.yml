@@ -24,4 +24,4 @@ before_script:
 jobs:
   include:
     - stage: "Compile & test"
-      script: make && make lcov
+      script: make && make run_unittests
