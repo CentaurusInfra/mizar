@@ -144,7 +144,7 @@ transit switch of that network, OW forward to the transit router. */
 	dst_epkey.tunip[2] = inner_dst_ip;
 	dst_r_ep = bpf_map_lookup_elem(&ep_host_cache, &dst_epkey);
 
-	/* Only rewrite RTS and update cache when router host */
+	/* Rewrite RTS and update cache*/
 	if (net) {
 		trn_update_ep_host_cache(pkt, tunnel_id, inner_src_ip);
 		pkt->rts_opt->rts_data.host.ip = pkt->ip->daddr;
@@ -156,7 +156,7 @@ transit switch of that network, OW forward to the transit router. */
 		if (!pkt->ip->ttl)
 			return XDP_DROP;
 		bpf_debug(
-			"[Transit:%ld.0x%x] Host of 0x%x, found sending directly from the router!\n",
+			"[Transit:%ld.0x%x] Host of 0x%x, found sending directly!\n",
 			pkt->agent_ep_tunid, bpf_ntohl(pkt->agent_ep_ipv4),
 			bpf_ntohl(inner_dst_ip));
 

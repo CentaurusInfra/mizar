@@ -219,34 +219,35 @@ def do_check_failed_rpcs(test, droplets):
     test.assertEqual(exit_code, 0)
 
 
-def do_validate_geneve_icmp_fast_path(test, packets, count, droplet, exp_ttl=64):
+def do_validate_geneve_icmp_direct_path(test, packets, droplet, pkt_ttl):
     """
     This function validates the number of geneve packets in a list of packets
     against a given count.
     """
     logger.info("{} IP: {} {}".format('='*20, droplet.ip, '='*20))
-    total_geneve_icmp = 0
+    total_geneve_icmp = sum(pkt_ttl.values())
     total_geneve_arp = 0
     for pkt in packets:
         # Checking src and dst due to docker promiscuous mode
         if GENEVE in pkt and (pkt[IP].src == droplet.ip or pkt[IP].dst == droplet.ip):
-            if ICMP in pkt and pkt[IP].ttl == exp_ttl:
-                total_geneve_icmp += 1
+            if ICMP in pkt and pkt[IP].ttl in pkt_ttl.keys():
+                pkt_ttl[pkt[IP].ttl] -= 1
             if ARP in pkt:
                 total_geneve_arp += 1
+    total_geneve_icmp -= sum(pkt_ttl.values())
     logger.info("{} Total geneve[ICMP]: {} {}".format(
         '*'*5, total_geneve_icmp, '*'*5))
     logger.info("{} Total geneve[ARP]: {} {}".format(
         '*'*5, total_geneve_arp, '*'*5))
-    test.assertEqual(total_geneve_icmp, count)
+    test.assertEqual(0, sum(pkt_ttl.values()))
     # If 0 geneve ICMPs, there must be 2 ARPs (switch droplet)
     if total_geneve_icmp == 0:
         test.assertEqual(total_geneve_arp, 2)
 
 
-def do_validate_fast_path(test, ep1, ep2, net1_switch_host, router_host=None, net2_switch_host=None):
+def do_validate_direct_path(test, ep1, ep2, net1_switch_host, router_host=None, net2_switch_host=None):
     """
-    This function validates the functionality of the fast path.
+    This function validates the functionality of the direct path.
     1. Tcpdumps to a pcap file with a timeout of 10 seconds.
     2. The common test is conducted between the two given endpoints.
     3. All geneve icmp packets are counted on each of the objects.
@@ -255,20 +256,25 @@ def do_validate_fast_path(test, ep1, ep2, net1_switch_host, router_host=None, ne
     6. Validate that the server has recieved packets with the 4 protocol layers.
     7. Validate that the switches don't recieve any packets containing the 4 tested protocol layers.
     """
-    exp_ep_ttl = 64
-    exp_ep_pkt_count = 4
-    exp_switch_pkt_count = 0
-    exp_router_pkt_count = 0
-
+    # ttl to expected pkt count maps
+    exp_ep1_pkt_ttl_count = {64: 4}
+    exp_ep2_pkt_ttl_count = {64: 4}
+    exp_switch1_pkt_ttl_count = {0: 0}
+    exp_switch2_pkt_ttl_count = {0: 0}
+    exp_router_pkt_ttl_count = {0: 0}
+    exp_switch_proto_count = 0
     net1_switch_host.dump_pcap_on_host(net1_switch_host.pcap_file, 10)
     ep1.host.dump_pcap_on_host(ep1.host.agent_pcap_file[ep1.veth_peer], 10)
     ep2.host.dump_pcap_on_host(ep2.host.agent_pcap_file[ep2.veth_peer], 10)
-    if router_host:  # Fast Path VPC case
+    if router_host:  # direct Path VPC case
         router_host.dump_pcap_on_host(router_host.pcap_file, 10)
         net2_switch_host.dump_pcap_on_host(net2_switch_host.pcap_file, 10)
-        exp_ep_ttl = 63
-        exp_ep_pkt_count = 4
-        exp_router_pkt_count = 8
+        exp_ep1_pkt_ttl_count = {64: 2, 63: 2}
+        exp_ep2_pkt_ttl_count = {64: 2, 63: 1, 61: 1}
+        exp_switch1_pkt_ttl_count = {64: 1, 63: 1}
+        exp_switch2_pkt_ttl_count = {62: 1, 61: 1}
+        exp_router_pkt_ttl_count = {64: 3, 63: 4, 62: 1}
+        exp_switch_proto_count = 1  # Switch receives first packets in router direct path case
     sleep(1)  # Wait for tcpdump to start
     do_common_tests(test, ep1, ep2)
     sleep(10)  # Wait for tcpdump to timeout
@@ -287,31 +293,30 @@ def do_validate_fast_path(test, ep1, ep2, net1_switch_host, router_host=None, ne
 
     logger.info("{} ep1_packets {}".format('='*20, '='*20))
     # One ping is sent, endpoints sees 2 ICMPS: ICMP request, ICMP reply
-    do_validate_geneve_icmp_fast_path(
-        test, ep1_pkts, exp_ep_pkt_count, ep1.host, exp_ep_ttl)
+    do_validate_geneve_icmp_direct_path(
+        test, ep1_pkts, ep1.host, exp_ep1_pkt_ttl_count)
     logger.info("{} ep2_packets {}".format('='*20, '='*20))
-    do_validate_geneve_icmp_fast_path(
-        test, ep2_pkts, exp_ep_pkt_count, ep2.host, exp_ep_ttl)
+    do_validate_geneve_icmp_direct_path(
+        test, ep2_pkts, ep2.host, exp_ep2_pkt_ttl_count)
     logger.info("{} net1_switch_packets {}".format('='*20, '='*20))
-    # One ping is sent, switch sees 0 ICMPs.
-    do_validate_geneve_icmp_fast_path(
-        test, net1_switch_pkts, exp_switch_pkt_count, net1_switch_host)
+    do_validate_geneve_icmp_direct_path(
+        test, net1_switch_pkts, net1_switch_host, exp_switch1_pkt_ttl_count)
 
     test.assertEqual(do_check_proto(test, {ep1.host.ip: ep1_pkts}), 4)
     test.assertEqual(do_check_proto(test, {ep2.host.ip: ep2_pkts}), 4)
     test.assertEqual(do_check_proto(
-        test, {net1_switch_host.ip: net1_switch_pkts}), 0)
+        test, {net1_switch_host.ip: net1_switch_pkts}), exp_switch_proto_count)
     if router_host:
         logger.info("{} router_packets {}".format('='*20, '='*20))
-        do_validate_geneve_icmp_fast_path(
-            test, router_pkts, exp_router_pkt_count, router_host)
+        do_validate_geneve_icmp_direct_path(
+            test, router_pkts, router_host, exp_router_pkt_ttl_count)
         logger.info("{} net2_switch_packets {}".format('='*20, '='*20))
-        do_validate_geneve_icmp_fast_path(
-            test, net2_switch_pkts, exp_switch_pkt_count, net2_switch_host)
+        do_validate_geneve_icmp_direct_path(
+            test, net2_switch_pkts, net2_switch_host, exp_switch2_pkt_ttl_count)
         test.assertEqual(do_check_proto(
             test, {router_host.ip: router_pkts}), 4)
         test.assertEqual(do_check_proto(
-            test, {net2_switch_host.ip: net2_switch_pkts}), 0)
+            test, {net2_switch_host.ip: net2_switch_pkts}), exp_switch_proto_count)
 
 
 def do_start_backend_servers(test, backend):
@@ -459,9 +464,9 @@ def debug_print_icmp_packet_info(test, pkt):
     """
     Function for dumping icmp packet info for debugging purposes.
     """
-    if pkt[ICMP].type == 0:
+    if pkt[GENEVE][ICMP].type == 0:
         icmp_type = "echo reply"
-    elif pkt[ICMP].type == 8:
+    elif pkt[GENEVE][ICMP].type == 8:
         icmp_type = "echo request"
     print("ICMP type " + icmp_type)
     print("Outer packet ttl: " + str(pkt[IP].ttl))
@@ -470,6 +475,18 @@ def debug_print_icmp_packet_info(test, pkt):
     print("Inner packet src: " + str(pkt[GENEVE][IP].src))
     print("Outer packet dst: " + str(pkt[IP].dst))
     print("Inner packet dst: " + str(pkt[GENEVE][IP].dst))
+    print()
+
+
+def debug_print_arp_packet_info(test, pkt):
+    """
+    Function for dumping arp packet info for debugging purposes.
+    """
+    print("ARP")
+    print("Outer packet src: " + str(pkt[IP].src))
+    print("Inner packet src: " + str(pkt[GENEVE][ARP].psrc))
+    print("Outer packet dst: " + str(pkt[IP].dst))
+    print("Inner packet dst: " + str(pkt[GENEVE][ARP].pdst))
     print()
 
 
