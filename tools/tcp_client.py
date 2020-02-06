@@ -7,7 +7,9 @@ import sys
 tcp_ip = str(sys.argv[1])
 message_count = int(sys.argv[2])
 delay = int(sys.argv[3])
-tpc_port = 8001
+port = 8000 + int(sys.argv[4])
+
+tpc_port = port
 buffer_size = 1024
 message = "Hello, World!"
 

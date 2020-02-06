@@ -17,34 +17,34 @@ import unittest
 from time import sleep
 
 
-class test_host_endpoint(unittest.TestCase):
+class test_scaled_endpoint_mixed_net_backend(unittest.TestCase):
 
     def setUp(self):
-
         self.droplets = {
+            "switch1": droplet("switch1"),
+            "switch2": droplet("switch2"),
+            "router1": droplet("router1"),
             "d1": droplet("d1"),
             "d2": droplet("d2"),
-            "d3": droplet("d3"),
-            "d4": droplet("d4"),
-            "d5": droplet("d5"),
-            "d6": droplet("d6"), }
-
+            "d3": droplet("d3")
+        }
         c = controller(self.droplets)
-        c.create_vpc(3, cidr("16", "10.0.0.0"), ["d1"])
-        c.create_network(3, 10, cidr("24", "10.0.0.0"), ["d2"])
-        c.create_network(3, 20, cidr("24", "10.0.20.0"), ["d3"])
 
-        self.ep1 = c.create_simple_endpoint(3, 10, "10.0.0.2", "d4")
-        self.ep2 = c.create_simple_endpoint(3, 20, "10.0.20.2", "d5")
-        self.ep_host = c.create_host_endpoint(3, 10, "10.0.0.3", "d6")
+        c.create_vpc(3, cidr("16", "10.0.0.0"), ["router1"])
+        c.create_network(3, 1, cidr("24", "10.0.0.0"), ["switch1"])
+        c.create_network(3, 2, cidr("24", "10.0.20.0"), ["switch2"])
+        self.ep0 = c.create_simple_endpoint(3, 1, "10.0.0.2", "d1")
+        self.ep1 = c.create_simple_endpoint(3, 1, "10.0.0.3", "d2")
+        self.ep2 = c.create_simple_endpoint(3, 2, "10.0.20.4", "d3")
+
+        self.sep_backend = [self.ep1, self.ep2]
+        self.sep = c.create_scaled_endpoint(
+            3, 1, "10.0.0.4", self.sep_backend)
 
     def tearDown(self):
         pass
 
-    def test_host_endpoint(self):
-        logger.info(
-            "{} Testing all endpoints can communicate! {}".format('='*20, '='*20))
-        do_common_tests(self, self.ep1, self.ep2)
-        do_common_tests(self, self.ep_host, self.ep1)
-        do_common_tests(self, self.ep_host, self.ep2)
+    def test_scaled_endpoint_mixed_net_backend(self):
+        do_test_scaled_ep_diff_conn(
+            self, self.ep0, self.sep, self.sep_backend)
         do_check_failed_rpcs(self, self.droplets.values())

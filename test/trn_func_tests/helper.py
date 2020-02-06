@@ -378,13 +378,14 @@ def do_test_scaled_ep_same_conn(test, client, server, backend):
         "{} Testing scaled endpoint same TCP connection multiple messages! {}".format('='*20, '='*20))
     exp_pkt_count = 3
     ep_to_host_map = {}
+    total_connections = 1
     do_start_pcap_scaled_ep(test, client, server, backend, 13)
     for ep in backend:
-        ep.do_tcp_serve_idle()
+        ep.do_tcp_serve_idle(total_connections)
         ep_to_host_map[ep.host.ip] = ep.ip
     client.do_tcp_client_idle(
-        server.ip, exp_pkt_count, 5)
-    sleep(13)
+        server.ip, total_connections, exp_pkt_count, 5)
+    sleep(15)
     backend_packets = {}
     for ep in backend:
         backend_packets[ep.host.ip] = (rdpcap("test/trn_func_tests/output/" + ep.host.ip + "_" +
@@ -407,22 +408,25 @@ def do_test_scaled_ep_same_conn(test, client, server, backend):
 def do_test_scaled_ep_diff_conn(test, client, server, backend):
     """
     This functions validates the scaled endpoint behavior when multiple TCP connections are opened.
-    1. Opens three TCP connection between the client endpoint and the scaled endpoint.
-    2. Sends a "Hello, World!" message on all three connections.
+    1. Opens TCP connection between the client endpoint and the scaled endpoint.
+    2. Sends a "Hello, World!" message on all connections.
     3. Validates that at least TWO hosts in the backend recieved the the "Hello, World!" messages.
     """
     logger.info(
         "{} Testing scaled endpoint multiple TCP connections! {}".format('='*20, '='*20))
-    total_connections = 10
+    total_connections = 50
     ep_to_host_map = {}
+    host_pkt_distrib = {}
     do_start_pcap_scaled_ep(test, client, server, backend, 10)
     for ep in backend:
-        ep.do_tcp_serve_idle()
+        ep.do_tcp_serve_idle(total_connections)
         ep_to_host_map[ep.host.ip] = ep.ip
-    for __ in range(0, total_connections):
-        client.do_tcp_client_idle(
-            server.ip, 1, 1)
-    sleep(10)
+        host_pkt_distrib[ep.host.ip] = 0
+        logger.info(
+            "{} Backend Host: {} IP: {} {}".format('='*20, ep.host.id, ep.host.ip, '='*20))
+    for conn in range(0, total_connections):
+        client.do_tcp_client_idle(server.ip, conn)
+    sleep(15)
     backend_packets = {}
     for ep in backend:
         backend_packets[ep.host.ip] = (rdpcap("test/trn_func_tests/output/" + ep.host.ip + "_" +
@@ -435,6 +439,12 @@ def do_test_scaled_ep_diff_conn(test, client, server, backend):
                     message = pkt[GENEVE][TCP][Raw].load.decode()
                     if message == "Hello, World!" and pkt[GENEVE][IP].dst == ep_to_host_map[host_ip]:
                         diff_host_count[host_ip] = 1
+                        host_pkt_distrib[host_ip] += 1
+    logger.info(
+        "{} {} Backend host(s) recieved a message! {}".format('='*20, sum(diff_host_count.values()), '='*20))
+    for host in host_pkt_distrib.keys():
+        logger.info(
+            "{} Backend Host {}: recieved {} messages! {}".format('='*20, host, host_pkt_distrib[host], '='*20))
     test.assertTrue(sum(diff_host_count.values()) > 1)
 
 
