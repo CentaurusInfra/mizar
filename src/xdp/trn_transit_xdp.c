@@ -395,6 +395,10 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 		return XDP_ABORTED;
 	}
 
+	/* For whatever compiler reason, we need to perform reverse flow modification
+	 in this function instead of trn_switch_handle_pkt so we keep the orig_src_ip */
+	__u32 orig_src_ip = pkt->inner_ip->saddr;
+
 	pkt->inner_ipv4_tuple.saddr = pkt->inner_ip->saddr;
 	pkt->inner_ipv4_tuple.daddr = pkt->inner_ip->daddr;
 	pkt->inner_ipv4_tuple.protocol = pkt->inner_ip->protocol;
@@ -436,14 +440,29 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 		return trn_handle_scaled_ep_modify(pkt);
 	}
 
-	/* Check if we need to apply a reverse flow update */
+	/* Lookup the source endpoint*/
+	__be64 tunnel_id = trn_vni_to_tunnel_id(pkt->geneve->vni);
+	struct endpoint_t *src_ep;
+	struct endpoint_key_t src_epkey;
+
+	__builtin_memcpy(&src_epkey.tunip[0], &tunnel_id, sizeof(tunnel_id));
+	src_epkey.tunip[2] = pkt->inner_ip->saddr;
+	src_ep = bpf_map_lookup_elem(&endpoints_map, &src_epkey);
+
+	/* If this is not the source endpoint's host, skip reverse flow modification */
+	if (!src_ep) {
+		return trn_switch_handle_pkt(pkt, pkt->inner_ip->saddr,
+					     pkt->inner_ip->daddr, orig_src_ip);
+	}
+
+	/* Check if we need to apply a reverse flow update,
+	only if the source endpoint is on this host */
 	struct ipv4_tuple_t inner;
 	struct scaled_endpoint_remote_t *inner_mod;
 	__builtin_memcpy(&inner, &pkt->inner_ipv4_tuple,
 			 sizeof(struct ipv4_tuple_t));
 
 	inner_mod = bpf_map_lookup_elem(&rev_flow_mod_cache, &inner);
-	__u32 orig_src_ip = pkt->inner_ip->saddr;
 	if (inner_mod) {
 		/* Modify the inner packet accordingly */
 		trn_set_src_dst_inner_ip_csum(pkt, inner_mod->saddr,
