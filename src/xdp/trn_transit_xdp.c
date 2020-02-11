@@ -326,6 +326,7 @@ static __inline int trn_handle_scaled_ep_modify(struct transit_packet *pkt)
 		  bpf_ntohl(pkt->scaled_ep_opt->scaled_ep_data.target.daddr));
 
 	__be64 tunnel_id = trn_vni_to_tunnel_id(pkt->geneve->vni);
+
 	struct scaled_endpoint_remote_t out_tuple;
 	struct ipv4_tuple_t in_tuple;
 
@@ -434,12 +435,6 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 		pkt->inner_ipv4_tuple.dport = pkt->inner_udp->dest;
 	}
 
-	if (pkt->scaled_ep_opt->type == TRN_GNV_SCALED_EP_OPT_TYPE &&
-	    pkt->scaled_ep_opt->scaled_ep_data.msg_type ==
-		    TRN_SCALED_EP_MODIFY) {
-		return trn_handle_scaled_ep_modify(pkt);
-	}
-
 	/* Lookup the source endpoint*/
 	__be64 tunnel_id = trn_vni_to_tunnel_id(pkt->geneve->vni);
 	struct endpoint_t *src_ep;
@@ -449,10 +444,17 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 	src_epkey.tunip[2] = pkt->inner_ip->saddr;
 	src_ep = bpf_map_lookup_elem(&endpoints_map, &src_epkey);
 
-	/* If this is not the source endpoint's host, skip reverse flow modification */
-	if (!src_ep) {
+	/* If this is not the source endpoint's host,
+	skip reverse flow modification, or scaled endpoint modify handling */
+	if (!src_ep || src_ep->hosted_iface == -1) {
 		return trn_switch_handle_pkt(pkt, pkt->inner_ip->saddr,
 					     pkt->inner_ip->daddr, orig_src_ip);
+	}
+
+	if (pkt->scaled_ep_opt->type == TRN_GNV_SCALED_EP_OPT_TYPE &&
+	    pkt->scaled_ep_opt->scaled_ep_data.msg_type ==
+		    TRN_SCALED_EP_MODIFY) {
+		return trn_handle_scaled_ep_modify(pkt);
 	}
 
 	/* Check if we need to apply a reverse flow update,
