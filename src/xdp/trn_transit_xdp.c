@@ -255,6 +255,14 @@ static __inline int trn_switch_handle_pkt(struct transit_packet *pkt,
 	ep = bpf_map_lookup_elem(&endpoints_map, &epkey);
 
 	if (!ep) {
+		/* If the scaled endpoint modify option is present,
+		   make TR route to the inner packet source */
+		if (pkt->scaled_ep_opt->type == TRN_GNV_SCALED_EP_OPT_TYPE &&
+		    pkt->scaled_ep_opt->scaled_ep_data.msg_type ==
+			    TRN_SCALED_EP_MODIFY)
+			return trn_router_handle_pkt(pkt, inner_dst_ip,
+						     inner_src_ip);
+
 		return trn_router_handle_pkt(pkt, inner_src_ip, inner_dst_ip);
 	}
 
