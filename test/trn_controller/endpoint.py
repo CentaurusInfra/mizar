@@ -60,6 +60,7 @@ class endpoint:
         if host_ep:
             self.veth_name = "host_" + self.veth_name
             self.veth_peer = "host_" + self.veth_peer
+            self.saved_ns = self.ns
             self.ns = ""
             self.ns_exec = ""
         self.backends = backends
@@ -109,20 +110,19 @@ class endpoint:
     def unprovision(self):
         if self.tuntype == 'vxn':
             return
-
-        if self.host is None:
-            veth_allocator.getInstance().reclaim_veth(
-                self.mac, self.ns.replace(self.tuntype + '_', ''), self.veth_peer.replace(self.tuntype + '_', ''))
-            self.veth_allocated = False
-            return
-        else:
+        if self.host is not None:
             self.transit_agent = None
             self.host.delete_ep(self)
             self.host.unprovision_simple_endpoint(self)
+
+        if self.ns == "":  # Host endpoint case
+            veth_allocator.getInstance().reclaim_veth(
+                self.mac, self.saved_ns.replace(self.tuntype + '_', ''), self.veth_peer.replace("host_" + self.tuntype + '_', ''))
+        else:
             veth_allocator.getInstance().reclaim_veth(
                 self.mac, self.ns.replace(self.tuntype + '_', ''), self.veth_peer.replace(self.tuntype + '_', ''))
-            self.veth_allocated = False
 
+        self.veth_allocated = False
         self.ready = False
 
     def __del__(self):
@@ -130,8 +130,13 @@ class endpoint:
             if self.transit_agent is not None:
                 self.host.unload_transit_agent_xdp(self.veth_peer)
         if self.veth_allocated:
-            veth_allocator.getInstance().reclaim_veth(
-                self.mac, self.ns.replace(self.tuntype + '_', ''), self.veth_peer.replace(self.tuntype + '_', ''))
+            if self.ns == "":  # Host endpoint case
+                veth_allocator.getInstance().reclaim_veth(
+                    self.mac, self.saved_ns.replace(self.tuntype + '_', ''), self.veth_peer.replace("host_" + self.tuntype + '_', ''))
+            else:
+                veth_allocator.getInstance().reclaim_veth(
+                    self.mac, self.ns.replace(self.tuntype + '_', ''), self.veth_peer.replace(self.tuntype + '_', ''))
+
             self.veth_allocated = False
 
     def get_tunnel_id(self):
