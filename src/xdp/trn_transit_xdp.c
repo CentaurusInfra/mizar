@@ -454,19 +454,14 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 
 	/* If this is not the source endpoint's host,
 	skip reverse flow modification, or scaled endpoint modify handling */
-	if (!src_ep || src_ep->hosted_iface == -1) {
-		return trn_switch_handle_pkt(pkt, pkt->inner_ip->saddr,
-					     pkt->inner_ip->daddr, orig_src_ip);
-	}
-
 	if (pkt->scaled_ep_opt->type == TRN_GNV_SCALED_EP_OPT_TYPE &&
 	    pkt->scaled_ep_opt->scaled_ep_data.msg_type ==
-		    TRN_SCALED_EP_MODIFY) {
+		    TRN_SCALED_EP_MODIFY &&
+	    src_ep && src_ep->hosted_iface != -1) {
 		return trn_handle_scaled_ep_modify(pkt);
 	}
 
-	/* Check if we need to apply a reverse flow update,
-	only if the source endpoint is on this host */
+	/* Check if we need to apply a reverse flow update */
 	struct ipv4_tuple_t inner;
 	struct scaled_endpoint_remote_t *inner_mod;
 	__builtin_memcpy(&inner, &pkt->inner_ipv4_tuple,
