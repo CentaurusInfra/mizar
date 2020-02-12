@@ -249,8 +249,8 @@ class endpoint:
         cmd = f'''{self.bash_cmd} 'iperf3 -c {ip} {args}' '''
         return self.host.run(cmd)
 
-    def do_tcp_serve_idle(self, connections, detach=True):
-        return self.host.run(self.tcp_serv_idle_cmd + " " + str(connections) + "'", detach=detach)
+    def do_tcp_serve_idle(self, connections, idle=0, detach=True):
+        return self.host.run(self.tcp_serv_idle_cmd + " " + str(connections) + " " + str(idle) + "'", detach=detach)
 
     def do_tcp_client_idle(self, ip, connection, message_count=2, delay=5, detach=True):
         return self.host.run(self.tcp_client_idle_cmd + str(ip) + " " + str(message_count) + " " + str(delay) + " " + str(connection) + "'", detach=detach)

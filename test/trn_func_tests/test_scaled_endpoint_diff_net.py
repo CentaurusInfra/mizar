@@ -45,6 +45,5 @@ class test_scaled_endpoint_diff_net(unittest.TestCase):
         pass
 
     def test_scaled_endpoint_diff_net(self):
-        input()
         do_test_scaled_ep_diff_conn(self, self.ep0, self.sep, self.sep_backend)
         do_check_failed_rpcs(self, self.droplets.values())

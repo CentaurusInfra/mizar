@@ -17,7 +17,7 @@ import unittest
 from time import sleep
 
 
-class test_scaled_endpoint_shared_backend_same_net(unittest.TestCase):
+class test_scaled_endpoint_shared_backend_diff_net(unittest.TestCase):
 
     def setUp(self):
         self.droplets = {
@@ -34,19 +34,19 @@ class test_scaled_endpoint_shared_backend_same_net(unittest.TestCase):
         c.create_network(3, 1, cidr("24", "10.0.0.0"), ["switch1"])
         c.create_network(3, 2, cidr("24", "10.0.20.0"), ["switch2"])
         self.ep0 = c.create_simple_endpoint(3, 1, "10.0.0.2", "d1")
-        self.ep1 = c.create_simple_endpoint(3, 1, "10.0.0.4", "d2")
-        self.ep2 = c.create_simple_endpoint(3, 1, "10.0.0.5", "d3")
+        self.ep1 = c.create_simple_endpoint(3, 1, "10.0.0.3", "d2")
+        self.ep2 = c.create_simple_endpoint(3, 2, "10.0.20.2", "d3")
 
         self.sep_backend = [self.ep1, self.ep2]
         self.sep1 = c.create_scaled_endpoint(
-            3, 1, "10.0.0.6", self.sep_backend)
+            3, 1, "10.0.0.4", self.sep_backend)
         self.sep2 = c.create_scaled_endpoint(
-            3, 1, "10.0.0.7", self.sep_backend)
+            3, 2, "10.0.20.3", self.sep_backend)
 
     def tearDown(self):
         pass
 
-    def test_scaled_endpoint_shared_backend_same_net(self):
+    def test_scaled_endpoint_shared_backend_diff_net(self):
         do_test_scaled_ep_diff_conn(
             self, self.ep0, self.sep2, self.sep_backend)
         do_test_scaled_ep_diff_conn(

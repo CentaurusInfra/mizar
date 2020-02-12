@@ -381,7 +381,7 @@ def do_test_scaled_ep_same_conn(test, client, server, backend):
     total_connections = 1
     do_start_pcap_scaled_ep(test, client, server, backend, 13)
     for ep in backend:
-        ep.do_tcp_serve_idle(total_connections)
+        ep.do_tcp_serve_idle(total_connections, 1)
         ep_to_host_map[ep.host.ip] = ep.ip
     client.do_tcp_client_idle(
         server.ip, total_connections, exp_pkt_count, 5)
