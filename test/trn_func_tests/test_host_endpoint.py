@@ -29,14 +29,14 @@ class test_host_endpoint(unittest.TestCase):
             "d5": droplet("d5"),
             "d6": droplet("d6"), }
 
-        c = controller(self.droplets)
-        c.create_vpc(3, cidr("16", "10.0.0.0"), ["d1"])
-        c.create_network(3, 10, cidr("24", "10.0.0.0"), ["d2"])
-        c.create_network(3, 20, cidr("24", "10.0.20.0"), ["d3"])
+        self.c = controller(self.droplets)
+        self.c.create_vpc(3, cidr("16", "10.0.0.0"), ["d1"])
+        self.c.create_network(3, 10, cidr("24", "10.0.0.0"), ["d2"])
+        self.c.create_network(3, 20, cidr("24", "10.0.20.0"), ["d3"])
 
-        self.ep1 = c.create_simple_endpoint(3, 10, "10.0.0.2", "d4")
-        self.ep2 = c.create_simple_endpoint(3, 20, "10.0.20.2", "d5")
-        self.ep_host = c.create_host_endpoint(3, 10, "10.0.0.3", "d6")
+        self.ep1 = self.c.create_simple_endpoint(3, 10, "10.0.0.2", "d4")
+        self.ep2 = self.c.create_simple_endpoint(3, 20, "10.0.20.2", "d5")
+        self.ep_host = self.c.create_host_endpoint(3, 10, "10.0.0.3", "d6")
 
     def tearDown(self):
         pass

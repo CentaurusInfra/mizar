@@ -56,18 +56,20 @@ class test_delete_multi_endpoint_same_host(unittest.TestCase):
             "right": droplet("right"),
             "switch": droplet("switch"),
         }
-        c = controller(self.droplets)
+        self.c = controller(self.droplets)
 
-        c.create_vpc(3, cidr("16", "10.0.0.0"), [])
-        c.create_network(3, 1, cidr("16", "10.0.0.0"), ["switch"])
-        self.ep_right = c.create_simple_endpoint(3, 1, "10.0.0.3", "right")
-        self.ep_left = c.create_simple_endpoint(3, 1, "10.0.0.2", "left")
+        self.c.create_vpc(3, cidr("16", "10.0.0.0"), [])
+        self.c.create_network(3, 1, cidr("16", "10.0.0.0"), ["switch"])
+        self.ep_right = self.c.create_simple_endpoint(
+            3, 1, "10.0.0.3", "right")
+        self.ep_left = self.c.create_simple_endpoint(3, 1, "10.0.0.2", "left")
 
-        self.ep_right2 = c.create_simple_endpoint(3, 1, "10.0.0.4", "right")
-        self.ep_left2 = c.create_simple_endpoint(3, 1, "10.0.0.5", "left")
+        self.ep_right2 = self.c.create_simple_endpoint(
+            3, 1, "10.0.0.4", "right")
+        self.ep_left2 = self.c.create_simple_endpoint(3, 1, "10.0.0.5", "left")
 
-        self.ep_left = c.delete_simple_endpoint(3, 1, "10.0.0.2")
-        self.ep_right = c.delete_simple_endpoint(3, 1, "10.0.0.3")
+        self.ep_left = self.c.delete_simple_endpoint(3, 1, "10.0.0.2")
+        self.ep_right = self.c.delete_simple_endpoint(3, 1, "10.0.0.3")
 
     def tearDown(self):
         pass

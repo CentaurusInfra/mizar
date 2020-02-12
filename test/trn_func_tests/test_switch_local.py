@@ -46,16 +46,16 @@ class test_switch_local(unittest.TestCase):
             "left": droplet("left"),
             "right": droplet("right"),
         }
-        c = controller(self.droplets)
+        self.c = controller(self.droplets)
 
-        c.create_vpc(3, cidr("16", "10.0.0.0"), [])
-        c.create_network(3, 1, cidr("16", "10.0.0.0"), ["right"])
+        self.c.create_vpc(3, cidr("16", "10.0.0.0"), [])
+        self.c.create_network(3, 1, cidr("16", "10.0.0.0"), ["right"])
 
-        self.ep0 = c.create_simple_endpoint(3, 1, "10.0.0.2", "left")
+        self.ep0 = self.c.create_simple_endpoint(3, 1, "10.0.0.2", "left")
         print("######## epip {}".format(self.ep0.ip))
-        self.ep1 = c.create_simple_endpoint(3, 1, "10.0.0.4", "left")
-        self.ep2 = c.create_simple_endpoint(3, 1, "10.0.0.3", "right")
-        self.ep3 = c.create_simple_endpoint(3, 1, "10.0.0.5", "right")
+        self.ep1 = self.c.create_simple_endpoint(3, 1, "10.0.0.4", "left")
+        self.ep2 = self.c.create_simple_endpoint(3, 1, "10.0.0.3", "right")
+        self.ep3 = self.c.create_simple_endpoint(3, 1, "10.0.0.5", "right")
 
     def tearDown(self):
         pass

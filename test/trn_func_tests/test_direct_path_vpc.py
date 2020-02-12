@@ -27,13 +27,14 @@ class test_direct_path_vpc(unittest.TestCase):
             "switch2": droplet("switch2"),
             "router": droplet("router")
         }
-        c = controller(self.droplets)
+        self.c = controller(self.droplets)
 
-        c.create_vpc(3, cidr("16", "10.0.0.0"), ["router"])
-        c.create_network(3, 1, cidr("24", "10.0.0.0"), ["switch"])
-        self.ep_left = c.create_simple_endpoint(3, 1, "10.0.0.2", "left")
-        c.create_network(3, 2, cidr("24", "10.0.20.0"), ["switch2"])
-        self.ep_right = c.create_simple_endpoint(3, 2, "10.0.20.3", "right")
+        self.c.create_vpc(3, cidr("16", "10.0.0.0"), ["router"])
+        self.c.create_network(3, 1, cidr("24", "10.0.0.0"), ["switch"])
+        self.ep_left = self.c.create_simple_endpoint(3, 1, "10.0.0.2", "left")
+        self.c.create_network(3, 2, cidr("24", "10.0.20.0"), ["switch2"])
+        self.ep_right = self.c.create_simple_endpoint(
+            3, 2, "10.0.20.3", "right")
 
     def tearDown(self):
         pass

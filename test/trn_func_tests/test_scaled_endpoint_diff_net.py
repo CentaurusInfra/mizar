@@ -28,17 +28,17 @@ class test_scaled_endpoint_diff_net(unittest.TestCase):
             "d2": droplet("d2"),
             "d3": droplet("d3")
         }
-        c = controller(self.droplets)
+        self.c = controller(self.droplets)
 
-        c.create_vpc(3, cidr("16", "10.0.0.0"), ["router1"])
-        c.create_network(3, 1, cidr("24", "10.0.0.0"), ["switch1"])
-        c.create_network(3, 2, cidr("24", "10.0.20.0"), ["switch2"])
-        self.ep0 = c.create_simple_endpoint(3, 1, "10.0.0.2", "d1")
-        self.ep1 = c.create_simple_endpoint(3, 2, "10.0.20.3", "d2")
-        self.ep2 = c.create_simple_endpoint(3, 2, "10.0.20.4", "d3")
+        self.c.create_vpc(3, cidr("16", "10.0.0.0"), ["router1"])
+        self.c.create_network(3, 1, cidr("24", "10.0.0.0"), ["switch1"])
+        self.c.create_network(3, 2, cidr("24", "10.0.20.0"), ["switch2"])
+        self.ep0 = self.c.create_simple_endpoint(3, 1, "10.0.0.2", "d1")
+        self.ep1 = self.c.create_simple_endpoint(3, 2, "10.0.20.3", "d2")
+        self.ep2 = self.c.create_simple_endpoint(3, 2, "10.0.20.4", "d3")
 
         self.sep_backend = [self.ep1, self.ep2]
-        self.sep = c.create_scaled_endpoint(
+        self.sep = self.c.create_scaled_endpoint(
             3, 2, "10.0.20.5", self.sep_backend)
 
     def tearDown(self):

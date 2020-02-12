@@ -56,17 +56,18 @@ class test_delete_endpoint(unittest.TestCase):
             "right": droplet("right"),
             "switch": droplet("switch"),
         }
-        c = controller(self.droplets)
+        self.c = controller(self.droplets)
 
-        c.create_vpc(3, cidr("16", "10.0.0.0"), [])
-        c.create_network(3, 1, cidr("16", "10.0.0.0"), ["switch"])
-        self.ep_right = c.create_simple_endpoint(3, 1, "10.0.0.3", "right")
+        self.c.create_vpc(3, cidr("16", "10.0.0.0"), [])
+        self.c.create_network(3, 1, cidr("16", "10.0.0.0"), ["switch"])
+        self.ep_right = self.c.create_simple_endpoint(
+            3, 1, "10.0.0.3", "right")
         # Clear all droplet update state before we create and delete ep_left
         self.droplets["switch"].clear_update_call_state()
         self.droplets["right"].clear_update_call_state()
 
-        self.ep_left = c.create_simple_endpoint(3, 1, "10.0.0.2", "left")
-        self.ep_left = c.delete_simple_endpoint(3, 1, "10.0.0.2")
+        self.ep_left = self.c.create_simple_endpoint(3, 1, "10.0.0.2", "left")
+        self.ep_left = self.c.delete_simple_endpoint(3, 1, "10.0.0.2")
 
     def tearDown(self):
         pass

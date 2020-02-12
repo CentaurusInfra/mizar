@@ -80,22 +80,22 @@ class test_delete_one_at_a_time(unittest.TestCase):
             "router-1": droplet("router-1")
         }
 
-        c = controller(self.droplets)
+        self.c = controller(self.droplets)
 
-        c.create_vpc(3, cidr("16", "10.0.0.0"), ["router-1"])
-        c.create_network(3, 10, cidr("24", "10.0.0.0"), ["switch-1"])
-        c.create_network(3, 20, cidr("24", "10.20.0.0"), ["switch-2"])
+        self.c.create_vpc(3, cidr("16", "10.0.0.0"), ["router-1"])
+        self.c.create_network(3, 10, cidr("24", "10.0.0.0"), ["switch-1"])
+        self.c.create_network(3, 20, cidr("24", "10.20.0.0"), ["switch-2"])
 
-        self.ep1 = c.create_simple_endpoint(3, 10, "10.0.0.2", "d1")
-        self.ep2 = c.create_simple_endpoint(3, 10, "10.0.0.3", "d2")
+        self.ep1 = self.c.create_simple_endpoint(3, 10, "10.0.0.2", "d1")
+        self.ep2 = self.c.create_simple_endpoint(3, 10, "10.0.0.3", "d2")
 
-        self.ep3 = c.create_simple_endpoint(3, 20, "10.20.0.4", "d3")
-        self.ep4 = c.create_simple_endpoint(3, 20, "10.20.0.5", "d4")
+        self.ep3 = self.c.create_simple_endpoint(3, 20, "10.20.0.4", "d3")
+        self.ep4 = self.c.create_simple_endpoint(3, 20, "10.20.0.5", "d4")
 
         # Delete an endpoint in subnet, delete the parent subnet, then parent VPC.
-        self.ep3 = c.delete_simple_endpoint(3, 20, "10.20.0.4")
-        c.delete_network(3, 20)
-        c.delete_vpc(3)
+        self.ep3 = self.c.delete_simple_endpoint(3, 20, "10.20.0.4")
+        self.c.delete_network(3, 20)
+        self.c.delete_vpc(3)
 
     def tearDown(self):
         pass
