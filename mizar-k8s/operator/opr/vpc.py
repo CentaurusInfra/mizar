@@ -6,9 +6,9 @@ class Vpc(object):
 	def __init__(self, name, vni, cidr, dividers={}, networks={}):
 		self.name = name
 		self.vni = vni
-        self.cidr = cidr
-        self.dividers = dividers
-        self.networks = networks
+		self.cidr = cidr
+		self.dividers = dividers
+		self.networks = networks
 
 	def update_divider(self, droplet):
 		pass
