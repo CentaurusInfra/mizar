@@ -1,0 +1,23 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: mizar-dropletd
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      job: mizar-dropletd
+  template:
+    metadata:
+      labels:
+        job: mizar-dropletd
+    spec:
+      serviceAccountName: mizar-operator
+      hostNetwork: true
+      hostPID: true
+      containers:
+      - image: selgohari/dropletd:latest
+        name: mizar-dropletd
+        securityContext:
+            privileged: true
