@@ -16,21 +16,6 @@ class NetOperator(object):
 		logger.info(kwargs)
 		self.vs = VpcStore()
 
-	def on_create(self, body, spec, **kwargs):
-		name = kwargs['name']
-		vni = spec['vni']
-		ip = spec['ip']
-		prefix = spec['prefix']
-		vpc = spec['vpc']
-		cidr = ''
-		logger.info("*create_net name: {}, vni: {}, ip: {}/{}, vpc:{}".format(name, vni, ip, prefix, vpc))
-		logger.info("vpc store {}".format(self.vs.store.keys()))
-		self.vs.get(vpc).update_network("network-1")
-
-	def on_delete(self, body, spec, **kwargs):
-		name = kwargs['name']
-		logger.info("*delete_net name: {}".format(kwargs))
-
 	def on_update(self, body, spec, **kwargs):
 		name = kwargs['name']
 		vni = spec['vni']
@@ -41,12 +26,12 @@ class NetOperator(object):
 		logger.info("*update_net name: {}, vni: {}, ip: {}/{}, vpc: {}".format(name, vni, ip, prefix, vpc))
 		self.vs.get(vpc).update_network("network-1")
 
+	def on_create(self, body, spec, **kwargs):
+		self.on_update(body, spec, **kwargs)
+
 	def on_resume(self, spec, **kwargs):
+		self.on_update(body, spec, **kwargs)
+
+	def on_delete(self, body, spec, **kwargs):
 		name = kwargs['name']
-		vni = spec['vni']
-		ip = spec['ip']
-		prefix = spec['prefix']
-		vpc = spec['vpc']
-		cidr = ''
-		logger.info("*resume_net name: {}, vni: {}, ip: {}/{}, vpc: {}".format(name, vni, ip, prefix, vpc))
-		self.vs.get(vpc).update_network("network-1")
+		logger.info("*delete_net name: {}".format(kwargs))

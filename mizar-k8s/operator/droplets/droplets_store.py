@@ -15,9 +15,8 @@ class DropletStore(object):
 		logger.info(kwargs)
 		self.store = {}
 
-	def update(self, name, ip, mac):
-		d = Droplet(name, ip, mac)
-		self.store[name] = d
+	def update(self, name, droplet):
+		self.store[name] = droplet
 
 	def delete(self, name):
 		if name in self.store:

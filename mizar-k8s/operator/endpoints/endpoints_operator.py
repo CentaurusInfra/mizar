@@ -17,14 +17,15 @@ class EndpointOperator(object):
 		self.ds = DropletStore()
 		self.vs = VpcStore()
 
-	def on_create(self, body, spec, **kwargs):
-		logger.info("*create_endpoint {}".format(self.ds.store))
-
 	def on_delete(self, body, spec, **kwargs):
 		logger.info("*delete_endpoint {}".format(self.ds.store))
 
 	def on_update(self, body, spec, **kwargs):
 		logger.info("*update_endpoint {}".format(self.ds.store))
 
+	def on_create(self, body, spec, **kwargs):
+		self.on_update(body, spec, **kwargs)
+
 	def on_resume(self, spec, **kwargs):
-		logger.info("*resume_endpoint {}".format(self.ds.store))
+		self.on_update(body, spec, **kwargs)
+

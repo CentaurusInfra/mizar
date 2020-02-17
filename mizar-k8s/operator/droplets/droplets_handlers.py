@@ -2,7 +2,7 @@ import kopf
 import logging
 
 from common.constants import group, version
-from opr.droplets_operator import DropletOperator
+from droplets.droplets_operator import DropletOperator
 
 logger = logging.getLogger()
 

@@ -1,3 +1,4 @@
+from droplets.droplet import Droplet
 from droplets.droplets_store import DropletStore
 import logging
 
@@ -16,13 +17,6 @@ class DropletOperator(object):
 		logger.info(kwargs)
 		self.ds = DropletStore()
 
-	def on_create(self, body, spec, **kwargs):
-		name = kwargs['name']
-		mac = spec['mac']
-		ip = spec['ip']
-		logger.info("*create_droplet {}, {}, {}".format(name, ip, mac))
-		self.ds.update(name, ip, mac)
-
 	def on_delete(self, body, spec, **kwargs):
 		name = kwargs['name']
 		logger.info("*delete_droplet {}, {}, {}".format(name, ip, mac))
@@ -33,11 +27,12 @@ class DropletOperator(object):
 		mac = spec['mac']
 		ip = spec['ip']
 		logger.info("*update_droplet {}, {}, {}".format(name, ip, mac))
-		self.ds.update(name, ip, mac)
+		d = Droplet(name, ip, mac)
+		self.ds.update(name, d)
+
+	def on_create(self, body, spec, **kwargs):
+		self.on_update(body, spec, **kwargs)
 
 	def on_resume(self, spec, **kwargs):
-		name = kwargs['name']
-		mac = spec['mac']
-		ip = spec['ip']
-		logger.info("*resume_droplet {}, {}, {}".format(name, ip, mac))
-		self.ds.update(name, ip, mac)
+		self.on_update(body, spec, **kwargs)
+
