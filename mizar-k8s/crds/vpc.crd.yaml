@@ -20,36 +20,15 @@ spec:
     - name: Ip
       type: string
       priority: 0
-      JSONPath: .ip
+      JSONPath: .spec.ip
       description: The IP of the VPC CIDR block
     - name: Prefix
       type: string
       priority: 0
-      JSONPath: .prefix
+      JSONPath: .spec.prefix
       description: The prefix of the VPC CIDR block
     - name: Vni
       type: string
       priority: 0
-      JSONPath: .vni
+      JSONPath: .spec.vni
       description: The VNI of the VPC
-  validation:
-    openAPIV3Schema:
-      required:
-      - vni
-      - ip
-      - prefix
-      properties:
-        ip:
-          type: string
-        prefix:
-          type: string
-        vni:
-          type: string
-        dividers:
-          type: array
-          items:
-            type: string
-        networks:
-          type: array
-          items:
-            type: string

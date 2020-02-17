@@ -1,4 +1,5 @@
-from opr.droplet import DropletStore
+from vpcs.vpcs_store import VpcStore
+from droplets.droplets_store import DropletStore
 import logging
 logger = logging.getLogger()
 
@@ -14,6 +15,7 @@ class EndpointOperator(object):
 	def _init(self, **kwargs):
 		logger.info(kwargs)
 		self.ds = DropletStore()
+		self.vs = VpcStore()
 
 	def on_create(self, body, spec, **kwargs):
 		logger.info("*create_endpoint {}".format(self.ds.store))

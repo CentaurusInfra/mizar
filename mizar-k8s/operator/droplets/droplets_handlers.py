@@ -1,9 +1,7 @@
-#!/usr/bin/python3
-
 import kopf
 import logging
 
-from common import group, version
+from common.constants import group, version
 from opr.droplets_operator import DropletOperator
 
 logger = logging.getLogger()

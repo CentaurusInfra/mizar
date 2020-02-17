@@ -42,3 +42,13 @@ spec:
       priority: 0
       JSONPath: .spec.status
       description: The Current Provisioning Status of the endpoint
+    - name: Network
+      type: string
+      priority: 0
+      JSONPath: .spec.net
+      description: The network of the endpoint
+    - name: Vpc
+      type: string
+      priority: 0
+      JSONPath: .spec.vpc
+      description: The vpc of the endpoint

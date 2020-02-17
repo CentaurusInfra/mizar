@@ -1,10 +1,8 @@
-#!/usr/bin/python3
-
 import kopf
 import logging
 
-from common import group, version
-from opr.vpcs_operator import VpcOperator
+from common.constants import group, version
+from vpcs.vpcs_operator import VpcOperator
 
 logger = logging.getLogger()
 

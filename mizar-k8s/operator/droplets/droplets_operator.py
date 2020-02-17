@@ -1,5 +1,5 @@
+from droplets.droplets_store import DropletStore
 import logging
-from opr.droplet import DropletStore
 
 logger = logging.getLogger()
 

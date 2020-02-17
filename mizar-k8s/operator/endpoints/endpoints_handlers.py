@@ -1,10 +1,8 @@
-#!/usr/bin/python3
-
 import kopf
 import logging
 
-from common import group, version
-from opr.endpoints_operator import EndpointOperator
+from common.constants import group, version
+from endpoints.endpoints_operator import EndpointOperator
 
 logger = logging.getLogger()
 

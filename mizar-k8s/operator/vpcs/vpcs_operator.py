@@ -1,4 +1,6 @@
-from opr.vpc import VpcStore
+from vpcs.vpc import Vpc
+from vpcs.vpcs_store import VpcStore
+from droplets.droplets_store import DropletStore
 import logging
 logger = logging.getLogger()
 
@@ -17,12 +19,13 @@ class VpcOperator(object):
 
 	def on_create(self, body, spec, **kwargs):
 		name = kwargs['name']
-		vni = body['vni']
-		ip = body['ip']
-		prefix = body['prefix']
+		vni = spec['vni']
+		ip = spec['ip']
+		prefix = spec['prefix']
 		cidr = ''
 		logger.info("*create_vpc name: {}, vni: {}, ip: {}/{}".format(name, vni, ip, prefix))
-		self.vs.update(name, vni, cidr)
+		vpc = Vpc(name, vni, cidr)
+		self.vs.update(name, vpc)
 
 	def on_delete(self, body, spec, **kwargs):
 		name = kwargs['name']
@@ -30,18 +33,20 @@ class VpcOperator(object):
 
 	def on_update(self, body, spec, **kwargs):
 		name = kwargs['name']
-		vni = body['vni']
-		ip = body['ip']
-		prefix = body['prefix']
+		vni = spec['vni']
+		ip = spec['ip']
+		prefix = spec['prefix']
 		cidr = ''
 		logger.info("*update_vpc name: {}, vni: {}, ip: {}/{}".format(name, vni, ip, prefix))
-		self.vs.update(name, vni, cidr)
+		vpc = Vpc(name, vni, cidr)
+		self.vs.update(name, vpc)
 
 	def on_resume(self, spec, **kwargs):
 		name = kwargs['name']
-		vni = kwargs['body']['vni']
-		ip = kwargs['body']['ip']
-		prefix = kwargs['body']['prefix']
+		vni = spec['vni']
+		ip = spec['ip']
+		prefix = spec['prefix']
 		cidr = ''
 		logger.info("*resume_vpc name: {}, vni: {}, ip: {}/{}".format(name, vni, ip, prefix))
-		self.vs.update(name, vni, cidr)
+		vpc = Vpc(name, vni, cidr)
+		self.vs.update(name, vpc)
