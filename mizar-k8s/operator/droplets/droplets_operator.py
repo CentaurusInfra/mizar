@@ -19,7 +19,7 @@ class DropletOperator(object):
 
 	def on_delete(self, body, spec, **kwargs):
 		name = kwargs['name']
-		logger.info("*delete_droplet {}, {}, {}".format(name, ip, mac))
+		logger.info("*delete_droplet {}".format(name))
 		self.ds.delete(name)
 
 	def on_update(self, body, spec, **kwargs):
@@ -33,6 +33,6 @@ class DropletOperator(object):
 	def on_create(self, body, spec, **kwargs):
 		self.on_update(body, spec, **kwargs)
 
-	def on_resume(self, spec, **kwargs):
+	def on_resume(self, body, spec, **kwargs):
 		self.on_update(body, spec, **kwargs)
 

@@ -20,7 +20,7 @@ class DividerOperator(object):
 
 	def on_delete(self, body, spec, **kwargs):
 		name = kwargs['name']
-		logger.info("*delete_divider {}, {}".format(name, ip))
+		logger.info("*delete_divider {}".format(name))
 
 	def on_update(self, body, spec, **kwargs):
 		name = kwargs['name']
@@ -30,5 +30,5 @@ class DividerOperator(object):
 	def on_create(self, body, spec, **kwargs):
 		self.on_update(body, spec, **kwargs)
 
-	def on_resume(self, spec, **kwargs):
+	def on_resume(self, body, spec, **kwargs):
 		self.on_update(body, spec, **kwargs)

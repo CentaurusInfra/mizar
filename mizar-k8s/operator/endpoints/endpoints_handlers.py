@@ -22,10 +22,10 @@ def update_endpoint(body, spec, **kwargs):
     endpoint_operators.on_update(body, spec, **kwargs)
 
 @kopf.on.resume(group, version, resource)
-def resume_endpoints(spec, **kwargs):
+def resume_endpoints(body, spec, **kwargs):
     logger.info("resume_endpoints")
     global endpoints_operator
-    endpoint_operators.on_resume(spec, **kwargs)
+    endpoint_operators.on_resume(body, spec, **kwargs)
 
 @kopf.on.delete(group, version, resource)
 def delete_endpoint(body, **kwargs):

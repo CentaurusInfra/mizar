@@ -22,10 +22,10 @@ def update_net(body, spec, **kwargs):
     net_operator.on_update(body, spec, **kwargs)
 
 @kopf.on.resume(group, version, resource)
-def resume_net(spec, **kwargs):
+def resume_net(body, spec, **kwargs):
     logger.info("resume_net")
     global net_operator
-    net_operator.on_resume(spec, **kwargs)
+    net_operator.on_resume(body, spec, **kwargs)
 
 @kopf.on.delete(group, version, resource)
 def delete_net(body, **kwargs):

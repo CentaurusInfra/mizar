@@ -21,10 +21,10 @@ def update_droplet(body, spec, **kwargs):
     droplet_operator.on_update(body, spec, **kwargs)
 
 @kopf.on.resume(group, version, 'droplets')
-def resume_droplet(spec, **kwargs):
+def resume_droplet(body, spec, **kwargs):
     logger.info("resume_droplet")
     global droplet_operator
-    droplet_operator.on_resume(spec, **kwargs)
+    droplet_operator.on_resume(body, spec, **kwargs)
 
 @kopf.on.delete(group, version, 'droplets')
 def delete_droplet(body, **kwargs):

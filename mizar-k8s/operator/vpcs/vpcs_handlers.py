@@ -22,10 +22,10 @@ def update_vpc(body, spec, **kwargs):
     vpc_operator.on_update(body, spec, **kwargs)
 
 @kopf.on.resume(group, version, resource)
-def resume_vpc(spec, **kwargs):
+def resume_vpc(body, spec, **kwargs):
     logger.info("resume_vpc")
     global vpc_operator
-    vpc_operator.on_resume(spec, **kwargs)
+    vpc_operator.on_resume(body, spec, **kwargs)
 
 @kopf.on.delete(group, version, resource)
 def delete_vpc(body, **kwargs):

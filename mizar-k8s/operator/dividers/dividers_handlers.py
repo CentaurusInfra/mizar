@@ -22,10 +22,10 @@ def update_divider(body, spec, **kwargs):
     divider_operator.on_update(body, spec, **kwargs)
 
 @kopf.on.resume(group, version, resource)
-def resume_divider(spec, **kwargs):
+def resume_divider(body, spec, **kwargs):
     logger.info("resume_divider")
     global divider_operator
-    divider_operator.on_resume(spec, **kwargs)
+    divider_operator.on_resume(body, spec, **kwargs)
 
 @kopf.on.delete(group, version, resource)
 def delete_divider(body, **kwargs):

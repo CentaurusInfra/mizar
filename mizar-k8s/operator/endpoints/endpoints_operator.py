@@ -26,6 +26,6 @@ class EndpointOperator(object):
 	def on_create(self, body, spec, **kwargs):
 		self.on_update(body, spec, **kwargs)
 
-	def on_resume(self, spec, **kwargs):
+	def on_resume(self, body, spec, **kwargs):
 		self.on_update(body, spec, **kwargs)
 
