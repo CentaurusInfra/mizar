@@ -45,6 +45,8 @@ class VpcOperator(object):
 			vpc = Vpc(self.obj_api, name, vni, cidr)
 
 		# First allocate the divider if it does not exist
+		# TODO: This code just allocate ONE divider, no support
+		# For scaling yet!!
 		self.allocate_divider(vpc)
 
 		self.vs.update(name, vpc)

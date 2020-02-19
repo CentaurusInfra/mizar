@@ -66,13 +66,16 @@ class Vpc(object):
 					body=divider_obj,
 				)
 				return True
-		finally:
-			return False
 
 		return False
 
 	def delete_divider(self, droplet):
 		pass
+
+	def get_network(self, name):
+		if name in self.networks:
+			return self.networks[name]
+		return None
 
 	def update_network(self, network):
 		pass

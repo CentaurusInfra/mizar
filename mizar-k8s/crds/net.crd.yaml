@@ -21,12 +21,12 @@ spec:
       type: string
       priority: 0
       JSONPath: .spec.ip
-      description: The IP of the VPC CIDR block
+      description: The IP of the NET CIDR block
     - name: Prefix
       type: string
       priority: 0
       JSONPath: .spec.prefix
-      description: The prefix of the VPC CIDR block
+      description: The prefix of the NET CIDR block
     - name: Vni
       type: string
       priority: 0
@@ -37,3 +37,8 @@ spec:
       priority: 0
       JSONPath: .spec.vpc
       description: The name of the VPC
+    - name: Bouncers
+      type: integer
+      priority: 0
+      JSONPath: .spec.bouncers
+      description: The number of bouncers of the Net

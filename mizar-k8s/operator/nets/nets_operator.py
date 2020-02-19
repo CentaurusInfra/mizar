@@ -1,3 +1,7 @@
+import random
+from kubernetes import client, config
+from common.common import Cidr
+from nets.net import Net
 from vpcs.vpcs_store import VpcStore
 from droplets.droplets_store import DropletStore
 import logging
@@ -14,17 +18,44 @@ class NetOperator(object):
 
 	def _init(self, **kwargs):
 		logger.info(kwargs)
+		self.ds = DropletStore()
 		self.vs = VpcStore()
+		config.load_incluster_config()
+		self.obj_api = client.CustomObjectsApi()
 
 	def on_update(self, body, spec, **kwargs):
+		update_object = False
 		name = kwargs['name']
 		vni = spec['vni']
 		ip = spec['ip']
 		prefix = spec['prefix']
 		vpc = spec['vpc']
-		cidr = ''
+		cidr = Cidr(prefix, ip)
+
+		bouncers = 1
+
+		if 'bouncers' in spec:
+			bouncers = spec['bouncers']
+		else:
+			update_object = True
+
+		net = self.vs.get(vpc).get_network(name)
+		if net is None:
+			net = Net(self.obj_api, name, vpc, vni, cidr)
+
+
+		# First allocate the bouncer if it does not exist
+		# TODO: This code just allocate ONE bouncer, no support
+		# For scaling yet!!
+		self.allocate_bouncer(net)
+
 		logger.info("*update_net name: {}, vni: {}, ip: {}/{}, vpc: {}".format(name, vni, ip, prefix, vpc))
-		self.vs.get(vpc).update_network("network-1")
+		self.vs.get(vpc).update_network(net)
+
+		# If we have change in the object field, update it
+		if update_object:
+			logger.info("Update net fields")
+			self.update_net(net, body)
 
 	def on_create(self, body, spec, **kwargs):
 		self.on_update(body, spec, **kwargs)
@@ -35,3 +66,25 @@ class NetOperator(object):
 	def on_delete(self, body, spec, **kwargs):
 		name = kwargs['name']
 		logger.info("*delete_net name: {}".format(kwargs))
+
+	def allocate_bouncer(self, net):
+		# Simple random allocator for now
+		droplets = self.ds.get_all()
+		if droplets is None:
+			return False
+		logger.info("net droplets {}".format(droplets))
+		bouncer = random.choice(droplets)
+		net.update_bouncer(bouncer)
+		return True
+
+	def update_net(self, net, body):
+		# update the resource
+		body['spec'] = net.get_obj_spec()
+		self.obj_api.patch_namespaced_custom_object(
+			group="mizar.com",
+			version="v1",
+			namespace="default",
+			plural="nets",
+			name=net.name,
+			body=body
+		)
