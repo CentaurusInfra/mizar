@@ -67,7 +67,7 @@ struct endpoint_t {
 	__u32 remote_ips[TRAN_MAX_REMOTES];
 	int hosted_iface;
 	unsigned char mac[6];
-} __attribute__((packed));
+} __attribute__((packed, aligned(4)));
 
 struct network_key_t {
 	__u32 prefixlen; /* up to 32 for AF_INET, 128 for AF_INET6*/
@@ -79,7 +79,7 @@ struct network_t {
 	__u32 nip[3];
 	__u32 nswitches;
 	__u32 switches_ips[TRAN_MAX_NSWITCH];
-} __attribute__((packed));
+} __attribute__((packed, aligned(4)));
 
 struct vpc_key_t {
 	union {
@@ -90,7 +90,7 @@ struct vpc_key_t {
 struct vpc_t {
 	__u32 nrouters;
 	__u32 routers_ips[TRAN_MAX_NROUTER];
-} __attribute__((packed));
+} __attribute__((packed, aligned(4)));
 
 struct tunnel_iface_t {
 	int iface_index;
@@ -104,7 +104,7 @@ struct agent_metadata_t {
 	struct network_t net;
 	struct endpoint_key_t epkey;
 	struct endpoint_t ep;
-} __attribute__((packed));
+} __attribute__((packed, aligned(4)));
 
 struct ipv4_tuple_t {
 	__u32 saddr;

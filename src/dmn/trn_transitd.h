@@ -47,7 +47,7 @@
 				"inserting [%s] for first time. allocate memory for interface key," \
 				" since RPC XDR will eventually free its value.",                   \
 				itf);                                                               \
-			e.key = malloc(sizeof(char) * strlen(itf));                                 \
+			e.key = malloc(sizeof(char) * strlen(itf) + 1);                             \
 			strcpy(e.key, itf);                                                         \
 			ep = hsearch(e, ENTER);                                                     \
 		}                                                                                   \
