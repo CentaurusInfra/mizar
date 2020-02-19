@@ -27,8 +27,8 @@ obj = {
 		"name": name
 	},
 	"spec": {
-		"mac": ip,
-		"ip": mac
+		"mac": mac,
+		"ip": ip
 	}
 }
 

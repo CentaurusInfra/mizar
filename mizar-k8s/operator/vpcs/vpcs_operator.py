@@ -1,3 +1,6 @@
+import random
+from kubernetes import client, config
+from common.common import Cidr
 from vpcs.vpc import Vpc
 from vpcs.vpcs_store import VpcStore
 from droplets.droplets_store import DropletStore
@@ -15,17 +18,41 @@ class VpcOperator(object):
 
 	def _init(self, **kwargs):
 		logger.info(kwargs)
+		self.ds = DropletStore()
 		self.vs = VpcStore()
+		config.load_incluster_config()
+		self.obj_api = client.CustomObjectsApi()
 
 	def on_update(self, body, spec, **kwargs):
+		update_object = False
+
 		name = kwargs['name']
 		vni = spec['vni']
 		ip = spec['ip']
 		prefix = spec['prefix']
-		cidr = ''
+		dividers = 1
+
+		if 'dividers' in spec:
+			dividers = spec['dividers']
+		else:
+			update_object = True
+
+		cidr = Cidr(prefix, ip)
 		logger.info("*update_vpc name: {}, vni: {}, ip: {}/{}".format(name, vni, ip, prefix))
-		vpc = Vpc(name, vni, cidr)
+
+		vpc = self.vs.get(name)
+		if vpc is None:
+			vpc = Vpc(self.obj_api, name, vni, cidr)
+
+		# First allocate the divider if it does not exist
+		self.allocate_divider(vpc)
+
 		self.vs.update(name, vpc)
+
+		# If we have change in the object field, update it
+		if update_object:
+			logger.info("Update vpc fields")
+			self.update_vpc(vpc, body)
 
 	def on_create(self, body, spec, **kwargs):
 		self.on_update(body, spec, **kwargs)
@@ -36,3 +63,26 @@ class VpcOperator(object):
 	def on_delete(self, body, spec, **kwargs):
 		name = kwargs['name']
 		logger.info("*delete_vpc name: {}".format(name))
+
+	def allocate_divider(self, vpc):
+		# Simple random allocator for now
+		droplets = self.ds.get_all()
+		if droplets is None:
+			return False
+		logger.info("droplets {}".format(droplets))
+		divider = random.choice(droplets)
+		vpc.update_divider(divider)
+		return True
+
+
+	def update_vpc(self, vpc, body):
+		# update the resource
+		body['spec'] = vpc.get_obj_spec()
+		self.obj_api.patch_namespaced_custom_object(
+			group="mizar.com",
+			version="v1",
+			namespace="default",
+			plural="vpcs",
+			name=vpc.name,
+			body=body
+		)

@@ -1,7 +1,7 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: vpcs.mizar.com
+  name: nets.mizar.com
 spec:
   scope: Namespaced
   group: mizar.com
@@ -10,12 +10,12 @@ spec:
       served: true
       storage: true
   names:
-    kind: Vpc
-    plural: vpcs
-    singular: vpc
+    kind: Net
+    plural: nets
+    singular: net
     shortNames:
-      - vpc
-      - vpcs
+      - net
+      - nets
   additionalPrinterColumns:
     - name: Ip
       type: string
@@ -32,8 +32,8 @@ spec:
       priority: 0
       JSONPath: .spec.vni
       description: The VNI of the VPC
-    - name: Dividers
-      type: integer
+    - name: Vpc
+      type: string
       priority: 0
-      JSONPath: .spec.dividers
-      description: The number of dividers of the VPC
+      JSONPath: .spec.vpc
+      description: The name of the VPC

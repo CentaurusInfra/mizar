@@ -26,3 +26,6 @@ class DropletStore(object):
 		if name in self.store:
 			return self.store[name]
 		return None
+
+	def get_all(self):
+		return list(self.store.values())
