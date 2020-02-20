@@ -59,6 +59,8 @@ class k8sParams:
 		self.cni_version = config_json["cniVersion"]
 		self.network_name = config_json["name"]
 		self.plugin = config_json["type"]
+		self.default_vpc = config_json["default_vpc"]
+		self.default_net = config_json["default_net"]
 		if "args" in config_json:
 			self.args = config_json["args"]
 		if "ipMasq" in config_json:
@@ -70,10 +72,12 @@ class k8sParams:
 		self.k8sconfig = config_json["k8sconfig"]
 
 class endpoint:
-	def __init__(self, interface, netns, args, core_api, obj_api):
+	def __init__(self, vpc, net, interface, netns, args, core_api, obj_api):
 		self.core_api = core_api
 		self.obj_api = obj_api
 		self.interface = interface
+		self.vpc = vpc
+		self.net = net
 		self.mac = ""
 		self.netns = netns
 		self.ip = ""
@@ -94,7 +98,9 @@ class endpoint:
 			},
 			"spec": {
 				"type": "simple",
-				"status": self.status
+				"status": self.status,
+				"vpc": self.vpc,
+				"net": self.net
 			}
 		}
 
@@ -149,7 +155,7 @@ class cni:
 	def exec_add(self):
 		#logging.info("add")
 		#logging.info(self.params.cni_args_dict)
-		ep = endpoint(self.params.interface, self.params.netns, self.params.cni_args_dict, self.core_api, self.obj_api)
+		ep = endpoint(self.params.default_vpc, self.params.default_net, self.params.interface, self.params.netns, self.params.cni_args_dict, self.core_api, self.obj_api)
 		ep.create_endpoint_obj()
 		if ep.watch_endpoint_obj():
 			logging.info("!!READY")

@@ -1,4 +1,5 @@
 import logging
+import random
 from kubernetes.client.rest import ApiException
 
 logger = logging.getLogger()
@@ -12,6 +13,11 @@ class Vpc(object):
 		self.networks = networks
 		self.obj_api = obj_api
 		self.obj = None
+		h = '{:06x}'.format(int(self.vni))
+		self.vni_mac = '{}:{}:{}'.format(h[0:2], h[2:4], h[4:6])
+		self.allocated_mac = set()
+		#TODO What if the vni is > 24bits (we have it 64)
+		#by default?
 
 	def get_obj_spec(self):
 		self.obj = {
@@ -69,6 +75,29 @@ class Vpc(object):
 
 		return False
 
+	def allocate_mac_address(self):
+		trials = 0
+		mac = "{}:{}:{}:{}".format(self.vni_mac,
+				random.randint(0, 255),
+				random.randint(0, 255),
+				random.randint(0, 255))
+		while mac in self.allocated_mac:
+			mac = "{}:{}:{}:{}".format(self.vni_mac,
+				random.randint(0, 255),
+				random.randint(0, 255),
+				random.randint(0, 255))
+			trials += 1
+			if trials == 1000:
+				return None
+		self.allocated_mac.add(mac)
+		return mac
+
+	def mark_mac_address_as_allocated(self, mac):
+		self.allocated_mac.add(mac)
+
+	def deallocate_mac_address(self, mac):
+		self.allocated_mac.remove(mac)
+
 	def delete_divider(self, droplet):
 		pass
 
@@ -77,8 +106,9 @@ class Vpc(object):
 			return self.networks[name]
 		return None
 
-	def update_network(self, network):
-		pass
+	def update_network(self, name, network):
+		self.networks[name]=network
+		logger.info("networks {}".format(self.networks.keys()))
 
 	def delete_network(self, network):
 		pass
@@ -89,7 +119,8 @@ class Vpc(object):
 	def delete_bouncer(self, network, bouncer):
 		pass
 
-	def update_simple_endpoint(self):
+	def update_simple_endpoint(self, ep):
+		logger.info("update_simple_endpoint of vpc {}".format(self.name))
 		pass
 
 	def delete_simple_endpoint(self):

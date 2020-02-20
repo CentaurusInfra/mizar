@@ -22,6 +22,33 @@ class NetOperator(object):
 		self.vs = VpcStore()
 		config.load_incluster_config()
 		self.obj_api = client.CustomObjectsApi()
+		self.query_existing_nets(self)
+
+	def query_existing_nets(self):
+		logger.info("* query nets")
+		response = self.obj_api.list_namespaced_custom_object(
+						group = "mizar.com",
+						version = "v1",
+						namespace = "default",
+						plural = "nets",
+						watch=False)
+		items = response['items']
+		logger.info("net response {}".format(response))
+		for v in items:
+			name = v['metadata']['name']
+			vni = v['spec']['vni']
+			ip = v['spec']['ip']
+			prefix = v['spec']['prefix']
+			bouncers = 0
+			if 'bouncers' in v['spec']:
+				bouncers =  v['spec']['bouncers']
+			vpc = v['spec']['vpc']
+			cidr = Cidr(prefix, ip)
+			net = self.vs.get(vpc).get_network(name)
+			if net is None:
+				net = Net(self.obj_api, name, vpc, vni, cidr)
+			logger.info("* update nets {}".format(name))
+			self.vs.get(vpc).update_network(name, net)
 
 	def on_update(self, body, spec, **kwargs):
 		update_object = False
@@ -50,7 +77,7 @@ class NetOperator(object):
 		self.allocate_bouncer(net)
 
 		logger.info("*update_net name: {}, vni: {}, ip: {}/{}, vpc: {}".format(name, vni, ip, prefix, vpc))
-		self.vs.get(vpc).update_network(net)
+		self.vs.get(vpc).update_network(name, net)
 
 		# If we have change in the object field, update it
 		if update_object:

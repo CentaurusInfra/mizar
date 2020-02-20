@@ -22,6 +22,29 @@ class VpcOperator(object):
 		self.vs = VpcStore()
 		config.load_incluster_config()
 		self.obj_api = client.CustomObjectsApi()
+		self.query_existing_vpcs(self)
+
+	def query_existing_vpcs(self):
+		logger.info("* query vpcs")
+		response = self.obj_api.list_namespaced_custom_object(
+						group = "mizar.com",
+						version = "v1",
+						namespace = "default",
+						plural = "vpcs",
+						watch=False)
+		items = response['items']
+		for v in items:
+			name = v['metadata']['name']
+			vni = v['spec']['vni']
+			ip = v['spec']['ip']
+			prefix = v['spec']['prefix']
+			dividers =  v['spec']['dividers']
+			cidr = Cidr(prefix, ip)
+			vpc = self.vs.get(name)
+			if vpc is None:
+				vpc = Vpc(self.obj_api, name, vni, cidr)
+			self.vs.update(name, vpc)
+
 
 	def on_update(self, body, spec, **kwargs):
 		update_object = False

@@ -12,6 +12,7 @@ class Net(object):
 		self.bouncers = bouncers
 		self.endpoints = endpoints
 		self.obj_api = obj_api
+		self.gw = self.cidr.gw
 
 	def get_obj_spec(self):
 		self.obj = {
@@ -70,6 +71,15 @@ class Net(object):
 			return True
 
 		return False
+
+	def allocate_ip(self):
+		return self.cidr.allocate_ip()
+
+	def deallocate_ip(self, ip):
+		return self.cidr.deallocate_ip(ip)
+
+	def mark_ip_as_allocated(self, ip):
+		self.cidr.mark_ip_as_allocated(ip)
 
 	def delete_bouncer(self, network, bouncer):
 		pass

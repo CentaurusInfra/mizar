@@ -52,3 +52,8 @@ spec:
       priority: 0
       JSONPath: .spec.vpc
       description: The vpc of the endpoint
+    - name: Vni
+      type: string
+      priority: 0
+      JSONPath: .spec.vni
+      description: The VNI of the VPC
