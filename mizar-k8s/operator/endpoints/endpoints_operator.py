@@ -69,11 +69,6 @@ class EndpointOperator(object):
 		if 'ip' in spec:
 			ip = spec['ip']
 
-		logger.info("net hosts {}".format(net_obj.cidr.hosts))
-		logger.info("allocated hosts {}".format(net_obj.cidr.allocated))
-		logger.info("len net hosts {}".format(len(net_obj.cidr.hosts)))
-		logger.info("len allocated hosts {}".format(len(net_obj.cidr.allocated)))
-
 		if ip is None or ip == 'None':
 			ip = str(net_obj.allocate_ip())
 			update_endpoint = True
@@ -91,10 +86,26 @@ class EndpointOperator(object):
 			vpc_obj.mark_mac_address_as_allocated(mac)
 
 		status = spec['status']
+		if status == ep_status_init:
+			# Move the status to allocated an invoke the bouncer
+			status = ep_status_allocated
+
+		elif status == ep_status_allocated:
+			logger.info("(BUG) No other entity should move the status to allocated except the endpoint operator")
+			pass
+
+		elif status == ep_status_bouncer_ready:
+			logger.info("Good to know that status is ready")
+			pass
+
+		elif status == ep_status_provisioned:
+			logger.info("Good to know that status is provisioned")
+			pass
 
 		ep = Endpoint(name, vpc, net, vni, status,
 			gw, ip, mac, ep_type, self.obj_api)
 
+		# Update the vpc store and cascade to next processing steps (e.g. bouncers)
 		if ep_type == 'simple':
 			self.vs.get(vpc).update_simple_endpoint(ep)
 

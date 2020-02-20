@@ -7,7 +7,7 @@ from dividers.dividers_operator import DividerOperator
 logger = logging.getLogger()
 
 resource = 'dividers'
-divider_operator  = DividerOperator(arg1="arg1", hello="hello2222")
+divider_operator  = DividerOperator()
 
 @kopf.on.create(group, version, resource)
 def create_divider(body, spec, **kwargs):

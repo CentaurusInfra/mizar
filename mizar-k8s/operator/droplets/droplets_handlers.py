@@ -6,7 +6,7 @@ from droplets.droplets_operator import DropletOperator
 
 logger = logging.getLogger()
 
-droplet_operator  = DropletOperator(arg1="arg1", hello="hello2222")
+droplet_operator  = DropletOperator()
 
 @kopf.on.create(group, version, 'droplets')
 def create_droplet(body, spec, **kwargs):

@@ -1,16 +1,17 @@
 import logging
+from common.constants import *
 from kubernetes.client.rest import ApiException
 
 logger = logging.getLogger()
 
 class Net(object):
-	def __init__(self, obj_api, name, vpc, vni, cidr, bouncers={}, endpoints={}):
+	def __init__(self, obj_api, name, vpc, vni, cidr):
 		self.name = name
 		self.vpc = vpc
 		self.vni = vni
 		self.cidr = cidr
-		self.bouncers = bouncers
-		self.endpoints = endpoints
+		self.bouncers = {}
+		self.endpoints = {}
 		self.obj_api = obj_api
 		self.gw = self.cidr.gw
 
@@ -25,14 +26,18 @@ class Net(object):
 
 		return self.obj
 
-	def update_bouncer(self, droplet):
-		logger.info("*Update bouncer {}".format(droplet.name))
-		if droplet.name in self.bouncers:
-			return True
+	def update_bouncer(self, bouncer):
+		logger.info("*Update bouncer {}, {}, {}".format(bouncer.name, bouncer.vpc, bouncer.net))
+		logger.info("*Update bouncer - net {}, {}, {}".format(self.vpc, self.name, self.bouncers.keys()))
+		self.bouncers[bouncer.name] = bouncer
+		# TODO: This is a new bouncer, program it with existing endpoints and update the transit agentmetadata
 
-		self.bouncers[droplet.name] = droplet
+	def create_bouncer(self, droplet):
+		logger.info("*Create bouncer {}".format(droplet.name))
 
 		bouncer_name = self.name +'-bouncer-' + droplet.name
+		if bouncer_name in self.bouncers:
+			return True
 		try:
 
 			api_response = self.obj_api.get_namespaced_custom_object(
@@ -43,9 +48,8 @@ class Net(object):
 				name=bouncer_name)
 			logger.info("Exist {}".format(api_response))
 
-		except ApiException as e:
+		except:
 			logger.info("Get {}".format(bouncer_name))
-			logger.info("Except {}".format(e.status))
 
 			bouncer_obj = {
 				"apiVersion": "mizar.com/v1",
@@ -56,10 +60,11 @@ class Net(object):
 				"spec": {
 					"ip": droplet.ip,
 					"droplet": droplet.name,
-					"vpc": self.name
+					"vpc": self.vpc,
+					"net": self.name
 				}
 			}
-
+			logger.info("### Bouncer obj {}".format(bouncer_obj))
 			# create the bouncer resource
 			self.obj_api.create_namespaced_custom_object(
 				group="mizar.com",
@@ -90,8 +95,15 @@ class Net(object):
 	def delete_gw_endpoint(self):
 		pass
 
-	def update_simple_endpoint(self):
-		pass
+	def update_simple_endpoint(self, ep):
+		if ep.status != ep_status_allocated:
+			logger.info("Nothing to do for the endpoint {} , status must be allocated!".format(self.name))
+			return
+		logger.info("update_simple_endpoint {} of net {} bouncers {}".format(ep.name, self.name, self.bouncers.keys()))
+		self.endpoints[ep.name] = ep
+		bouncers = self.bouncers.values()
+		for b in bouncers:
+			b.update_simple_endpoint(ep)
 
 	def delete_simple_endpoint(self):
 		pass

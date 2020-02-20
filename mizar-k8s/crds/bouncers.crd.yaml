@@ -17,11 +17,21 @@ spec:
       - bncr
       - bncrs
   additionalPrinterColumns:
+    - name: vpc
+      type: string
+      priority: 0
+      JSONPath: .spec.vpc
+      description: The VPC of the divider
+    - name: net
+      type: string
+      priority: 0
+      JSONPath: .spec.net
+      description: The Network of the bouncer
     - name: Ip
       type: string
       priority: 0
       JSONPath: .spec.ip
-      description: The IP of the endpoint
+      description: The IP of the droplet
     - name: Droplet
       type: string
       priority: 0

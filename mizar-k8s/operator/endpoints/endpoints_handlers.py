@@ -7,7 +7,7 @@ from endpoints.endpoints_operator import EndpointOperator
 logger = logging.getLogger()
 
 resource = 'endpoints'
-endpoint_operators = EndpointOperator(arg1="arg1", hello="hello")
+endpoint_operators = EndpointOperator()
 
 @kopf.on.create(group, version, resource)
 def create_endpoint(body, spec, **kwargs):

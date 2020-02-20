@@ -1,3 +1,4 @@
+from bouncers.bouncer import Bouncer
 from vpcs.vpcs_store import VpcStore
 from droplets.droplets_store import DropletStore
 import logging
@@ -25,7 +26,14 @@ class BouncerOperator(object):
 	def on_update(self, body, spec, **kwargs):
 		name = kwargs['name']
 		ip = spec['ip']
-		logger.info("*update_bouncer {}, {}".format(name, ip))
+		droplet = spec['droplet']
+		vpc = spec['vpc']
+		net = spec['net']
+		vpc_obj = self.vs.get(vpc)
+		net_obj = vpc_obj.get_network(net)
+		logger.info("*update_bouncer {}, {}, {}, {}/{}, {}".format(name, ip, vpc, net, net_obj.name, net_obj.bouncers.keys()))
+		bouncer = Bouncer(name, vpc, net, ip, droplet)
+		net_obj.update_bouncer(bouncer)
 
 	def on_create(self, body, spec, **kwargs):
 		self.on_update(body, spec, **kwargs)

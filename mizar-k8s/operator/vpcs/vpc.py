@@ -1,16 +1,17 @@
 import logging
 import random
+from common.constants import *
 from kubernetes.client.rest import ApiException
 
 logger = logging.getLogger()
 
 class Vpc(object):
-	def __init__(self, obj_api, name, vni, cidr, dividers={}, networks={}):
+	def __init__(self, obj_api, name, vni, cidr):
 		self.name = name
 		self.vni = vni
 		self.cidr = cidr
-		self.dividers = dividers
-		self.networks = networks
+		self.dividers = {}
+		self.networks = {}
 		self.obj_api = obj_api
 		self.obj = None
 		h = '{:06x}'.format(int(self.vni))
@@ -120,7 +121,9 @@ class Vpc(object):
 		pass
 
 	def update_simple_endpoint(self, ep):
-		logger.info("update_simple_endpoint of vpc {}".format(self.name))
+		logger.info("update_simple_endpoint {} of vpc {}".format(ep.name, self.name))
+		net_obj = self.get_network(ep.net)
+		net_obj.update_simple_endpoint(ep)
 		pass
 
 	def delete_simple_endpoint(self):

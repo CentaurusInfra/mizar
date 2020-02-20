@@ -7,7 +7,7 @@ from vpcs.vpcs_operator import VpcOperator
 logger = logging.getLogger()
 
 resource = 'vpcs'
-vpc_operator  = VpcOperator(arg1="arg1", hello="hello2222")
+vpc_operator  = VpcOperator()
 
 @kopf.on.create(group, version, resource)
 def create_vpc(body, spec, **kwargs):

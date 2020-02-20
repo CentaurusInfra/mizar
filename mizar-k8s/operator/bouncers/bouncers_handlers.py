@@ -7,7 +7,7 @@ from bouncers.bouncers_operator import BouncerOperator
 logger = logging.getLogger()
 
 resource = 'bouncers'
-bouncer_operator  = BouncerOperator(arg1="arg1", hello="hello2222")
+bouncer_operator  = BouncerOperator()
 
 @kopf.on.create(group, version, resource)
 def create_bouncer(body, spec, **kwargs):

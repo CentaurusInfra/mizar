@@ -101,7 +101,7 @@ class NetOperator(object):
 			return False
 		logger.info("net droplets {}".format(droplets))
 		bouncer = random.choice(droplets)
-		net.update_bouncer(bouncer)
+		net.create_bouncer(bouncer)
 		return True
 
 	def update_net(self, net, body):

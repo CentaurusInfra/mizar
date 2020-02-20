@@ -7,7 +7,7 @@ from nets.nets_operator import NetOperator
 logger = logging.getLogger()
 
 resource = 'nets'
-net_operator = NetOperator(arg1="arg1", hello="hello")
+net_operator = NetOperator()
 
 @kopf.on.create(group, version, resource)
 def create_net(body, spec, **kwargs):
