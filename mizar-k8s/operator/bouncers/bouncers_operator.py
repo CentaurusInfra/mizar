@@ -31,8 +31,9 @@ class BouncerOperator(object):
 		net = spec['net']
 		vpc_obj = self.vs.get(vpc)
 		net_obj = vpc_obj.get_network(net)
+		droplet_obj = self.ds.get(droplet)
 		logger.info("*update_bouncer {}, {}, {}, {}/{}, {}".format(name, ip, vpc, net, net_obj.name, net_obj.bouncers.keys()))
-		bouncer = Bouncer(name, vpc, net, ip, droplet)
+		bouncer = Bouncer(name, vpc, net, ip, droplet, droplet_obj)
 		net_obj.update_bouncer(bouncer)
 
 	def on_create(self, body, spec, **kwargs):

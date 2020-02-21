@@ -5,9 +5,12 @@ import json
 import logging
 import uuid
 import pprint
+import subprocess
 from kubernetes import client, config, watch
 
 logging.basicConfig(level=logging.INFO, filename='/tmp/cni.log')
+
+sys.stderr = open('/tmp/cni.stderr', 'w')
 
 # apiVersion: apiextensions.k8s.io/v1beta1
 # kind: CustomResourceDefinition
@@ -71,8 +74,14 @@ class k8sParams:
 
 		self.k8sconfig = config_json["k8sconfig"]
 
+		logging.info("read params")
+		cmd = 'hostname'
+		r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+		self.droplet = r.stdout.read().decode().strip()
+		logging.info("done reading params {}".format(self.droplet))
+
 class endpoint:
-	def __init__(self, vpc, net, interface, netns, args, core_api, obj_api):
+	def __init__(self, droplet, vpc, net, interface, netns, args, core_api, obj_api):
 		self.core_api = core_api
 		self.obj_api = obj_api
 		self.interface = interface
@@ -89,6 +98,7 @@ class endpoint:
 		if 'K8S_POD_NAME' in args:
 			self.name = args['K8S_POD_NAME']
 		self.name = 'simple-ep-' + self.name
+		self.droplet = droplet
 
 		self.obj = {
 			"apiVersion": "mizar.com/v1",
@@ -100,7 +110,8 @@ class endpoint:
 				"type": "simple",
 				"status": self.status,
 				"vpc": self.vpc,
-				"net": self.net
+				"net": self.net,
+				"droplet": self.droplet
 			}
 		}
 
@@ -155,7 +166,7 @@ class cni:
 	def exec_add(self):
 		#logging.info("add")
 		#logging.info(self.params.cni_args_dict)
-		ep = endpoint(self.params.default_vpc, self.params.default_net, self.params.interface, self.params.netns, self.params.cni_args_dict, self.core_api, self.obj_api)
+		ep = endpoint(self.params.droplet, self.params.default_vpc, self.params.default_net, self.params.interface, self.params.netns, self.params.cni_args_dict, self.core_api, self.obj_api)
 		ep.create_endpoint_obj()
 		if ep.watch_endpoint_obj():
 			logging.info("!!READY")
@@ -205,7 +216,6 @@ def main():
 	config.load_kube_config(config_file=params.k8sconfig)
 	c = cni(params)
 	print(c.exec(), file=sys.stdout)
-
 
 	# # it's my custom resource defined as Dict
 	# test_ep = {

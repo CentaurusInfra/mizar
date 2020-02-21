@@ -1,5 +1,6 @@
 import ipaddress
 import heapq
+import subprocess
 
 class Cidr:
 	def __init__(self, prefixlen, ip):
@@ -36,3 +37,10 @@ class Cidr:
 	def deallocate_ip(self, ip):
 		self.allocated.remove(ip)
 		heapq.heappush(self.hosts,ip)
+
+
+def run_cmd(cmd):
+	result = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+	text = result.stdout.read().decode()
+	returncode = result.returncode
+	return (returncode, text)

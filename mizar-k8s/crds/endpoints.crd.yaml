@@ -57,3 +57,8 @@ spec:
       priority: 0
       JSONPath: .spec.vni
       description: The VNI of the VPC
+    - name: Droplet
+      type: string
+      priority: 0
+      JSONPath: .spec.droplet
+      description: The droplet hosting the endpoint

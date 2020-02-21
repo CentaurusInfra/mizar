@@ -30,6 +30,11 @@ class EndpointOperator(object):
 		update_endpoint = False
 
 		name = kwargs['name']
+		droplet = None
+		droplet_obj = None
+		if 'droplet' in spec:
+			droplet = spec['droplet']
+			droplet_obj = self.ds.get(droplet)
 
 		vpc = default_ep_vpc
 		if 'vpc' in spec:
@@ -102,7 +107,7 @@ class EndpointOperator(object):
 			logger.info("Good to know that status is provisioned")
 			pass
 
-		ep = Endpoint(name, vpc, net, vni, status,
+		ep = Endpoint(name, droplet, droplet_obj, vpc, net, vni, status,
 			gw, ip, mac, ep_type, self.obj_api)
 
 		# Update the vpc store and cascade to next processing steps (e.g. bouncers)
