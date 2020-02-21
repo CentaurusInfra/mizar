@@ -16,8 +16,16 @@ spec:
       serviceAccountName: mizar-operator
       hostNetwork: true
       hostPID: true
+      volumes:
+        - name: mizar
+          hostPath:
+            path: /home
+            type: Directory
       containers:
       - image: selgohari/dropletd:latest
         name: mizar-dropletd
         securityContext:
             privileged: true
+        volumeMounts:
+          - name: mizar
+            mountPath: /mizar

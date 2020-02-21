@@ -1,6 +1,7 @@
 #!/bin/bash
 
 DIR=${1:-.}
+DIR="${DIR}/mizar-k8s"
 
 # Delete existing deployment
 kubectl delete daemonset.apps/mizar-dropletd

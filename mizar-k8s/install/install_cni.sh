@@ -1,6 +1,7 @@
 #!/bin/bash
 
 DIR=${1:-.}
+DIR="${DIR}/mizar-k8s"
 
 # Installing mizar cni
 api_ip=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' kind-control-plane`

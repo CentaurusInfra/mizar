@@ -4,5 +4,5 @@ RUN pip install kubernetes
 RUN pip install pyyaml
 RUN pip install netaddr
 RUN pip install ipaddress
-COPY operator/ /mizar/operator
+COPY mizar-k8s/operator/ /mizar/operator
 CMD kopf run --standalone /mizar/operator/app.py
