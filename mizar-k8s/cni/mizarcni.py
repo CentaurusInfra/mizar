@@ -74,11 +74,12 @@ class endpoint:
 		self.status = "init"
 		self.name = ""
 		self.mac = ""
-		self.veth = "teth-" + self.localid
-		self.veth_peer = "veth-" + self.localid
+		self.veth = None
+		self.veth_peer = None
 		self.veth_peer_idx = -1
 		self.veth_peer_mac = ""
-		self.mizarnetns = "trn-" + self.localid
+		self.mizarnetns = None
+		self.veth_prepared = False
 		self.droplet = self.params.droplet
 		if 'K8S_POD_NAME' in self.args:
 			self.name = self.args['K8S_POD_NAME']
@@ -97,12 +98,17 @@ class endpoint:
 				"vpc": self.vpc,
 				"net": self.net,
 				"droplet": self.droplet,
-				"mac": self.mac
+				"mac": self.mac,
+				"itf": self.interface,
+				"veth": self.veth_peer,
+				"netns": self.mizarnetns
 			}
 		}
 		return self.obj
 
 	def get_mizarnetns(self, iproute):
+		if self.veth_prepared:
+			return self.mizarnetns
 		e = [1]
 		v = [1]
 		while len(e) or len(v):
@@ -124,6 +130,15 @@ class endpoint:
 		return self.mizarnetns
 
 	def prepare_veth_pair(self, iproute, iproute_ns):
+		if self.veth_prepared:
+			logging.info("looking for {} in {}".format(self.veth, self.mizarnetns))
+			self.interface_index = iproute_ns.link_lookup(ifname=self.veth)[0]
+			self.veth_peer_idx = iproute.link_lookup(ifname=self.veth_peer)[0]
+			self.mac = self.get_iface_mac(self.interface_index, iproute_ns)
+			self.veth_peer_mac = self.get_iface_mac(self.veth_peer_idx, iproute)
+			logging.info("veth for {} exist on {}/{} veth:{} peer:{}".format(self.name, self.mizarnetns, self.netns, self.mac, self.veth_peer_mac))
+			return
+
 		iproute.link('add', ifname=self.veth, peer=self.veth_peer, kind='veth')
 		self.interface_index = iproute.link_lookup(ifname=self.veth)[0]
 		self.veth_peer_idx = iproute.link_lookup(ifname=self.veth_peer)[0]
@@ -131,6 +146,27 @@ class endpoint:
 		self.veth_peer_mac = self.get_iface_mac(self.veth_peer_idx, iproute)
 		iproute.link('set', index=self.interface_index, net_ns_fd=self.mizarnetns)
 		iproute_ns.link('set', index=self.interface_index, ifname=self.interface)
+
+		logging.info("1/link_lookup")
+		lo_idx = iproute.link_lookup(ifname="lo")[0]
+
+		logging.info("2/link_set")
+		iproute_ns.link('set',
+			index=lo_idx,
+			state='up')
+
+		logging.info("3/link_set")
+		iproute_ns.link('set',
+			index=self.interface_index,
+			state='up')
+
+		logging.info("4/link_set {}: {}".format(self.veth_peer, self.veth_peer_idx))
+		iproute.link('set',
+			index=self.veth_peer_idx,
+			state='up',
+			mtu=9000)
+
+
 		logging.info("veth for {} created on {}/{} veth:{} peer:{}".format(self.name, self.mizarnetns, self.netns, self.mac, self.veth_peer_mac))
 
 	def get_iface_mac(self, idx, iproute):
@@ -140,15 +176,40 @@ class endpoint:
 		return None
 
 	def create_endpoint_obj(self):
-		# create the resource
-		self.obj_api.create_namespaced_custom_object(
+
+		try:
+
+			body = self.obj_api.get_namespaced_custom_object(
 			group="mizar.com",
 			version="v1",
 			namespace="default",
 			plural="endpoints",
-			body=self.get_ep_obj(),
-		)
-		logging.info("test_ep Resource created {}".format(self.name))
+			name=self.name)
+			spec = body['spec']
+
+			self.status = spec['status']
+			self.vpc = spec['vpc']
+			self.net = spec['net']
+			self.droplet = spec['droplet']
+			self.mac = spec['mac']
+			self.interface = spec['itf']
+			self.veth_peer = spec['veth']
+			self.mizarnetns = spec['netns']
+			self.prefix = spec['prefix']
+			self.ip = spec['ip']
+			self.veth = self.interface
+			self.veth_prepared = True
+			logging.info("Endpoint exist {}".format(spec))
+
+		except:
+			self.obj_api.create_namespaced_custom_object(
+				group="mizar.com",
+				version="v1",
+				namespace="default",
+				plural="endpoints",
+				body=self.get_ep_obj(),
+			)
+			logging.info("Endpoint created {}".format(self.name))
 
 
 	def watch_endpoint_obj(self):
@@ -172,14 +233,30 @@ class endpoint:
 				continue
 			logging.info("!!Filtered name: {}, status: {}".format(name, status))
 			watcher.stop()
+			spec = event['object']['spec']
+			self.ip = spec['ip']
+			self.prefix = spec['prefix']
 			return True
 
 	def is_endpoint_ready(self):
 		return True
 
-	def create_endpoint(self):
-		#create veth pair
-		pass
+	def provision_endpoint(self, iproute, iproute_ns):
+#ip netns exec {ep.ns} sysctl -w net.ipv4.tcp_mtu_probing=2 && \
+#ip netns exec {ep.ns} ethtool -K veth0 tso off gso off ufo off && \
+#ip netns exec {ep.ns} ethtool --offload veth0 rx off tx off && \
+
+		logging.info("5/addr_add")
+		iproute_ns.addr('add',
+			index=self.interface_index,
+        	address=self.ip,
+        	prefixlen=int(self.prefix))
+
+		logging.info("6/route_add")
+		iproute_ns.route('add',
+			gateway=self.gw)
+
+
 
 class cni:
 	def __init__(self, params):
@@ -202,10 +279,12 @@ class cni:
 		self.iproute_ns = NetNS(mizarnetns)
 		ep.prepare_veth_pair(self.iproute, self.iproute_ns)
 		ep.create_endpoint_obj()
-		#if ep.watch_endpoint_obj():
-		#	logging.info("!!READY")
-		#logging.info("Done watching ,,,...!!!")
-
+		if ep.watch_endpoint_obj():
+			ep.provision_endpoint(self.iproute, self.iproute_ns)
+		else:
+			#TODO error handling
+			pass
+		logging.info("provisioned {}".format(ep.name))
 		result = {
 			"cniVersion": self.params.cni_version,
 			"interfaces": [

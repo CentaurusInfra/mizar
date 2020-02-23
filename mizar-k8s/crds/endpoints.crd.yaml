@@ -37,6 +37,11 @@ spec:
       priority: 0
       JSONPath: .spec.gw
       description: The GW of the endpoint
+    - name: Prefix
+      type: string
+      priority: 0
+      JSONPath: .spec.prefix
+      description: The network prefix of the endpoint
     - name: Status
       type: string
       priority: 0
@@ -62,3 +67,18 @@ spec:
       priority: 0
       JSONPath: .spec.droplet
       description: The droplet hosting the endpoint
+    - name: Interface
+      type: string
+      priority: 0
+      JSONPath: .spec.itf
+      description: The interface name of the endpoint
+    - name: Veth
+      type: string
+      priority: 0
+      JSONPath: .spec.veth
+      description: The veth peer interface name of the endpoint
+    - name: Netns
+      type: string
+      priority: 0
+      JSONPath: .spec.netns
+      description: The netns of the endpoint

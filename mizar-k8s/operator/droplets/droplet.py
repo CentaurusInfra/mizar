@@ -12,6 +12,7 @@ class Droplet(object):
 		self.ip = ip
 		self.mac = mac
 		self.phy_itf = 'eth0'
+		benchmark = False
 
 		# transitd cli commands
 		self.trn_cli = f'''/trn_bin/transit -s {self.ip} '''
@@ -37,6 +38,13 @@ class Droplet(object):
 		self.trn_cli_get_agent_ep = f'''{self.trn_cli} get-agent-ep'''
 		self.trn_cli_delete_agent_ep = f'''{self.trn_cli} delete-agent-ep'''
 
+		if benchmark:
+			self.xdp_path = "/trn_xdp/trn_transit_xdp_ebpf.o"
+			self.agent_xdp_path = "/trn_xdp/trn_agent_xdp_ebpf.o"
+		else:
+			self.xdp_path = "/trn_xdp/trn_transit_xdp_ebpf_debug.o"
+			self.agent_xdp_path = "/trn_xdp/trn_agent_xdp_ebpf_debug.o"
+
 	def get_substrate_ep_json(self):
 		jsonconf = {
 			"tunnel_id": "0",
@@ -56,6 +64,14 @@ class Droplet(object):
 		logger.info("update_substrate_ep: {}".format(cmd))
 		returncode, text = run_cmd(cmd)
 		logger.info("returns {} {}".format(returncode, text))
+
+	def update_agent_substrate_ep(self, ep, droplet):
+		itf = ep.get_veth_peer()
+		jsonconf = droplet.get_substrate_ep_json()
+		cmd = f'''{self.trn_cli_update_agent_ep} -i \'{itf}\' -j \'{jsonconf}\''''
+		logger.info("update_agent_substrate_ep: {}".format(cmd))
+		returncode, text = run_cmd(cmd)
+		logger.info("update_agent_substrate_ep returns {} {}".format(returncode, text))
 
 	def update_ep(self, ep, expect_fail=False):
 		peer = ""
@@ -84,3 +100,46 @@ class Droplet(object):
 		logger.info("update_ep: {}".format(cmd))
 		returncode, text = run_cmd(cmd)
 		logger.info("returns {} {}".format(returncode, text))
+
+	def update_agent_metadata(self, ep, net):
+		itf = ep.get_veth_peer()
+		jsonconf = {
+			"ep": {
+				"tunnel_id": ep.get_tunnel_id(),
+				"ip": ep.get_ip(),
+				"eptype": ep.get_eptype(),
+				"mac": ep.get_mac(),
+				"veth": ep.get_veth_name(),
+				"remote_ips": ep.get_remote_ips(),
+				"hosted_iface": self.phy_itf
+			},
+			"net": {
+				"tunnel_id": net.get_tunnel_id(),
+				"nip": net.get_nip(),
+				"prefixlen": net.get_prefixlen(),
+				"switches_ips": net.get_bouncers_ips()
+			},
+			"eth": {
+				"ip": self.ip,
+				"mac": self.mac,
+				"iface": self.phy_itf
+			}
+		}
+		jsonconf = json.dumps(jsonconf)
+		cmd = f'''{self.trn_cli_update_agent_metadata} -i \'{itf}\' -j \'{jsonconf}\''''
+		logger.info("update_agent_metadata: {}".format(cmd))
+		returncode, text = run_cmd(cmd)
+		logger.info("update_agent_metadata returns {} {}".format(returncode, text))
+
+	def load_transit_agent_xdp(self, ep):
+		itf = ep.veth_peer
+		agent_pcap_file = itf + '.pcap'
+		jsonconf = {
+			"xdp_path": self.agent_xdp_path,
+			"pcapfile": agent_pcap_file
+		}
+		jsonconf = json.dumps(jsonconf)
+		cmd = f'''{self.trn_cli_load_transit_agent_xdp} -i \'{itf}\' -j \'{jsonconf}\' '''
+		logger.info("load_transit_agent_xdp: {}".format(cmd))
+		returncode, text = run_cmd(cmd)
+		logger.info("load_transit_agent_xdp returns {} {}".format(returncode, text))

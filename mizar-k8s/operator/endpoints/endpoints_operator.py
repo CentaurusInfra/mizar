@@ -26,7 +26,7 @@ class EndpointOperator(object):
 		logger.info("*delete_endpoint {}".format(self.ds.store))
 
 	def on_update(self, body, spec, **kwargs):
-		logger.info("*update_endpoint {}".format(spec))
+		logger.info("*update_endpoint {}".format(body))
 		update_endpoint = False
 
 		name = kwargs['name']
@@ -56,6 +56,18 @@ class EndpointOperator(object):
 			# given vpc
 			pass
 
+		itf = None
+		if 'itf' in spec:
+			itf = spec['itf']
+
+		veth = None
+		if 'veth' in spec:
+			veth = spec['veth']
+
+		netns = None
+		if 'netns' in spec:
+			netns = spec['netns']
+
 		vpc_obj = self.vs.get(vpc)
 		net_obj = vpc_obj.get_network(net)
 		logger.info("got network {}".format(net))
@@ -67,6 +79,14 @@ class EndpointOperator(object):
 
 		if gw == None:
 			gw = str(net_obj.gw)
+			update_endpoint = True
+
+		prefix = None
+		if 'prefix' in spec:
+			prefix = spec['prefix']
+
+		if prefix == None:
+			prefix = str(net_obj.cidr.prefixlen)
 			update_endpoint = True
 
 		# Get or allocate the IP
@@ -107,15 +127,15 @@ class EndpointOperator(object):
 			logger.info("Good to know that status is provisioned")
 			pass
 
-		ep = Endpoint(name, droplet, droplet_obj, vpc, net, vni, status,
-			gw, ip, mac, ep_type, self.obj_api)
+		ep = Endpoint(name, itf, veth, netns, droplet, droplet_obj, vpc, net, vni, status,
+			gw, ip, prefix, mac, ep_type, self.obj_api)
 
 		# Update the vpc store and cascade to next processing steps (e.g. bouncers)
 		if ep_type == 'simple':
 			self.vs.get(vpc).update_simple_endpoint(ep)
 
 		if update_endpoint:
-			self.update_endpoint(ep, body)
+			ep.update_object()
 
 	def on_create(self, body, spec, **kwargs):
 		self.on_update(body, spec, **kwargs)
@@ -123,16 +143,4 @@ class EndpointOperator(object):
 	def on_resume(self, body, spec, **kwargs):
 		self.on_update(body, spec, **kwargs)
 
-	def update_endpoint(self, ep, body):
-		# update the ep resource
-		logger.info("spec {}".format(ep.get_obj_spec()))
-		body['spec'] = ep.get_obj_spec()
-		self.obj_api.patch_namespaced_custom_object(
-			group="mizar.com",
-			version="v1",
-			namespace="default",
-			plural="endpoints",
-			name=ep.name,
-			body=body
-		)
 

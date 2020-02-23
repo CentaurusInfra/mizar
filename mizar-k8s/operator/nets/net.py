@@ -15,6 +15,21 @@ class Net(object):
 		self.obj_api = obj_api
 		self.gw = self.cidr.gw
 
+	def get_gw_ip(self):
+		return self.cidr.get_ip(1)
+
+	def get_tunnel_id(self):
+		return str(self.vni)
+
+	def get_nip(self):
+		return str(self.cidr.ip)
+
+	def get_prefixlen(self):
+		return str(self.cidr.prefixlen)
+
+	def get_bouncers_ips(self):
+		return [str(b.ip) for b in self.bouncers.values()]
+
 	def get_obj_spec(self):
 		self.obj = {
 			"ip": self.cidr.ip,
@@ -105,6 +120,16 @@ class Net(object):
 		for b in bouncers:
 			b.update_simple_endpoint(ep)
 
+		logger.info("$$ done update_simple_endpoint {} of net {} bouncers {}".format(ep.name, self.name, self.bouncers.keys()))
+		ep.status = ep_status_ready
+
+		ep.droplet_obj.load_transit_agent_xdp(ep)
+		ep.droplet_obj.update_agent_metadata(ep, self)
+		for b in bouncers:
+			ep.droplet_obj.update_agent_substrate_ep(ep, b.droplet_obj)
+
+		#update agent metadata
+		ep.update_object()
 
 	def delete_simple_endpoint(self):
 		pass

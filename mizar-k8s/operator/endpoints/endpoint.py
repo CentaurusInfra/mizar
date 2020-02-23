@@ -1,7 +1,10 @@
 from common.constants import *
+import logging
+
+logger = logging.getLogger()
 
 class Endpoint:
-	def __init__(self, name, droplet, droplet_obj, vpc, net, vni, status, gw, ip, mac, ep_type, obj_api):
+	def __init__(self, name, veth_name, veth_peer, netns, droplet, droplet_obj, vpc, net, vni, status, gw, ip, prefix, mac, ep_type, obj_api):
 		self.name = name
 		self.obj_api = obj_api
 		self.vpc = vpc
@@ -10,12 +13,33 @@ class Endpoint:
 		self.status = status
 		self.gw = gw
 		self.ip = ip
+		self.prefix = prefix
 		self.mac = mac
 		self.type = ep_type
 		self.droplet = droplet
 		self.droplet_obj = droplet_obj
-		self.veth_peer = ""
-		self.veth_name = ""
+		self.veth_peer = veth_peer
+		self.veth_name = veth_name
+		self.netns = netns
+
+	def update_object(self):
+		body = self.obj_api.get_namespaced_custom_object(
+			group="mizar.com",
+			version="v1",
+			namespace="default",
+			plural="endpoints",
+			name=self.name)
+		body['spec'] = self.get_obj_spec()
+		logger.info("updating Endpont {}".format(self.name))
+		self.obj_api.patch_namespaced_custom_object(
+			group="mizar.com",
+			version="v1",
+			namespace="default",
+			plural="endpoints",
+			name=self.name,
+			body=body,
+		)
+		logger.info("updated endpint {}".format(self.name))
 
 	def get_obj_spec(self):
 		self.obj = {
@@ -27,7 +51,8 @@ class Endpoint:
 				"gw": self.gw,
 				"mac": self.mac,
 				"vni": self.vni,
-				"droplet": self.droplet
+				"droplet": self.droplet,
+				"prefix": self.prefix
 		}
 
 		return self.obj
