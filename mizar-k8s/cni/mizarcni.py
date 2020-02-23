@@ -6,36 +6,12 @@ import logging
 import uuid
 import pprint
 import subprocess
+from socket import AF_INET
+from pyroute2 import IPRoute, NetNS
 from kubernetes import client, config, watch
 
 logging.basicConfig(level=logging.INFO, filename='/tmp/cni.log')
-
-sys.stderr = open('/tmp/cni.stderr', 'w')
-
-# apiVersion: apiextensions.k8s.io/v1beta1
-# kind: CustomResourceDefinition
-# metadata:
-#   name: endpoints.mizar.com
-# spec:
-#   scope: Namespaced
-#   group: mizar.com
-#   versions:
-#     - name: v1
-#       served: true
-#       storage: true
-#   names:
-#     kind: Endpoint
-#     plural: endpoints
-#     singular: endpoint
-#     shortNames:
-#       - ep
-#       - eps
-#   additionalPrinterColumns:
-#     - name: Type
-#       type: string
-#       priority: 0
-#       JSONPath: .spec.type
-#       description: The type of the endpoint
+sys.stderr = open('/tmp/cni.stderr', 'a')
 
 class k8sParams:
 	def __init__(self, stdin):
@@ -45,7 +21,7 @@ class k8sParams:
 		self.netns = os.environ.get("CNI_NETNS")
 		self.container_pid = None
 		if (self.netns != ""):
-			self.container_pid =  os.environ.get("CNI_NETNS").split("/")[2]
+			self.container_pid =  self.netns.split("/")[2]
 		self.interface = os.environ.get("CNI_IFNAME")
 		self.cni_path = os.environ.get("CNI_PATH")
 		self.cni_args = os.environ.get("CNI_ARGS")
@@ -81,25 +57,34 @@ class k8sParams:
 		logging.info("done reading params {}".format(self.droplet))
 
 class endpoint:
-	def __init__(self, droplet, vpc, net, interface, netns, args, core_api, obj_api):
+	def __init__(self, params, core_api, obj_api):
+		self.params = params
+		self.args = self.params.cni_args_dict
 		self.core_api = core_api
 		self.obj_api = obj_api
-		self.interface = interface
-		self.vpc = vpc
-		self.net = net
-		self.mac = ""
-		self.netns = netns
-		self.ip = ""
-		self.prefix = ""
-		self.gw = ""
+		self.interface = self.params.interface
+		self.vpc = self.params.default_vpc
+		self.net = self.params.default_net
+		self.localid = 'NONE'
+		self.netns = self.params.netns
+		self.ip = "10.0.0.1"
+		self.prefix = "32"
+		self.gw = "10.0.0.1"
 		self.interface_index = "0"
 		self.status = "init"
 		self.name = ""
-		if 'K8S_POD_NAME' in args:
-			self.name = args['K8S_POD_NAME']
+		self.mac = ""
+		self.veth = "teth-" + self.localid
+		self.veth_peer = "veth-" + self.localid
+		self.veth_peer_idx = -1
+		self.veth_peer_mac = ""
+		self.mizarnetns = "trn-" + self.localid
+		self.droplet = self.params.droplet
+		if 'K8S_POD_NAME' in self.args:
+			self.name = self.args['K8S_POD_NAME']
 		self.name = 'simple-ep-' + self.name
-		self.droplet = droplet
 
+	def get_ep_obj(self):
 		self.obj = {
 			"apiVersion": "mizar.com/v1",
 			"kind": "Endpoint",
@@ -111,9 +96,48 @@ class endpoint:
 				"status": self.status,
 				"vpc": self.vpc,
 				"net": self.net,
-				"droplet": self.droplet
+				"droplet": self.droplet,
+				"mac": self.mac
 			}
 		}
+		return self.obj
+
+	def get_mizarnetns(self, iproute):
+		e = [1]
+		v = [1]
+		while len(e) or len(v):
+			self.localid = self.params.container_id[-8:]
+			eth = "eth-" + self.localid
+			veth = 'veth-' + self.localid
+			e = iproute.link_lookup(ifname=eth)
+			v = iproute.link_lookup(ifname=veth)
+		self.veth = "teth-" + self.localid
+		self.veth_peer = "veth-" + self.localid
+		self.mizarnetns = "mizar-" + self.localid
+
+		os.makedirs('/var/run/netns/', exist_ok = True)
+		src = self.netns
+		dst = '/var/run/netns/{}'.format(self.mizarnetns)
+		os.symlink(src, dst)
+
+		logging.info("assiged_id {}".format(self.localid))
+		return self.mizarnetns
+
+	def prepare_veth_pair(self, iproute, iproute_ns):
+		iproute.link('add', ifname=self.veth, peer=self.veth_peer, kind='veth')
+		self.interface_index = iproute.link_lookup(ifname=self.veth)[0]
+		self.veth_peer_idx = iproute.link_lookup(ifname=self.veth_peer)[0]
+		self.mac = self.get_iface_mac(self.interface_index, iproute)
+		self.veth_peer_mac = self.get_iface_mac(self.veth_peer_idx, iproute)
+		iproute.link('set', index=self.interface_index, net_ns_fd=self.mizarnetns)
+		iproute_ns.link('set', index=self.interface_index, ifname=self.interface)
+		logging.info("veth for {} created on {}/{} veth:{} peer:{}".format(self.name, self.mizarnetns, self.netns, self.mac, self.veth_peer_mac))
+
+	def get_iface_mac(self, idx, iproute):
+		for (attr, val) in iproute.get_links(idx)[0]['attrs']:
+			if attr == 'IFLA_ADDRESS':
+				return val
+		return None
 
 	def create_endpoint_obj(self):
 		# create the resource
@@ -122,7 +146,7 @@ class endpoint:
 			version="v1",
 			namespace="default",
 			plural="endpoints",
-			body=self.obj,
+			body=self.get_ep_obj(),
 		)
 		logging.info("test_ep Resource created {}".format(self.name))
 
@@ -162,14 +186,24 @@ class cni:
 		self.params = params
 		self.core_api=client.CoreV1Api()
 		self.obj_api = client.CustomObjectsApi()
+		self.iproute = IPRoute()
+		self.iproute_ns = None
+
+	def __del__(self):
+		self.iproute.close()
+		#if self.iproute_ns is not None:
+		#	self.iproute_ns.close()
 
 	def exec_add(self):
 		#logging.info("add")
 		#logging.info(self.params.cni_args_dict)
-		ep = endpoint(self.params.droplet, self.params.default_vpc, self.params.default_net, self.params.interface, self.params.netns, self.params.cni_args_dict, self.core_api, self.obj_api)
+		ep = endpoint(self.params, self.core_api, self.obj_api)
+		mizarnetns = ep.get_mizarnetns(self.iproute)
+		self.iproute_ns = NetNS(mizarnetns)
+		ep.prepare_veth_pair(self.iproute, self.iproute_ns)
 		ep.create_endpoint_obj()
-		if ep.watch_endpoint_obj():
-			logging.info("!!READY")
+		#if ep.watch_endpoint_obj():
+		#	logging.info("!!READY")
 		#logging.info("Done watching ,,,...!!!")
 
 		result = {
@@ -186,7 +220,7 @@ class cni:
 					"version": "4",
 					"address": "{}/{}".format(ep.ip,ep.prefix),
 					"gateway": ep.gw,
-					"interface": ep.interface_index
+					"interface": 0
 				}
 			]
 		}
@@ -215,27 +249,6 @@ def main():
 	params = k8sParams(''.join(sys.stdin.readlines()))
 	config.load_kube_config(config_file=params.k8sconfig)
 	c = cni(params)
-	print(c.exec(), file=sys.stdout)
-
-	# # it's my custom resource defined as Dict
-	# test_ep = {
-	# 	"apiVersion": "mizar.com/v1",
-	# 	"kind": "Endpoint",
-	# 	"metadata": {"name": "mizartest2-ep"},
-	# 	"spec": {
-	# 		"type": "simple"
-	# 	}
-	# }
-
-	# # create the resource
-	# obj_api.create_namespaced_custom_object(
-	# 	group="mizar.com",
-	# 	version="v1",
-	# 	namespace="default",
-	# 	plural="endpoints",
-	# 	body=test_ep,
-	# )
-	# logging.info("test_ep Resource created")
-
+	print(c.exec())
 
 main()

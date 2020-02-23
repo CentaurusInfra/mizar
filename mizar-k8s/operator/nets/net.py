@@ -105,6 +105,7 @@ class Net(object):
 		for b in bouncers:
 			b.update_simple_endpoint(ep)
 
+
 	def delete_simple_endpoint(self):
 		pass
 

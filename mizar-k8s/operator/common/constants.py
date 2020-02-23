@@ -11,7 +11,7 @@ default_vpc_vni = 0
 
 ep_status_init = 'init'
 ep_status_allocated = 'alloc'
-ep_status_bouncer_ready = 'ready'
+ep_status_ready = 'ready'
 ep_status_provisioned = 'provisioned'
 
 ep_type_simple = 'simple'

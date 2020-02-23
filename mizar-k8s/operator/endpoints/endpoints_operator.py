@@ -99,7 +99,7 @@ class EndpointOperator(object):
 			logger.info("(BUG) No other entity should move the status to allocated except the endpoint operator")
 			pass
 
-		elif status == ep_status_bouncer_ready:
+		elif status == ep_status_ready:
 			logger.info("Good to know that status is ready")
 			pass
 

@@ -18,3 +18,4 @@ docker exec kind-control-plane apt update
 docker exec kind-control-plane apt install -y python3
 docker exec kind-control-plane apt install -y python3-pip
 docker exec kind-control-plane pip3 install kubernetes
+docker exec kind-control-plane pip3 install pyroute2
