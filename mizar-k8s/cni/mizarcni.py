@@ -256,6 +256,25 @@ class endpoint:
 		iproute_ns.route('add',
 			gateway=self.gw)
 
+	def finalize_provisioning(self):
+		self.status = 'provisioned'
+		body = self.obj_api.get_namespaced_custom_object(
+			group="mizar.com",
+			version="v1",
+			namespace="default",
+			plural="endpoints",
+			name=self.name)
+		body['spec']['status'] = self.status
+		logging.info("finalize Endpont {}".format(self.name))
+		self.obj_api.patch_namespaced_custom_object(
+			group="mizar.com",
+			version="v1",
+			namespace="default",
+			plural="endpoints",
+			name=self.name,
+			body=body,
+		)
+		logging.info("finalize endpint {}".format(self.name))
 
 
 class cni:
@@ -284,6 +303,7 @@ class cni:
 		else:
 			#TODO error handling
 			pass
+		ep.finalize_provisioning()
 		logging.info("provisioned {}".format(ep.name))
 		result = {
 			"cniVersion": self.params.cni_version,
