@@ -1,0 +1,39 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: droplets.mizar.com
+spec:
+  scope: Namespaced
+  group: mizar.com
+  versions:
+    - name: v1
+      served: true
+      storage: true
+  names:
+    kind: Droplet
+    plural: droplets
+    singular: droplet
+    shortNames:
+      - drp
+      - drps
+  additionalPrinterColumns:
+    - name: Mac
+      type: string
+      priority: 0
+      JSONPath: .spec.mac
+      description: The mac address of the endpoint
+    - name: Ip
+      type: string
+      priority: 0
+      JSONPath: .spec.ip
+      description: The IP of the endpoint
+    - name: Status
+      type: string
+      priority: 0
+      JSONPath: .spec.status
+      description: The Current Status of the droplet
+    - name: Interface
+      type: string
+      priority: 0
+      JSONPath: .spec.itf
+      description: The main interface of the droplet
