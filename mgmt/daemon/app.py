@@ -3,11 +3,13 @@ import logging
 import subprocess
 import rpyc
 import inspect
-from kubernetes import client, config, watch
+from common.common import host_nsenter
+from kubernetes import client, config
+from kubernetes.client import Configuration
 from rpyc.utils.server import ThreadedServer
 from daemon.cni_service import CniService
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 # Setup the droplet's host
 script = (f''' bash -c '\
@@ -33,7 +35,11 @@ cmd = 'nsenter -t 1 -m -u -n -i hostname'
 r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
 name = r.stdout.read().decode().strip()
 
-config.load_incluster_config()
+c = config.load_incluster_config()
+CniService.config = Configuration._default
+cert_file = Configuration._default.ssl_ca_cert
+logging.info("***** config {}/ {}".format(Configuration._default, cert_file))
+
 obj_api = client.CustomObjectsApi()
 
 obj = {
@@ -83,6 +89,13 @@ output = r.stdout.read().decode().strip()
 logging.info("Running load-transit-xdp: {}".format(output))
 
 logging.info("Droplet {} is ready".format(name))
+
+
+with open(cert_file) as f:
+	CniService.cert = f.read()
+
+host_nsenter(1)
+
 
 choice = 'ThreadedServer'  # Debugging
 svc_server = None

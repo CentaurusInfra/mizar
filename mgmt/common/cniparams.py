@@ -32,6 +32,7 @@ class CniParams:
 		self.plugin = config_json["type"]
 		self.default_vpc = config_json["default_vpc"]
 		self.default_net = config_json["default_net"]
+		self.default_vni = config_json["default_vni"]
 		if "args" in config_json:
 			self.args = config_json["args"]
 		if "ipMasq" in config_json:

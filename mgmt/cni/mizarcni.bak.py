@@ -118,7 +118,7 @@ class endpoint:
 			veth = 'veth-' + self.localid
 			e = iproute.link_lookup(ifname=eth)
 			v = iproute.link_lookup(ifname=veth)
-		self.veth = "teth-" + self.localid
+		self.veth = "eth-" + self.localid
 		self.veth_peer = "veth-" + self.localid
 		self.mizarnetns = "mizar-" + self.localid
 
@@ -347,13 +347,11 @@ class cni:
 def main():
 
 	c = rpyc.connect("localhost", 18861, config={"sync_request_timeout": 30})
-	params = k8sParams(''.join(sys.stdin.readlines()))
-
 	logging.info("server's add is", c.root.add())
 	logging.info("server's del is", c.root.delete())
 	logging.info("server's get is", c.root.get())
 	logging.info("server's ver is", c.root.version())
-
+	params = k8sParams(''.join(sys.stdin.readlines()))
 	config.load_kube_config(config_file=params.k8sconfig)
 	c = cni(params)
 	print(c.exec())
