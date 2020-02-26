@@ -17,8 +17,8 @@ spec:
       restartPolicy: Always
       initContainers:
         - image: fwnetworking/mizar:v1 # Will reboot node
-          name: kernelpatch-node
-          command: [./kernelpatch-node.sh]
+          name: kernelupdate-node
+          command: [./kernelupdate-node.sh]
           securityContext:
             privileged: true
         - image: fwnetworking/mizar:v1
