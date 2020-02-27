@@ -1,34 +1,37 @@
 import kopf
 import logging
-
+import asyncio
+from common.constants import *
 from common.constants import group, version
 from operators.vpcs.vpcs_operator import VpcOperator
 
-logger = logging.getLogger()
-
-resource = 'vpcs'
+LOCK: asyncio.Lock
 vpc_operator  = VpcOperator()
 
-@kopf.on.create(group, version, resource)
-def create_vpc(body, spec, **kwargs):
-    logger.info("create_vpc")
+@kopf.on.startup()
+async def vpc_opr_on_startup(logger, **kwargs):
+    global LOCK
+    LOCK = asyncio.Lock()
     global vpc_operator
-    vpc_operator.on_create(body, spec, **kwargs)
+    vpc_operator.on_startup(logger, **kwargs)
 
-@kopf.on.update(group, version, resource)
-def update_vpc(body, spec, **kwargs):
-    logger.info("update_vpc")
+@kopf.on.delete(group, version, RESOURCES.vpcs)
+def vpc_opr_on_vpc_delete(body, **kwargs):
     global vpc_operator
-    vpc_operator.on_update(body, spec, **kwargs)
+    vpc_operator.on_vpc_delete(body, **kwargs)
 
-@kopf.on.resume(group, version, resource)
-def resume_vpc(body, spec, **kwargs):
-    logger.info("resume_vpc")
+@kopf.on.resume(group, version, RESOURCES.vpcs, when=LAMBDAS.vpc_status_init)
+@kopf.on.update(group, version, RESOURCES.vpcs, when=LAMBDAS.vpc_status_init)
+@kopf.on.create(group, version, RESOURCES.vpcs, when=LAMBDAS.vpc_status_init)
+def vpc_opr_on_vpc_init(body, spec, **kwargs):
     global vpc_operator
-    vpc_operator.on_resume(body, spec, **kwargs)
+    vpc_operator.on_vpc_init(body, spec, **kwargs)
 
-@kopf.on.delete(group, version, resource)
-def delete_vpc(body, **kwargs):
-    logger.info("delete_vpc")
+
+@kopf.on.resume(group, version, RESOURCES.vpcs, when=LAMBDAS.vpc_status_ready)
+@kopf.on.update(group, version, RESOURCES.vpcs, when=LAMBDAS.vpc_status_ready)
+@kopf.on.create(group, version, RESOURCES.vpcs, when=LAMBDAS.vpc_status_ready)
+def vpc_opr_on_vpc_ready(body, spec, **kwargs):
     global vpc_operator
-    vpc_operator.on_delete(body, **kwargs)
+    vpc_operator.on_vpc_ready(body, spec, **kwargs)
+

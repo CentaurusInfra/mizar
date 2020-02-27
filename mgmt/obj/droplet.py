@@ -1,5 +1,7 @@
 import logging
 import json
+from common.constants import *
+from common.common import *
 from common.common import run_cmd
 
 logger = logging.getLogger()
@@ -7,12 +9,16 @@ logger = logging.getLogger()
 
 class Droplet(object):
 
-	def __init__(self, name, ip, mac):
+	def __init__(self, name, obj_api, opr_store, spec=None):
 		self.name = name
-		self.ip = ip
-		self.mac = mac
+		self.obj_api = obj_api
+		self.store = opr_store
+		self.ip = ""
+		self.mac = ""
 		self.phy_itf = 'eth0'
-		self.status = ""
+		self.status = OBJ_STATUS.droplet_status_init
+		if spec is not None:
+			self.set_obj_spec(spec)
 		benchmark = False
 
 		# transitd cli commands
@@ -56,18 +62,42 @@ class Droplet(object):
 
 		return self.obj
 
+	def set_obj_spec(self, spec):
+		self.status = spec['status']
+		self.mac = spec['mac']
+		self.ip = spec['ip']
+		self.phy_itf = spec['itf']
+
+	# K8s APIs
+	def get_name(self):
+		return self.name
+
+	def get_plural(self):
+		return "droplets"
+
+	def get_kind(self):
+		return "Droplet"
+
+	def store_update_obj(self):
+		self.store.update_droplet(self)
+
+	def store_delete_obj(self):
+		self.store.delete_droplet(self.name)
+
 	def create_obj(self):
-		pass
+		return kube_create_obj(self)
 
 	def update_obj(self):
-		pass
+		return kube_update_obj(self)
 
 	def delete_obj(self):
-		pass
+		return kube_delete_obj(self)
 
-	def watch_obj(self):
-		pass
+	def watch_obj(self, watch_callback):
+		return kube_watch_obj(self, watch_callback)
 
+	def set_status(self, status):
+		self.status = status
 
 	def get_substrate_ep_json(self):
 		jsonconf = {

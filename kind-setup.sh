@@ -17,5 +17,6 @@ ln -snf $KINDCONF $KINDHOME
 
 source install/create_crds.sh $CWD
 source install/create_service_account.sh $CWD
+
 source install/deploy_daemon.sh $CWD
 source install/deploy_operator.sh $CWD

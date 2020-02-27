@@ -1,33 +1,30 @@
 import kopf
 import logging
-
+import asyncio
+from common.constants import *
 from common.constants import group, version
 from operators.droplets.droplets_operator import DropletOperator
 
-logger = logging.getLogger()
-
+LOCK: asyncio.Lock
 droplet_operator  = DropletOperator()
 
-@kopf.on.create(group, version, 'droplets')
-def create_droplet(body, spec, **kwargs):
-    logger.info("create_droplet")
+@kopf.on.startup()
+async def droplet_opr_on_startup(logger, **kwargs):
+    global LOCK
+    LOCK = asyncio.Lock()
     global droplet_operator
-    droplet_operator.on_create(body, spec, **kwargs)
+    droplet_operator.on_startup(logger, **kwargs)
 
-@kopf.on.update(group, version, 'droplets')
-def update_droplet(body, spec, **kwargs):
-    logger.info("update_droplet")
+@kopf.on.resume(group, version, RESOURCES.droplets, when=LAMBDAS.vpc_status_init)
+@kopf.on.update(group, version, RESOURCES.droplets, when=LAMBDAS.vpc_status_init)
+@kopf.on.create(group, version, RESOURCES.droplets, when=LAMBDAS.vpc_status_init)
+def droplet_opr_on_droplet_init(body, spec, **kwargs):
     global droplet_operator
-    droplet_operator.on_update(body, spec, **kwargs)
+    droplet_operator.on_droplet_init(body, spec, **kwargs)
 
-@kopf.on.resume(group, version, 'droplets')
-def resume_droplet(body, spec, **kwargs):
-    logger.info("resume_droplet")
+@kopf.on.resume(group, version, RESOURCES.droplets, when=LAMBDAS.vpc_status_provisioned)
+@kopf.on.update(group, version, RESOURCES.droplets, when=LAMBDAS.vpc_status_provisioned)
+@kopf.on.create(group, version, RESOURCES.droplets, when=LAMBDAS.vpc_status_provisioned)
+def droplet_opr_on_droplet_provisioned(body, spec, **kwargs):
     global droplet_operator
-    droplet_operator.on_resume(body, spec, **kwargs)
-
-@kopf.on.delete(group, version, 'droplets')
-def delete_droplet(body, **kwargs):
-    logger.info("delete_droplet")
-    global droplet_operator
-    droplet_operator.on_delete(body, **kwargs)
+    droplet_operator.on_droplet_provisioned(body, spec, **kwargs)

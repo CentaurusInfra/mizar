@@ -44,7 +44,3 @@ class CniParams:
 		self.k8sconfig = config_json["k8sconfig"]
 
 		logger.info("read params")
-		cmd = 'hostname'
-		r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-		self.droplet = r.stdout.read().decode().strip()
-		logger.info("done reading params {}".format(self.droplet))

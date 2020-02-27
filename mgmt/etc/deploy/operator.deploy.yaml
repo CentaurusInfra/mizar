@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   name: mizar-operator
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: mizar-operator
@@ -10,6 +11,7 @@ spec:
     metadata:
       labels:
         app: mizar-operator
+        mizar: operator
     spec:
       serviceAccountName: mizar-operator
       hostNetwork: true

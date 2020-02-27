@@ -1,5 +1,8 @@
+from common.constants import *
+from common.common import *
 from kubernetes import client, config
 from obj.droplet import Droplet
+from store.operator_store import OprStore
 from store.droplets_store import DropletStore
 import logging
 
@@ -17,9 +20,30 @@ class DropletOperator(object):
 	def _init(self, **kwargs):
 		logger.info(kwargs)
 		self.ds = DropletStore()
+		self.store = OprStore()
 		config.load_incluster_config()
 		self.obj_api = client.CustomObjectsApi()
-		self.query_existing_droplets(self)
+
+	def on_startup(self, logger, **kwargs):
+		def list_doplet_obj_fn(name, spec, plurals):
+			logger.info("Bootstrapped droplet {}".format(name))
+			d = Droplet(name, self.obj_api, self.store, spec)
+			self.store.update_droplet(d)
+
+		kube_list_obj(self.obj_api, RESOURCES.droplets, list_doplet_obj_fn)
+
+	def on_droplet_init(self, body, spec, **kwargs):
+		name = kwargs['name']
+		logger.info("Droplet on_droplet_any {} with spec: {}".format(name, spec))
+		d = Droplet(name, self.obj_api, self.store, spec)
+		d.set_status(OBJ_STATUS.droplet_status_provisioned)
+		d.update_obj()
+
+	def on_droplet_provisioned(self, body, spec, **kwargs):
+		name = kwargs['name']
+		logger.info("Droplet on_droplet_provisioned {} with spec: {}".format(name, spec))
+		d = Droplet(name, self.obj_api, self.store, spec)
+		self.store.update_droplet(d)
 
 	def query_existing_droplets(self):
 		logger.info("*query droplets")
@@ -49,10 +73,4 @@ class DropletOperator(object):
 		logger.info("*update_droplet {}, {}, {}".format(name, ip, mac))
 		d = Droplet(name, ip, mac)
 		self.ds.update(name, d)
-
-	def on_create(self, body, spec, **kwargs):
-		self.on_update(body, spec, **kwargs)
-
-	def on_resume(self, body, spec, **kwargs):
-		self.on_update(body, spec, **kwargs)
 

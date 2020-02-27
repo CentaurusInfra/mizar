@@ -8,8 +8,10 @@ import subprocess
 import tempfile
 from common.common import *
 from common.constants import *
+from store.operator_store import OprStore
 from kubernetes.client import Configuration
 from obj.endpoint import Endpoint
+from obj.droplet import Droplet
 from rpyc import Service
 from socket import AF_INET
 from pyroute2 import IPRoute, NetNS
@@ -17,11 +19,66 @@ from kubernetes import client, config, watch
 
 logger = logging.getLogger()
 
+def get_host_info():
+	### Get the droplet IP/MAC
+	cmd = 'ip addr show eth0 | grep "inet\\b" | awk \'{print $2}\' | cut -d/ -f1'
+	r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+	ip = r.stdout.read().decode().strip()
+
+	cmd = 'ip addr show eth0 | grep "link/ether\\b" | awk \'{print $2}\' | cut -d/ -f1'
+	r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+	mac = r.stdout.read().decode().strip()
+
+	cmd = 'hostname'
+	r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+	name = r.stdout.read().decode().strip()
+
+
+	cmd = "ip link set dev eth0 xdpgeneric off"
+
+	r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+	output = r.stdout.read().decode().strip()
+	logging.info("Removed existing XDP program: {}".format(output))
+
+	cmd = "/trn_bin/transitd &"
+	r = subprocess.Popen(cmd, shell=True)
+	logging.info("Running transitd")
+
+	config = '{"xdp_path": "/trn_xdp/trn_transit_xdp_ebpf_debug.o", "pcapfile": "/bpffs/transit_xdp.pcap"}'
+	cmd = (f''' /trn_bin/transit -s {ip} load-transit-xdp -i eth0 -j '{config}' ''')
+
+	r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+	output = r.stdout.read().decode().strip()
+	logging.info("Running load-transit-xdp: {}".format(output))
+
+	logging.info("Droplet {} is ready".format(name))
+
+	spec = {
+		'ip': ip,
+		'mac': mac,
+		'itf': 'eth0',
+		'status': OBJ_STATUS.droplet_status_init
+		}
+
+	return name, spec
+
+
 class CniService(Service):
 	config = None
 	cert = ""
 	ssl_ca_cert = None
-	endpoints = {}
+	droplet = None
+	store = OprStore()
+	droplet_configured = False
+
+	def configure_droplet(obj_api):
+		if CniService.droplet_configured:
+			return
+		name, spec = get_host_info()
+		droplet = Droplet(name, obj_api, CniService.store, spec)
+		droplet.create_obj()
+		CniService.droplet_configured = True
+		return name
 
 	def on_connect(self, conn):
 		self.iproute = IPRoute()
@@ -30,6 +87,7 @@ class CniService(Service):
 		f.write(CniService.cert)
 		self._set_config()
 		self.obj_api = client.CustomObjectsApi()
+		self.configure_droplet()
 
 	def _set_config(self):
 		configuration = Configuration()
@@ -46,7 +104,7 @@ class CniService(Service):
 		status = 1
 		ep = self.get_or_create_ep(params)
 
-		if ep.status != EP_CONSTANTS.ep_status_provisioned:
+		if ep.status != OBJ_STATUS.ep_status_provisioned:
 			return val, status
 
 		result = {
@@ -99,10 +157,10 @@ class CniService(Service):
 			name = params.cni_args_dict['K8S_POD_NAME']
 		name = 'simple-ep-' + name
 
-		if name in CniService.endpoints:
-			return CniService.endpoints[name]
+		if CniService.store.contains_ep(name):
+			return CniService.store.get_ep(name)
 
-		ep = Endpoint(name, self.obj_api)
+		ep = Endpoint(name, self.obj_api, CniService.store)
 
 		# If not provided in Pod, use defaults
 		# TODO: have it pod :)
@@ -110,10 +168,10 @@ class CniService(Service):
 		ep.set_vpc(params.default_vpc)
 		ep.set_net(params.default_net)
 
-		ep.set_type(EP_CONSTANTS.ep_type_simple)
-		ep.set_status(EP_CONSTANTS.ep_status_init)
+		ep.set_type(OBJ_DEFAULTS.ep_type_simple)
+		ep.set_status(OBJ_STATUS.ep_status_init)
 		ep.set_veth_name(params.interface)
-		ep.set_droplet(params.droplet)
+		ep.set_droplet(CniService.droplet)
 		ep.set_container_id(params.container_id)
 		self.allocate_local_id(ep)
 
@@ -128,10 +186,8 @@ class CniService(Service):
 		ep.create_obj()
 		ep.watch_obj(self.ep_ready_fn)
 		self.provision_endpoint(ep, iproute_ns)
-		ep.set_status(EP_CONSTANTS.ep_status_provisioned)
+		ep.set_status(OBJ_STATUS.ep_status_provisioned)
 		ep.update_obj()
-
-		self.endpoints[name] = ep
 
 		return ep
 
@@ -151,7 +207,7 @@ class CniService(Service):
 		status = event['object']['spec']['status']
 		if name != ep.name:
 			return False
-		if status != EP_CONSTANTS.ep_status_ready:
+		if status != OBJ_STATUS.ep_status_ready:
 			return False
 		spec = event['object']['spec']
 		# Now get the gw, ip, and prefix

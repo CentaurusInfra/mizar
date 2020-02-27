@@ -1,4 +1,10 @@
-from store.vpcs_store import VpcStore
+import random
+import uuid
+from kubernetes import client, config
+from common.constants import *
+from common.common import *
+from obj.vpc import Vpc
+from store.operator_store import OprStore
 from store.droplets_store import DropletStore
 import logging
 
@@ -16,19 +22,24 @@ class DividerOperator(object):
 	def _init(self, **kwargs):
 		logger.info(kwargs)
 		self.ds = DropletStore()
-		self.vs = VpcStore()
+		self.store = OprStore()
+		config.load_incluster_config()
+		self.obj_api = client.CustomObjectsApi()
 
-	def on_delete(self, body, spec, **kwargs):
+	def on_startup(self, logger, **kwargs):
+		logger.info("divider on_startup")
+
+	def on_vpc_allocated(self, body, spec, **kwargs):
 		name = kwargs['name']
-		logger.info("*delete_divider {}".format(name))
+		logger.info("Divider on_vpc_allocated {} with spec: {}".format(name, spec))
+		v = Vpc(name, self.obj_api, self.store, spec)
+		self.schedule_dividers(v)
+		v.update_obj()
 
-	def on_update(self, body, spec, **kwargs):
-		name = kwargs['name']
-		ip = spec['ip']
-		logger.info("*update_divider {}, {}".format(name, ip))
-
-	def on_create(self, body, spec, **kwargs):
-		self.on_update(body, spec, **kwargs)
-
-	def on_resume(self, body, spec, **kwargs):
-		self.on_update(body, spec, **kwargs)
+	def schedule_dividers(vpc):
+		droplets = set(self.store.get_all_droplets())
+		for i in vpc.n_dividers:
+			j = random.choice(range(len(droplets)))
+			d = droplets[j]
+			droplets.remove(j)
+			vpc.update_divider(d)

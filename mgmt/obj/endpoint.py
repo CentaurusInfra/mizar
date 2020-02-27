@@ -1,14 +1,14 @@
 import logging
 from common.constants import *
-from kubernetes import watch
+from common.common import *
 
 logger = logging.getLogger()
 
 class Endpoint:
-	def __init__(self, name, obj_api):
+	def __init__(self, name, obj_api, opr_store, spec=None):
 		self.name = name
 		self.obj_api = obj_api
-
+		self.store = opr_store
 		# Initial values all none
 		self.vpc = ""
 		self.net = ""
@@ -29,6 +29,8 @@ class Endpoint:
 		self.veth_peer_index = ""
 		self.mac = ""
 		self.veth_peer_mac = ""
+		if spec is not None:
+			self.set_obj_spec(spec)
 
 		# Misc obj
 		# self.droplet_obj = None
@@ -52,86 +54,48 @@ class Endpoint:
 
 		return self.obj
 
+	def set_obj_spec(self, spec):
+		self.type = spec['type']
+		self.status = spec['status']
+		self.vpc = spec['vpc']
+		self.net = spec['net']
+		self.ip = spec['ip']
+		self.gw = spec['gw']
+		self.mac = spec['mac']
+		self.vni = spec['vni']
+		self.droplet = spec['droplet']
+		self.prefix = spec['prefix']
+		self.veth_name = spec['itf']
+		self.veth_peer = spec['veth']
+		self.netns = spec['netns']
+
+	def get_name(self):
+		return self.name
+
+	def get_plural(self):
+		return "endpoints"
+
+	def get_kind(self):
+		return "Endpoint"
+
+	def store_update_obj(self):
+		self.store.update_ep(self)
+
+	def store_delete_obj(self):
+		self.store.delete_ep(self.name)
+
 	# K8s APIs
 	def create_obj(self):
-		try:
-			body = self.obj_api.get_namespaced_custom_object(
-				group="mizar.com",
-				version="v1",
-				namespace="default",
-				plural="endpoints",
-				name=self.name)
-			spec = body['spec']
-			self.type = spec['type']
-			self.status = spec['status']
-			self.vpc = spec['vpc']
-			self.net = spec['net']
-			self.ip = spec['ip']
-			self.gw = spec['gw']
-			self.mac = spec['mac']
-			self.vni = spec['vni']
-			self.droplet = spec['droplet']
-			self.prefix = spec['prefix']
-			self.veth_name = spec['itf']
-			self.veth_peer = spec['veth']
-			self.netns = spec['netns']
-
-		except:
-			body = {
-				"apiVersion": "mizar.com/v1",
-				"kind": "Endpoint",
-				"metadata": {
-					"name": self.name
-				},
-				"spec": self.get_obj_spec()
-			}
-
-			self.obj_api.create_namespaced_custom_object(
-				group="mizar.com",
-				version="v1",
-				namespace="default",
-				plural="endpoints",
-				body=body,
-			)
-			logging.debug("Created endpoint {}".format(self.name))
-
+		return kube_create_obj(self)
 
 	def update_obj(self):
-		body = self.obj_api.get_namespaced_custom_object(
-			group="mizar.com",
-			version="v1",
-			namespace="default",
-			plural="endpoints",
-			name=self.name)
-		body['spec'] = self.get_obj_spec()
-		self.obj_api.patch_namespaced_custom_object(
-			group="mizar.com",
-			version="v1",
-			namespace="default",
-			plural="endpoints",
-			name=self.name,
-			body=body,
-		)
-
+		return kube_update_obj(self)
 
 	def delete_obj(self):
-		pass
+		return kube_delete_obj(self)
 
 	def watch_obj(self, watch_callback):
-		watcher = watch.Watch()
-		stream = watcher.stream(self.obj_api.list_namespaced_custom_object,
-					group="mizar.com",
-					version="v1",
-					namespace="default",
-					plural="endpoints",
-					field_selector = "metadata.name={}".format(self.name),
-					watch = True
-				)
-
-		for event in stream:
-			if watch_callback(event, self):
-				watcher.stop()
-				return
+		return kube_watch_obj(self, watch_callback)
 
 	# Setters
 	def set_vpc(self, vpc):

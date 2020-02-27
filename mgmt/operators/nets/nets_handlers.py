@@ -1,6 +1,7 @@
 import kopf
 import logging
-
+import asyncio
+from common.constants import *
 from common.constants import group, version
 from operators.nets.nets_operator import NetOperator
 
@@ -9,26 +10,21 @@ logger = logging.getLogger()
 resource = 'nets'
 net_operator = NetOperator()
 
-@kopf.on.create(group, version, resource)
-def create_net(body, spec, **kwargs):
-    logger.info("create_net")
+@kopf.on.startup()
+async def net_opr_on_startup(logger, **kwargs):
+    global LOCK
+    LOCK = asyncio.Lock()
     global net_operator
-    net_operator.on_create(body, spec, **kwargs)
+    net_operator.on_startup(logger, **kwargs)
 
-@kopf.on.update(group, version, resource)
-def update_net(body, spec, **kwargs):
-    logger.info("update_net")
+@kopf.on.delete(group, version, RESOURCES.nets)
+def net_opr_on_net_delete(body, **kwargs):
     global net_operator
-    net_operator.on_update(body, spec, **kwargs)
+    net_operator.on_net_delete(body, **kwargs)
 
-@kopf.on.resume(group, version, resource)
-def resume_net(body, spec, **kwargs):
-    logger.info("resume_net")
+@kopf.on.resume(group, version, RESOURCES.nets)
+@kopf.on.update(group, version, RESOURCES.nets)
+@kopf.on.create(group, version, RESOURCES.nets)
+def net_opr_on_net_update_any(body, spec, **kwargs):
     global net_operator
-    net_operator.on_resume(body, spec, **kwargs)
-
-@kopf.on.delete(group, version, resource)
-def delete_net(body, **kwargs):
-    logger.info("delete_net")
-    global net_operator
-    net_operator.on_delete(body, **kwargs)
+    net_operator.on_net_update_any(body, spec, **kwargs)

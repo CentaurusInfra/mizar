@@ -22,10 +22,20 @@ class EndpointOperator(object):
 		config.load_incluster_config()
 		self.obj_api = client.CustomObjectsApi()
 
-	def on_delete(self, body, spec, **kwargs):
-		logger.info("*delete_endpoint {}".format(self.ds.store))
+	def on_endpoint_delete(self, body, spec, **kwargs):
+		logger.info("on_endpoint_delete {}".format(spec))
 
-	def on_update(self, body, spec, **kwargs):
+	def on_endpoint_init(self, body, spec, **kwargs):
+		logger.info("on_endpoint_init {}".format(spec))
+
+	def on_vpc_provisioned(self, body, spec, **kwargs):
+		logger.info("on_vpc_provisioned {}".format(spec))
+
+	def on_net_provisioned(self, body, spec, **kwargs):
+		logger.info("on_vpc_provisioned {}".format(spec))
+
+#####
+	def old_endpoint_update(self, body, spec, **kwargs):
 		logger.info("*update_endpoint {}".format(body))
 		update_endpoint = False
 
@@ -137,10 +147,5 @@ class EndpointOperator(object):
 		if update_endpoint:
 			ep.update_object()
 
-	def on_create(self, body, spec, **kwargs):
-		self.on_update(body, spec, **kwargs)
-
-	def on_resume(self, body, spec, **kwargs):
-		self.on_update(body, spec, **kwargs)
 
 

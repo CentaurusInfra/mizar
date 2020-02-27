@@ -22,8 +22,18 @@ class NetOperator(object):
 		self.vs = VpcStore()
 		config.load_incluster_config()
 		self.obj_api = client.CustomObjectsApi()
-		self.query_existing_nets(self)
 
+
+	def on_startup(self, logger, **kwargs):
+		pass
+
+	def on_net_update_any(self, body, spec, **kwargs):
+		logger.info("on_net_update_any {}".format(spec))
+
+	def on_net_delete(self, body, spec, **kwargs):
+		logger.info("on_net_delete {}".format(spec))
+
+#######
 	def query_existing_nets(self):
 		logger.info("* query nets")
 		response = self.obj_api.list_namespaced_custom_object(
