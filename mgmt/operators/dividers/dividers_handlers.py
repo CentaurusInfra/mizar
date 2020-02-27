@@ -21,3 +21,11 @@ async def divider_opr_on_startup(logger, **kwargs):
 def divider_opr_on_vpc_allocated(body, spec, **kwargs):
     global divider_operator
     divider_operator.on_vpc_allocated(body, spec, **kwargs)
+
+
+@kopf.on.resume(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_init)
+@kopf.on.update(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_init)
+@kopf.on.create(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_init)
+def divider_opr_on_divider_init(body, spec, **kwargs):
+    global divider_operator
+    divider_operator.on_divider_init(body, spec, **kwargs)

@@ -16,6 +16,7 @@ class OprStore(object):
 		self.vpcs_store = {}
 		self.nets_store = {}
 		self.eps_store = {}
+		self.dividers_store = {}
 		self.droplets_store = {}
 
 	def update_vpc(self,vpc):
@@ -93,7 +94,7 @@ class OprStore(object):
 			return self.droplets_store[name]
 		return None
 
-	def get_all_droplets(self, name):
+	def get_all_droplets(self):
 		return self.droplets_store.values()
 
 	def contains_droplet(self, name):
@@ -104,3 +105,24 @@ class OprStore(object):
 	def _dump_droplets(self):
 		for d in self.droplets_store.values():
 			logger.info("Droplets: {}, Spec: {}".format(d.name, d.get_obj_spec()))
+
+	def update_divider(self,div):
+		self.dividers_store[div.name] = div
+
+	def delete_divider(self, name):
+		if name in self.dividers_store:
+			del self.dividers_store[name]
+
+	def get_divider(self, name):
+		if name in self.dividers_store:
+			return self.dividers_store[name]
+		return None
+
+	def contains_divider(self, name):
+		if name in self.dividers_store:
+			return True
+		return False
+
+	def _dump_dividers(self):
+		for d in self.dividers_store.values():
+			logger.info("EP: {}, Spec: {}".format(d.name, d.get_obj_spec()))

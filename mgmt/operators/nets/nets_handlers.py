@@ -22,9 +22,23 @@ def net_opr_on_net_delete(body, **kwargs):
     global net_operator
     net_operator.on_net_delete(body, **kwargs)
 
-@kopf.on.resume(group, version, RESOURCES.nets)
-@kopf.on.update(group, version, RESOURCES.nets)
-@kopf.on.create(group, version, RESOURCES.nets)
-def net_opr_on_net_update_any(body, spec, **kwargs):
+@kopf.on.resume(group, version, RESOURCES.nets, when=LAMBDAS.net_status_init)
+@kopf.on.update(group, version, RESOURCES.nets, when=LAMBDAS.net_status_init)
+@kopf.on.create(group, version, RESOURCES.nets, when=LAMBDAS.net_status_init)
+def vpc_opr_on_net_init(body, spec, **kwargs):
     global net_operator
-    net_operator.on_net_update_any(body, spec, **kwargs)
+    net_operator.on_net_init(body, spec, **kwargs)
+
+@kopf.on.resume(group, version, RESOURCES.nets, when=LAMBDAS.net_status_ready)
+@kopf.on.update(group, version, RESOURCES.nets, when=LAMBDAS.net_status_ready)
+@kopf.on.create(group, version, RESOURCES.nets, when=LAMBDAS.net_status_ready)
+def vpc_opr_on_net_ready(body, spec, **kwargs):
+    global net_operator
+    net_operator.on_net_ready(body, spec, **kwargs)
+
+@kopf.on.resume(group, version, RESOURCES.vpcs, when=LAMBDAS.vpc_status_provisioned)
+@kopf.on.update(group, version, RESOURCES.vpcs, when=LAMBDAS.vpc_status_provisioned)
+@kopf.on.create(group, version, RESOURCES.vpcs, when=LAMBDAS.vpc_status_provisioned)
+def vpc_opr_on_vpc_provisioned(body, spec, **kwargs):
+    global net_operator
+    net_operator.on_vpc_provisioned(body, spec, **kwargs)

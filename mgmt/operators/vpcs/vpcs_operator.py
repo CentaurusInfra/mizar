@@ -56,7 +56,11 @@ class VpcOperator(object):
 		v.update_obj()
 
 	def on_vpc_ready(self, body, spec, **kwargs):
-		logger.info("on_vpc_ready {} with spec: {}".format(name, spec))
+		name = kwargs['name']
+		logger.info("Vpc on_vpc_ready {} with spec: {}".format(name, spec))
+		v = Vpc(name, self.obj_api, self.store, spec)
+		v.set_status(OBJ_STATUS.vpc_status_provisioned)
+		v.update_obj()
 
 	def on_vpc_delete(self, body, spec, **kwargs):
 		logger.info("on_vpc_delete {}".format(spec))

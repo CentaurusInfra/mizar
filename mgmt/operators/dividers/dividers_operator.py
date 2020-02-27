@@ -34,12 +34,16 @@ class DividerOperator(object):
 		logger.info("Divider on_vpc_allocated {} with spec: {}".format(name, spec))
 		v = Vpc(name, self.obj_api, self.store, spec)
 		self.schedule_dividers(v)
+		v.set_status(OBJ_STATUS.vpc_status_ready)
 		v.update_obj()
 
-	def schedule_dividers(vpc):
+	def schedule_dividers(self, vpc):
 		droplets = set(self.store.get_all_droplets())
-		for i in vpc.n_dividers:
-			j = random.choice(range(len(droplets)))
-			d = droplets[j]
-			droplets.remove(j)
+		for i in range(vpc.n_dividers):
+			d = random.sample(droplets, 1)[0]
 			vpc.update_divider(d)
+			droplets.remove(d)
+
+	def on_divider_init(self, body, spec, **kwargs):
+		name = kwargs['name']
+		logger.info("Divider on_divider_init {} with spec: {}".format(name, spec))

@@ -1,40 +1,34 @@
 import kopf
 import logging
-
+import asyncio
 from common.constants import *
+from common.constants import group, version
 from operators.bouncers.bouncers_operator import BouncerOperator
+
+LOCK: asyncio.Lock
 
 logger = logging.getLogger()
 
-resource = 'bouncers'
 bouncer_operator  = BouncerOperator()
 
-@kopf.on.create(group, version, resource)
-def create_bouncer(body, spec, **kwargs):
-    logger.info("create_bouncer")
+@kopf.on.startup()
+async def bouncer_opr_on_startup(logger, **kwargs):
+    global LOCK
+    LOCK = asyncio.Lock()
     global bouncer_operator
-    bouncer_operator.on_create(body, spec, **kwargs)
+    bouncer_operator.on_startup(logger, **kwargs)
 
-@kopf.on.update(group, version, resource)
-def update_bouncer(body, spec, **kwargs):
-    logger.info("update_bouncer")
+@kopf.on.resume(group, version, RESOURCES.nets, when=LAMBDAS.net_status_allocated)
+@kopf.on.update(group, version, RESOURCES.nets, when=LAMBDAS.net_status_allocated)
+@kopf.on.create(group, version, RESOURCES.nets, when=LAMBDAS.net_status_allocated)
+def divider_opr_on_net_allocated(body, spec, **kwargs):
     global bouncer_operator
-    bouncer_operator.on_update(body, spec, **kwargs)
+    bouncer_operator.on_net_allocated(body, spec, **kwargs)
 
-@kopf.on.resume(group, version, resource)
-def resume_bouncer(body, spec, **kwargs):
-    logger.info("resume_bouncer")
+
+@kopf.on.resume(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_init)
+@kopf.on.update(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_init)
+@kopf.on.create(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_init)
+def divider_opr_on_bouncer_init(body, spec, **kwargs):
     global bouncer_operator
-    bouncer_operator.on_resume(body, spec, **kwargs)
-
-@kopf.on.delete(group, version, resource)
-def delete_bouncer(body, **kwargs):
-    logger.info("delete_bouncer")
-    global bouncer_operator
-    bouncer_operator.on_delete(body, **kwargs)
-
-@kopf.on.resume(group, version, 'endpoints', when=lambda body, **_: body.get('spec', {}).get('status', '') == 'ready')
-@kopf.on.update(group, version, 'endpoints', when=lambda body, **_: body.get('spec', {}).get('status', '') == 'ready')
-@kopf.on.create(group, version, 'endpoints', when=lambda body, **_: body.get('spec', {}).get('status', '') == 'ready')
-def when_ep_is_alloc(body, spec, **kwargs):
-    logger.info("@@@ bouncer sees endpoint status: {}".format(spec['status']))
+    bouncer_operator.on_bouncer_init(body, spec, **kwargs)

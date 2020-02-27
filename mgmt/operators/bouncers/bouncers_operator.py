@@ -1,5 +1,10 @@
+import random
+from kubernetes import client, config
 from obj.bouncer import Bouncer
-from store.vpcs_store import VpcStore
+from common.constants import *
+from common.common import *
+from obj.net import Net
+from store.operator_store import OprStore
 from store.droplets_store import DropletStore
 import logging
 
@@ -17,27 +22,28 @@ class BouncerOperator(object):
 	def _init(self, **kwargs):
 		logger.info(kwargs)
 		self.ds = DropletStore()
-		self.vs = VpcStore()
+		self.store = OprStore()
+		config.load_incluster_config()
+		self.obj_api = client.CustomObjectsApi()
 
-	def on_delete(self, body, spec, **kwargs):
+	def on_startup(self, logger, **kwargs):
+		logger.info("bouncer on_startup")
+
+	def on_net_allocated(self, body, spec, **kwargs):
 		name = kwargs['name']
-		logger.info("*delete_bouncer {}".format(name))
+		logger.info("Bouncer on_net_allocated {} with spec: {}".format(name, spec))
+		n = Net(name, self.obj_api, self.store, spec)
+		self.schedule_bouncers(n)
+		n.set_status(OBJ_STATUS.net_status_ready)
+		n.update_obj()
 
-	def on_update(self, body, spec, **kwargs):
+	def schedule_bouncers(self, net):
+		droplets = set(self.store.get_all_droplets())
+		for i in range(net.n_bouncers):
+			d = random.sample(droplets, 1)[0]
+			net.update_bouncer(d)
+			droplets.remove(d)
+
+	def on_bouncer_init(self, body, spec, **kwargs):
 		name = kwargs['name']
-		ip = spec['ip']
-		droplet = spec['droplet']
-		vpc = spec['vpc']
-		net = spec['net']
-		vpc_obj = self.vs.get(vpc)
-		net_obj = vpc_obj.get_network(net)
-		droplet_obj = self.ds.get(droplet)
-		logger.info("*update_bouncer {}, {}, {}, {}/{}, {}".format(name, ip, vpc, net, net_obj.name, net_obj.bouncers.keys()))
-		bouncer = Bouncer(name, vpc, net, ip, droplet, droplet_obj)
-		net_obj.update_bouncer(bouncer)
-
-	def on_create(self, body, spec, **kwargs):
-		self.on_update(body, spec, **kwargs)
-
-	def on_resume(self, body, spec, **kwargs):
-		self.on_update(body, spec, **kwargs)
+		logger.info("Bouncer on_bouncer_init {} with spec: {}".format(name, spec))

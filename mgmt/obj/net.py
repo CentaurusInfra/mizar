@@ -1,6 +1,7 @@
 import logging
 from common.constants import *
 from common.common import *
+from obj.bouncer import Bouncer
 from common.cidr import Cidr
 from kubernetes.client.rest import ApiException
 
@@ -13,6 +14,7 @@ class Net(object):
 		self.vni = OBJ_DEFAULTS.default_vpc_vni
 		self.cidr = Cidr(OBJ_DEFAULTS.default_net_prefix, OBJ_DEFAULTS.default_net_ip)
 		self.n_bouncers = OBJ_DEFAULTS.default_n_bouncers
+		self.n_allocated_bouncers = 0
 		self.bouncers = {}
 		self.endpoints = {}
 		self.obj_api = obj_api
@@ -72,6 +74,12 @@ class Net(object):
 	def watch_obj(self, watch_callback):
 		return kube_watch_obj(self, watch_callback)
 
+	def set_vni(self, vni):
+		self.vni = vni
+
+	def set_status(self, status):
+		self.status = status
+
 	def get_gw_ip(self):
 		return self.cidr.get_ip(1)
 
@@ -87,56 +95,26 @@ class Net(object):
 	def get_bouncers_ips(self):
 		return [str(b.ip) for b in self.bouncers.values()]
 
-	def update_bouncer(self, bouncer):
-		logger.info("*Update bouncer {}, {}, {}".format(bouncer.name, bouncer.vpc, bouncer.net))
-		logger.info("*Update bouncer - net {}, {}, {}".format(self.vpc, self.name, self.bouncers.keys()))
-		self.bouncers[bouncer.name] = bouncer
-		# TODO: This is a new bouncer, program it with existing endpoints and update the transit agentmetadata
+	def update_bouncer(self, droplet):
+		logger.info("Update bouncer {} for net".format(droplet.name, self.name))
+		if droplet.name in self.bouncers:
+			return True
 
-	def create_bouncer(self, droplet):
-		logger.info("*Create bouncer {}".format(droplet.name))
-
+		self.bouncers[droplet.name] = droplet
 		bouncer_name = self.name +'-bouncer-' + droplet.name
-		if bouncer_name in self.bouncers:
-			return True
-		try:
 
-			api_response = self.obj_api.get_namespaced_custom_object(
-				group="mizar.com",
-				version="v1",
-				namespace="default",
-				plural="bouncers",
-				name=bouncer_name)
-			logger.info("Exist {}".format(api_response))
+		bouncer_spec = {
+			"vpc": self.vpc,
+			"net": self.name,
+			"mac": droplet.mac,
+			"ip": droplet.ip,
+			"status": OBJ_STATUS.bouncer_status_init,
+			"droplet": droplet.name
+		}
 
-		except:
-			logger.info("Get {}".format(bouncer_name))
-
-			bouncer_obj = {
-				"apiVersion": "mizar.com/v1",
-				"kind": "Bouncer",
-				"metadata": {
-					"name": bouncer_name
-				},
-				"spec": {
-					"ip": droplet.ip,
-					"droplet": droplet.name,
-					"vpc": self.vpc,
-					"net": self.name
-				}
-			}
-			logger.info("### Bouncer obj {}".format(bouncer_obj))
-			# create the bouncer resource
-			self.obj_api.create_namespaced_custom_object(
-				group="mizar.com",
-				version="v1",
-				namespace="default",
-				plural="bouncers",
-				body=bouncer_obj,
-			)
-			return True
-
-		return False
+		b = Bouncer(bouncer_name, self.obj_api, self.store, bouncer_spec)
+		b.create_obj()
+		self.n_allocated_bouncers += 1
 
 	def allocate_ip(self):
 		return self.cidr.allocate_ip()

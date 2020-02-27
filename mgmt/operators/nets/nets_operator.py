@@ -1,8 +1,10 @@
 import random
 from kubernetes import client, config
 from common.cidr import Cidr
+from common.constants import *
+from common.common import *
 from obj.net import Net
-from store.vpcs_store import VpcStore
+from store.operator_store import OprStore
 from store.droplets_store import DropletStore
 import logging
 logger = logging.getLogger()
@@ -19,19 +21,30 @@ class NetOperator(object):
 	def _init(self, **kwargs):
 		logger.info(kwargs)
 		self.ds = DropletStore()
-		self.vs = VpcStore()
+		self.store = OprStore()
 		config.load_incluster_config()
 		self.obj_api = client.CustomObjectsApi()
-
 
 	def on_startup(self, logger, **kwargs):
 		pass
 
-	def on_net_update_any(self, body, spec, **kwargs):
-		logger.info("on_net_update_any {}".format(spec))
+	def on_net_init(self, body, spec, **kwargs):
+		name = kwargs['name']
+		logger.info("on_net_init {}".format(spec))
+		n = Net(name, self.obj_api, self.store, spec)
+		v = self.store.get_vpc(n.vpc)
+		n.set_vni(v.vni)
+		n.set_status(OBJ_STATUS.net_status_allocated)
+		n.update_obj()
+
+	def on_net_ready(self, body, spec, **kwargs):
+		logger.info("on_net_ready {}".format(spec))
 
 	def on_net_delete(self, body, spec, **kwargs):
 		logger.info("on_net_delete {}".format(spec))
+
+	def on_vpc_provisioned(self, body, spec, **kwargs):
+		logger.info("on_vpc_provisioned {}".format(spec))
 
 #######
 	def query_existing_nets(self):

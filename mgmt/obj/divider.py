@@ -45,6 +45,12 @@ class Divider(object):
 	def get_kind(self):
 		return "Divider"
 
+	def store_update_obj(self):
+		self.store.update_divider(self)
+
+	def store_delete_obj(self):
+		self.store.delete_divider(self.name)
+
 	def create_obj(self):
 		return kube_create_obj(self)
 
