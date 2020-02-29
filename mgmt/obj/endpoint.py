@@ -29,6 +29,7 @@ class Endpoint:
 		self.veth_peer_index = ""
 		self.mac = ""
 		self.veth_peer_mac = ""
+		self.bouncers = set()
 		if spec is not None:
 			self.set_obj_spec(spec)
 
@@ -79,9 +80,13 @@ class Endpoint:
 		return "Endpoint"
 
 	def store_update_obj(self):
+		if self.store is None:
+			return
 		self.store.update_ep(self)
 
 	def store_delete_obj(self):
+		if self.store is None:
+			return
 		self.store.delete_ep(self.name)
 
 	# K8s APIs
@@ -155,6 +160,8 @@ class Endpoint:
 	def set_veth_peer_mac(self, veth_peer_mac):
 		self.veth_peer_mac = veth_peer_mac
 
+	def add_bouncer(self, b):
+		self.bouncers.add(b)
 
 ############
 	def update_object(self):

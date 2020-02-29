@@ -7,7 +7,8 @@ from operators.nets.nets_operator import NetOperator
 
 logger = logging.getLogger()
 
-resource = 'nets'
+LOCK: asyncio.Lock
+
 net_operator = NetOperator()
 
 @kopf.on.startup()
@@ -25,20 +26,20 @@ def net_opr_on_net_delete(body, **kwargs):
 @kopf.on.resume(group, version, RESOURCES.nets, when=LAMBDAS.net_status_init)
 @kopf.on.update(group, version, RESOURCES.nets, when=LAMBDAS.net_status_init)
 @kopf.on.create(group, version, RESOURCES.nets, when=LAMBDAS.net_status_init)
-def vpc_opr_on_net_init(body, spec, **kwargs):
+def net_opr_on_net_init(body, spec, **kwargs):
     global net_operator
     net_operator.on_net_init(body, spec, **kwargs)
 
-@kopf.on.resume(group, version, RESOURCES.nets, when=LAMBDAS.net_status_ready)
-@kopf.on.update(group, version, RESOURCES.nets, when=LAMBDAS.net_status_ready)
-@kopf.on.create(group, version, RESOURCES.nets, when=LAMBDAS.net_status_ready)
-def vpc_opr_on_net_ready(body, spec, **kwargs):
+@kopf.on.resume(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_provisioned)
+@kopf.on.update(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_provisioned)
+@kopf.on.create(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_provisioned)
+def net_opr_on_bouncer_provisioned(body, spec, **kwargs):
     global net_operator
-    net_operator.on_net_ready(body, spec, **kwargs)
+    net_operator.on_bouncer_provisioned(body, spec, **kwargs)
 
-@kopf.on.resume(group, version, RESOURCES.vpcs, when=LAMBDAS.vpc_status_provisioned)
-@kopf.on.update(group, version, RESOURCES.vpcs, when=LAMBDAS.vpc_status_provisioned)
-@kopf.on.create(group, version, RESOURCES.vpcs, when=LAMBDAS.vpc_status_provisioned)
-def vpc_opr_on_vpc_provisioned(body, spec, **kwargs):
+@kopf.on.resume(group, version, RESOURCES.endpoints, when=LAMBDAS.endpoint_status_init)
+@kopf.on.update(group, version, RESOURCES.endpoints, when=LAMBDAS.endpoint_status_init)
+@kopf.on.create(group, version, RESOURCES.endpoints, when=LAMBDAS.endpoint_status_init)
+def net_opr_on_endpoint_init(body, spec, **kwargs):
     global net_operator
-    net_operator.on_vpc_provisioned(body, spec, **kwargs)
+    net_operator.on_endpoint_init(body, spec, **kwargs)

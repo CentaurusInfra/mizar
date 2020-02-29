@@ -53,9 +53,13 @@ class Vpc(object):
 		return "Vpc"
 
 	def store_update_obj(self):
+		if self.store is None:
+			return
 		self.store.update_vpc(self)
 
 	def store_delete_obj(self):
+		if self.store is None:
+			return
 		self.store.delete_vpc(self.name)
 
 	def create_obj(self):

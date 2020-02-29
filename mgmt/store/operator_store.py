@@ -13,11 +13,20 @@ class OprStore(object):
 
 	def _init(self, **kwargs):
 		logger.info(kwargs)
+		self.droplets_store = {}
+
 		self.vpcs_store = {}
 		self.nets_store = {}
+
 		self.eps_store = {}
+		self.eps_net_store = {}
+
 		self.dividers_store = {}
-		self.droplets_store = {}
+		self.dividers_vpc_store = {}
+
+		self.bouncers_store = {}
+		self.bouncers_net_store = {}
+		self.bouncers_vpc_store = {}
 
 	def update_vpc(self,vpc):
 		self.vpcs_store[vpc.name] = vpc
@@ -63,14 +72,29 @@ class OprStore(object):
 
 	def update_ep(self,ep):
 		self.eps_store[ep.name] = ep
+		if ep.net not in self.eps_net_store:
+			self.eps_net_store[ep.net] = set()
+		self.eps_net_store[ep.net].add(ep)
 
 	def delete_ep(self, name):
-		if name in self.eps_store:
-			del self.eps_store[name]
+		if name not in self.eps_store:
+			return
+		ep = self.eps_store[name]
+
+		self.eps_net_store[ep.net].remove(name)
+		del self.eps_store[name]
+		l = len(self.eps_net_store[ep.net])
+		if  l == 0:
+			del self.eps_net_store[ep.net]
 
 	def get_ep(self, name):
 		if name in self.eps_store:
 			return self.eps_store[name]
+		return None
+
+	def get_eps_in_net(self, net):
+		if net in self.nets_ep_store:
+			return self.nets_ep_store[net]
 		return None
 
 	def contains_ep(self, name):
@@ -109,13 +133,31 @@ class OprStore(object):
 	def update_divider(self,div):
 		self.dividers_store[div.name] = div
 
+		if div.vpc is not in self.dividers_store:
+			self.dividers_vpc_store[div.vpc] = set()
+		self.dividers_vpc_store[div.vpc].add(div)
+
 	def delete_divider(self, name):
-		if name in self.dividers_store:
-			del self.dividers_store[name]
+		if name not in self.dividers_store:
+			return
+		d = self.dividers_store[name]
+
+		self.dividers_vpc_store[d.vpc].remove(d)
+		del self.dividers_store[name]
+
+		l = len(self.dividers_vpc_store[d.vpc])
+		if  l == 0:
+			del self.dividers_vpc_store[d.vpc]
+
 
 	def get_divider(self, name):
 		if name in self.dividers_store:
 			return self.dividers_store[name]
+		return None
+
+	def get_dividers_of_vpc(self, vpc):
+		if vpc in self.dividers_vpc_store:
+			return self.dividers_vpc_store[vpc]
 		return None
 
 	def contains_divider(self, name):
@@ -126,3 +168,56 @@ class OprStore(object):
 	def _dump_dividers(self):
 		for d in self.dividers_store.values():
 			logger.info("EP: {}, Spec: {}".format(d.name, d.get_obj_spec()))
+
+
+	def update_bouncer(self, b):
+		self.bouncers_store[b.name] = b
+
+		if b.net is not in self.bouncers_net_store:
+			self.bouncers_net_store[b.net] = set()
+		self.bouncers_net_store[b.net].add(b)
+
+		if b.vpc is not in self.bouncers_vpc_store:
+			self.bouncers_vpc_store[b.vpc] = set()
+		self.bouncers_vpc_store[b.vpc].add(b)
+
+	def delete_bouncer(self, name):
+		if name not in self.bouncers_store:
+			return
+		b = self.bouncers_store[name]
+
+		self.bouncers_net_store[b.net].remove(b)
+		self.bouncers_vpc_store[b.vpc].remove(b)
+		del self.bouncers_store[name]
+
+		l = len(self.bouncers_net_store[b.net])
+		if  l == 0:
+			del self.bouncers_net_store[b.net]
+
+		l = len(self.bouncers_vpc_store[b.vpc])
+		if  l == 0:
+			del self.bouncers_vpc_store[b.vpc]
+
+	def get_bouncer(self, name):
+		if name in self.bouncers_store:
+			return self.bouncers_store[name]
+		return None
+
+	def get_bouncers_of_net(self, net):
+		if net in self.bouncers_net_store:
+			return self.bouncers_net_store[net]
+		return None
+
+	def get_bouncers_of_vpc(self, vpc):
+		if vpc in self.bouncers_vpc_store:
+			return self.bouncers_vpc_store[vpc]
+		return None
+
+	def contains_bouncer(self, name):
+		if name in self.bouncers_store:
+			return True
+		return False
+
+	def _dump_bouncers(self):
+		for b in self.bouncers_store.values():
+			logger.info("Bouncer: {}, Spec: {}".format(b.name, b.get_obj_spec()))

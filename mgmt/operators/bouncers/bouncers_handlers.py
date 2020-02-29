@@ -18,17 +18,23 @@ async def bouncer_opr_on_startup(logger, **kwargs):
     global bouncer_operator
     bouncer_operator.on_startup(logger, **kwargs)
 
-@kopf.on.resume(group, version, RESOURCES.nets, when=LAMBDAS.net_status_allocated)
-@kopf.on.update(group, version, RESOURCES.nets, when=LAMBDAS.net_status_allocated)
-@kopf.on.create(group, version, RESOURCES.nets, when=LAMBDAS.net_status_allocated)
-def divider_opr_on_net_allocated(body, spec, **kwargs):
+@kopf.on.resume(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_provisioned)
+@kopf.on.update(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_provisioned)
+@kopf.on.create(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_provisioned)
+def divider_opr_on_bouncer_provisioned(body, spec, **kwargs):
     global bouncer_operator
-    bouncer_operator.on_net_allocated(body, spec, **kwargs)
+    bouncer_operator.on_bouncer_provisioned(body, spec, **kwargs)
 
-
-@kopf.on.resume(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_init)
-@kopf.on.update(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_init)
-@kopf.on.create(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_init)
-def divider_opr_on_bouncer_init(body, spec, **kwargs):
+@kopf.on.resume(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_placed)
+@kopf.on.update(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_placed)
+@kopf.on.create(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_placed)
+def divider_opr_on_divider_placed(body, spec, **kwargs):
     global bouncer_operator
-    bouncer_operator.on_bouncer_init(body, spec, **kwargs)
+    bouncer_operator.on_divider_placed(body, spec, **kwargs)
+
+@kopf.on.resume(group, version, RESOURCES.endpoints, when=LAMBDAS.endpoint_status_allocated)
+@kopf.on.update(group, version, RESOURCES.endpoints, when=LAMBDAS.endpoint_status_allocated)
+@kopf.on.create(group, version, RESOURCES.endpoints, when=LAMBDAS.endpoint_status_allocated)
+def divider_opr_on_endpoints_allocated(body, spec, **kwargs):
+    global bouncer_operator
+    bouncer_operator.on_endpoints_allocated(body, spec, **kwargs)

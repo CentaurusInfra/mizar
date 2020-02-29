@@ -79,9 +79,13 @@ class Droplet(object):
 		return "Droplet"
 
 	def store_update_obj(self):
+		if self.store is None:
+			return
 		self.store.update_droplet(self)
 
 	def store_delete_obj(self):
+		if self.store is None:
+			return
 		self.store.delete_droplet(self.name)
 
 	def create_obj(self):

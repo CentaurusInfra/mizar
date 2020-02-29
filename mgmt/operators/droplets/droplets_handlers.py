@@ -15,16 +15,30 @@ async def droplet_opr_on_startup(logger, **kwargs):
     global droplet_operator
     droplet_operator.on_startup(logger, **kwargs)
 
-@kopf.on.resume(group, version, RESOURCES.droplets, when=LAMBDAS.vpc_status_init)
-@kopf.on.update(group, version, RESOURCES.droplets, when=LAMBDAS.vpc_status_init)
-@kopf.on.create(group, version, RESOURCES.droplets, when=LAMBDAS.vpc_status_init)
+@kopf.on.resume(group, version, RESOURCES.droplets, when=LAMBDAS.droplet_status_init)
+@kopf.on.update(group, version, RESOURCES.droplets, when=LAMBDAS.droplet_status_init)
+@kopf.on.create(group, version, RESOURCES.droplets, when=LAMBDAS.droplet_status_init)
 def droplet_opr_on_droplet_init(body, spec, **kwargs):
     global droplet_operator
     droplet_operator.on_droplet_init(body, spec, **kwargs)
 
-@kopf.on.resume(group, version, RESOURCES.droplets, when=LAMBDAS.vpc_status_provisioned)
-@kopf.on.update(group, version, RESOURCES.droplets, when=LAMBDAS.vpc_status_provisioned)
-@kopf.on.create(group, version, RESOURCES.droplets, when=LAMBDAS.vpc_status_provisioned)
+@kopf.on.resume(group, version, RESOURCES.droplets, when=LAMBDAS.droplet_status_provisioned)
+@kopf.on.update(group, version, RESOURCES.droplets, when=LAMBDAS.droplet_status_provisioned)
+@kopf.on.create(group, version, RESOURCES.droplets, when=LAMBDAS.droplet_status_provisioned)
 def droplet_opr_on_droplet_provisioned(body, spec, **kwargs):
     global droplet_operator
     droplet_operator.on_droplet_provisioned(body, spec, **kwargs)
+
+@kopf.on.resume(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_init)
+@kopf.on.update(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_init)
+@kopf.on.create(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_init)
+def droplet_opr_on_bouncer_init(body, spec, **kwargs):
+    global droplet_operator
+    droplet_operator.on_bouncer_init(body, spec, **kwargs)
+
+@kopf.on.resume(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_init)
+@kopf.on.update(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_init)
+@kopf.on.create(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_init)
+def droplet_opr_on_divider_init(body, spec, **kwargs):
+    global droplet_operator
+    droplet_operator.on_divider_init(body, spec, **kwargs)

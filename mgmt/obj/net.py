@@ -1,3 +1,4 @@
+import uuid
 import logging
 from common.constants import *
 from common.common import *
@@ -57,9 +58,13 @@ class Net(object):
 		return "Net"
 
 	def store_update_obj(self):
+		if self.store is None:
+			return
 		self.store.update_net(self)
 
 	def store_delete_obj(self):
+		if self.store is None:
+			return
 		self.store.delete_net(self.name)
 
 	def create_obj(self):
@@ -95,26 +100,13 @@ class Net(object):
 	def get_bouncers_ips(self):
 		return [str(b.ip) for b in self.bouncers.values()]
 
-	def update_bouncer(self, droplet):
-		logger.info("Update bouncer {} for net".format(droplet.name, self.name))
-		if droplet.name in self.bouncers:
-			return True
-
-		self.bouncers[droplet.name] = droplet
-		bouncer_name = self.name +'-bouncer-' + droplet.name
-
-		bouncer_spec = {
-			"vpc": self.vpc,
-			"net": self.name,
-			"mac": droplet.mac,
-			"ip": droplet.ip,
-			"status": OBJ_STATUS.bouncer_status_init,
-			"droplet": droplet.name
-		}
-
-		b = Bouncer(bouncer_name, self.obj_api, self.store, bouncer_spec)
+	def create_bouncer(self):
+		logger.info("Create bouncer for net {}".format(self.name))
+		u = str(uuid.uuid4())
+		bouncer_name = self.name +'-b-' + u
+		b = Bouncer(bouncer_name, self.obj_api, self.store)
+		self.bouncers[bouncer_name] = b
 		b.create_obj()
-		self.n_allocated_bouncers += 1
 
 	def allocate_ip(self):
 		return self.cidr.allocate_ip()

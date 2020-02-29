@@ -28,10 +28,9 @@ def vpc_opr_on_vpc_init(body, spec, **kwargs):
     vpc_operator.on_vpc_init(body, spec, **kwargs)
 
 
-@kopf.on.resume(group, version, RESOURCES.vpcs, when=LAMBDAS.vpc_status_ready)
-@kopf.on.update(group, version, RESOURCES.vpcs, when=LAMBDAS.vpc_status_ready)
-@kopf.on.create(group, version, RESOURCES.vpcs, when=LAMBDAS.vpc_status_ready)
-def vpc_opr_on_vpc_ready(body, spec, **kwargs):
+@kopf.on.resume(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_provisioned)
+@kopf.on.update(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_provisioned)
+@kopf.on.create(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_provisioned)
+def vpc_opr_on_divider_provisioned(body, spec, **kwargs):
     global vpc_operator
-    vpc_operator.on_vpc_ready(body, spec, **kwargs)
-
+    vpc_operator.on_divider_provisioned(body, spec, **kwargs)

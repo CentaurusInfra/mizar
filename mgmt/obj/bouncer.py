@@ -14,6 +14,7 @@ class Bouncer(object):
 		self.net = ""
 		self.ip = ""
 		self.mac = ""
+		self.eps = set()
 		self.status = OBJ_STATUS.bouncer_status_init
 		if spec is not None:
 			self.set_obj_spec(spec)
@@ -48,6 +49,16 @@ class Bouncer(object):
 	def get_kind(self):
 		return "Bouncer"
 
+	def store_update_obj(self):
+		if self.store is None:
+			return
+		self.store.update_bouncer(self)
+
+	def store_delete_obj(self):
+		if self.store is None:
+			return
+		self.store.delete_bouncer(self.name)
+
 	def create_obj(self):
 		return kube_create_obj(self)
 
@@ -59,6 +70,20 @@ class Bouncer(object):
 
 	def watch_obj(self, watch_callback):
 		return kube_watch_obj(self, watch_callback)
+
+	def update_eps(self, eps):
+		self.eps.union(eps)
+
+	def set_vpc(self, vpc):
+		self.vpc = vpc
+
+	def set_net(self, net):
+		self.net = net
+
+	def set_droplet(self, droplet):
+		self.droplet = droplet.name
+		self.ip = droplet.ip
+		self.mac = droplet.mac
 
 	def update_simple_endpoint(self, ep):
 		logger.info("Bouncer {} update_simple_endpoint {} on droplet {}".format(self.name, ep.name, ep.droplet))

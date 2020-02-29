@@ -1,12 +1,12 @@
 import random
+import logging
 from kubernetes import client, config
 from common.cidr import Cidr
 from common.constants import *
 from common.common import *
 from obj.net import Net
 from store.operator_store import OprStore
-from store.droplets_store import DropletStore
-import logging
+
 logger = logging.getLogger()
 
 class NetOperator(object):
@@ -20,121 +20,56 @@ class NetOperator(object):
 
 	def _init(self, **kwargs):
 		logger.info(kwargs)
-		self.ds = DropletStore()
 		self.store = OprStore()
 		config.load_incluster_config()
 		self.obj_api = client.CustomObjectsApi()
 
 	def on_startup(self, logger, **kwargs):
-		pass
+		def list_net_obj_fn(name, spec, plurals):
+			logger.info("Bootstrapped {}".format(name))
+			n = Net(name, self.obj_api, self.store, spec)
+			self.store.update_net(n)
+
+		kube_list_obj(self.obj_api, RESOURCES.nets, list_net_obj_fn)
+		self.create_default_net()
+		logger.debug("Bootstrap Net store: ".format(self.store._dump_nets()))
+
+	def create_default_net(self):
+		if self.store.get_net(OBJ_DEFAULTS.default_ep_net):
+			return
+		n = Net(OBJ_DEFAULTS.default_ep_net, self.obj_api, self.store)
+		n.create_obj()
 
 	def on_net_init(self, body, spec, **kwargs):
 		name = kwargs['name']
-		logger.info("on_net_init {}".format(spec))
+		logger.info("Net on_net_init {}".format(spec))
 		n = Net(name, self.obj_api, self.store, spec)
 		v = self.store.get_vpc(n.vpc)
 		n.set_vni(v.vni)
+		for i in range(n.n_bouncers):
+			n.create_bouncer()
 		n.set_status(OBJ_STATUS.net_status_allocated)
 		n.update_obj()
-
-	def on_net_ready(self, body, spec, **kwargs):
-		logger.info("on_net_ready {}".format(spec))
 
 	def on_net_delete(self, body, spec, **kwargs):
 		logger.info("on_net_delete {}".format(spec))
 
-	def on_vpc_provisioned(self, body, spec, **kwargs):
-		logger.info("on_vpc_provisioned {}".format(spec))
-
-#######
-	def query_existing_nets(self):
-		logger.info("* query nets")
-		response = self.obj_api.list_namespaced_custom_object(
-						group = "mizar.com",
-						version = "v1",
-						namespace = "default",
-						plural = "nets",
-						watch=False)
-		items = response['items']
-		logger.info("net response {}".format(response))
-		for v in items:
-			name = v['metadata']['name']
-			vni = v['spec']['vni']
-			ip = v['spec']['ip']
-			prefix = v['spec']['prefix']
-			bouncers = 0
-			if 'bouncers' in v['spec']:
-				bouncers =  v['spec']['bouncers']
-			vpc = v['spec']['vpc']
-			cidr = Cidr(prefix, ip)
-			net = self.vs.get(vpc).get_network(name)
-			if net is None:
-				net = Net(self.obj_api, name, vpc, vni, cidr)
-			logger.info("* update nets {}".format(name))
-			self.vs.get(vpc).update_network(name, net)
-
-	def on_update(self, body, spec, **kwargs):
-		update_object = False
+	def on_bouncer_provisioned(self, body, spec, **kwargs):
 		name = kwargs['name']
-		vni = spec['vni']
-		ip = spec['ip']
-		prefix = spec['prefix']
-		vpc = spec['vpc']
-		cidr = Cidr(prefix, ip)
+		logger.info("Net on_bouncer_provisioned {} with spec: {}".format(name, spec))
+		b = Bouncer(name, self.obj_api, None, spec)
+		n = self.store.get_net(b.net)
+		if n.status != OBJ_STATUS.net_status_provisioned:
+			n.set_status(OBJ_STATUS.net_status_provisioned)
+			n.update_obj()
 
-		bouncers = 1
-
-		if 'bouncers' in spec:
-			bouncers = spec['bouncers']
-		else:
-			update_object = True
-
-		net = self.vs.get(vpc).get_network(name)
-		if net is None:
-			net = Net(self.obj_api, name, vpc, vni, cidr)
-
-
-		# First allocate the bouncer if it does not exist
-		# TODO: This code just allocate ONE bouncer, no support
-		# For scaling yet!!
-		self.allocate_bouncer(net)
-
-		logger.info("*update_net name: {}, vni: {}, ip: {}/{}, vpc: {}".format(name, vni, ip, prefix, vpc))
-		self.vs.get(vpc).update_network(name, net)
-
-		# If we have change in the object field, update it
-		if update_object:
-			logger.info("Update net fields")
-			self.update_net(net, body)
-
-	def on_create(self, body, spec, **kwargs):
-		self.on_update(body, spec, **kwargs)
-
-	def on_resume(self, body, spec, **kwargs):
-		self.on_update(body, spec, **kwargs)
-
-	def on_delete(self, body, spec, **kwargs):
+	def on_endpoint_init(self, body, spec, **kwargs):
 		name = kwargs['name']
-		logger.info("*delete_net name: {}".format(kwargs))
-
-	def allocate_bouncer(self, net):
-		# Simple random allocator for now
-		droplets = self.ds.get_all()
-		if droplets is None:
-			return False
-		logger.info("net droplets {}".format(droplets))
-		bouncer = random.choice(droplets)
-		net.create_bouncer(bouncer)
-		return True
-
-	def update_net(self, net, body):
-		# update the resource
-		body['spec'] = net.get_obj_spec()
-		self.obj_api.patch_namespaced_custom_object(
-			group="mizar.com",
-			version="v1",
-			namespace="default",
-			plural="nets",
-			name=net.name,
-			body=body
-		)
+		logger.info("Net on_endpoint_init {} with spec: {}".format(name, spec))
+		ep = Endpoint(name, self.obj_api, None, spec)
+		n = self.store.get_net(ep.net)
+		ip = n.allocate_ip()
+		ep.set_ip(ip)
+		n.mark_ip_as_allocated(ip)
+		ep.set_status(LAMBDAS.endpoint_status_allocated)
+		ep.update_obj()

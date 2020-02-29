@@ -3,7 +3,6 @@ from common.common import *
 from kubernetes import client, config
 from obj.droplet import Droplet
 from store.operator_store import OprStore
-from store.droplets_store import DropletStore
 import logging
 
 logger = logging.getLogger()
@@ -19,18 +18,17 @@ class DropletOperator(object):
 
 	def _init(self, **kwargs):
 		logger.info(kwargs)
-		self.ds = DropletStore()
 		self.store = OprStore()
 		config.load_incluster_config()
 		self.obj_api = client.CustomObjectsApi()
 
 	def on_startup(self, logger, **kwargs):
-		def list_doplet_obj_fn(name, spec, plurals):
+		def list_droplet_obj_fn(name, spec, plurals):
 			logger.info("Bootstrapped droplet {}".format(name))
 			d = Droplet(name, self.obj_api, self.store, spec)
 			self.store.update_droplet(d)
 
-		kube_list_obj(self.obj_api, RESOURCES.droplets, list_doplet_obj_fn)
+		kube_list_obj(self.obj_api, RESOURCES.droplets, list_droplet_obj_fn)
 
 	def on_droplet_init(self, body, spec, **kwargs):
 		name = kwargs['name']
@@ -45,32 +43,36 @@ class DropletOperator(object):
 		d = Droplet(name, self.obj_api, self.store, spec)
 		self.store.update_droplet(d)
 
-	def query_existing_droplets(self):
-		logger.info("*query droplets")
-		response = self.obj_api.list_namespaced_custom_object(
-						group = "mizar.com",
-						version = "v1",
-						namespace = "default",
-						plural = "droplets",
-						watch=False)
-		items = response['items']
-		for v in items:
-			name = v['metadata']['name']
-			mac = v['spec']['mac']
-			ip = v['spec']['ip']
-			d = Droplet(name, ip, mac)
-			self.ds.update(name, d)
+	def on_bouncer_init(self, body, spec, **kwargs):
+		name = kwargs['name']
+		logger.info("Droplet place bouncer {} with spec: {}".format(name, spec))
+		b = Bouncer(name, self.obj_api, None, spec)
+		self.assign_bouncer_droplet(b)
+		b.set_status(OBJ_STATUS.bouncer_status_allocated)
+		b.update_obj()
+
+	def on_driver_init(self, body, spec, **kwargs):
+		name = kwargs['name']
+		logger.info("Droplet place divider {} with spec: {}".format(name, spec))
+		d = Divider(name, self.obj_api, None, spec)
+		self.assign_divider_droplet(d)
+		d.set_status(OBJ_STATUS.divider_status_allocated)
+		d.update_obj()
+
+	def assign_bouncer_droplet(self, bouncer):
+		droplets = set(self.store.get_all_droplets())
+		d = random.sample(droplets, 1)[0]
+		bouncer.set_droplet(d)
+
+	def assign_divider_droplet(self, divider):
+		droplets = set(self.store.get_all_droplets())
+		d = random.sample(droplets, 1)[0]
+		divider.set_droplet(d)
+
 
 	def on_delete(self, body, spec, **kwargs):
 		name = kwargs['name']
 		logger.info("*delete_droplet {}".format(name))
 		self.ds.delete(name)
 
-	def on_update(self, body, spec, **kwargs):
-		name = kwargs['name']
-		mac = spec['mac']
-		ip = spec['ip']
-		logger.info("*update_droplet {}, {}, {}".format(name, ip, mac))
-		d = Droplet(name, ip, mac)
-		self.ds.update(name, d)
 

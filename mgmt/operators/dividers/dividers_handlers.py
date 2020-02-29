@@ -15,17 +15,17 @@ async def divider_opr_on_startup(logger, **kwargs):
     global divider_operator
     divider_operator.on_startup(logger, **kwargs)
 
-@kopf.on.resume(group, version, RESOURCES.vpcs, when=LAMBDAS.vpc_status_allocated)
-@kopf.on.update(group, version, RESOURCES.vpcs, when=LAMBDAS.vpc_status_allocated)
-@kopf.on.create(group, version, RESOURCES.vpcs, when=LAMBDAS.vpc_status_allocated)
-def divider_opr_on_vpc_allocated(body, spec, **kwargs):
-    global divider_operator
-    divider_operator.on_vpc_allocated(body, spec, **kwargs)
 
-
-@kopf.on.resume(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_init)
-@kopf.on.update(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_init)
-@kopf.on.create(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_init)
-def divider_opr_on_divider_init(body, spec, **kwargs):
+@kopf.on.resume(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_provisioned)
+@kopf.on.update(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_provisioned)
+@kopf.on.create(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_provisioned)
+def divider_opr_on_divider_provisioned(body, spec, **kwargs):
     global divider_operator
-    divider_operator.on_divider_init(body, spec, **kwargs)
+    divider_operator.on_divider_provisioned(body, spec, **kwargs)
+
+@kopf.on.resume(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_endpoint_ready)
+@kopf.on.update(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_endpoint_ready)
+@kopf.on.create(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_endpoint_ready)
+def divider_opr_on_bouncer_endpoint_ready(body, spec, **kwargs):
+    global divider_operator
+    divider_operator.on_bouncer_endpoint_ready(body, spec, **kwargs)
