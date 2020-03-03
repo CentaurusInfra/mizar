@@ -84,15 +84,16 @@ def kube_update_obj(obj):
 		namespace="default",
 		plural=obj.get_plural(),
 		name=obj.get_name())
+
 	body['spec'] = obj.get_obj_spec()
+
 	obj.obj_api.patch_namespaced_custom_object(
 		group="mizar.com",
 		version="v1",
 		namespace="default",
 		plural=obj.get_plural(),
 		name=obj.name,
-		body=body,
-	)
+		body=body)
 	obj.store_update_obj()
 
 def kube_delete_obj(obj):
@@ -131,3 +132,6 @@ def kube_list_obj(obj_api, plurals, list_callback):
 		name = v['metadata']['name']
 		spec = v['spec']
 		list_callback(name, spec, plurals)
+
+def get_spec_val(key, spec, default=""):
+	return default if key not in spec else spec[key]

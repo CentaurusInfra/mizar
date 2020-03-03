@@ -1,5 +1,6 @@
 import logging
 import random
+import uuid
 from common.constants import *
 from common.common import *
 from common.cidr import Cidr
@@ -35,11 +36,11 @@ class Vpc(object):
 		return self.obj
 
 	def set_obj_spec(self, spec):
-		self.status = spec['status']
-		self.vni = spec['vni']
-		self.n_dividers = int(spec['dividers'])
-		ip = spec['ip']
-		prefix = spec['prefix']
+		self.status = get_spec_val('status', spec)
+		self.vni = get_spec_val('vni', spec)
+		self.n_dividers = int(get_spec_val('dividers', spec, OBJ_DEFAULTS.default_n_dividers))
+		ip = get_spec_val('ip', spec, OBJ_DEFAULTS.default_net_ip)
+		prefix = get_spec_val('prefix', spec, OBJ_DEFAULTS.default_net_prefix)
 		self.cidr = Cidr(prefix, ip)
 
 	# K8s APIs
@@ -80,64 +81,13 @@ class Vpc(object):
 	def set_status(self, status):
 		self.status = status
 
-	def update_divider(self, droplet):
-		logger.info("Update dividers {} for vpc".format(droplet.name, self.name))
-		if droplet.name in self.dividers:
-			return True
-
-		self.dividers[droplet.name] = droplet
-		divider_name = self.name +'-divider-' + droplet.name
-
-		divider_spec = {
-			"vpc": self.name,
-			"mac": droplet.mac,
-			"ip": droplet.ip,
-			"status": OBJ_STATUS.divider_status_init,
-			"droplet": droplet.name
-		}
-
-		div = Divider(divider_name, self.obj_api, self.store, divider_spec)
-		div.create_obj()
-		self.n_allocated_dividers += 1
+	def create_divider(self):
+		logger.info("Create divider for vpc {}".format(self.name))
+		u = str(uuid.uuid4())
+		divider_name = self.name +'-d-' + u
+		d = Divider(divider_name, self.obj_api, None)
+		d.set_vpc(self.name)
+		d.create_obj()
 
 	def delete_divider(self, droplet):
-		pass
-##
-	def get_network(self, name):
-		if name in self.networks:
-			return self.networks[name]
-		return None
-
-	def update_network(self, name, network):
-		self.networks[name]=network
-		logger.info("networks {}".format(self.networks.keys()))
-
-	def delete_network(self, network):
-		pass
-
-	def update_bouncer(self, network, bouncer):
-		pass
-
-	def delete_bouncer(self, network, bouncer):
-		pass
-
-	def update_simple_endpoint(self, ep):
-		logger.info("update_simple_endpoint {} of vpc {}".format(ep.name, self.name))
-		net_obj = self.get_network(ep.net)
-		net_obj.update_simple_endpoint(ep)
-		pass
-
-	def delete_simple_endpoint(self):
-		pass
-
-	def update_host_endpoint(self):
-		pass
-
-	def delete_host_endpoint(self):
-		pass
-
-	def update_scaled_endpoint(self):
-		pass
-
-	def delete_scaled_endpoint(self):
 		pass

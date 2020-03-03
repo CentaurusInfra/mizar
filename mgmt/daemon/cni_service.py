@@ -75,8 +75,8 @@ class CniService(Service):
 		if CniService.droplet_configured:
 			return
 		name, spec = get_host_info()
-		droplet = Droplet(name, obj_api, CniService.store, spec)
-		droplet.create_obj()
+		CniService.droplet = Droplet(name, obj_api, CniService.store, spec)
+		CniService.droplet.create_obj()
 		CniService.droplet_configured = True
 		return name
 
@@ -171,14 +171,15 @@ class CniService(Service):
 		ep.set_type(OBJ_DEFAULTS.ep_type_simple)
 		ep.set_status(OBJ_STATUS.ep_status_init)
 		ep.set_veth_name(params.interface)
-		ep.set_droplet(CniService.droplet)
+		ep.set_droplet(CniService.droplet.name)
 		ep.set_container_id(params.container_id)
 		self.allocate_local_id(ep)
 
 		ep.set_veth_name("eth-" + ep.local_id)
 		ep.set_veth_peer("veth-" + ep.local_id)
 		ep.set_netns("mizar-" + ep.local_id)
-
+		ep.set_droplet_ip(CniService.droplet.ip)
+		ep.set_droplet_mac(CniService.droplet.mac)
 
 		iproute_ns = self.create_mizarnetns(params, ep)
 		self.prepare_veth_pair(ep, iproute_ns, params)
@@ -207,7 +208,7 @@ class CniService(Service):
 		status = event['object']['spec']['status']
 		if name != ep.name:
 			return False
-		if status != OBJ_STATUS.ep_status_ready:
+		if status != OBJ_STATUS.ep_status_provisioned:
 			return False
 		spec = event['object']['spec']
 		# Now get the gw, ip, and prefix

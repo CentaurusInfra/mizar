@@ -1,9 +1,12 @@
+import logging
+import random
 from common.constants import *
 from common.common import *
 from kubernetes import client, config
 from obj.droplet import Droplet
+from obj.bouncer import Bouncer
+from obj.divider import Divider
 from store.operator_store import OprStore
-import logging
 
 logger = logging.getLogger()
 
@@ -48,15 +51,15 @@ class DropletOperator(object):
 		logger.info("Droplet place bouncer {} with spec: {}".format(name, spec))
 		b = Bouncer(name, self.obj_api, None, spec)
 		self.assign_bouncer_droplet(b)
-		b.set_status(OBJ_STATUS.bouncer_status_allocated)
+		b.set_status(OBJ_STATUS.bouncer_status_placed)
 		b.update_obj()
 
-	def on_driver_init(self, body, spec, **kwargs):
+	def on_divider_init(self, body, spec, **kwargs):
 		name = kwargs['name']
 		logger.info("Droplet place divider {} with spec: {}".format(name, spec))
 		d = Divider(name, self.obj_api, None, spec)
 		self.assign_divider_droplet(d)
-		d.set_status(OBJ_STATUS.divider_status_allocated)
+		d.set_status(OBJ_STATUS.divider_status_placed)
 		d.update_obj()
 
 	def assign_bouncer_droplet(self, bouncer):

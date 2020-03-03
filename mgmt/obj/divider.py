@@ -13,9 +13,14 @@ class Divider(object):
 		self.ip = ""
 		self.mac = ""
 		self.droplet = ""
+		self.bouncers = set()
 		self.status = OBJ_STATUS.divider_status_init
 		if spec is not None:
 			self.set_obj_spec(spec)
+
+	@property
+	def rpc(self):
+		return TrnRpc(self.ip, self.mac)
 
 	def get_obj_spec(self):
 		self.obj = {
@@ -29,11 +34,11 @@ class Divider(object):
 		return self.obj
 
 	def set_obj_spec(self, spec):
-		self.status = spec['status']
-		self.vpc = spec['vpc']
-		self.ip = spec['ip']
-		self.mac = spec['mac']
-		self.droplet = spec['droplet']
+		self.status = get_spec_val('status', spec)
+		self.vpc = get_spec_val('vpc', spec)
+		self.ip = get_spec_val('ip', spec)
+		self.mac = get_spec_val('mac', spec)
+		self.droplet = get_spec_val('droplet', spec)
 
 	# K8s APIs
 	def get_name(self):
@@ -66,3 +71,17 @@ class Divider(object):
 
 	def watch_obj(self, watch_callback):
 		return kube_watch_obj(self, watch_callback)
+
+	def set_status(self, status):
+		self.status = status
+
+	def set_vpc(self, vpc):
+		self.vpc = vpc
+
+	def set_droplet(self, droplet):
+		self.droplet = droplet.name
+		self.ip = droplet.ip
+		self.mac = droplet.mac
+
+	def update_bouncers(self, bouncers):
+		self.bouncers.union(bouncers)

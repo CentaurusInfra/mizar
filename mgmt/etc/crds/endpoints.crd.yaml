@@ -82,3 +82,13 @@ spec:
       priority: 0
       JSONPath: .spec.netns
       description: The netns of the endpoint
+    - name: HostIp
+      type: string
+      priority: 0
+      JSONPath: .spec.hostip
+      description: The Host IP of the endpoint
+    - name: HostMac
+      type: string
+      priority: 0
+      JSONPath: .spec.hostmac
+      description: The Host MAC of the endpoint

@@ -1,11 +1,13 @@
 import random
+import logging
 from kubernetes import client, config
 from obj.bouncer import Bouncer
+from obj.divider import Divider
+from obj.endpoint import Endpoint
 from common.constants import *
 from common.common import *
 from obj.net import Net
 from store.operator_store import OprStore
-import logging
 
 logger = logging.getLogger()
 
@@ -29,29 +31,29 @@ class BouncerOperator(object):
 		def list_bouncers_obj_fn(name, spec, plurals):
 			logger.info("Bootstrapped Bouncer {}".format(name))
 			b = Bouncer(name, self.obj_api, self.store, spec)
-			self.store.update_bouncer(d)
+			self.store.update_bouncer(b)
 
 		kube_list_obj(self.obj_api, RESOURCES.droplets, list_bouncers_obj_fn)
 
-	def on_bouncer_provisioned(body, spec, **kwargs):
+	def on_bouncer_provisioned(self, body, spec, **kwargs):
 		name = kwargs['name']
 		logger.info("on_bouncer_provisioned {}".format(spec))
 		b = Bouncer(name, self.obj_api, self.store, spec)
-		self.store.update_bouncer(d)
+		self.store.update_bouncer(b)
 
-	def on_divider_placed(body, spec, **kwargs):
+	def on_divider_placed(self, body, spec, **kwargs):
 		name = kwargs['name']
 		logger.info("on_divider_placed {}".format(spec))
 		# divider.bouncers = net.get_all_bouncers (bouncers_opr)
 		div = Divider(name, self.obj_api, None, spec)
 		bouncers = self.store.get_bouncers_of_vpc(div.vpc)
-		div.add_bouncers(bouncers)
+		div.update_bouncers(set(bouncers))
 		for b in bouncers:
 			b.add_divider(div)
 		div.set_status(OBJ_STATUS.divider_status_provisioned)
 		div.update_obj()
 
-	def on_endpoints_allocated(body, spec, **kwargs):
+	def on_endpoints_allocated(self, body, spec, **kwargs):
 		name = kwargs['name']
 		logger.info("on_endpoints_allocated {}".format(spec))
 		ep = Endpoint(name, self.obj_api, None, spec)

@@ -6,7 +6,7 @@ from operators.endpoints.endpoints_operator import EndpointOperator
 
 LOCK: asyncio.Lock
 logger = logging.getLogger()
-endpoint_operators = EndpointOperator()
+endpoints_operator = EndpointOperator()
 
 @kopf.on.startup()
 async def ep_opr_on_startup(logger, **kwargs):
@@ -19,32 +19,32 @@ async def ep_opr_on_startup(logger, **kwargs):
 def ep_opr_on_endpoint_delete(body, **kwargs):
     logger.info("ep_opr_on_endpoint_delete")
     global endpoints_operator
-    endpoint_operators.on_endpoint_delete(body, **kwargs)
+    endpoints_operator.on_endpoint_delete(body, **kwargs)
 
 @kopf.on.resume(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_provisioned)
 @kopf.on.update(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_provisioned)
 @kopf.on.create(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_provisioned)
 def ep_opr_on_endpoint_provisioned(body, spec, **kwargs):
     global endpoints_operator
-    endpoint_operators.on_endpoint_provisioned(body, spec, **kwargs)
+    endpoints_operator.on_endpoint_provisioned(body, spec, **kwargs)
 
 @kopf.on.resume(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_bouncer_ready)
 @kopf.on.update(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_bouncer_ready)
 @kopf.on.create(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_bouncer_ready)
 def ep_opr_on_endpoint_bouncer_ready(body, spec, **kwargs):
     global endpoints_operator
-    endpoint_operators.on_endpoint_bouncer_ready(body, spec, **kwargs)
+    endpoints_operator.on_endpoint_bouncer_ready(body, spec, **kwargs)
 
 @kopf.on.resume(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_placed)
 @kopf.on.update(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_placed)
 @kopf.on.create(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_placed)
 def ep_opr_on_bouncer_placed(body, spec, **kwargs):
     global endpoints_operator
-    endpoint_operators.on_bouncer_placed(body, spec, **kwargs)
+    endpoints_operator.on_bouncer_placed(body, spec, **kwargs)
 
 @kopf.on.resume(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_provisioned)
 @kopf.on.update(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_provisioned)
 @kopf.on.create(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_provisioned)
 def ep_opr_on_bouncer_provisioned(body, spec, **kwargs):
     global endpoints_operator
-    endpoint_operators.on_bouncer_provisioned(body, spec, **kwargs)
+    endpoints_operator.on_bouncer_provisioned(body, spec, **kwargs)

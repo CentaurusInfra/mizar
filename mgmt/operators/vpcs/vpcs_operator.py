@@ -7,6 +7,7 @@ from common.common import *
 from common.cidr import Cidr
 from obj.vpc import Vpc
 from obj.net import Net
+from obj.divider import Divider
 from store.operator_store import OprStore
 logger = logging.getLogger()
 
@@ -29,6 +30,8 @@ class VpcOperator(object):
 		def list_vpc_obj_fn(name, spec, plurals):
 			logger.info("Bootstrapped {}".format(name))
 			v = Vpc(name, self.obj_api, self.store, spec)
+			if v.status == OBJ_STATUS.vpc_status_init:
+				return self._on_vpc_init(name, spec)
 			self.store.update_vpc(v)
 
 		kube_list_obj(self.obj_api, RESOURCES.vpcs, list_vpc_obj_fn)
@@ -43,10 +46,14 @@ class VpcOperator(object):
 
 	def on_vpc_init(self, body, spec, **kwargs):
 		name = kwargs['name']
+		self._on_vpc_init(name, spec)
+
+	def _on_vpc_init(self, name, spec):
 		logger.info("on_vpc_init {} with spec: {}".format(name, spec))
 		v = Vpc(name, self.obj_api, self.store, spec)
 		v.set_vni(self.allocate_vni(v))
-		for i in range(v.n_divider):
+		for i in range(v.n_dividers):
+			logger.info("Create divicer {} for vpc: {}".format(i, name))
 			v.create_divider()
 		v.set_status(OBJ_STATUS.vpc_status_allocated)
 		v.update_obj()

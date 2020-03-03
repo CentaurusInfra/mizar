@@ -27,7 +27,6 @@ def vpc_opr_on_vpc_init(body, spec, **kwargs):
     global vpc_operator
     vpc_operator.on_vpc_init(body, spec, **kwargs)
 
-
 @kopf.on.resume(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_provisioned)
 @kopf.on.update(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_provisioned)
 @kopf.on.create(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_provisioned)

@@ -15,7 +15,6 @@ async def divider_opr_on_startup(logger, **kwargs):
     global divider_operator
     divider_operator.on_startup(logger, **kwargs)
 
-
 @kopf.on.resume(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_provisioned)
 @kopf.on.update(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_provisioned)
 @kopf.on.create(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_provisioned)

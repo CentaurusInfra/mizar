@@ -32,9 +32,9 @@ def divider_opr_on_divider_placed(body, spec, **kwargs):
     global bouncer_operator
     bouncer_operator.on_divider_placed(body, spec, **kwargs)
 
-@kopf.on.resume(group, version, RESOURCES.endpoints, when=LAMBDAS.endpoint_status_allocated)
-@kopf.on.update(group, version, RESOURCES.endpoints, when=LAMBDAS.endpoint_status_allocated)
-@kopf.on.create(group, version, RESOURCES.endpoints, when=LAMBDAS.endpoint_status_allocated)
+@kopf.on.resume(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_allocated)
+@kopf.on.update(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_allocated)
+@kopf.on.create(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_allocated)
 def divider_opr_on_endpoints_allocated(body, spec, **kwargs):
     global bouncer_operator
     bouncer_operator.on_endpoints_allocated(body, spec, **kwargs)

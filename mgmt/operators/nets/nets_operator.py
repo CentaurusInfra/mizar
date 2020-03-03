@@ -5,6 +5,8 @@ from common.cidr import Cidr
 from common.constants import *
 from common.common import *
 from obj.net import Net
+from obj.endpoint import Endpoint
+from obj.bouncer import Bouncer
 from store.operator_store import OprStore
 
 logger = logging.getLogger()
@@ -44,8 +46,6 @@ class NetOperator(object):
 		name = kwargs['name']
 		logger.info("Net on_net_init {}".format(spec))
 		n = Net(name, self.obj_api, self.store, spec)
-		v = self.store.get_vpc(n.vpc)
-		n.set_vni(v.vni)
 		for i in range(n.n_bouncers):
 			n.create_bouncer()
 		n.set_status(OBJ_STATUS.net_status_allocated)
@@ -69,7 +69,11 @@ class NetOperator(object):
 		ep = Endpoint(name, self.obj_api, None, spec)
 		n = self.store.get_net(ep.net)
 		ip = n.allocate_ip()
+		gw = n.get_gw_ip()
+		prefix = n.get_prefixlen()
 		ep.set_ip(ip)
+		ep.set_gw(gw)
+		ep.set_prefix(prefix)
 		n.mark_ip_as_allocated(ip)
-		ep.set_status(LAMBDAS.endpoint_status_allocated)
+		ep.set_status(OBJ_STATUS.ep_status_allocated)
 		ep.update_obj()

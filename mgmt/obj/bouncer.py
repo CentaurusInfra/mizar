@@ -15,9 +15,14 @@ class Bouncer(object):
 		self.ip = ""
 		self.mac = ""
 		self.eps = set()
+		self.dividers = set()
 		self.status = OBJ_STATUS.bouncer_status_init
 		if spec is not None:
 			self.set_obj_spec(spec)
+
+	@property
+	def rpc(self):
+		return TrnRpc(self.ip, self.mac)
 
 	def get_obj_spec(self):
 		self.obj = {
@@ -32,12 +37,12 @@ class Bouncer(object):
 		return self.obj
 
 	def set_obj_spec(self, spec):
-		self.status = spec['status']
-		self.vpc = spec['vpc']
-		self.net = spec['net']
-		self.ip = spec['ip']
-		self.mac = spec['mac']
-		self.droplet = spec['droplet']
+		self.status = get_spec_val('status', spec)
+		self.vpc = get_spec_val('vpc', spec)
+		self.net = get_spec_val('net', spec)
+		self.ip = get_spec_val('ip', spec)
+		self.mac = get_spec_val('mac', spec)
+		self.droplet = get_spec_val('droplet', spec)
 
 	# K8s APIs
 	def get_name(self):
@@ -71,8 +76,14 @@ class Bouncer(object):
 	def watch_obj(self, watch_callback):
 		return kube_watch_obj(self, watch_callback)
 
+	def set_status(self, status):
+		self.status = status
+
 	def update_eps(self, eps):
 		self.eps.union(eps)
+
+	def update_dividers(self, dividers):
+		self.dividers.union(dividers)
 
 	def set_vpc(self, vpc):
 		self.vpc = vpc

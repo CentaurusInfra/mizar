@@ -3,7 +3,8 @@ import uuid
 from kubernetes import client, config
 from common.constants import *
 from common.common import *
-from obj.vpc import Vpc
+from obj.bouncer import Bouncer
+from obj.divider import Divider
 from store.operator_store import OprStore
 import logging
 
@@ -33,19 +34,19 @@ class DividerOperator(object):
 
 		kube_list_obj(self.obj_api, RESOURCES.droplets, list_dividers_obj_fn)
 
-	def on_divider_provisioned(body, spec, **kwargs):
+	def on_divider_provisioned(self, body, spec, **kwargs):
 		name = kwargs['name']
 		logger.info("on_divider_provisioned {}".format(spec))
 		d = Divider(name, self.obj_api, self.store, spec)
 		self.store.update_divider(d)
 
-	def on_bouncer_endpoint_ready(body, spec, **kwargs):
+	def on_bouncer_endpoint_ready(self, body, spec, **kwargs):
 		name = kwargs['name']
 		logger.info("on_bouncer_endpoint_ready {}".format(spec))
 		b = Bouncer(name, self.obj_api, None, spec)
 		dividers = self.store.get_dividers_of_vpc(b.vpc)
-		b.add_dividers(dividers)
+		b.update_dividers(dividers)
 		for d in dividers:
-			d.add_bouncer(b)
+			d.update_bouncers(set([b]))
 		b.set_status(OBJ_STATUS.bouncer_status_provisioned)
 		b.update_obj()

@@ -38,18 +38,18 @@ class OBJ_STATUS:
 	droplet_status_provisioned = 'Provisioned'
 
 	bouncer_status_init = 'Init'
-	bouncer_status_allocated = 'alloc'
-	bouncer_status_ready = 'ready'
+	bouncer_status_allocated = 'Alloc'
+	bouncer_status_ready = 'Ready'
 	bouncer_status_provisioned = 'Provisioned'
 	bouncer_status_placed = 'Placed'
 	bouncer_status_endpoint_ready = 'EndpointReady'
 	bouncer_status_divider_ready = 'DividerReady'
 
-	divider_status_init = 'init'
-	divider_status_allocated = 'alloc'
-	divider_status_provisioned = 'ready'
-	divider_status_provisioned = 'provisioned'
-	divider_status_placed = 'placed'
+	divider_status_init = 'Init'
+	divider_status_allocated = 'Alloc'
+	divider_status_provisioned = 'Ready'
+	divider_status_provisioned = 'Provisioned'
+	divider_status_placed = 'Placed'
 
 class OBJ_DEFAULTS:
 	default_ep_vpc = 'vpc0'
@@ -74,8 +74,7 @@ class RESOURCES:
 
 class LAMBDAS:
 	ep_status_init = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.ep_status_init
-	ep_status_allocated = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.ep_status_init
-	ep_status_ready = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.ep_status_init
+	ep_status_allocated = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.ep_status_allocated
 	ep_status_provisioned = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.ep_status_provisioned
 	ep_status_bouncer_ready = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.ep_status_bouncer_ready
 
@@ -99,9 +98,9 @@ class LAMBDAS:
 	bouncer_status_ready = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.bouncer_status_ready
 	bouncer_status_provisioned = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.bouncer_status_provisioned
 	bouncer_status_placed = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.bouncer_status_placed
+	bouncer_status_endpoint_ready = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.bouncer_status_endpoint_ready
 
 	divider_status_init = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.divider_status_init
 	divider_status_allocated = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.divider_status_allocated
-	divider_status_ready = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.divider_status_provisioned
 	divider_status_provisioned = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.divider_status_provisioned
 	divider_status_placed = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.divider_status_placed

@@ -28,7 +28,7 @@ class Cidr:
 		while ip in self.allocated:
 			ip = heapq.heappop(self.hosts)
 		self.allocated.add(ip)
-		return ip
+		return str(ip)
 
 	def mark_ip_as_allocated(self, ip):
 		self.allocated.add(ipaddress.IPv4Address(ip))

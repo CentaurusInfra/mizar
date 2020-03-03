@@ -20,6 +20,8 @@ class Endpoint:
 		self.mac = ""
 		self.type = ""
 		self.droplet = ""
+		self.droplet_ip = ""
+		self.droplet_mac = ""
 		self.veth_peer = ""
 		self.veth_name = ""
 		self.netns = ""
@@ -51,24 +53,28 @@ class Endpoint:
 				"itf": self.veth_name,
 				"veth": self.veth_peer,
 				"netns": self.netns,
+				"hostip": self.droplet_ip,
+				"hostmac": self.droplet_mac
 		}
 
 		return self.obj
 
 	def set_obj_spec(self, spec):
-		self.type = spec['type']
-		self.status = spec['status']
-		self.vpc = spec['vpc']
-		self.net = spec['net']
-		self.ip = spec['ip']
-		self.gw = spec['gw']
-		self.mac = spec['mac']
-		self.vni = spec['vni']
-		self.droplet = spec['droplet']
-		self.prefix = spec['prefix']
-		self.veth_name = spec['itf']
-		self.veth_peer = spec['veth']
-		self.netns = spec['netns']
+		self.type = get_spec_val('type', spec)
+		self.status = get_spec_val('status', spec)
+		self.vpc = get_spec_val('vpc', spec)
+		self.net = get_spec_val('net', spec)
+		self.ip = get_spec_val('ip', spec)
+		self.gw = get_spec_val('gw', spec)
+		self.mac = get_spec_val('mac', spec)
+		self.vni = get_spec_val('vni', spec)
+		self.droplet = get_spec_val('droplet', spec)
+		self.prefix = get_spec_val('prefix', spec)
+		self.veth_name = get_spec_val('itf', spec)
+		self.veth_peer = get_spec_val('veth', spec)
+		self.netns = get_spec_val('netns', spec)
+		self.droplet_ip = get_spec_val('hostip', spec)
+		self.droplet_mac = get_spec_val('hostip', spec)
 
 	def get_name(self):
 		return self.name
@@ -133,6 +139,12 @@ class Endpoint:
 	def set_droplet(self, droplet):
 		self.droplet = droplet
 
+	def set_droplet_ip(self, droplet_ip):
+		self.droplet_ip = droplet_ip
+
+	def set_droplet_mac(self, droplet_mac):
+		self.droplet_mac = droplet_mac
+
 	def set_droplet_obj(self, droplet_obj):
 		self.droplet_obj = droplet_obj
 
@@ -162,6 +174,9 @@ class Endpoint:
 
 	def add_bouncer(self, b):
 		self.bouncers.add(b)
+
+	def update_md(self):
+		pass
 
 ############
 	def update_object(self):

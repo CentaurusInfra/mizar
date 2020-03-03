@@ -1,7 +1,9 @@
 import logging
 from kubernetes import client, config
 from obj.endpoint import Endpoint
+from obj.bouncer import Bouncer
 from common.constants import *
+from common.common import *
 from store.operator_store import OprStore
 
 logger = logging.getLogger()
@@ -44,7 +46,8 @@ class EndpointOperator(object):
 		logger.info("on_endpoint_bouncer_ready {}".format(spec))
 		ep = Endpoint(name, self.obj_api, self.store, spec)
 		ep.update_md()
-		ep.update()
+		ep.set_status(OBJ_STATUS.ep_status_provisioned)
+		ep.update_obj()
 
 	def on_bouncer_placed(self, body, spec, **kwargs):
 		name = kwargs['name']
@@ -52,6 +55,8 @@ class EndpointOperator(object):
 		b = Bouncer(name, self.obj_api, None, spec)
 		eps = self.store.get_eps_in_net(b.net)
 		b.update_eps(eps)
+		b.set_status(OBJ_STATUS.bouncer_status_endpoint_ready)
+		b.update_obj()
 
 	def on_bouncer_provisioned(self, body, spec, **kwargs):
 		name = kwargs['name']

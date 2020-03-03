@@ -37,9 +37,9 @@ def net_opr_on_bouncer_provisioned(body, spec, **kwargs):
     global net_operator
     net_operator.on_bouncer_provisioned(body, spec, **kwargs)
 
-@kopf.on.resume(group, version, RESOURCES.endpoints, when=LAMBDAS.endpoint_status_init)
-@kopf.on.update(group, version, RESOURCES.endpoints, when=LAMBDAS.endpoint_status_init)
-@kopf.on.create(group, version, RESOURCES.endpoints, when=LAMBDAS.endpoint_status_init)
+@kopf.on.resume(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_init)
+@kopf.on.update(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_init)
+@kopf.on.create(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_init)
 def net_opr_on_endpoint_init(body, spec, **kwargs):
     global net_operator
     net_operator.on_endpoint_init(body, spec, **kwargs)

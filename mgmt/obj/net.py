@@ -38,12 +38,12 @@ class Net(object):
 		return self.obj
 
 	def set_obj_spec(self, spec):
-		self.status = spec['status']
-		self.vpc = spec['vpc']
-		self.vni = spec['vni']
-		self.n_bouncers = int(spec['bouncers'])
-		ip = spec['ip']
-		prefix = spec['prefix']
+		self.status = get_spec_val('type', spec)
+		self.vpc = get_spec_val('vpc', spec)
+		self.vni = get_spec_val('vni', spec)
+		self.n_bouncers = int(get_spec_val('bouncers', spec, OBJ_DEFAULTS.default_n_bouncers))
+		ip = get_spec_val('ip', spec, OBJ_DEFAULTS.default_net_ip)
+		prefix = get_spec_val('prefix', spec, OBJ_DEFAULTS.default_net_prefix)
 		self.cidr = Cidr(prefix, ip)
 		self.gw = self.cidr.gw
 
@@ -86,7 +86,7 @@ class Net(object):
 		self.status = status
 
 	def get_gw_ip(self):
-		return self.cidr.get_ip(1)
+		return str(self.cidr.get_ip(1))
 
 	def get_tunnel_id(self):
 		return str(self.vni)
@@ -104,8 +104,9 @@ class Net(object):
 		logger.info("Create bouncer for net {}".format(self.name))
 		u = str(uuid.uuid4())
 		bouncer_name = self.name +'-b-' + u
-		b = Bouncer(bouncer_name, self.obj_api, self.store)
-		self.bouncers[bouncer_name] = b
+		b = Bouncer(bouncer_name, self.obj_api, None)
+		b.set_vpc(self.vpc)
+		b.set_net(self.name)
 		b.create_obj()
 
 	def allocate_ip(self):
