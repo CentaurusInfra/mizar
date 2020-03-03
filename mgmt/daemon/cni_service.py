@@ -33,26 +33,6 @@ def get_host_info():
 	r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
 	name = r.stdout.read().decode().strip()
 
-
-	cmd = "ip link set dev eth0 xdpgeneric off"
-
-	r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-	output = r.stdout.read().decode().strip()
-	logging.info("Removed existing XDP program: {}".format(output))
-
-	cmd = "/trn_bin/transitd &"
-	r = subprocess.Popen(cmd, shell=True)
-	logging.info("Running transitd")
-
-	config = '{"xdp_path": "/trn_xdp/trn_transit_xdp_ebpf_debug.o", "pcapfile": "/bpffs/transit_xdp.pcap"}'
-	cmd = (f''' /trn_bin/transit -s {ip} load-transit-xdp -i eth0 -j '{config}' ''')
-
-	r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-	output = r.stdout.read().decode().strip()
-	logging.info("Running load-transit-xdp: {}".format(output))
-
-	logging.info("Droplet {} is ready".format(name))
-
 	spec = {
 		'ip': ip,
 		'mac': mac,

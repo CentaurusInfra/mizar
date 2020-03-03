@@ -1,4 +1,5 @@
 import logging
+from common.rpc import TrnRpc
 from common.constants import *
 from common.common import *
 
@@ -80,10 +81,16 @@ class Bouncer(object):
 		self.status = status
 
 	def update_eps(self, eps):
-		self.eps.union(eps)
+		self.eps = self.eps.union(eps)
+		for e in eps:
+			self._update_ep(e)
+
+	def _update_ep(self, ep):
+		self.rpc.update_ep(ep)
+		self.rpc.update_substrate_ep(ep.droplet_ip, ep.droplet_mac)
 
 	def update_dividers(self, dividers):
-		self.dividers.union(dividers)
+		self.dividers = self.dividers.union(dividers)
 
 	def set_vpc(self, vpc):
 		self.vpc = vpc

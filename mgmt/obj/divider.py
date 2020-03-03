@@ -1,4 +1,5 @@
 import logging
+from common.rpc import TrnRpc
 from common.constants import *
 from common.common import *
 
@@ -84,4 +85,4 @@ class Divider(object):
 		self.mac = droplet.mac
 
 	def update_bouncers(self, bouncers):
-		self.bouncers.union(bouncers)
+		self.bouncers = self.bouncers.union(bouncers)

@@ -28,13 +28,6 @@ def ep_opr_on_endpoint_provisioned(body, spec, **kwargs):
     global endpoints_operator
     endpoints_operator.on_endpoint_provisioned(body, spec, **kwargs)
 
-@kopf.on.resume(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_bouncer_ready)
-@kopf.on.update(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_bouncer_ready)
-@kopf.on.create(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_bouncer_ready)
-def ep_opr_on_endpoint_bouncer_ready(body, spec, **kwargs):
-    global endpoints_operator
-    endpoints_operator.on_endpoint_bouncer_ready(body, spec, **kwargs)
-
 @kopf.on.resume(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_placed)
 @kopf.on.update(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_placed)
 @kopf.on.create(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_placed)

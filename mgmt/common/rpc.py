@@ -1,10 +1,14 @@
+import logging
 import json
+from common.common import run_cmd
+
+logger = logging.getLogger()
 
 class TrnRpc:
 	def __init__(self, ip, mac, itf='eth0', benchmark = False):
-		self.ip = droplet.ip
-		self.mac = droplet.mac
-		self.itf = droplet.itf
+		self.ip = ip
+		self.mac = mac
+		self.phy_itf = itf
 
 		# transitd cli commands
 		self.trn_cli = f'''/trn_bin/transit -s {self.ip} '''
@@ -37,12 +41,12 @@ class TrnRpc:
 			self.xdp_path = "/trn_xdp/trn_transit_xdp_ebpf_debug.o"
 			self.agent_xdp_path = "/trn_xdp/trn_agent_xdp_ebpf_debug.o"
 
-	def get_substrate_ep_json(self, droplet):
+	def get_substrate_ep_json(self, ip, mac):
 		jsonconf = {
 			"tunnel_id": "0",
-			"ip": droplet.ip,
+			"ip": ip,
 			"eptype": "0",
-			"mac": droplet.mac,
+			"mac": mac,
 			"veth": "",
 			"remote_ips": [""],
 			"hosted_iface": ""
@@ -50,26 +54,26 @@ class TrnRpc:
 		jsonconf = json.dumps(jsonconf)
 		return jsonconf
 
-	def update_substrate_ep(self, droplet):
-		jsonconf = self.get_substrate_ep_json(droplet)
+	def update_substrate_ep(self, ip, mac):
+		jsonconf = self.get_substrate_ep_json(ip, mac)
 		cmd = f'''{self.trn_cli_update_ep} \'{jsonconf}\''''
 		logger.info("update_substrate_ep: {}".format(cmd))
 		returncode, text = run_cmd(cmd)
 		logger.info("returns {} {}".format(returncode, text))
 
-	def update_agent_substrate_ep(self, ep, droplet):
+	def update_agent_substrate_ep(self, ep, ip, mac):
 		itf = ep.get_veth_peer()
-		jsonconf = self.get_substrate_ep_json(droplet)
+		jsonconf = self.get_substrate_ep_json(ip, mac)
 		cmd = f'''{self.trn_cli_update_agent_ep} -i \'{itf}\' -j \'{jsonconf}\''''
 		logger.info("update_agent_substrate_ep: {}".format(cmd))
 		returncode, text = run_cmd(cmd)
 		logger.info("update_agent_substrate_ep returns {} {}".format(returncode, text))
 
-	def update_ep(self, ep, droplet):
+	def update_ep(self, ep):
 		peer = ""
-
+		droplet_ip = ep.get_droplet_ip()
 		# Only detail veth info if the droplet is also a host
-		if (droplet and self.ip == droplet.ip):
+		if (droplet_ip and self.ip == droplet_ip):
 			peer = ep.get_veth_peer()
 
 		jsonconf = {
@@ -93,7 +97,7 @@ class TrnRpc:
 		returncode, text = run_cmd(cmd)
 		logger.info("returns {} {}".format(returncode, text))
 
-	def update_agent_metadata(self, ep, net):
+	def update_agent_metadata(self, ep):
 		itf = ep.get_veth_peer()
 		jsonconf = {
 			"ep": {
@@ -103,18 +107,18 @@ class TrnRpc:
 				"mac": ep.get_mac(),
 				"veth": ep.get_veth_name(),
 				"remote_ips": ep.get_remote_ips(),
-				"hosted_iface": self.phy_itf
+				"hosted_iface": ep.droplet_eth
 			},
 			"net": {
-				"tunnel_id": net.get_tunnel_id(),
-				"nip": net.get_nip(),
-				"prefixlen": net.get_prefixlen(),
-				"switches_ips": net.get_bouncers_ips()
+				"tunnel_id": ep.get_tunnel_id(),
+				"nip": ep.get_nip(),
+				"prefixlen": ep.get_prefix(),
+				"switches_ips": ep.get_bouncers_ips()
 			},
 			"eth": {
-				"ip": self.ip,
-				"mac": self.mac,
-				"iface": self.phy_itf
+				"ip": ep.droplet_ip,
+				"mac": ep.droplet_mac,
+				"iface": ep.droplet_eth
 			}
 		}
 		jsonconf = json.dumps(jsonconf)

@@ -1,6 +1,7 @@
 import logging
 import random
 import uuid
+from common.rpc import TrnRpc
 from common.constants import *
 from common.common import *
 from common.cidr import Cidr

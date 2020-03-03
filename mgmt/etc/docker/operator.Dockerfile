@@ -7,5 +7,5 @@ RUN pip install ipaddress
 RUN pip install rpyc
 COPY mgmt/ /var/mizar/mgmt/
 COPY build/ /var/mizar/mgmt/build
-RUN ln -snf /mizar/operator/build/bin /trn_bin
+RUN ln -snf /var/mizar/mgmt/build/bin /trn_bin
 CMD kopf run --standalone /var/mizar/mgmt/operator.py

@@ -41,14 +41,6 @@ class EndpointOperator(object):
 		ep = Endpoint(name, self.obj_api, self.store, spec)
 		self.store.update_ep(ep)
 
-	def on_endpoint_bouncer_ready(self, body, spec, **kwargs):
-		name = kwargs['name']
-		logger.info("on_endpoint_bouncer_ready {}".format(spec))
-		ep = Endpoint(name, self.obj_api, self.store, spec)
-		ep.update_md()
-		ep.set_status(OBJ_STATUS.ep_status_provisioned)
-		ep.update_obj()
-
 	def on_bouncer_placed(self, body, spec, **kwargs):
 		name = kwargs['name']
 		logger.info("Endpoint on_bouncer_placed {}".format(spec))
@@ -64,4 +56,4 @@ class EndpointOperator(object):
 		b = Bouncer(name, self.obj_api, None, spec)
 		eps = self.store.get_eps_in_net(b.net)
 		for ep in eps:
-			ep.add_bouncer(b)
+			ep.update_bouncers(set([b]))

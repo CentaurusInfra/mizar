@@ -1,4 +1,6 @@
 import logging
+import ipaddress
+from common.rpc import TrnRpc
 from common.constants import *
 from common.common import *
 
@@ -22,6 +24,7 @@ class Endpoint:
 		self.droplet = ""
 		self.droplet_ip = ""
 		self.droplet_mac = ""
+		self.droplet_eth = 'eth0'
 		self.veth_peer = ""
 		self.veth_name = ""
 		self.netns = ""
@@ -35,8 +38,21 @@ class Endpoint:
 		if spec is not None:
 			self.set_obj_spec(spec)
 
-		# Misc obj
-		# self.droplet_obj = None
+	@property
+	def rpc(self):
+		return TrnRpc(self.droplet_ip, self.droplet_mac)
+
+	def get_nip(self):
+		ip = ipaddress.ip_interface(self.ip + '/' + self.prefix)
+		return str(ip.network.network_address)
+
+	def get_prefix(self):
+		return self.prefix
+
+	def get_bouncers_ips(self):
+		bouncers = [b.ip for b in self.bouncers]
+		logger.info("!!get_bouncers_ips: {}".format(self.bouncers))
+		return bouncers
 
 	def get_obj_spec(self):
 		self.obj = {
@@ -74,7 +90,7 @@ class Endpoint:
 		self.veth_peer = get_spec_val('veth', spec)
 		self.netns = get_spec_val('netns', spec)
 		self.droplet_ip = get_spec_val('hostip', spec)
-		self.droplet_mac = get_spec_val('hostip', spec)
+		self.droplet_mac = get_spec_val('hostmac', spec)
 
 	def get_name(self):
 		return self.name
@@ -172,32 +188,15 @@ class Endpoint:
 	def set_veth_peer_mac(self, veth_peer_mac):
 		self.veth_peer_mac = veth_peer_mac
 
-	def add_bouncer(self, b):
-		self.bouncers.add(b)
+	def update_bouncers(self, bouncers):
+		self.bouncers = self.bouncers.union(bouncers)
+		if self.status == OBJ_STATUS.ep_status_provisioned:
+			self.update_md()
 
 	def update_md(self):
-		pass
-
-############
-	def update_object(self):
-		body = self.obj_api.get_namespaced_custom_object(
-			group="mizar.com",
-			version="v1",
-			namespace="default",
-			plural="endpoints",
-			name=self.name)
-		body['spec'] = self.get_obj_spec()
-		logger.info("updating Endpont {}".format(self.name))
-		self.obj_api.patch_namespaced_custom_object(
-			group="mizar.com",
-			version="v1",
-			namespace="default",
-			plural="endpoints",
-			name=self.name,
-			body=body,
-		)
-		logger.info("updated endpint {}".format(self.name))
-
+		self.rpc.update_agent_metadata(self)
+		for b in self.bouncers:
+			self.rpc.update_agent_substrate_ep(self, b.ip, b.mac)
 
 	def get_veth_peer(self):
 		return self.veth_peer
@@ -212,13 +211,22 @@ class Endpoint:
 		return str(self.ip)
 
 	def get_eptype(self):
-		if self.type == ep_type_simple:
+		if self.type == OBJ_DEFAULTS.ep_type_simple:
 			return str(CONSTANTS.TRAN_SIMPLE_EP)
 
 	def get_mac(self):
 		return str(self.mac)
 
 	def get_remote_ips(self):
-		remote_ips = []
-		remote_ips = self.droplet_obj and [str(self.droplet_obj.ip)]
+		remote_ips = [self.droplet_ip]
 		return remote_ips
+
+	def get_remote_macs(self):
+		remote_macs = [self.droplet_mac]
+		return remote_macs
+
+	def get_droplet_ip(self):
+		return self.droplet_ip
+
+	def load_transit_agent(self):
+		self.rpc.load_transit_agent_xdp(self)

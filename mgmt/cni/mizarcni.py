@@ -10,7 +10,7 @@ logger = logging.getLogger()
 
 def add():
 	val, status = conn.root.add(params)
-	logger.info("server's add is {}".format(val))
+	logger.info("server's add is {} {}".format(val, status))
 	print(val)
 	exit(status)
 

@@ -1,5 +1,6 @@
 import uuid
 import logging
+from common.rpc import TrnRpc
 from common.constants import *
 from common.common import *
 from obj.bouncer import Bouncer

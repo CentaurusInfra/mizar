@@ -28,6 +28,30 @@ cert_file = Configuration._default.ssl_ca_cert
 obj_api = client.CustomObjectsApi()
 CniService.configure_droplet(obj_api)
 
+cmd = 'nsenter -t 1 -m -u -n -i ip addr show eth0 | grep "inet\\b" | awk \'{print $2}\' | cut -d/ -f1'
+r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+ip = r.stdout.read().decode().strip()
+
+cmd = "nsenter -t 1 -m -u -n -i ip link set dev eth0 xdpgeneric off"
+
+r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+output = r.stdout.read().decode().strip()
+logging.info("Removed existing XDP program: {}".format(output))
+
+cmd = "nsenter -t 1 -m -u -n -i /trn_bin/transitd &"
+r = subprocess.Popen(cmd, shell=True)
+logging.info("Running transitd")
+
+config = '{"xdp_path": "/trn_xdp/trn_transit_xdp_ebpf_debug.o", "pcapfile": "/bpffs/transit_xdp.pcap"}'
+cmd = (f'''nsenter -t 1 -m -u -n -i /trn_bin/transit -s {ip} load-transit-xdp -i eth0 -j '{config}' ''')
+
+r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+output = r.stdout.read().decode().strip()
+logging.info("Running load-transit-xdp: {}".format(output))
+
+logging.info("Droplet is ready!")
+
+
 with open(cert_file) as f:
 	CniService.cert = f.read()
 

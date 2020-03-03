@@ -78,23 +78,29 @@ def kube_create_obj(obj):
 
 
 def kube_update_obj(obj):
-	body = obj.obj_api.get_namespaced_custom_object(
-		group="mizar.com",
-		version="v1",
-		namespace="default",
-		plural=obj.get_plural(),
-		name=obj.get_name())
+	get_body = True
+	while get_body:
+		body = obj.obj_api.get_namespaced_custom_object(
+			group="mizar.com",
+			version="v1",
+			namespace="default",
+			plural=obj.get_plural(),
+			name=obj.get_name())
 
-	body['spec'] = obj.get_obj_spec()
-
-	obj.obj_api.patch_namespaced_custom_object(
-		group="mizar.com",
-		version="v1",
-		namespace="default",
-		plural=obj.get_plural(),
-		name=obj.name,
-		body=body)
-	obj.store_update_obj()
+		body['spec'] = obj.get_obj_spec()
+		try:
+			obj.obj_api.patch_namespaced_custom_object(
+				group="mizar.com",
+				version="v1",
+				namespace="default",
+				plural=obj.get_plural(),
+				name=obj.name,
+				body=body)
+			obj.store_update_obj()
+			get_body = False
+		except:
+			logger.debug("Retry updating {} {}".format(obj.get_kind(), obj.get_name()))
+			get_body = True
 
 def kube_delete_obj(obj):
 	pass
