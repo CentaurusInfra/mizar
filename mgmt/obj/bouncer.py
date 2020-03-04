@@ -102,8 +102,3 @@ class Bouncer(object):
 		self.droplet = droplet.name
 		self.ip = droplet.ip
 		self.mac = droplet.mac
-
-	def update_simple_endpoint(self, ep):
-		logger.info("Bouncer {} update_simple_endpoint {} on droplet {}".format(self.name, ep.name, ep.droplet))
-		self.droplet_obj.update_ep(ep)
-		self.droplet_obj.update_substrate_ep(ep.droplet_obj)

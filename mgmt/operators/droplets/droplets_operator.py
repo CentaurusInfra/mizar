@@ -72,7 +72,6 @@ class DropletOperator(object):
 		d = random.sample(droplets, 1)[0]
 		divider.set_droplet(d)
 
-
 	def on_delete(self, body, spec, **kwargs):
 		name = kwargs['name']
 		logger.info("*delete_droplet {}".format(name))

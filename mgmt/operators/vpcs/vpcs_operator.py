@@ -32,6 +32,8 @@ class VpcOperator(object):
 			v = Vpc(name, self.obj_api, self.store, spec)
 			if v.status == OBJ_STATUS.vpc_status_init:
 				return self._on_vpc_init(name, spec)
+			if v.status == OBJ_STATUS.vpc_status_allocated:
+				return self._on_divider_provisioned(name, spec)
 			self.store.update_vpc(v)
 
 		kube_list_obj(self.obj_api, RESOURCES.vpcs, list_vpc_obj_fn)
@@ -60,6 +62,9 @@ class VpcOperator(object):
 
 	def on_divider_provisioned(self, body, spec, **kwargs):
 		name = kwargs['name']
+		self._on_divider_provisioned(name, spec)
+
+	def _on_divider_provisioned(self, name, spec):
 		logger.info("on_divider_provisioned {} with spec: {}".format(name, spec))
 		div = Divider(name, self.obj_api, None, spec)
 		v = self.store.get_vpc(div.vpc)

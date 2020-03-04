@@ -40,9 +40,6 @@ class BouncerOperator(object):
 		logger.info("on_bouncer_provisioned {}".format(spec))
 		b = Bouncer(name, self.obj_api, self.store, spec)
 		self.store.update_bouncer(b)
-		logger.info("on_bouncer_provisioned Dump bouncers start ------------")
-		self.store._dump_bouncers()
-		logger.info("on_bouncer_provisioned Dump bouncers end ------------")
 
 	def on_divider_placed(self, body, spec, **kwargs):
 		name = kwargs['name']
@@ -61,7 +58,6 @@ class BouncerOperator(object):
 		logger.info("on_endpoints_allocated {}".format(spec))
 		ep = Endpoint(name, self.obj_api, None, spec)
 		bouncers = self.store.get_bouncers_of_net(ep.net)
-		logger.info("on_endpoints_allocated Dump bouncers {}".format(bouncers))
 		eps = set([ep])
 		for b in bouncers:
 			b.update_eps(eps)

@@ -51,7 +51,6 @@ class Endpoint:
 
 	def get_bouncers_ips(self):
 		bouncers = [b.ip for b in self.bouncers]
-		logger.info("!!get_bouncers_ips: {}".format(self.bouncers))
 		return bouncers
 
 	def get_obj_spec(self):
