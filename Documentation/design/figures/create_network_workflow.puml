@@ -1,0 +1,45 @@
+@startuml
+
+skinparam monochrome true
+
+actor Client
+collections Dividers
+database Divider_Operator
+collections Networks
+database Network_Operator
+collections Bouncers
+database Bouncer_Operator
+collections Endpoints
+database Endpoints_Operator
+collections Droplets
+database Droplet_Operator
+
+Client -> Networks: Client creates a Network
+rnote over Networks: ==Init
+Network_Operator --> Networks: Sees status Init
+Network_Operator -> Networks: Create bouncer
+Networks -> Bouncers: Creates a Bouncer Object
+Network_Operator -> Networks: Update status to Alloc
+rnote over Networks: ==Alloc
+rnote over Bouncers: ==Init
+Droplet_Operator --> Bouncers: Sees status Init
+Droplet_Operator -> Droplets: Places Bouncer on Droplet
+Droplet_Operator -> Bouncers: Updates status to Placed
+rnote over Bouncers: ==Placed
+Endpoints_Operator --> Bouncers: Sees status Placed
+Endpoints_Operator -> Bouncers: Update new Bouncer with all endpoints (No Endpoint)
+Endpoints_Operator -> Bouncers: Update status to EndpointReady
+rnote over Bouncers: ==EndpointReady
+Divider_Operator --> Bouncers: Sees status EndpointReady
+Divider_Operator -> Bouncers: Update new Bouncer with all Dividers
+Divider_Operator -> Dividers: Update all Dividers with new Bouncer
+Divider_Operator -> Bouncers: Updates status to Provisioned
+rnote over Bouncers: ==Provisioned
+Bouncer_Operator --> Bouncers: Sees status provisioned
+Bouncer_Operator -> Bouncer_Operator: Updates cache
+Endpoints_Operator --> Bouncers: Sees status provisioned
+Endpoints_Operator -> Endpoints: Updates all Endpoints with new Bouncer
+Network_Operator --> Bouncers: Sees status provisioned
+Network_Operator -> Networks: Updates status to provisioned
+rnote over Networks: ==Provisioned
+@enduml
