@@ -1,0 +1,41 @@
+@startuml
+
+skinparam monochrome true
+
+actor Client
+collections VPCs
+database VPC_Operator
+collections Dividers
+database Divider_Operator
+collections Bouncers
+database Bouncer_Operator
+collections Droplets
+database Droplet_Operator
+
+
+
+Client -> VPCs : Client creates a VPC
+rnote over VPCs: == Init
+VPC_Operator --> VPCs: Sees status Init
+VPC_Operator -> VPCs: Create a Divider
+VPCs -> Dividers : Creates a Divider Object
+VPC_Operator -> VPCs: Update status to Alloc
+rnote over VPCs: == Alloc
+
+rnote over Dividers: == Init
+Droplet_Operator --> Dividers: Seess status Init
+Droplet_Operator -> Droplets: 3. Places Divider on Droplet
+Droplet_Operator -> Dividers: Update status to Placed
+rnote over Dividers: == Placed
+Bouncer_Operator --> Dividers: Sees status Placed
+Bouncer_Operator -> Bouncers: Updates all Bouncers with Divider info (No Bouncers)
+Bouncer_Operator -> Dividers: Updates divider with all Bouncer info (No Bouncers)
+Bouncer_Operator -> Dividers: Updates status to Provisioned
+rnote over Dividers: == Provisioned
+Divider_Operator --> Dividers: Sees status Provisioned
+Divider_Operator -> Divider_Operator: Update cache
+VPC_Operator --> Dividers : Sees status Provisioned
+VPC_Operator -> VPCs : Updates status to Provisioned
+rnote over VPCs: == Provisioned
+
+@enduml
