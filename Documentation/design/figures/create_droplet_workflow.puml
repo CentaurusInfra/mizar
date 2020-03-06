@@ -1,0 +1,17 @@
+@startuml
+
+skinparam monochrome true
+
+database API_Server
+database CNI_Service
+collections Droplet_Operator
+
+CNI_Service -> API_Server: Create a droplet for each Node
+rnote over API_Server: ==Droplet Status: Init
+API_Server -> Droplet_Operator: Creates a droplet for each Node
+Droplet_Operator -> API_Server: Updates droplet status to Provisioned
+rnote over API_Server: Droplet Status: Provisioned
+Droplet_Operator --> API_Server: See Droplet status Provisioned
+Droplet_Operator -> Droplet_Operator: Updates cache
+
+@enduml
