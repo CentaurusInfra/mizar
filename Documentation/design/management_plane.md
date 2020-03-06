@@ -224,6 +224,18 @@ For example:
    1. A VPC object is in state **Init**
    2. There is only one Operator that may mutate its state to the next state of **Provisioned**, the VPC Operator.
 
+When creating any object, there are **two states** that must be persisted to the API Server.
+
+These states are **Object Init** and **Object Provisioned**.
+Any other states may be communicated between  operators by the Inter-Operators Communication methods mentioned previously.
+
+An object's state may be *watched* by many operators, that will take certain actions when the state is changed.
+However, a general guidline is, only **one operator** may mutate the state of any given object per state.
+
+For example:
+   1. A VPC object is in state **Init**
+   2. There is only one Operator that may mutate its state to the next state of **Provisioned**, the VPC Operator.
+
 ### VPC Object Life Cycle
 
 ![VPC](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/phudtran/mizar/dev-k8s/Documentation/design/figures/create_vpc_workflow.puml)

@@ -1,24 +1,22 @@
 @startuml
 
 skinparam monochrome true
-
+autonumber
 database API_Server
 collections VPC_Operator
 collections Divider_Operator
 collections Bouncer_Operator
 collections Droplet_Operator
 
-API_Server -> VPC_Operator : Create a VPC
-VPC_Operator -> API_Server: Creates a VPC Object
+==VPC Created==
 rnote over API_Server: ==VPC Status: Init
 VPC_Operator --> API_Server: Sees VPC Status: Init
-VPC_Operator -> Divider_Operator: Create a Divider
-Divider_Operator -> API_Server: Creates a Divider Object
+VPC_Operator -> API_Server: Creates a Divider Object
 rnote over API_Server: ==Divider Status: Init
 
 Droplet_Operator --> API_Server: Sees status Init
 Droplet_Operator -> Droplet_Operator: Places Divider on a Droplet
-Droplet_Operator -> Bouncer_Operator: Tell Bouncer Operator, Divider Placed
+Droplet_Operator -> Bouncer_Operator: On Divider Placed
 
 Bouncer_Operator -> Bouncer_Operator: Updates all Bouncers with Divider info (No Bouncers)
 Bouncer_Operator -> Bouncer_Operator: Updates divider with all Bouncer info (No Bouncers)
@@ -27,7 +25,8 @@ rnote over API_Server: ==Divider Status: Provisioned
 Divider_Operator --> API_Server: Sees status Provisioned
 Divider_Operator -> Divider_Operator: Update cache
 VPC_Operator --> API_Server : Sees status Divider Status Provisioned
-VPC_Operator -> API_Server : Updates status VPC Status to Provisioned
+VPC_Operator -> API_Server : Updates VPC Status to Provisioned
 rnote over API_Server: ==VPC Status: Provisioned
+==VPC Ready==
 
 @enduml
