@@ -2,40 +2,32 @@
 
 skinparam monochrome true
 
-actor Client
-collections VPCs
-database VPC_Operator
-collections Dividers
-database Divider_Operator
-collections Bouncers
-database Bouncer_Operator
-collections Droplets
-database Droplet_Operator
+database API_Server
+collections VPC_Operator
+collections Divider_Operator
+collections Bouncer_Operator
+collections Droplet_Operator
 
+API_Server -> VPC_Operator : Create a VPC
+VPC_Operator -> API_Server: Creates a VPC Object
+rnote over API_Server: ==VPC Status: Init
+VPC_Operator --> API_Server: Sees VPC Status: Init
+VPC_Operator -> Divider_Operator: Create a Divider
+Divider_Operator -> API_Server: Creates a Divider Object
+rnote over API_Server: ==Divider Status: Init
 
+Droplet_Operator --> API_Server: Sees status Init
+Droplet_Operator -> Droplet_Operator: Places Divider on a Droplet
+Droplet_Operator -> Bouncer_Operator: Tell Bouncer Operator, Divider Placed
 
-Client -> VPCs : Client creates a VPC
-rnote over VPCs: == Init
-VPC_Operator --> VPCs: Sees status Init
-VPC_Operator -> VPCs: Create a Divider
-VPCs -> Dividers : Creates a Divider Object
-VPC_Operator -> VPCs: Update status to Alloc
-rnote over VPCs: == Alloc
-
-rnote over Dividers: == Init
-Droplet_Operator --> Dividers: Seess status Init
-Droplet_Operator -> Droplets: 3. Places Divider on Droplet
-Droplet_Operator -> Dividers: Update status to Placed
-rnote over Dividers: == Placed
-Bouncer_Operator --> Dividers: Sees status Placed
-Bouncer_Operator -> Bouncers: Updates all Bouncers with Divider info (No Bouncers)
-Bouncer_Operator -> Dividers: Updates divider with all Bouncer info (No Bouncers)
-Bouncer_Operator -> Dividers: Updates status to Provisioned
-rnote over Dividers: == Provisioned
-Divider_Operator --> Dividers: Sees status Provisioned
+Bouncer_Operator -> Bouncer_Operator: Updates all Bouncers with Divider info (No Bouncers)
+Bouncer_Operator -> Bouncer_Operator: Updates divider with all Bouncer info (No Bouncers)
+Bouncer_Operator -> API_Server: Updates status to Provisioned
+rnote over API_Server: ==Divider Status: Provisioned
+Divider_Operator --> API_Server: Sees status Provisioned
 Divider_Operator -> Divider_Operator: Update cache
-VPC_Operator --> Dividers : Sees status Provisioned
-VPC_Operator -> VPCs : Updates status to Provisioned
-rnote over VPCs: == Provisioned
+VPC_Operator --> API_Server : Sees status Divider Status Provisioned
+VPC_Operator -> API_Server : Updates status VPC Status to Provisioned
+rnote over API_Server: ==VPC Status: Provisioned
 
 @enduml

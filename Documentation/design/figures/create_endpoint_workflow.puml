@@ -2,32 +2,27 @@
 
 skinparam monochrome true
 
-actor Client
-database CNI_Service
-collections Networks
-database Network_Operator
-collections Bouncers
-database Bouncer_Operator
-collections Endpoints
-database Endpoints_Operator
-collections Droplets
-database Droplet_Operator
+database API_Server
+collections CNI_Service
+collections Network_Operator
+collections Bouncer_Operator
+collections Endpoints_Operator
+collections Droplet_Operator
 
 
-Client -> CNI_Service: Client Creates an Endpoint
-CNI_Service -> Endpoints: Initializes Endpoint (Allocates, veth-pair, netns, etc)
-CNI_Service -> Droplets: Assigns Endpoint to Droplet
-CNI_Service -> Endpoints: Sets status to Init
-rnote over Endpoints: ==Init
-Network_Operator --> Endpoints: Sees status Init
-Network_Operator -> Endpoints: Allocates IP, Gw, etc.
-Network_Operator -> Endpoints: Sets status to Alloc
-rnote over Endpoints: ==Alloc
-Bouncer_Operator --> Endpoints: Sees status Alloc
-Bouncer_Operator -> Bouncers: Updates all Bouncers with new Endpoint
-Bouncer_Operator -> Endpoints: Updates Endpoint with all Bouncers
-Bouncer_Operator -> Endpoints: Updates status to Provisioned
-rnote over Endpoints: ==Provisioned
-
+API_Server -> CNI_Service: Create an Endpoint
+CNI_Service -> API_Server: Creates an Endpoint Object
+CNI_Service -> Droplet_Operator: Assigns Endpoint to Droplet
+CNI_Service -> API_Server: Sets status to Init
+rnote over API_Server: == Endpoint Status: Init
+Network_Operator --> API_Server: Sees Endpoint status Init
+Network_Operator -> Network_Operator: Allocates IP, Gw, etc.
+Network_Operator -> Bouncer_Operator: Endpoint is now Alloc
+Bouncer_Operator -> Bouncer_Operator: Updates all Bouncers with new Endpoint
+Bouncer_Operator -> Bouncer_Operator: Updates Endpoint with all Bouncers
+Bouncer_Operator -> API_Server: Updates status to Provisioned
+rnote over API_Server: ==Endpoint Status: Provisioned
+CNI_Service --> API_Server: Sees Endpoint status Provisioned
+CNI_Service -> CNI_Service: Updated self
 
 @enduml

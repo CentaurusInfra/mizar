@@ -2,37 +2,31 @@
 
 skinparam monochrome true
 
-actor Client
-collections Dividers
-database Divider_Operator
-collections Networks
-database Network_Operator
-collections Bouncers
-database Bouncer_Operator
-collections Endpoints
-database Endpoints_Operator
-collections Droplets
-database Droplet_Operator
+database API_Server
+collections Divider_Operator
+collections Network_Operator
+collections Bouncer_Operator
+collections Endpoints_Operator
+collections Droplet_Operator
 
-Client -> Networks: Client creates a Bouncer
-Networks -> Bouncers: Creates a Bouncer Object
-rnote over Bouncers: ==Init
-Droplet_Operator --> Bouncers: Sees status Init
-Droplet_Operator -> Droplets: Places Bouncer on Droplet
-Droplet_Operator -> Bouncers: Updates status to Placed
-rnote over Bouncers: ==Placed
-Endpoints_Operator --> Bouncers: Sees status Placed
-Endpoints_Operator -> Bouncers: Update new Bouncer with all endpoints (No Endpoint)
-Endpoints_Operator -> Bouncers: Update status to EndpointReady
-rnote over Bouncers: ==EndpointReady
-Divider_Operator --> Bouncers: Sees status EndpointReady
-Divider_Operator -> Bouncers: Update new Bouncer with all Dividers
-Divider_Operator -> Dividers: Update all Dividers with new Bouncer
-Divider_Operator -> Bouncers: Updates status to Provisioned
-rnote over Bouncers: ==Provisioned
-Bouncer_Operator --> Bouncers: Sees status provisioned
+API_Server -> Bouncer_Operator: Create a Bouncer
+Bouncer_Operator -> API_Server: Creates a Bouncer Object
+rnote over API_Server: ==Bouncer Status Init
+Droplet_Operator --> API_Server: Sees status Init
+Droplet_Operator -> Droplet_Operator: Places Bouncer on Droplet
+
+Droplet_Operator -> Endpoints_Operator: Bouncer Placed
+Endpoints_Operator -> Endpoints_Operator: Update new Bouncer with all endpoints (No Endpoint)
+Endpoints_Operator -> Endpoints_Operator: Update status to EndpointReady
+Endpoints_Operator -> Divider_Operator: Bouncers are EndpointReady
+Divider_Operator -> Divider_Operator: Update new Bouncer with all Dividers
+Divider_Operator -> Divider_Operator: Update all Dividers with new Bouncer
+Divider_Operator -> API_Server: Updates status to Provisioned
+rnote over API_Server: == Bouncer Status: Provisioned
+
+Bouncer_Operator --> API_Server: Sees status provisioned
 Bouncer_Operator -> Bouncer_Operator: Updates cache
-Endpoints_Operator --> Bouncers: Sees status provisioned
-Endpoints_Operator -> Endpoints: Updates all Endpoints with new Bouncer
-
+Endpoints_Operator --> API_Server: Sees Bouncer Status provisioned
+Endpoints_Operator -> Endpoints_Operator: Updates all Endpoints with new Bouncer
+Network_Operator --> API_Server: Sees Bouncer status provisioned
 @enduml

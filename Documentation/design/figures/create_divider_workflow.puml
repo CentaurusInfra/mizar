@@ -2,29 +2,26 @@
 
 skinparam monochrome true
 
-actor Client
-collections VPCs
-database VPC_Operator
-collections Dividers
-database Divider_Operator
-collections Bouncers
-database Bouncer_Operator
-collections Droplets
-database Droplet_Operator
+database API_Server
+collections Divider_Operator
+collections Network_Operator
+collections Bouncer_Operator
+collections Endpoints_Operator
+collections Droplet_Operator
 
-Client -> VPCs : Client creates a Divider
-VPCs -> Dividers: Creates Divider Object
-rnote over Dividers: == Init
-Droplet_Operator --> Dividers: Seess status Init
-Droplet_Operator -> Droplets: 3. Places Divider on Droplet
-Droplet_Operator -> Dividers: Update status to Placed
-rnote over Dividers: == Placed
-Bouncer_Operator --> Dividers: Sees status Placed
-Bouncer_Operator -> Bouncers: Updates all Bouncers with Divider info (No Bouncers)
-Bouncer_Operator -> Dividers: Updates divider with all Bouncer info (No Bouncers)
-Bouncer_Operator -> Dividers: Updates status to Provisioned
-rnote over Dividers: == Provisioned
-Divider_Operator --> Dividers: Sees status Provisioned
+API_Server -> Divider_Operator: Create a Divider
+Divider_Operator -> API_Server: Creates a Divider Object
+rnote over API_Server: ==Divider Status: Init
+
+Droplet_Operator --> API_Server: Sees status Init
+Droplet_Operator -> Droplet_Operator: Places Divider on a Droplet
+Droplet_Operator -> Bouncer_Operator: Tell Bouncer Operator, Divider Placed
+
+Bouncer_Operator -> Bouncer_Operator: Updates all Bouncers with Divider info (No Bouncers)
+Bouncer_Operator -> Bouncer_Operator: Updates divider with all Bouncer info (No Bouncers)
+Bouncer_Operator -> API_Server: Updates status to Provisioned
+rnote over API_Server: ==Divider Status: Provisioned
+Divider_Operator --> API_Server: Sees status Provisioned
 Divider_Operator -> Divider_Operator: Update cache
 
 @enduml
