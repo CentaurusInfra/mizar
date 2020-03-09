@@ -33,5 +33,17 @@ class WorkflowFactory(ABC):
 	def VpcProvisioned(self, param):
 		pass
 
+	@abstractmethod
+	def DividerOperatorStart(self, param):
+		pass
+
+	@abstractmethod
+	def DividerCreate(self, param):
+		pass
+
+	@abstractmethod
+	def DividerProvisioned(self, param):
+		pass
+
 
 

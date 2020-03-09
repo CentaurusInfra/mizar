@@ -53,6 +53,12 @@ class BouncerOperator(object):
 		div.set_status(OBJ_STATUS.divider_status_provisioned)
 		div.update_obj()
 
+	def update_bouncers_with_divider(self, div):
+		bouncers = self.store.get_bouncers_of_vpc(div.vpc)
+		div.update_bouncers(set(bouncers))
+		for b in bouncers:
+			b.update_dividers(set([div]))
+
 	def on_endpoints_allocated(self, body, spec, **kwargs):
 		name = kwargs['name']
 		logger.info("on_endpoints_allocated {}".format(spec))

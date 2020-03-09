@@ -1,6 +1,6 @@
 import logging
 from common.workflow import *
-from operators.vpcs.vpcs_operator import *
+from dp.mizar.operators.vpcs.vpcs_operator import *
 logger = logging.getLogger()
 
 vpcs_opr = VpcOperator()
@@ -17,7 +17,7 @@ class VpcAllocateVNI(WorkflowTask):
 		vpcs_opr.allocate_vni(v)
 		self.finalize()
 
-class CreateDividers(WorkflowTask):
+class VpcCreateDividers(WorkflowTask):
 
 	def requires(self):
 		logger.info("Requires {task}".format(task=self.__class__.__name__))
@@ -33,7 +33,7 @@ class VpcCreate(WorkflowTask):
 
 	def requires(self):
 		logger.info("Requires {task}".format(task=self.__class__.__name__))
-		return [CreateDividers(param=self.param)]
+		return [VpcCreateDividers(param=self.param)]
 
 	def run(self):
 		logger.info("Run {task}".format(task=self.__class__.__name__))

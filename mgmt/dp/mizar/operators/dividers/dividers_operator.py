@@ -25,20 +25,31 @@ class DividerOperator(object):
 		config.load_incluster_config()
 		self.obj_api = client.CustomObjectsApi()
 
-	def on_startup(self, logger, **kwargs):
+	def query_existing_dividers(self):
 		logger.info("divider on_startup")
 		def list_dividers_obj_fn(name, spec, plurals):
 			logger.info("Bootstrapped Divider {}".format(name))
 			d = Divider(name, self.obj_api, self.store, spec)
-			self.store.update_divider(d)
+			if d.status == OBJ_STATUS.divider_status_provisioned:
+				self.store.update_divider(d)
 
 		kube_list_obj(self.obj_api, RESOURCES.droplets, list_dividers_obj_fn)
+
+	def get_divider_tmp_obj(self, name, spec):
+		return Divider(name, self.obj_api, None, spec)
+
+	def get_divider_stored_obj(self, name, spec):
+		return Divider(name, self.obj_api, self.store, spec)
 
 	def on_divider_provisioned(self, body, spec, **kwargs):
 		name = kwargs['name']
 		logger.info("on_divider_provisioned {}".format(spec))
 		d = Divider(name, self.obj_api, self.store, spec)
 		self.store.update_divider(d)
+
+	def set_divider_provisioned(self, div):
+		div.set_status(OBJ_STATUS.divider_status_provisioned)
+		div.update_obj()
 
 	def on_bouncer_endpoint_ready(self, body, spec, **kwargs):
 		name = kwargs['name']
