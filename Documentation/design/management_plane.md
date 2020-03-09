@@ -18,7 +18,7 @@ design to happen, which we reuse:
    client APIs that _act as a controller_ for CRDs. Operator
    frameworks allow us to write custom lightweight operators the
    derive the networking objects life-cycle. We particulary use
-   **Kopf** extensively as it allows us to easily refactor the test controller as both are python based.
+   [Kopf](https://github.com/zalando-incubator/kopf) extensively as it allows us to easily refactor the test controller.
 3. **LMDB**: Provides a light-weight in-memory transactional database
    that is __local__ to each Operator.
 
@@ -82,7 +82,7 @@ to Operators will become clear as we detail Mizar's workflow.
 The specification of an Operator's Stateful Object, Mutable Object,
 and Mutating Actions are what defines the management plane workflow.
 
-## Inter-Operators Communications
+### Inter-Operators Communications
 
 Operators communicate with each other to evolve the object's state.
 When an operator mutates the state of the object it invokes the next
@@ -141,9 +141,54 @@ troubleshooting becomes less of a concern in the simple function calls
 mode because state transitions is within the same process with unified
 logging, and metering.
 
-## Horizontal Scaling
+### Local object store (LMDB) and Resumable Workflow
 
-### Generic Network Objects and Operators
+Each Operator will have a local K/V store implemented with
+[LMDB](https://symas.com/lmdb/). Each Operator stores its Stateful
+Object in this store when it reaches the state "Provisioned" and
+delete it when the object is recycled (deleted). The objects are
+stored in their Provisioned state, there is no need to develop a
+complicated cache synchronization mechanism as the object is
+cached into an final (immutable) state.
+
+Given the operator being a StatefulSet, the store persists in the
+volume. When the operator is replaced it resumes the workflow by
+serving stalled objects in the API server (in Init or recorded
+intermediate state) utilizing the data of the provisioned objects in
+the local store. In this regard, the local store serves two purposes:
+
+1. It caches the final object's data into its operator, hence reduces
+   the need to frequently get the object through the API server.
+1. The store accelerates the starting time of the operators after a
+   failure.
+
+### Horizontal Scaling
+
+Operators shall be deployed as stateful replica set, where Kubernetes
+auto-scales the number of operators according to their resource metrics or
+custom metrics. To ensure that the horizontal scaling is effective,
+the operator proxy layer partitions the requests to be handled by each
+individual operator. The partitioning is by means of typical hash
+ring, where the key is the VPC. Partitioning by the VPC ensures data
+locality of operators that relies on the function calls as
+inter-operator communications.
+
+The proxy layer itself is left unimplemented, we shall reuse the partitioning
+schemes proposed in the [Arktos
+project](https://github.com/futurewei-cloud/arktos). It's left in the
+design diagram for completeness, or for future standalone implementations.
+
+## Detailed Network Objects and Operators
+
+We categorize network objects and operators as generic, and data-plane
+specific. Generic network object primarily extends [Kubernetes Network
+Model](https://kubernetes.io/docs/concepts/cluster-administration/networking/#the-kubernetes-network-model). Data-plane
+specific network objects are specific to the underlying data-plane
+requirements. For example, in Mizar we have the abstract concpets of Bouncers
+and Dividers, hence we have speific objects and operators for them.
+
+### Generic Objects
+
 
 #### **Droplet Operator**:
 
@@ -156,21 +201,14 @@ logging, and metering.
 As we extend Mizar's features, we will be introducing more operators
 such as: security group operator, nacl.
 
-### Data-plane Specific Objects Operators
-
-The overall architecture is extensible to support
+### Data-plane Specific Objects
 
 In case of Mizar, we have two unique objects that the management plane
-manages its life-cyle: Bouncers, Dividers. For these objects, we have
+manages its life-cyle: Bouncers and Dividers. For these objects, we have
 introduced the following operators:
 
 #### **Bouncer Operator**:
 #### **Divider Operator**:
-
-
-### Resumable Object Processing
-
-### Stateful Operator Resilience
 
 ## Mizar Management Workflows
 
@@ -184,7 +222,7 @@ introduced the following operators:
 
 ### Bouncer Object Life Cycle (Mizar Specific)
 
-### Compatability of other Data-planes (OVS)
+## Compatability of other Data-planes (OVS)
 
 This architecture is extensible to derive other data-plane systems and
 is compatible with existing cloud networking solutions (particularly

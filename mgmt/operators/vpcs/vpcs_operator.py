@@ -26,19 +26,21 @@ class VpcOperator(object):
 		config.load_incluster_config()
 		self.obj_api = client.CustomObjectsApi()
 
-	def on_startup(self, logger, **kwargs):
+	def query_existing_vpcs(self):
 		def list_vpc_obj_fn(name, spec, plurals):
 			logger.info("Bootstrapped {}".format(name))
-			v = Vpc(name, self.obj_api, self.store, spec)
-			if v.status == OBJ_STATUS.vpc_status_init:
-				return self._on_vpc_init(name, spec)
-			if v.status == OBJ_STATUS.vpc_status_allocated:
-				return self._on_divider_provisioned(name, spec)
-			self.store.update_vpc(v)
+			v = self.get_vpc_stored_obj(name, spec)
+			if v.status == OBJ_STATUS.vpc_status_provisioned:
+				self.store.update_vpc(v)
 
 		kube_list_obj(self.obj_api, RESOURCES.vpcs, list_vpc_obj_fn)
-		self.create_default_vpc()
 		logger.debug("Bootstrap VPC store: ".format(self.store._dump_vpcs()))
+
+	def get_vpc_tmp_obj(self, name, spec):
+		return Vpc(name, self.obj_api, None, spec)
+
+	def get_vpc_stored_obj(self, name, spec):
+		return Vpc(name, self.obj_api, self.store, spec)
 
 	def create_default_vpc(self):
 		if self.store.get_vpc(OBJ_DEFAULTS.default_ep_vpc):
@@ -46,19 +48,14 @@ class VpcOperator(object):
 		v = Vpc(OBJ_DEFAULTS.default_ep_vpc, self.obj_api, self.store)
 		v.create_obj()
 
-	def on_vpc_init(self, body, spec, **kwargs):
-		name = kwargs['name']
-		self._on_vpc_init(name, spec)
+	def create_vpc_dividers(self, vpc):
+		for i in range(vpc.n_dividers):
+			logger.info("Create divider {} for vpc: {}".format(i, vpc.name))
+			vpc.create_divider()
 
-	def _on_vpc_init(self, name, spec):
-		logger.info("on_vpc_init {} with spec: {}".format(name, spec))
-		v = Vpc(name, self.obj_api, self.store, spec)
-		v.set_vni(self.allocate_vni(v))
-		for i in range(v.n_dividers):
-			logger.info("Create divicer {} for vpc: {}".format(i, name))
-			v.create_divider()
-		v.set_status(OBJ_STATUS.vpc_status_allocated)
-		v.update_obj()
+	def set_vpc_provisioned(self, vpc):
+		vpc.set_status(OBJ_STATUS.vpc_status_provisioned)
+		vpc.update_obj()
 
 	def on_divider_provisioned(self, body, spec, **kwargs):
 		name = kwargs['name']
@@ -80,5 +77,5 @@ class VpcOperator(object):
 		# TODO: There is a tiny chance of collision here, not to worry about now
 		if vpc.name == OBJ_DEFAULTS.default_ep_vpc:
 			return OBJ_DEFAULTS.default_vpc_vni
-		return uuid.uuid4().int & (1<<24)-1
+		vpc.set_vni(uuid.uuid4().int & (1<<24)-1)
 

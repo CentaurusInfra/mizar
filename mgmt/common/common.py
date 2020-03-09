@@ -1,6 +1,7 @@
 import subprocess
 import ctypes
 import logging
+import luigi
 from kubernetes import watch
 from ctypes.util import find_library
 from pathlib import Path
@@ -141,3 +142,14 @@ def kube_list_obj(obj_api, plurals, list_callback):
 
 def get_spec_val(key, spec, default=""):
 	return default if key not in spec else spec[key]
+
+def run_workflow(wf):
+    luigi.build(wf, workers=1, local_scheduler=True, log_level='INFO')
+
+def run_task(task):
+	sch = luigi.scheduler.Scheduler()
+
+	# no_install_shutdown_handler makes it thread safe
+	w = luigi.worker.Worker(scheduler=sch, no_install_shutdown_handler=True)
+	w.add(task)
+	w.run()

@@ -5,6 +5,7 @@ RUN pip install pyyaml
 RUN pip install netaddr
 RUN pip install ipaddress
 RUN pip install rpyc
+RUN pip install luigi
 COPY mgmt/ /var/mizar/mgmt/
 COPY build/ /var/mizar/mgmt/build
 RUN ln -snf /var/mizar/mgmt/build/bin /trn_bin

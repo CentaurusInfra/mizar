@@ -1,0 +1,8 @@
+apiVersion: "mizar.com/v1"
+kind: Vpc
+metadata:
+  name: vpc1
+spec:
+  ip: "10.0.0.0"
+  spec: "16"
+  status: "Init"
