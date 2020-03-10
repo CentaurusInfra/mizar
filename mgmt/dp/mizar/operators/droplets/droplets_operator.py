@@ -24,21 +24,33 @@ class DropletOperator(object):
 		self.store = OprStore()
 		config.load_incluster_config()
 		self.obj_api = client.CustomObjectsApi()
+		self.bootstrapped = False
 
-	def on_startup(self, logger, **kwargs):
+	def query_existing_droplets(self):
 		def list_droplet_obj_fn(name, spec, plurals):
 			logger.info("Bootstrapped droplet {}".format(name))
 			d = Droplet(name, self.obj_api, self.store, spec)
-			self.store.update_droplet(d)
+			if d.status == OBJ_STATUS.droplet_status_provisioned:
+				self.store_update(d)
 
 		kube_list_obj(self.obj_api, RESOURCES.droplets, list_droplet_obj_fn)
+		self.bootstrapped = True
 
-	def on_droplet_init(self, body, spec, **kwargs):
-		name = kwargs['name']
-		logger.info("Droplet on_droplet_any {} with spec: {}".format(name, spec))
-		d = Droplet(name, self.obj_api, self.store, spec)
-		d.set_status(OBJ_STATUS.droplet_status_provisioned)
-		d.update_obj()
+	def is_bootstrapped(self):
+		return self.bootstrapped
+
+	def get_droplet_tmp_obj(self, name, spec):
+		return Droplet(name, self.obj_api, None, spec)
+
+	def get_droplet_stored_obj(self, name, spec):
+		return Droplet(name, self.obj_api, self.store, spec)
+
+	def set_droplet_provisioned(self, droplet):
+		droplet.set_status(OBJ_STATUS.droplet_status_provisioned)
+		droplet.update_obj()
+
+	def store_update(self, droplet):
+		self.store.update_droplet(droplet)
 
 	def on_droplet_provisioned(self, body, spec, **kwargs):
 		name = kwargs['name']
@@ -63,8 +75,6 @@ class DropletOperator(object):
 		droplets = set(self.store.get_all_droplets())
 		d = random.sample(droplets, 1)[0]
 		divider.set_droplet(d)
-		divider.set_status(OBJ_STATUS.divider_status_placed)
-		divider.update_obj()
 
 	def on_delete(self, body, spec, **kwargs):
 		name = kwargs['name']

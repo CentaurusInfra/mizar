@@ -45,5 +45,26 @@ class WorkflowFactory(ABC):
 	def DividerProvisioned(self, param):
 		pass
 
+	@abstractmethod
+	def DropletOperatorStart(self, param):
+		pass
 
+	@abstractmethod
+	def DropletCreate(self, param):
+		pass
 
+	@abstractmethod
+	def DropletProvisioned(self, param):
+		pass
+
+	@abstractmethod
+	def NetOperatorStart(self, param):
+		pass
+
+	@abstractmethod
+	def NetCreate(self, param):
+		pass
+
+	@abstractmethod
+	def NetProvisioned(self, param):
+		pass

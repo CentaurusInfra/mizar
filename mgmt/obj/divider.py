@@ -1,4 +1,5 @@
 import logging
+import luigi
 from common.rpc import TrnRpc
 from common.constants import *
 from common.common import *

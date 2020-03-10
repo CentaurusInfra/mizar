@@ -31,7 +31,7 @@ class DividerOperator(object):
 			logger.info("Bootstrapped Divider {}".format(name))
 			d = Divider(name, self.obj_api, self.store, spec)
 			if d.status == OBJ_STATUS.divider_status_provisioned:
-				self.store.update_divider(d)
+				self.store_update(d)
 
 		kube_list_obj(self.obj_api, RESOURCES.droplets, list_dividers_obj_fn)
 
@@ -41,11 +41,8 @@ class DividerOperator(object):
 	def get_divider_stored_obj(self, name, spec):
 		return Divider(name, self.obj_api, self.store, spec)
 
-	def on_divider_provisioned(self, body, spec, **kwargs):
-		name = kwargs['name']
-		logger.info("on_divider_provisioned {}".format(spec))
-		d = Divider(name, self.obj_api, self.store, spec)
-		self.store.update_divider(d)
+	def store_update(self, divider):
+		self.store.update_divider(divider)
 
 	def set_divider_provisioned(self, div):
 		div.set_status(OBJ_STATUS.divider_status_provisioned)

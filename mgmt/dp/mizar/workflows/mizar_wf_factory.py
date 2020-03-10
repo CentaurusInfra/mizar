@@ -10,6 +10,16 @@ from dp.mizar.workflows.dividers.create import *
 from dp.mizar.workflows.dividers.provisioned import *
 from dp.mizar.workflows.dividers.delete import *
 
+from dp.mizar.workflows.droplets.bootstrap import *
+from dp.mizar.workflows.droplets.create import *
+from dp.mizar.workflows.droplets.provisioned import *
+from dp.mizar.workflows.droplets.delete import *
+
+from dp.mizar.workflows.nets.bootstrap import *
+from dp.mizar.workflows.nets.create import *
+from dp.mizar.workflows.nets.provisioned import *
+from dp.mizar.workflows.nets.delete import *
+
 class MizarWorkflowFactory():
 
 	def VpcOperatorStart(self, param):
@@ -29,3 +39,21 @@ class MizarWorkflowFactory():
 
 	def DividerProvisioned(self, param):
 		return DividerProvisioned(param=param)
+
+	def DropletOperatorStart(self, param):
+		return DropletOperatorStart(param=param)
+
+	def DropletCreate(self, param):
+		return DropletCreate(param=param)
+
+	def DropletProvisioned(self, param):
+		return DropletProvisioned(param=param)
+
+	def NetOperatorStart(self, param):
+		return NetOperatorStart(param=param)
+
+	def NetCreate(self, param):
+		return NetCreate(param=param)
+
+	def NetProvisioned(self, param):
+		return NetProvisioned(param=param)

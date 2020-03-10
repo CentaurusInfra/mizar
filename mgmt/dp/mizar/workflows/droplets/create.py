@@ -1,11 +1,12 @@
 import logging
 from common.workflow import *
-from dp.mizar.operators.vpcs.vpcs_operator import *
+from dp.mizar.operators.droplets.droplets_operator import *
+
 logger = logging.getLogger()
 
-vpcs_opr = VpcOperator()
+droplets_opr = DropletOperator()
 
-class VpcProvisioned(WorkflowTask):
+class DropletCreate(WorkflowTask):
 
 	def requires(self):
 		logger.info("Requires {task}".format(task=self.__class__.__name__))
@@ -13,6 +14,7 @@ class VpcProvisioned(WorkflowTask):
 
 	def run(self):
 		logger.info("Run {task}".format(task=self.__class__.__name__))
-		v = vpcs_opr.get_vpc_stored_obj(self.param.name, self.param.spec)
-		vpcs_opr.store_update(v)
+		d = droplets_opr.get_droplet_stored_obj(self.param.name, self.param.spec)
+		droplets_opr.set_droplet_provisioned(d)
+		droplets_opr.store_update(d)
 		self.finalize()

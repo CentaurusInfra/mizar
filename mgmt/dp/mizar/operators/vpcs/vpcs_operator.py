@@ -31,7 +31,7 @@ class VpcOperator(object):
 			logger.info("Bootstrapped {}".format(name))
 			v = self.get_vpc_stored_obj(name, spec)
 			if v.status == OBJ_STATUS.vpc_status_provisioned:
-				self.store.update_vpc(v)
+				self.store_update(v)
 
 		kube_list_obj(self.obj_api, RESOURCES.vpcs, list_vpc_obj_fn)
 		logger.debug("Bootstrap VPC store: ".format(self.store._dump_vpcs()))
@@ -47,6 +47,9 @@ class VpcOperator(object):
 			return
 		v = Vpc(OBJ_DEFAULTS.default_ep_vpc, self.obj_api, self.store)
 		v.create_obj()
+
+	def store_update(self, vpc):
+		self.store.update_vpc(vpc)
 
 	def create_vpc_dividers(self, vpc):
 		for i in range(vpc.n_dividers):
