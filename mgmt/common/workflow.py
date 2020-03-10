@@ -68,3 +68,15 @@ class WorkflowFactory(ABC):
 	@abstractmethod
 	def NetProvisioned(self, param):
 		pass
+
+	@abstractmethod
+	def BouncerOperatorStart(self, param):
+		pass
+
+	@abstractmethod
+	def BouncerCreate(self, param):
+		pass
+
+	@abstractmethod
+	def BouncerProvisioned(self, param):
+		pass

@@ -41,19 +41,11 @@ class EndpointOperator(object):
 		ep = Endpoint(name, self.obj_api, self.store, spec)
 		self.store.update_ep(ep)
 
-	def on_bouncer_placed(self, body, spec, **kwargs):
-		name = kwargs['name']
-		logger.info("Endpoint on_bouncer_placed {}".format(spec))
-		b = Bouncer(name, self.obj_api, None, spec)
-		eps = self.store.get_eps_in_net(b.net)
-		b.update_eps(eps)
-		b.set_status(OBJ_STATUS.bouncer_status_endpoint_ready)
-		b.update_obj()
+	def update_bouncer_with_endpoints(self, bouncer):
+		eps = self.store.get_eps_in_net(bouncer.net)
+		bouncer.update_eps(eps)
 
-	def on_bouncer_provisioned(self, body, spec, **kwargs):
-		name = kwargs['name']
-		logger.info("Endpoint on_bouncer_provisioned {}".format(spec))
-		b = Bouncer(name, self.obj_api, None, spec)
-		eps = self.store.get_eps_in_net(b.net)
+	def update_endpoints_with_bouncers(self, bouncer):
+		eps = self.store.get_eps_in_net(bouncer.net)
 		for ep in eps:
-			ep.update_bouncers(set([b]))
+			ep.update_bouncers(set([bouncer]))

@@ -43,7 +43,7 @@ class NetOperator(object):
 		return Net(name, self.obj_api, self.store, spec)
 
 	def store_update(self, net):
-		self.store.update_net(n)
+		self.store.update_net(net)
 
 	def create_default_net(self):
 		if self.store.get_net(OBJ_DEFAULTS.default_ep_net):

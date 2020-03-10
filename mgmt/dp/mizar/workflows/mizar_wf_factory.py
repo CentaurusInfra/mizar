@@ -20,6 +20,11 @@ from dp.mizar.workflows.nets.create import *
 from dp.mizar.workflows.nets.provisioned import *
 from dp.mizar.workflows.nets.delete import *
 
+from dp.mizar.workflows.bouncers.bootstrap import *
+from dp.mizar.workflows.bouncers.create import *
+from dp.mizar.workflows.bouncers.provisioned import *
+from dp.mizar.workflows.bouncers.delete import *
+
 class MizarWorkflowFactory():
 
 	def VpcOperatorStart(self, param):
@@ -57,3 +62,12 @@ class MizarWorkflowFactory():
 
 	def NetProvisioned(self, param):
 		return NetProvisioned(param=param)
+
+	def BouncerOperatorStart(self, param):
+		return BouncerOperatorStart(param=param)
+
+	def BouncerCreate(self, param):
+		return BouncerCreate(param=param)
+
+	def BouncerProvisioned(self, param):
+		return BouncerProvisioned(param=param)

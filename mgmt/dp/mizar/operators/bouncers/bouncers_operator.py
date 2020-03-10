@@ -26,14 +26,23 @@ class BouncerOperator(object):
 		config.load_incluster_config()
 		self.obj_api = client.CustomObjectsApi()
 
-	def on_startup(self, logger, **kwargs):
+	def query_existing_bouncers(self):
 		logger.info("bouncer on_startup")
 		def list_bouncers_obj_fn(name, spec, plurals):
 			logger.info("Bootstrapped Bouncer {}".format(name))
 			b = Bouncer(name, self.obj_api, self.store, spec)
-			self.store.update_bouncer(b)
+			self.store_update(b)
 
 		kube_list_obj(self.obj_api, RESOURCES.droplets, list_bouncers_obj_fn)
+
+	def get_bouncer_tmp_obj(self, name, spec):
+		return Bouncer(name, self.obj_api, None, spec)
+
+	def get_bouncer_stored_obj(self, name, spec):
+		return Bouncer(name, self.obj_api, self.store, spec)
+
+	def store_update(self, b):
+		self.store.update_bouncer(b)
 
 	def on_bouncer_provisioned(self, body, spec, **kwargs):
 		name = kwargs['name']
@@ -52,6 +61,10 @@ class BouncerOperator(object):
 			b.update_dividers(set([div]))
 		div.set_status(OBJ_STATUS.divider_status_provisioned)
 		div.update_obj()
+
+	def set_bouncer_provisioned(self, bouncer):
+		bouncer.set_status(OBJ_STATUS.bouncer_status_provisioned)
+		bouncer.update_obj()
 
 	def update_bouncers_with_divider(self, div):
 		bouncers = self.store.get_bouncers_of_vpc(div.vpc)

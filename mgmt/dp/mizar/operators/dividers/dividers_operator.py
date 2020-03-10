@@ -48,13 +48,8 @@ class DividerOperator(object):
 		div.set_status(OBJ_STATUS.divider_status_provisioned)
 		div.update_obj()
 
-	def on_bouncer_endpoint_ready(self, body, spec, **kwargs):
-		name = kwargs['name']
-		logger.info("on_bouncer_endpoint_ready {}".format(spec))
-		b = Bouncer(name, self.obj_api, None, spec)
-		dividers = self.store.get_dividers_of_vpc(b.vpc)
-		b.update_dividers(dividers)
+	def update_bouncer_with_dividers(self, bouncer):
+		dividers = self.store.get_dividers_of_vpc(bouncer.vpc)
+		bouncer.update_dividers(dividers)
 		for d in dividers:
-			d.update_bouncers(set([b]))
-		b.set_status(OBJ_STATUS.bouncer_status_provisioned)
-		b.update_obj()
+			d.update_bouncers(set([bouncer]))
