@@ -84,3 +84,11 @@ class BouncerOperator(object):
 		ep.update_md()
 		ep.set_status(OBJ_STATUS.ep_status_provisioned)
 		ep.update_obj()
+
+	def update_endpoint_with_bouncers(self, ep):
+		bouncers = self.store.get_bouncers_of_net(ep.net)
+		eps = set([ep])
+		for b in bouncers:
+			b.update_eps(eps)
+		ep.update_bouncers(bouncers)
+		ep.update_md()

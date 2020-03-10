@@ -23,14 +23,26 @@ class EndpointOperator(object):
 		config.load_incluster_config()
 		self.obj_api = client.CustomObjectsApi()
 
-	def on_startup(self, logger, **kwargs):
+	def query_existing_endpoints(self):
 		def list_endpoint_obj_fn(name, spec, plurals):
 			logger.info("Bootstrapped {}".format(name))
 			ep = Endpoint(name, self.obj_api, self.store, spec)
-			self.store.update_ep(ep)
+			self.store_update(ep)
 
 		kube_list_obj(self.obj_api, RESOURCES.endpoints, list_endpoint_obj_fn)
-		logger.debug("Bootstrap Endpoint store: ".format(self.store._dump_eps()))
+
+	def get_endpoint_tmp_obj(self, name, spec):
+		return Endpoint(name, self.obj_api, None, spec)
+
+	def get_endpoint_stored_obj(self, name, spec):
+		return Endpoint(name, self.obj_api, self.store, spec)
+
+	def set_endpoint_provisioned(self, ep):
+		ep.set_status(OBJ_STATUS.ep_status_provisioned)
+		ep.update_obj()
+
+	def store_update(self, ep):
+		self.store.update_ep(ep)
 
 	def on_endpoint_delete(self, body, spec, **kwargs):
 		logger.info("on_endpoint_delete {}".format(spec))

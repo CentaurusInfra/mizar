@@ -25,6 +25,11 @@ from dp.mizar.workflows.bouncers.create import *
 from dp.mizar.workflows.bouncers.provisioned import *
 from dp.mizar.workflows.bouncers.delete import *
 
+from dp.mizar.workflows.endpoints.bootstrap import *
+from dp.mizar.workflows.endpoints.create import *
+from dp.mizar.workflows.endpoints.provisioned import *
+from dp.mizar.workflows.endpoints.delete import *
+
 class MizarWorkflowFactory():
 
 	def VpcOperatorStart(self, param):
@@ -71,3 +76,12 @@ class MizarWorkflowFactory():
 
 	def BouncerProvisioned(self, param):
 		return BouncerProvisioned(param=param)
+
+	def EndpointOperatorStart(self, param):
+		return EndpointOperatorStart(param=param)
+
+	def EndpointCreate(self, param):
+		return EndpointCreate(param=param)
+
+	def EndpointProvisioned(self, param):
+		return EndpointProvisioned(param=param)
