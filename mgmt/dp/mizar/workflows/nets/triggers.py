@@ -38,6 +38,7 @@ def net_opr_on_net_provisioned(body, spec, **kwargs):
 	param.name = kwargs['name']
 	param.body = body
 	param.spec = spec
+	param.diff = kwargs['diff']
 	run_task(wffactory().NetProvisioned(param=param))
 
 

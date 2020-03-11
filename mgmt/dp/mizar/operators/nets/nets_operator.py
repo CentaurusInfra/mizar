@@ -51,6 +51,7 @@ class NetOperator(object):
 		n = Net(OBJ_DEFAULTS.default_ep_net, self.obj_api, self.store)
 		n.create_obj()
 
+
 	def set_net_provisioned(self, net):
 		net.set_status(OBJ_STATUS.net_status_provisioned)
 		net.update_obj()
@@ -64,10 +65,23 @@ class NetOperator(object):
 		n.set_status(OBJ_STATUS.net_status_allocated)
 		n.update_obj()
 
-	def create_net_bouncers(self, net):
-		for i in range(net.n_bouncers):
-			logger.info("Create Bouncer {} for net: {}".format(i, net.name))
+	def create_net_bouncers(self, net, n):
+		logger.info("Create {} Bouncers for net: {}".format(n, net.name))
+		for i in range(n):
 			net.create_bouncer()
+
+	def process_bouncer_change(self, net, old, new):
+		diff = new - old
+		if diff > 0:
+			logger.info("Scaling out Nets bouncers: {}".format(diff))
+			return self.create_net_bouncers(net, abs(diff))
+
+		if diff < 0:
+			logger.info("Scaling in Nets bouncers: {}".format(diff))
+			pass
+
+		return
+
 
 	def on_net_delete(self, body, spec, **kwargs):
 		logger.info("on_net_delete {}".format(spec))

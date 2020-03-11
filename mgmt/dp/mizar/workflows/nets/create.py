@@ -14,6 +14,6 @@ class NetCreate(WorkflowTask):
 	def run(self):
 		logger.info("Run {task}".format(task=self.__class__.__name__))
 		n = nets_opr.get_net_stored_obj(self.param.name, self.param.spec)
-		nets_opr.create_net_bouncers(n)
+		nets_opr.create_net_bouncers(n, n.n_bouncers)
 		nets_opr.set_net_provisioned(n)
 		self.finalize()

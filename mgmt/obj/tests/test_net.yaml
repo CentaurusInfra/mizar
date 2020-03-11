@@ -5,6 +5,7 @@ metadata:
 spec:
   vpc: "vpc0"
   vni: "0"
-  ip: "10.0.0.0"
+  ip: "20.0.0.0"
   spec: "16"
   status: "Init"
+  bouncers: 2
