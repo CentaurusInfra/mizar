@@ -236,7 +236,8 @@ For example:
    1. A VPC object is in state **Init**
    2. There is only one Operator that may mutate its state to the next state of **Provisioned**, the VPC Operator.
 
-### VPC Object Life Cycle
+### VPC Object Create Workflow
+
 
 ![VPC](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/phudtran/mizar/dev-k8s/Documentation/design/figures/create_vpc_workflow.puml)
 
@@ -253,7 +254,7 @@ For example:
 11. The VPC Operator sees that the Divider has been provisioned.
 12. The VPC Operator updates the state of the VPC to **Provisioned** and persists its state to the API Server.
 
-### Network Object Life Cycle
+### Network Object Create Workflow
 
 ![Net](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/phudtran/mizar/dev-k8s/Documentation/design/figures/create_network_workflow.puml)
 
@@ -275,7 +276,7 @@ For example:
 16. The Network Operator updates the status of the Network Object to **Provisioned** and persists its state to the API Server.
 
 
-### Endpoint Object Life Cycle
+### Endpoint Object Create Workflow
 
 ![Endpoint](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/phudtran/mizar/dev-k8s/Documentation/design/figures/create_endpoint_workflow.puml)
 
@@ -290,7 +291,7 @@ For example:
 9. The Endpoint Operator sees that the Endpoint's state is now provisioned.
 10. The Endpoint Operator updates its own state store with the newly provisioned Endpoint.
 
-### Divider Object Life Cycle (Mizar Specific)
+### Divider Object Create Workflow (Mizar Specific)
 
 ![Divider](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/phudtran/mizar/dev-k8s/Documentation/design/figures/create_divider_workflow.puml)
 
@@ -304,7 +305,7 @@ For example:
 8. The Divider Operator sees that the Divider Object is now Provisioned.
 9. The Divider Operator updates its state store with the newly provisioned Divider Object.
 
-### Bouncer Object Life Cycle (Mizar Specific)
+### Bouncer Object Create Workflow (Mizar Specific)
 
 ![Bouncer](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/phudtran/mizar/dev-k8s/Documentation/design/figures/create_bouncer_workflow.puml)
 
@@ -322,7 +323,7 @@ For example:
 12. The Endpoint Operator sees that the Bouncer status is now Provisioned.
 13. The Endpoint Operator updates all Endpoints with the new Bouncer (Note: There are currently no Endpoints)
 
-### Droplet Object Life Cycle
+### Droplet Object Create Workflow
 
 ![Droplet](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/phudtran/mizar/dev-k8s/Documentation/design/figures/create_droplet_workflow.puml)
 
@@ -332,6 +333,18 @@ For example:
 4. The Droplet Operator updats the status of the Droplet to **Provisioned** and persists its state to the API Server.
 5. The Droplet Operator sees that the Droplet is now Provisioned.
 6. The Droplet Operator updater its state store with the Droplet
+
+
+### VPC Object Delete Workflow
+![VPC](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/phudtran/mizar/dev-k8s/Documentation/design/figures/delete_vpc_workflow.puml)
+### Network Object Delete Workflow
+![Network](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/phudtran/mizar/dev-k8s/Documentation/design/figures/delete_network_workflow.puml)
+### Endpoint Object Delete Workflow
+![Endpoint](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/phudtran/mizar/dev-k8s/Documentation/design/figures/delete_endpoint_workflow.puml)
+### Divider Object Delete Workflow
+![Divider](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/phudtran/mizar/dev-k8s/Documentation/design/figures/delete_divider_workflow.puml)
+### Bouncer Object Delete Workflow
+![Bouncer](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/phudtran/mizar/dev-k8s/Documentation/design/figures/delete_bouncer_workflow.puml)
 
 ### Compatability of other Data-planes (OVS)
 

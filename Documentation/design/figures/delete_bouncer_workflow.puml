@@ -1,0 +1,32 @@
+@startuml
+
+skinparam monochrome true
+autonumber
+
+database API_Server
+collections Divider_Operator
+collections Network_Operator
+collections Bouncer_Operator
+collections Endpoints_Operator
+collections Droplet_Operator
+
+==Bouncer Delete Requested==
+rnote over API_Server: ==Bouncer Status TBD
+Bouncer_Operator --> API_Server: Sees status TBD
+Bouncer_Operator -> Endpoints_Operator: Remove Bouncer info from endpoints and vice versa.
+group For All Endpoints
+Endpoints_Operator -> Endpoints_Operator: Delete Bouncer info Endpoints
+Endpoints_Operator -> Endpoints_Operator: Delete Endpoint info from Bouncer host
+end
+Endpoints_Operator -> Divider_Operator: On Bouncer-EndpointDelete
+group For All Dividers
+Divider_Operator -> Divider_Operator: Delete  Bouncer info from Divider
+Divider_Operator -> Divider_Operator: Delete Divider info from Bouncer host
+end
+Divider_Operator -> API_Server: Updates status to Deprovisioned
+rnote over API_Server: == Bouncer Status: Deprovisioned
+Bouncer_Operator --> API_Server: Sees status Deprovisioned
+Bouncer_Operator -> API_Server: Deletes Bouncer Object
+Bouncer_Operator -> Bouncer_Operator: Updates cache
+==Bouncer Deleted==
+@enduml

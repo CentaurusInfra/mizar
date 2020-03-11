@@ -1,0 +1,52 @@
+@startuml
+
+skinparam monochrome true
+autonumber
+
+database API_Server
+collections CNI_Service
+collections Divider_Operator
+collections Network_Operator
+collections Bouncer_Operator
+collections Endpoints_Operator
+
+==Network Delete Requested==
+rnote over API_Server: ==Network Status: TBD
+Network_Operator --> API_Server: Sees status TBD
+group For All Endpoints
+Network_Operator -> Network_Operator: Deallocate Endpoints IP, Gw, etc.
+Network_Operator -> Bouncer_Operator: On Endpoint-Dealloc
+group For All Bouncers
+Bouncer_Operator -> Bouncer_Operator: Delete Endpoint from Bouncer
+Bouncer_Operator -> Bouncer_Operator: Delete Bouncer information from Endpoint host
+end
+Bouncer_Operator -> CNI_Service: On Endpoint-Deleted
+CNI_Service -> CNI_Service: Write to CNI file.
+Bouncer_Operator -> API_Server: Updates status to Deprovisioned
+rnote over API_Server: ==Endpoint Status: Deprovisioned
+Endpoints_Operator --> API_Server: Sees Endpoint status Deprovisioned
+Endpoints_Operator -> API_Server: Delete Endpoint Object from API Server
+Endpoints_Operator -> Endpoints_Operator: Update cache
+end
+Network_Operator -> Bouncer_Operator: On All Endpoints Deprovisioned
+group For All Bouncers
+group For All Dividers
+Divider_Operator -> Divider_Operator: Delete Divider information from Bouncer
+Divider_Operator --> Divider_Operator: Delete Bouncer information from the Divider
+Divider_Operator -> API_Server: Update status to Deprovisioned
+end
+rnote over API_Server: ==Bouncer Status: Deprovisioned
+Bouncer_Operator --> API_Server: Sees status Bouncer Deprovisioned
+Bouncer_Operator -> API_Server: Delete Bouncer Object
+Bouncer_Operator -> Bouncer_Operator: Update cache
+end
+Bouncer_Operator -> Network_Operator: On All Bouncers Deprovisioned
+Network_Operator -> API_Server: Update Network status to Deprovisioned.
+rnote over API_Server: ==Network Status: Deprovisioned
+Network_Operator --> API_Server: Sees status Deprovisioned.
+Network_Operator -> API_Server: Deletes Network Object
+Network_Operator -> Network_Operator: Update cache.
+
+
+==Network Deleted==
+@enduml
