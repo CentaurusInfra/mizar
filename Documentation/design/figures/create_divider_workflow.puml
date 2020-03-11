@@ -15,12 +15,14 @@ VPC_Operator -> API_Server: Create a Divider
 ==Divider Created==
 rnote over API_Server: ==Divider Status: Init
 
-Droplet_Operator --> API_Server: Sees status Init
+Divider_Operator --> API_Server: Sees Divider Status Init
+Divider_Operator -> Droplet_Operator: Place Divider
 Droplet_Operator -> Droplet_Operator: Places Divider on a Droplet
 Droplet_Operator -> Bouncer_Operator: On Divider Placed
-
-Bouncer_Operator -> Bouncer_Operator: Updates all Bouncers with Divider info
-Bouncer_Operator -> Bouncer_Operator: Updates divider with all Bouncer info
+group For All Bouncers
+Bouncer_Operator -> Bouncer_Operator: Updates Bouncers with Divider info
+Bouncer_Operator -> Bouncer_Operator: Updates divider with Bouncer info
+end
 Bouncer_Operator -> API_Server: Updates status to Provisioned
 rnote over API_Server: ==Divider Status: Provisioned
 Divider_Operator --> API_Server: Sees status Provisioned

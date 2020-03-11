@@ -17,21 +17,23 @@ Network_Operator -> API_Server: Create a Bouncer
 rnote over API_Server: ==Bouncer Status Init
 Droplet_Operator --> API_Server: Sees status Init
 Droplet_Operator -> Droplet_Operator: Places Bouncer on Droplet
-
 Droplet_Operator -> Endpoints_Operator: On Bouncer-Placed
+group For All Endpoints
 Endpoints_Operator -> Endpoints_Operator: Update new Bouncer with all endpoints (No Endpoints)
+Endpoints_Operator -> Endpoints_Operator: Updates Endpoint with new Bouncer (No Endpoints)
+end
 Endpoints_Operator -> Divider_Operator: On Bouncer-EndpointReady
-Divider_Operator -> Divider_Operator: Update new Bouncer with all Dividers
-Divider_Operator -> Divider_Operator: Update all Dividers with new Bouncer
+group For All Dividers
+Divider_Operator -> Divider_Operator: Update new Bouncer with Divider
+Divider_Operator -> Divider_Operator: Update Divider with new Bouncer
+end
 Divider_Operator -> API_Server: Updates status to Provisioned
 rnote over API_Server: == Bouncer Status: Provisioned
-
 Bouncer_Operator --> API_Server: Sees status provisioned
 Bouncer_Operator -> Bouncer_Operator: Updates cache
-Endpoints_Operator --> API_Server: Sees Bouncer Status provisioned
-Endpoints_Operator -> Endpoints_Operator: Updates all Endpoints with new Bouncer (No Endpoints)
-Network_Operator --> API_Server: Sees Bouncer status provisioned
 Network_Operator -> API_Server: Updates Network status to provisioned
 rnote over API_Server: == Network Status: Provisioned
+Network_Operator --> API_Server: Sees Network status Provisioned
+Network_Operator -> Network_Operator: Update cache
 ==Network Ready==
 @enduml
