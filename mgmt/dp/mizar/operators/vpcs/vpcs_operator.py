@@ -51,10 +51,22 @@ class VpcOperator(object):
 	def store_update(self, vpc):
 		self.store.update_vpc(vpc)
 
-	def create_vpc_dividers(self, vpc):
-		for i in range(vpc.n_dividers):
+	def create_vpc_dividers(self, vpc, n):
+		for i in range(n):
 			logger.info("Create divider {} for vpc: {}".format(i, vpc.name))
 			vpc.create_divider()
+
+	def process_divider_change(self, vpc, old, new):
+		diff = new - old
+		if diff > 0:
+			logger.info("Scaling out VPCs dividers: {}".format(diff))
+			return self.create_vpc_dividers(vpc, abs(diff))
+
+		if diff < 0:
+			logger.info("Scaling in VPCs dividers: {}".format(diff))
+			pass
+
+		return
 
 	def set_vpc_provisioned(self, vpc):
 		vpc.set_status(OBJ_STATUS.vpc_status_provisioned)

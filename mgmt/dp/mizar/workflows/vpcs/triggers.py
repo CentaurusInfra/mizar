@@ -6,7 +6,7 @@ from common.common import *
 from common.constants import *
 from common.wf_factory import *
 from common.wf_param import *
-
+logger = logging.getLogger()
 LOCK: asyncio.Lock
 
 @kopf.on.startup()
@@ -38,6 +38,7 @@ def vpc_opr_on_vpc_provisioned(body, spec, **kwargs):
 	param.name = kwargs['name']
 	param.body = body
 	param.spec = spec
+	param.diff = kwargs['diff']
 	run_task(wffactory().VpcProvisioned(param=param))
 
 
