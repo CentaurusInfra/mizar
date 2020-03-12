@@ -2,13 +2,13 @@
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
-- role: control-plane
-  image: selgohari/kindnode:latest
-  extraMounts:
-  - hostPath: .
-    containerPath: /var/mizar
-- role: worker
-  image: selgohari/kindnode:latest
-  extraMounts:
-  - hostPath: .
-    containerPath: /var/mizar
+  - role: control-plane
+    image: phudtran/kindnode:latest
+    extraMounts:
+      - hostPath: .
+        containerPath: /var/mizar
+  - role: worker
+    image: phudtran/kindnode:latest
+    extraMounts:
+      - hostPath: .
+        containerPath: /var/mizar

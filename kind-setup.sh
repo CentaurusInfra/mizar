@@ -7,7 +7,7 @@ KINDHOME="${HOME}/.kube/config"
 
 kind delete cluster
 
-docker image build -t selgohari/kindnode:latest -f k8s/kind/Dockerfile .
+docker image build -t phudtran/kindnode:latest -f k8s/kind/Dockerfile .
 
 kind create cluster --config k8s/kind/cluster.yaml --kubeconfig $KINDCONF
 

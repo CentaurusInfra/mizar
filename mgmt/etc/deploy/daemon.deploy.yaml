@@ -22,10 +22,10 @@ spec:
             path: /home
             type: Directory
       containers:
-      - image: selgohari/dropletd:latest
-        name: mizar-daemon
-        securityContext:
+        - image: phudtran/dropletd:latest
+          name: mizar-daemon
+          securityContext:
             privileged: true
-        volumeMounts:
-          - name: mizar
-            mountPath: /mizar
+          volumeMounts:
+            - name: mizar
+              mountPath: /mizar

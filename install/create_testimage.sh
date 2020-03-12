@@ -3,5 +3,5 @@
 DIR=${1:-.}
 
 # Build the daemon image
-docker image build -t selgohari/testpod:latest -f $DIR/mgmt/etc/docker/test.Dockerfile $DIR
-docker image push selgohari/testpod:latest
+docker image build -t phudtran/testpod:latest -f $DIR/mgmt/etc/docker/test.Dockerfile $DIR
+docker image push phudtran/testpod:latest

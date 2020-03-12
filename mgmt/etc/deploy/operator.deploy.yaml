@@ -16,7 +16,7 @@ spec:
       serviceAccountName: mizar-operator
       hostNetwork: true
       containers:
-      - image: selgohari/endpointopr:latest
-        name: mizar-operator
-        securityContext:
+        - image: phudtran/endpointopr:latest
+          name: mizar-operator
+          securityContext:
             privileged: true
