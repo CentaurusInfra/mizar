@@ -34,5 +34,7 @@ class Cidr:
 		self.allocated.add(ipaddress.IPv4Address(ip))
 
 	def deallocate_ip(self, ip):
-		self.allocated.remove(ip)
-		heapq.heappush(self.hosts,ip)
+		ip = ipaddress.IPv4Address(ip)
+		if ip in self.hosts:
+			self.allocated.remove(ip)
+			heapq.heappush(self.hosts, ip)

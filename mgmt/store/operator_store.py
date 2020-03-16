@@ -79,13 +79,15 @@ class OprStore(object):
 	def delete_ep(self, name):
 		if name not in self.eps_store:
 			return
-		ep = self.eps_store[name]
+		ep = self.eps_store.pop(name)
 
-		self.eps_net_store[ep.net].remove(name)
-		del self.eps_store[name]
+		if name not in self.eps_net_store[ep.net]:
+			return ep
+		self.eps_net_store[ep.net].pop(name)
 		l = len(self.eps_net_store[ep.net])
 		if  l == 0:
 			del self.eps_net_store[ep.net]
+		return ep
 
 	def get_ep(self, name):
 		if name in self.eps_store:
@@ -104,7 +106,7 @@ class OprStore(object):
 
 	def _dump_eps(self):
 		for e in self.eps_store.values():
-			logger.info("EP: {}, Spec: {}".format(e.name, e.get_obj_spec()))
+			logger.debug("EP: {}, Spec: {}".format(e.name, e.get_obj_spec()))
 
 	def update_droplet(self,droplet):
 		self.droplets_store[droplet.name] = droplet
@@ -174,12 +176,12 @@ class OprStore(object):
 		self.bouncers_store[b.name] = b
 
 		if b.net not in self.bouncers_net_store:
-			self.bouncers_net_store[b.net] = set()
-		self.bouncers_net_store[b.net].add(b)
+			self.bouncers_net_store[b.net] = {}
+		self.bouncers_net_store[b.net][b.name] = b
 
 		if b.vpc not in self.bouncers_vpc_store:
-			self.bouncers_vpc_store[b.vpc] = set()
-		self.bouncers_vpc_store[b.vpc].add(b)
+			self.bouncers_vpc_store[b.vpc] = {}
+		self.bouncers_vpc_store[b.vpc][b.name] = b
 
 	def delete_bouncer(self, name):
 		if name not in self.bouncers_store:
@@ -207,6 +209,10 @@ class OprStore(object):
 		if net in self.bouncers_net_store:
 			return self.bouncers_net_store[net]
 		return set()
+
+	def update_bouncers_of_net(self, net, bouncers):
+		if net in self.bouncers_net_store:
+			self.bouncers_net_store[net] = bouncers
 
 	def get_bouncers_of_vpc(self, vpc):
 		if vpc in self.bouncers_vpc_store:

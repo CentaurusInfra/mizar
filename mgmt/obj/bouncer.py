@@ -84,10 +84,13 @@ class Bouncer(object):
 	def update_eps(self, eps):
 		self.eps = self.eps.union(eps)
 		for e in eps:
+
 			if e.type == OBJ_DEFAULTS.ep_type_simple:
 				self._update_ep(e)
 			elif e.type == OBJ_DEFAULTS.ep_type_scaled:
 				self._update_scaled_ep(e)
+
+		return self
 
 	def _update_ep(self, ep):
 		self.rpc.update_ep(ep)
@@ -111,3 +114,13 @@ class Bouncer(object):
 		self.droplet = droplet.name
 		self.ip = droplet.ip
 		self.mac = droplet.mac
+
+	def delete_eps(self, eps):
+		for e in eps:
+			if e in self.eps:
+				self.eps.remove(e)
+				self._delete_ep(e)
+
+	def _delete_ep(self, ep):
+		self.rpc.delete_ep(ep)
+		self.rpc.delete_substrate_ep(ep.droplet_ip)

@@ -109,6 +109,14 @@ class Net(object):
 		b.set_vpc(self.vpc)
 		b.set_net(self.name)
 		b.create_obj()
+		self.bouncers[bouncer_name] = b
+
+	def delete_bouncer(self):
+		logger.info("Delete bouncers for net {}".format(self.name))
+		for key in self.bouncers:
+			bouncer = self.bouncers.pop(key)
+			bouncer.delete_obj()
+
 
 	def allocate_ip(self):
 		return self.cidr.allocate_ip()
@@ -128,7 +136,7 @@ class Net(object):
 	def delete_gw_endpoint(self):
 		pass
 
-	def update_simple_endpoint(self, ep):
+	def update_simple_endpoint(self, ep): # Unused
 		if ep.status != ep_status_allocated:
 			logger.info("Nothing to do for the endpoint {} , status must be allocated!".format(self.name))
 			return
@@ -149,8 +157,12 @@ class Net(object):
 		#update agent metadata
 		ep.update_object()
 
-	def delete_simple_endpoint(self):
-		pass
+	def delete_simple_endpoint(self, ep): # Unused
+		if ep.status != ep_status_tbd:
+			logger.info("Nothing to do for the endpoint {} , status must be tbd!".format(self.name))
+			return
+		logger.info("delete_simple_endpoint {} of net {} bouncers {}".format(ep.name, self.name, self.bouncers.keys()))
+		self.endpoints.pop(ep.name)
 
 	def update_host_endpoint(self):
 		pass

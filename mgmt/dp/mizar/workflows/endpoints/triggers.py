@@ -38,3 +38,11 @@ def endpoint_opr_on_endpoint_provisioned(body, spec, **kwargs):
 	param.body = body
 	param.spec = spec
 	run_task(wffactory().EndpointProvisioned(param=param))
+
+@kopf.on.delete(group, version, RESOURCES.endpoints)
+def endpoint_opr_on_endpoint_delete(body, spec, **kwargs):
+	param = HandlerParam()
+	param.name = kwargs['name']
+	param.body = body
+	param.spec = spec
+	run_task(wffactory().EndpointDelete(param=param))

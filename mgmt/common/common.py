@@ -2,7 +2,7 @@ import subprocess
 import ctypes
 import logging
 import luigi
-from kubernetes import watch
+from kubernetes import watch, client
 from ctypes.util import find_library
 from pathlib import Path
 _libc = ctypes.CDLL(find_library('c'), use_errno=True)
@@ -104,7 +104,18 @@ def kube_update_obj(obj):
 			get_body = True
 
 def kube_delete_obj(obj):
-	pass
+	try:
+		obj.obj_api.delete_namespaced_custom_object(
+			group="mizar.com",
+			version="v1",
+			namespace="default",
+			plural=obj.get_plural(),
+			name=obj.name,
+			body=client.V1DeleteOptions(),
+			propagation_policy="Orphan")
+		obj.store_delete_obj()
+	except:
+		logger.debug("Failed to delete {} {}".format(obj.get_kind(), obj.get_name()))
 
 def kube_watch_obj(obj, watch_callback):
 	watcher = watch.Watch()

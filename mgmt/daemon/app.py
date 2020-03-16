@@ -22,7 +22,7 @@ r = subprocess.Popen(script, shell=True, stdout=subprocess.PIPE)
 output = r.stdout.read().decode().strip()
 logging.info("Setup done")
 
-c = config.load_incluster_config()
+config.load_incluster_config()
 CniService.config = Configuration._default
 cert_file = Configuration._default.ssl_ca_cert
 obj_api = client.CustomObjectsApi()

@@ -89,9 +89,31 @@ class BouncerOperator(object):
 
 		bouncers = self.store.get_bouncers_of_net(ep.net)
 		eps = set([ep])
-		for b in bouncers:
-			b.update_eps(eps)
+
+		for key in bouncers:
+			bouncers[key].update_eps(eps)
+		self.store.update_bouncers_of_net(ep.net, bouncers)
+		for bouncer in self.store.get_bouncers_of_net(ep.net).values():
+			logger.info("Bouncer: {}".format(bouncer.name))
+			for ep in bouncer.eps:
+				logger.info("Ep is {}".format(ep.name))
 
 		if ep.type == OBJ_DEFAULTS.ep_type_simple:
 			ep.update_bouncers(bouncers)
 			ep.update_md()
+
+	def delete_endpoint_with_bouncers(self, ep):
+		bouncers = self.store.get_bouncers_of_net(ep.net)
+		for bouncer in self.store.get_bouncers_of_net(ep.net).values():
+			logger.info("Before delete Bouncer: {}".format(bouncer.name))
+			for ep in bouncer.eps:
+				logger.info("Ep is {}".format(ep.name))
+		eps = set([ep])
+		for key in bouncers:
+			bouncers[key].delete_eps(eps)
+		self.store.update_bouncers_of_net(ep.net, bouncers)
+		for bouncer in self.store.get_bouncers_of_net(ep.net).values():
+			logger.info("After delete Bouncer: {}".format(bouncer.name))
+			for ep in bouncer.eps:
+				logger.info("Ep is {}".format(ep.name))
+		# No need to delete agent info, it gets deleted with agent unload

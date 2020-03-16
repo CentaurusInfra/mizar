@@ -38,6 +38,7 @@ class Endpoint:
 		self.backends = set()
 		if spec is not None:
 			self.set_obj_spec(spec)
+		self.deleted = False
 
 	@property
 	def rpc(self):
@@ -119,6 +120,9 @@ class Endpoint:
 		return kube_update_obj(self)
 
 	def delete_obj(self):
+		if self.deleted:
+			return
+		self.deleted = True
 		return kube_delete_obj(self)
 
 	def watch_obj(self, watch_callback):
@@ -189,7 +193,7 @@ class Endpoint:
 		self.veth_peer_mac = veth_peer_mac
 
 	def update_bouncers(self, bouncers):
-		self.bouncers = self.bouncers.union(bouncers)
+		self.bouncers = self.bouncers.union(bouncers.values())
 		if self.status == OBJ_STATUS.ep_status_provisioned:
 			self.update_md()
 
@@ -238,3 +242,6 @@ class Endpoint:
 
 	def load_transit_agent(self):
 		self.rpc.load_transit_agent_xdp(self)
+
+	def unload_transit_agent_xdp(self):
+		self.rpc.unload_transit_agent_xdp(self)

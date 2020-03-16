@@ -112,9 +112,9 @@ class CniService(Service):
 		return val, status
 
 	def exposed_delete(self, params):
-		val = "!!delete service!!"
-		status = 1
-		logger.info("cni service delete {}".format(params))
+		val = ""
+		status = 0
+		self.delete_ep(params)
 		return val, status
 
 	def exposed_get(self, params):
@@ -169,6 +169,7 @@ class CniService(Service):
 		self.provision_endpoint(ep, iproute_ns)
 		ep.set_status(OBJ_STATUS.ep_status_provisioned)
 		ep.update_obj()
+		CniService.store.update_ep(ep)
 
 		return ep
 
@@ -248,5 +249,37 @@ class CniService(Service):
 		logging.info("Bring veth interface {} up and set mtu to 9000".format(ep.veth_peer))
 		self.iproute.link('set', index=ep.veth_peer_index, state='up', mtu=9000)
 
+	def delete_ep(self, params):
+		if 'K8S_POD_NAME' in params.cni_args_dict:
+			pod_name = params.cni_args_dict['K8S_POD_NAME']
+			name = 'simple-ep-' + pod_name
+			if CniService.store.contains_ep(name):
+				ep = CniService.store.get_ep(name)
+			else:
+				return
+		else:
+			logger.debug("Pod name not found!!")
+			return
+		ep.delete_obj()
+		logger.info("cni service delete {}".format(ep.name))
+		CniService.store.delete_ep(ep.name)
+		self.delete_mizarnetns(ep)
+		self.delete_veth_pair(ep)
 
+	def delete_mizarnetns(self, ep):
+		os.remove("/var/run/netns/{}".format(ep.netns))
+		logging.debug("Deleted namespace {}".format(ep.netns))
 
+	def delete_veth_pair(self, ep):
+		self.iproute.link('del', index=ep.veth_peer_index)
+		logging.debug("Deleted veth-pair {}, from {}".format(ep.veth_peer, ep.netns))
+
+	def ep_deprovisioned_fn(self, event, ep):
+		name = event['object']['metadata']['name']
+		status = event['object']['spec']['status']
+		logging.debug("Object info {}".format(event['object']))
+		if name != ep.name:
+			return False
+		if status != OBJ_STATUS.ep_status_deprovisioned:
+			return False
+		return True

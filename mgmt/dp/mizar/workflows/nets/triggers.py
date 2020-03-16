@@ -42,3 +42,10 @@ def net_opr_on_net_provisioned(body, spec, **kwargs):
 	run_task(wffactory().NetProvisioned(param=param))
 
 
+@kopf.on.delete(group, version, RESOURCES.nets)
+def  net_opr_on_net_delete(body, spec, **kwargs):
+	param = HandlerParam()
+	param.name = kwargs['name']
+	param.body = body
+	param.spec = spec
+	#run_task(wffactory().NetDelete(param=param))

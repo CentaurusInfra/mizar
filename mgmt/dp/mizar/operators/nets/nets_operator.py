@@ -34,7 +34,7 @@ class NetOperator(object):
 
 		kube_list_obj(self.obj_api, RESOURCES.nets, list_net_obj_fn)
 		self.create_default_net()
-		logger.debug("Bootstrap Net store: ".format(self.store._dump_nets()))
+		logger.debug("Bootstrap Net store: {}".format(self.store._dump_nets()))
 
 	def get_net_tmp_obj(self, name, spec):
 		return Net(name, self.obj_api, None, spec)
@@ -121,6 +121,13 @@ class NetOperator(object):
 		prefix = n.get_prefixlen()
 		ep.set_gw(gw)
 		ep.set_prefix(prefix)
+
 		if ep.type == OBJ_DEFAULTS.ep_type_simple:
 			ep.load_transit_agent()
+
+		n.mark_ip_as_allocated(ip)
+
+	def deallocate_endpoint(self, ep):
+		n = self.store.get_net(ep.net)
+		n.deallocate_ip(ep.ip)
 

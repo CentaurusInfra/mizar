@@ -21,16 +21,23 @@ class OBJ_STATUS:
 	ep_status_allocated = 'Alloc'
 	ep_status_bouncer_ready = 'BouncerReady'
 	ep_status_provisioned = 'Provisioned'
+	ep_status_tbd = 'TBD'
+	ep_status_deprovisioned = 'Deprovisioned'
 
 	net_status_init = 'Init'
 	net_status_allocated = 'Alloc'
 	net_status_ready = 'Ready'
 	net_status_provisioned = 'Provisioned'
+	net_status_tbd = 'TBD'
+	net_status_deprovisioned = 'Deprovisioned'
+
 
 	vpc_status_init = 'Init'
 	vpc_status_allocated = 'Alloc'
 	vpc_status_ready = 'Ready'
 	vpc_status_provisioned = 'Provisioned'
+	vpc_status_tbd = 'TBD'
+	vpc_status_deprovisioned = 'Deprovisioned'
 
 	droplet_status_init = 'Init'
 	droplet_status_allocated = 'Alloc'
@@ -44,12 +51,16 @@ class OBJ_STATUS:
 	bouncer_status_placed = 'Placed'
 	bouncer_status_endpoint_ready = 'EndpointReady'
 	bouncer_status_divider_ready = 'DividerReady'
+	bouncer_status_tbd = 'TBD'
+	bouncer_status_deprovisioned = 'Deprovisioned'
 
 	divider_status_init = 'Init'
 	divider_status_allocated = 'Alloc'
 	divider_status_provisioned = 'Ready'
 	divider_status_provisioned = 'Provisioned'
 	divider_status_placed = 'Placed'
+	divider_status_tbd = 'TBD'
+	divider_status_provisioned = 'Deprovisioned'
 
 class OBJ_DEFAULTS:
 	default_ep_vpc = 'vpc0'
@@ -77,6 +88,8 @@ class LAMBDAS:
 	ep_status_allocated = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.ep_status_allocated
 	ep_status_provisioned = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.ep_status_provisioned
 	ep_status_bouncer_ready = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.ep_status_bouncer_ready
+	ep_status_tbd = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.ep_status_tbd
+	ep_status_deprovisioned = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.ep_status_deprovisioned
 
 	net_status_init = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.net_status_init
 	net_status_allocated = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.net_status_allocated
