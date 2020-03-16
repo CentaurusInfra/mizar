@@ -30,11 +30,14 @@ from dp.mizar.workflows.endpoints.create import *
 from dp.mizar.workflows.endpoints.provisioned import *
 from dp.mizar.workflows.endpoints.delete import *
 from dp.mizar.workflows.endpoints.deprovisioned import *
+<<<<<<< HEAD
 
 from dp.mizar.workflows.builtins.services.bootstrap import *
 from dp.mizar.workflows.builtins.services.create import *
 from dp.mizar.workflows.builtins.services.provisioned import *
 from dp.mizar.workflows.builtins.services.delete import *
+=======
+>>>>>>> Initial work for delete_ep
 
 class MizarWorkflowFactory():
 
@@ -93,6 +96,7 @@ class MizarWorkflowFactory():
 		return EndpointProvisioned(param=param)
 
 	def EndpointDelete(self, param):
+<<<<<<< HEAD
 		return EndpointDelete(param=param)
 
 	def k8sServiceCreate(self, param):
@@ -101,3 +105,6 @@ class MizarWorkflowFactory():
 	def k8sEndpointsUpdate(self, param):
 		return k8sEndpointsUpdate(param=param)
 
+=======
+		return EndpointDelete(param=param)
+>>>>>>> Initial work for delete_ep

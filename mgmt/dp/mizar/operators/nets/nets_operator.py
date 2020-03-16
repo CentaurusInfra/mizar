@@ -130,4 +130,3 @@ class NetOperator(object):
 	def deallocate_endpoint(self, ep):
 		n = self.store.get_net(ep.net)
 		n.deallocate_ip(ep.ip)
-
