@@ -83,25 +83,12 @@ class Bouncer(object):
 		self.status = status
 
 	def update_eps(self, eps):
-<<<<<<< HEAD
 		for ep in eps:
-			self.eps[ep.name] = ep
-		for ep in eps:
-			if ep.name not in self.known_substrates.keys():
-				self.known_substrates[ep.name] = ep.droplet_ip
-
-			if e.type == OBJ_DEFAULTS.ep_type_simple:
-				self._update_ep(e)
-			elif e.type == OBJ_DEFAULTS.ep_type_scaled:
-				self._update_scaled_ep(e)
-
-
-=======
-		self.eps = self.eps.union(eps)
-		for e in eps:
-			self._update_ep(e)
-		return self
->>>>>>> Initial work for delete_ep
+			if ep.name not in self.eps.keys():
+				logger.info("EEP: Updated")
+				self.eps[ep.name] = ep
+				self._update_ep(ep)
+				self.droplet_obj.update_substrate(ep.name)
 
 	def _update_ep(self, ep):
 		self.rpc.update_ep(ep)
@@ -127,7 +114,6 @@ class Bouncer(object):
 		self.mac = droplet.mac
 
 	def delete_eps(self, eps):
-<<<<<<< HEAD
 		for ep in eps:
 			if ep.name in self.eps.keys():
 				self.eps.pop(ep.name)
@@ -135,19 +121,5 @@ class Bouncer(object):
 
 	def _delete_ep(self, ep):
 		self.rpc.delete_ep(ep)
-		logger.info("Len of dict :" + str(len(self.known_substrates)))
-		if ep.name in self.known_substrates.keys():
-			self.known_substrates.pop(ep.name)
-		if ep.droplet_ip not in self.known_substrates.values():
-			self.rpc.delete_substrate_ep(ep.droplet_ip)
+		self.droplet_obj.delete_substrate(ep.name)
 
-=======
-		for e in eps:
-			if e in self.eps:
-				self.eps.remove(e)
-				self._delete_ep(e)
-
-	def _delete_ep(self, ep):
-		self.rpc.delete_ep(ep)
-		self.rpc.delete_substrate_ep(ep.droplet_ip)
->>>>>>> Initial work for delete_ep
