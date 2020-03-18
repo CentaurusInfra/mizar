@@ -113,11 +113,14 @@ class NetOperator(object):
 
 	def allocate_endpoint(self, ep):
 		n = self.store.get_net(ep.net)
-		ip = n.allocate_ip()
+		if ep.ip == "":
+			ip = n.allocate_ip()
+			n.mark_ip_as_allocated(ip)
+			ep.set_ip(ip)
 		gw = n.get_gw_ip()
 		prefix = n.get_prefixlen()
-		ep.set_ip(ip)
 		ep.set_gw(gw)
 		ep.set_prefix(prefix)
-		ep.load_transit_agent()
-		n.mark_ip_as_allocated(ip)
+		if ep.type == OBJ_DEFAULTS.ep_type_simple:
+			ep.load_transit_agent()
+

@@ -7,6 +7,8 @@ from common.constants import *
 from common.wf_factory import *
 from common.wf_param import *
 
+logger = logging.getLogger()
+
 LOCK: asyncio.Lock
 
 @kopf.on.startup()

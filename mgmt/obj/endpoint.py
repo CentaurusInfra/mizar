@@ -35,6 +35,7 @@ class Endpoint:
 		self.mac = ""
 		self.veth_peer_mac = ""
 		self.bouncers = set()
+		self.backends = set()
 		if spec is not None:
 			self.set_obj_spec(spec)
 
@@ -197,6 +198,9 @@ class Endpoint:
 		for b in self.bouncers:
 			self.rpc.update_agent_substrate_ep(self, b.ip, b.mac)
 
+	def set_backends(self, backends):
+		self.backends = backends
+
 	def get_veth_peer(self):
 		return self.veth_peer
 
@@ -212,12 +216,17 @@ class Endpoint:
 	def get_eptype(self):
 		if self.type == OBJ_DEFAULTS.ep_type_simple:
 			return str(CONSTANTS.TRAN_SIMPLE_EP)
+		if self.type == OBJ_DEFAULTS.ep_type_scaled:
+			return str(CONSTANTS.TRAN_SCALED_EP)
 
 	def get_mac(self):
 		return str(self.mac)
 
 	def get_remote_ips(self):
-		remote_ips = [self.droplet_ip]
+		if self.type == OBJ_DEFAULTS.ep_type_simple:
+			remote_ips = [self.droplet_ip]
+		if self.type == OBJ_DEFAULTS.ep_type_scaled:
+			remote_ips = list(self.backends)
 		return remote_ips
 
 	def get_remote_macs(self):

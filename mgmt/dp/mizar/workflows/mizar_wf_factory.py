@@ -30,6 +30,11 @@ from dp.mizar.workflows.endpoints.create import *
 from dp.mizar.workflows.endpoints.provisioned import *
 from dp.mizar.workflows.endpoints.delete import *
 
+from dp.mizar.workflows.builtins.services.bootstrap import *
+from dp.mizar.workflows.builtins.services.create import *
+from dp.mizar.workflows.builtins.services.provisioned import *
+from dp.mizar.workflows.builtins.services.delete import *
+
 class MizarWorkflowFactory():
 
 	def VpcOperatorStart(self, param):
@@ -85,3 +90,9 @@ class MizarWorkflowFactory():
 
 	def EndpointProvisioned(self, param):
 		return EndpointProvisioned(param=param)
+
+	def k8sServiceCreate(self, param):
+		return k8sServiceCreate(param=param)
+
+	def k8sEndpointsUpdate(self, param):
+		return k8sEndpointsUpdate(param=param)

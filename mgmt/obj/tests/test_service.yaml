@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-service-3
+  annotations:
+        service.beta.kubernetes.io/mizar-scaled-endpoint-type: "scaled-endpoint"
+  labels:
+    run: test-service-3
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+  selector:
+    run: example3
+

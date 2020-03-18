@@ -18,6 +18,7 @@ class Bouncer(object):
 		self.eps = set()
 		self.dividers = set()
 		self.status = OBJ_STATUS.bouncer_status_init
+		self.scaled_ep_obj = '/trn_xdp/trn_transit_scaled_endpoint_ebpf_debug.o'
 		if spec is not None:
 			self.set_obj_spec(spec)
 
@@ -83,11 +84,19 @@ class Bouncer(object):
 	def update_eps(self, eps):
 		self.eps = self.eps.union(eps)
 		for e in eps:
-			self._update_ep(e)
+			if e.type == OBJ_DEFAULTS.ep_type_simple:
+				self._update_ep(e)
+			elif e.type == OBJ_DEFAULTS.ep_type_scaled:
+				self._update_scaled_ep(e)
 
 	def _update_ep(self, ep):
 		self.rpc.update_ep(ep)
 		self.rpc.update_substrate_ep(ep.droplet_ip, ep.droplet_mac)
+
+	def _update_scaled_ep(self, ep):
+		self.rpc.update_ep(ep)
+		self.rpc.load_transit_xdp_pipeline_stage(CONSTANTS.ON_XDP_SCALED_EP,
+			self.scaled_ep_obj)
 
 	def update_dividers(self, dividers):
 		self.dividers = self.dividers.union(dividers)

@@ -139,3 +139,14 @@ class TrnRpc:
 		logger.info("load_transit_agent_xdp: {}".format(cmd))
 		returncode, text = run_cmd(cmd)
 		logger.info("load_transit_agent_xdp returns {} {}".format(returncode, text))
+
+	def load_transit_xdp_pipeline_stage(self, stage, obj_file):
+		jsonconf = {
+			"xdp_path": obj_file,
+			"stage": stage
+		}
+		jsonconf = json.dumps(jsonconf)
+		cmd = f'''{self.trn_cli_load_pipeline_stage} \'{jsonconf}\' '''
+		logger.info("load_transit_xdp_pipeline_stage: {}".format(cmd))
+		returncode, text = run_cmd(cmd)
+		logger.info("load_transit_xdp_pipeline_stage returns {} {}".format(returncode, text))

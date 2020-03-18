@@ -1,4 +1,5 @@
 import logging
+import random
 from kubernetes import client, config
 from obj.endpoint import Endpoint
 from obj.bouncer import Bouncer
@@ -61,3 +62,39 @@ class EndpointOperator(object):
 		eps = self.store.get_eps_in_net(bouncer.net)
 		for ep in eps:
 			ep.update_bouncers(set([bouncer]))
+
+	def create_scaled_endpoint(self, name, spec):
+		logger.info("Create scaled endpoint {} spec {}".format(name, spec))
+
+		ep = Endpoint(name, self.obj_api, self.store)
+		ip = spec['clusterIP']
+		# If not provided in Pod, use defaults
+		# TODO: have it pod :)
+		ep.set_vni(OBJ_DEFAULTS.default_vpc_vni)
+		ep.set_vpc(OBJ_DEFAULTS.default_ep_vpc)
+		ep.set_net(OBJ_DEFAULTS.default_ep_net)
+		ep.set_ip(ip)
+		ep.set_mac(self.rand_mac())
+		ep.set_type(OBJ_DEFAULTS.ep_type_scaled)
+		ep.set_status(OBJ_STATUS.ep_status_init)
+		ep.create_obj()
+
+	def rand_mac(self):
+		return "a5:5b:00:%02x:%02x:%02x" % (
+			random.randint(0, 255),
+			random.randint(0, 255),
+			random.randint(0, 255),
+			)
+
+	def update_scaled_endpoint_backend(self, name, spec):
+		ep = self.store.get_ep(name)
+		if ep is None:
+			return None
+		backends = set()
+		for s in spec:
+			for a in s['addresses']:
+				backends.add(a['ip'])
+		ep.set_backends(backends)
+		self.store_update(ep)
+		logger.info("Update scaled endpoint {} with backends: {}".format(name, backends))
+		return self.store.get_ep(name)

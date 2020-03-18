@@ -80,3 +80,11 @@ class WorkflowFactory(ABC):
 	@abstractmethod
 	def BouncerProvisioned(self, param):
 		pass
+
+	@abstractmethod
+	def k8sServiceCreate(self, param):
+		pass
+
+	@abstractmethod
+	def k8sEndpointsUpdate(self, param):
+		pass
