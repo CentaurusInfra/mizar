@@ -112,9 +112,6 @@ class Bouncer(object):
 		self.rpc.load_transit_xdp_pipeline_stage(CONSTANTS.ON_XDP_SCALED_EP,
 			self.scaled_ep_obj)
 
-	def update_dividers(self, dividers):
-		self.dividers = self.dividers.union(dividers)
-
 	def update_vpc(self, dividers, add=True): # Fix this
 		for divider in dividers:
 			if add:

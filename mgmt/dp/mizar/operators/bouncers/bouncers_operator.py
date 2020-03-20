@@ -86,7 +86,7 @@ class BouncerOperator(object):
 		for b in bouncers:
 			b.update_eps(eps)
 		ep.update_bouncers(bouncers)
-		ep.update_md()
+		ep.update_agent(bouncers)
 		ep.set_status(OBJ_STATUS.ep_status_provisioned)
 		ep.update_obj()
 
@@ -96,7 +96,6 @@ class BouncerOperator(object):
 		eps = set([ep])
 		for key in bouncers:
 			bouncers[key].update_eps(eps)
-		self.store.update_bouncers_of_net(ep.net, bouncers)
 		ep.update_bouncers(bouncers)
 
 	def delete_endpoint_from_bouncers(self, ep):
@@ -106,3 +105,6 @@ class BouncerOperator(object):
 			bouncers[key].delete_eps(eps)
 		self.store.update_bouncers_of_net(ep.net, bouncers)
 		# No need to delete agent info, it gets deleted with agent unload
+
+	def delete_vpc(self, bouncer):
+		bouncer.delete_vpc()

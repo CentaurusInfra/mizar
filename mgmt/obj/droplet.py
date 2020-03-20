@@ -19,7 +19,6 @@ class Droplet(object):
 		self.phy_itf = 'eth0'
 		self.status = OBJ_STATUS.droplet_status_init
 		self.known_substrates = {}
-		self.known_agent_substrates = {}
 		self.known_bouncers = {}
 		if spec is not None:
 			self.set_obj_spec(spec)
@@ -91,19 +90,6 @@ class Droplet(object):
 		if self.ip not in self.known_substrates.values():
 			logger.info("DROPLET_SUBSTRATE: Deleted")
 			self.rpc.delete_substrate_ep(self.ip)
-
-	def update_agent_substrate(self, name, ep):
-		if name not in self.known_substrates.keys():
-			logger.info("DROPLET_AGENT_SUBSTRATE: Updated")
-			self.known_agent_substrates[name] = self.ip
-			self.rpc.update_agent_substrate_ep(ep, self.ip, self.mac)
-
-	def delete_agent_substrate(self, name, ep):
-		if name in self.known_agent_substrates.keys():
-			self.known_agent_substrates.pop(name)
-		if self.ip not in self.known_agent_substrates.values():
-			logger.info("DROPLET_AGENT_SUBSTRATE: Deleted")
-			self.rpc.delete_agent_substrate_ep(ep, self.ip)
 
 	def update_vpc(self, bouncer):
 		if bouncer.name not in self.known_bouncers.keys():

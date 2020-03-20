@@ -69,7 +69,6 @@ class TrnRpc:
 		returncode, text = run_cmd(cmd)
 		logger.info("update_agent_substrate_ep returns {} {}".format(returncode, text))
 
-
 	def delete_agent_substrate_ep(self, ep, ip):
 		itf = ep.get_veth_peer()
 		jsonconf = {

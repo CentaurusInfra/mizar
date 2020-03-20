@@ -196,15 +196,10 @@ class Endpoint:
 		for bouncer in bouncers.values():
 			if add:
 				self.bouncers[bouncer.name] = bouncer
+				self.update_agent_substrate(self, bouncer)
 			else:
 				self.bouncers.pop(bouncer.name)
-				self.droplet.delete_agent_substrate_ep(self, bouncer.ip, bouncer.mac)
-		if self.status == OBJ_STATUS.ep_status_provisioned:
-			self.update_md()
-			for b in self.bouncers.values():
-				self.droplet.update_agent_substrate_ep(self, b.ip, b.mac)
-
-	def update_md(self):
+				self.droplet_obj.delete_agent_substrate(self, bouncer)
 		self.rpc.update_agent_metadata(self)
 
 	def set_backends(self, backends):
@@ -250,3 +245,9 @@ class Endpoint:
 
 	def unload_transit_agent_xdp(self):
 		self.rpc.unload_transit_agent_xdp(self)
+
+	def update_agent_substrate(self, ep, bouncer):
+		self.rpc.update_agent_substrate_ep(ep, bouncer.ip, bouncer.mac)
+
+	def delete_agent_substrate(self, ep, bouncer):
+		self.rpc.delete_agent_substrate_ep(ep, bouncer.ip)
