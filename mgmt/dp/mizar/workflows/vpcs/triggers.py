@@ -41,4 +41,10 @@ def vpc_opr_on_vpc_provisioned(body, spec, **kwargs):
 	param.diff = kwargs['diff']
 	run_task(wffactory().VpcProvisioned(param=param))
 
-
+@kopf.on.delete(group, version, RESOURCES.vpcs)
+def  vpc_opr_on_vpc_delete(body, spec, **kwargs):
+	param = HandlerParam()
+	param.name = kwargs['name']
+	param.body = body
+	param.spec = spec
+	run_task(wffactory().VpcDelete(param=param))

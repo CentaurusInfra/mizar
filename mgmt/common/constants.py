@@ -60,7 +60,6 @@ class OBJ_STATUS:
 	divider_status_provisioned = 'Provisioned'
 	divider_status_placed = 'Placed'
 	divider_status_tbd = 'TBD'
-	divider_status_provisioned = 'Deprovisioned'
 
 class OBJ_DEFAULTS:
 	default_ep_vpc = 'vpc0'

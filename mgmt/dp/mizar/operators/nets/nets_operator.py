@@ -69,6 +69,12 @@ class NetOperator(object):
 		logger.info("Create {} Bouncers for net: {}".format(n, net.name))
 		for i in range(n):
 			net.create_bouncer()
+		return net
+
+	def delete_net_bouncers(self, net, n):
+		logger.info("Deleting all Bouncers for net: {}".format(net.name))
+		for i in range(n):
+			net.delete_bouncer()
 
 	def process_bouncer_change(self, net, old, new):
 		diff = new - old

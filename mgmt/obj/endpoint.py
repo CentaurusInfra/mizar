@@ -25,6 +25,7 @@ class Endpoint:
 		self.droplet_ip = ""
 		self.droplet_mac = ""
 		self.droplet_eth = 'eth0'
+		self.droplet_obj = None
 		self.veth_peer = ""
 		self.veth_name = ""
 		self.netns = ""
@@ -34,8 +35,7 @@ class Endpoint:
 		self.veth_peer_index = ""
 		self.mac = ""
 		self.veth_peer_mac = ""
-		self.bouncers = set()
-		self.backends = set()
+		self.bouncers = {}
 		if spec is not None:
 			self.set_obj_spec(spec)
 		self.deleted = False
@@ -52,7 +52,7 @@ class Endpoint:
 		return self.prefix
 
 	def get_bouncers_ips(self):
-		bouncers = [b.ip for b in self.bouncers]
+		bouncers = [b.ip for b in self.bouncers.values()]
 		return bouncers
 
 	def get_obj_spec(self):
@@ -192,15 +192,20 @@ class Endpoint:
 	def set_veth_peer_mac(self, veth_peer_mac):
 		self.veth_peer_mac = veth_peer_mac
 
-	def update_bouncers(self, bouncers):
-		self.bouncers = self.bouncers.union(bouncers.values())
+	def update_bouncers(self, bouncers, add=True):
+		for bouncer in bouncers.values():
+			if add:
+				self.bouncers[bouncer.name] = bouncer
+			else:
+				self.bouncers.pop(bouncer.name)
+				self.droplet.delete_agent_substrate_ep(self, bouncer.ip, bouncer.mac)
 		if self.status == OBJ_STATUS.ep_status_provisioned:
 			self.update_md()
+			for b in self.bouncers.values():
+				self.droplet.update_agent_substrate_ep(self, b.ip, b.mac)
 
 	def update_md(self):
 		self.rpc.update_agent_metadata(self)
-		for b in self.bouncers:
-			self.rpc.update_agent_substrate_ep(self, b.ip, b.mac)
 
 	def set_backends(self, backends):
 		self.backends = backends

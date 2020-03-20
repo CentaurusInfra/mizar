@@ -21,6 +21,6 @@ class EndpointDelete(WorkflowTask):
 		logger.info("Run {task}".format(task=self.__class__.__name__))
 		ep = endpoints_opr.get_endpoint_stored_obj(self.param.name, self.param.spec)
 		nets_opr.deallocate_endpoint(ep)
-		bouncers_opr.delete_endpoint_with_bouncers(ep)
+		bouncers_opr.delete_endpoint_from_bouncers(ep)
 		endpoints_opr.set_endpoint_deprovisioned(ep)
 		self.finalize()

@@ -1,5 +1,6 @@
 import uuid
 import logging
+import random
 from common.rpc import TrnRpc
 from common.constants import *
 from common.common import *
@@ -107,15 +108,16 @@ class Net(object):
 		bouncer_name = self.name +'-b-' + u
 		b = Bouncer(bouncer_name, self.obj_api, None)
 		b.set_vpc(self.vpc)
+		b.set_cidr(self.cidr)
+		b.set_vni(self.vni)
 		b.set_net(self.name)
+		self.bouncers[b.name] = b
 		b.create_obj()
-		self.bouncers[bouncer_name] = b
 
 	def delete_bouncer(self):
-		logger.info("Delete bouncers for net {}".format(self.name))
-		for key in self.bouncers:
-			bouncer = self.bouncers.pop(key)
-			bouncer.delete_obj()
+		logger.info("Delete bouncer from net {}".format(self.name))
+		b = self.bouncers.pop(random.choice(self.bouncers.keys()))
+		b.delete_obj()
 
 
 	def allocate_ip(self):
@@ -127,8 +129,6 @@ class Net(object):
 	def mark_ip_as_allocated(self, ip):
 		self.cidr.mark_ip_as_allocated(ip)
 
-	def delete_bouncer(self, network, bouncer):
-		pass
 
 	def update_gw_endpoint(self):
 		pass
@@ -137,9 +137,9 @@ class Net(object):
 		pass
 
 	def update_simple_endpoint(self, ep): # Unused
-		if ep.status != ep_status_allocated:
-			logger.info("Nothing to do for the endpoint {} , status must be allocated!".format(self.name))
-			return
+		#if ep.status != ep_status_allocated:
+		#	logger.info("Nothing to do for the endpoint {} , status must be allocated!".format(self.name))
+		#	return
 		logger.info("update_simple_endpoint {} of net {} bouncers {}".format(ep.name, self.name, self.bouncers.keys()))
 		self.endpoints[ep.name] = ep
 		bouncers = self.bouncers.values()
@@ -147,7 +147,7 @@ class Net(object):
 			b.update_simple_endpoint(ep)
 
 		logger.info("$$ done update_simple_endpoint {} of net {} bouncers {}".format(ep.name, self.name, self.bouncers.keys()))
-		ep.status = ep_status_ready
+		#ep.status = ep_status_ready
 
 		ep.droplet_obj.load_transit_agent_xdp(ep)
 		ep.droplet_obj.update_agent_metadata(ep, self)
@@ -156,13 +156,6 @@ class Net(object):
 
 		#update agent metadata
 		ep.update_object()
-
-	def delete_simple_endpoint(self, ep): # Unused
-		if ep.status != ep_status_tbd:
-			logger.info("Nothing to do for the endpoint {} , status must be tbd!".format(self.name))
-			return
-		logger.info("delete_simple_endpoint {} of net {} bouncers {}".format(ep.name, self.name, self.bouncers.keys()))
-		self.endpoints.pop(ep.name)
 
 	def update_host_endpoint(self):
 		pass

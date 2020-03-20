@@ -36,3 +36,11 @@ def bouncer_opr_on_bouncer_provisioned(body, spec, **kwargs):
 	param.body = body
 	param.spec = spec
 	run_task(wffactory().BouncerProvisioned(param=param))
+
+@kopf.on.delete(group, version, RESOURCES.bouncers)
+def  bouncer_opr_on_bouncer_delete(body, spec, **kwargs):
+	param = HandlerParam()
+	param.name = kwargs['name']
+	param.body = body
+	param.spec = spec
+	run_task(wffactory().BouncerDelete(param=param))

@@ -30,14 +30,11 @@ from dp.mizar.workflows.endpoints.create import *
 from dp.mizar.workflows.endpoints.provisioned import *
 from dp.mizar.workflows.endpoints.delete import *
 from dp.mizar.workflows.endpoints.deprovisioned import *
-<<<<<<< HEAD
 
 from dp.mizar.workflows.builtins.services.bootstrap import *
 from dp.mizar.workflows.builtins.services.create import *
 from dp.mizar.workflows.builtins.services.provisioned import *
 from dp.mizar.workflows.builtins.services.delete import *
-=======
->>>>>>> Initial work for delete_ep
 
 class MizarWorkflowFactory():
 
@@ -50,6 +47,9 @@ class MizarWorkflowFactory():
 	def VpcProvisioned(self, param):
 		return VpcProvisioned(param=param)
 
+	def VpcDelete(self, param):
+		return VpcDelete(param=param)
+
 	def DividerOperatorStart(self, param):
 		return DividerOperatorStart(param=param)
 
@@ -58,6 +58,9 @@ class MizarWorkflowFactory():
 
 	def DividerProvisioned(self, param):
 		return DividerProvisioned(param=param)
+
+	def DividerDelete(self, param):
+		return DividerDelete(param=param)
 
 	def DropletOperatorStart(self, param):
 		return DropletOperatorStart(param=param)
@@ -77,6 +80,9 @@ class MizarWorkflowFactory():
 	def NetProvisioned(self, param):
 		return NetProvisioned(param=param)
 
+	def NetDelete(self, param):
+		return NetDelete(param=param)
+
 	def BouncerOperatorStart(self, param):
 		return BouncerOperatorStart(param=param)
 
@@ -85,6 +91,9 @@ class MizarWorkflowFactory():
 
 	def BouncerProvisioned(self, param):
 		return BouncerProvisioned(param=param)
+
+	def BouncerDelete(self, param):
+		return BouncerDelete(param=param)
 
 	def EndpointOperatorStart(self, param):
 		return EndpointOperatorStart(param=param)
@@ -96,7 +105,6 @@ class MizarWorkflowFactory():
 		return EndpointProvisioned(param=param)
 
 	def EndpointDelete(self, param):
-<<<<<<< HEAD
 		return EndpointDelete(param=param)
 
 	def k8sServiceCreate(self, param):
@@ -104,7 +112,3 @@ class MizarWorkflowFactory():
 
 	def k8sEndpointsUpdate(self, param):
 		return k8sEndpointsUpdate(param=param)
-
-=======
-		return EndpointDelete(param=param)
->>>>>>> Initial work for delete_ep

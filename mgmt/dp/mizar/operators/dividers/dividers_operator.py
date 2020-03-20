@@ -48,8 +48,29 @@ class DividerOperator(object):
 		div.set_status(OBJ_STATUS.divider_status_provisioned)
 		div.update_obj()
 
-	def update_bouncer_with_dividers(self, bouncer):
+	def update_bouncer_with_dividers(self, bouncer, net): # Fix this
 		dividers = self.store.get_dividers_of_vpc(bouncer.vpc)
-		bouncer.update_dividers(dividers)
 		for d in dividers:
-			d.update_bouncers(set([bouncer]))
+			d.update_net(net)
+
+	def delete_bouncer_from_dividers(self, bouncer, net): # Fix this
+		dividers = self.store.get_dividers_of_vpc(bouncer.vpc)
+		for d in dividers:
+			d.update_net(net, False)
+
+	def update_net(self, net, dividers=None): # Fix this
+		if not dividers:
+			dividers = self.store.get_dividers_of_vpc(net.vpc)
+		logger.info("Len of dividers is {}".format(len(dividers)))
+		for d in dividers:
+			d.update_net(net)
+
+	def delete_net(self, net): # Fix this
+		dividers = self.store.get_dividers_of_vpc(net.vpc)
+		for d in dividers:
+			d.delete_net(net)
+
+	def update_vpc(self, bouncer): # Fix this
+		dividers = self.store.get_dividers_of_vpc(bouncer.vpc)
+		logger.info("Len of dividers is {}".format(len(dividers)))
+		bouncer.update_vpc(dividers)

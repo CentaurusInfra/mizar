@@ -208,7 +208,7 @@ class OprStore(object):
 	def get_bouncers_of_net(self, net):
 		if net in self.bouncers_net_store:
 			return self.bouncers_net_store[net]
-		return set()
+		return {}
 
 	def update_bouncers_of_net(self, net, bouncers):
 		if net in self.bouncers_net_store:
@@ -217,7 +217,7 @@ class OprStore(object):
 	def get_bouncers_of_vpc(self, vpc):
 		if vpc in self.bouncers_vpc_store:
 			return self.bouncers_vpc_store[vpc]
-		return set()
+		return {}
 
 	def contains_bouncer(self, name):
 		if name in self.bouncers_store:

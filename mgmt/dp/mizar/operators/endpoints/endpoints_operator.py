@@ -102,6 +102,15 @@ class EndpointOperator(object):
 		logger.info("Update scaled endpoint {} with backends: {}".format(name, backends))
 		return self.store.get_ep(name)
 
+	def delete_endpoints_from_bouncers(self, bouncer):
+		eps = self.store.get_eps_in_net(bouncer.net)
+		bouncer.delete_eps(eps)
+
+	def delete_bouncer_from_endpoints(self, bouncer):
+		eps = self.store.get_eps_in_net(bouncer.net)
+		for ep in eps:
+			ep.update_bouncers(set([bouncer]), False)
+
 	def set_endpoint_deprovisioned(self, ep):
 		ep.set_status(OBJ_STATUS.ep_status_deprovisioned)
 		ep.unload_transit_agent_xdp()

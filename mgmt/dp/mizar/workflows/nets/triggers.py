@@ -48,4 +48,4 @@ def  net_opr_on_net_delete(body, spec, **kwargs):
 	param.name = kwargs['name']
 	param.body = body
 	param.spec = spec
-	#run_task(wffactory().NetDelete(param=param))
+	run_task(wffactory().NetDelete(param=param))

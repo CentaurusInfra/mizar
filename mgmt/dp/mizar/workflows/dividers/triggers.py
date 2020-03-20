@@ -36,3 +36,11 @@ def divider_opr_on_divider_provisioned(body, spec, **kwargs):
 	param.body = body
 	param.spec = spec
 	run_task(wffactory().DividerProvisioned(param=param))
+
+@kopf.on.delete(group, version, RESOURCES.dividers)
+def  divider_opr_on_divider_delete(body, spec, **kwargs):
+	param = HandlerParam()
+	param.name = kwargs['name']
+	param.body = body
+	param.spec = spec
+	run_task(wffactory().DividerDelete(param=param))

@@ -2,6 +2,7 @@ import logging
 from common.rpc import TrnRpc
 from common.constants import *
 from common.common import *
+from common.cidr import Cidr
 
 logger = logging.getLogger()
 
@@ -11,12 +12,16 @@ class Bouncer(object):
 		self.obj_api = obj_api
 		self.store = opr_store
 		self.droplet = ""
+		self.droplet_obj = None
 		self.vpc = ""
+		self.vni = ""
+		self.nip = ""
+		self.net_prefixlen = ""
 		self.net = ""
 		self.ip = ""
 		self.mac = ""
 		self.eps = {}
-		self.dividers = set()
+		self.dividers = {}
 		self.known_substrates = {}
 		self.status = OBJ_STATUS.bouncer_status_init
 		self.scaled_ep_obj = '/trn_xdp/trn_transit_scaled_endpoint_ebpf_debug.o'
@@ -57,6 +62,15 @@ class Bouncer(object):
 	def get_kind(self):
 		return "Bouncer"
 
+	def get_divider_ips(self):
+		return [d.ip for d in self.dividers.values()]
+
+	def get_nip(self):
+		return self.nip
+
+	def get_prefixlen(self):
+		return self.net_prefixlen
+
 	def store_update_obj(self):
 		if self.store is None:
 			return
@@ -92,7 +106,6 @@ class Bouncer(object):
 
 	def _update_ep(self, ep):
 		self.rpc.update_ep(ep)
-		self.rpc.update_substrate_ep(ep.droplet_ip, ep.droplet_mac)
 
 	def _update_scaled_ep(self, ep):
 		self.rpc.update_ep(ep)
@@ -102,13 +115,39 @@ class Bouncer(object):
 	def update_dividers(self, dividers):
 		self.dividers = self.dividers.union(dividers)
 
+	def update_vpc(self, dividers, add=True): # Fix this
+		for divider in dividers:
+			if add:
+				logger.info("Divider added: {}".format(divider.name))
+				self.dividers[divider.name] = divider
+				self.droplet_obj.update_substrate(divider.name)
+			else:
+				logger.info("Divider removed: {}".format(divider.name))
+				self.dividers[divider.name] = divider
+				self.droplet_obj.delete_substrate(divider.name)
+		self.droplet_obj.update_vpc(self)
+
+	def delete_vpc(self): # Fix this
+		for name in self.dividers.keys():
+			divider = self.dividers.pop(name)
+			self.droplet_obj.delete_substrate(divider)
+		self.droplet_obj.delete_vpc(self)
+
 	def set_vpc(self, vpc):
 		self.vpc = vpc
 
 	def set_net(self, net):
 		self.net = net
 
+	def set_vni(self, vni):
+		self.vni = vni
+
+	def set_cidr(self, cidr):
+		self.nip = str(cidr.ip)
+		self.net_prefixlen = str(cidr.prefixlen)
+
 	def set_droplet(self, droplet):
+		self.droplet_obj = droplet
 		self.droplet = droplet.name
 		self.ip = droplet.ip
 		self.mac = droplet.mac

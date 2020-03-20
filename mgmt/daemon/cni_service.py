@@ -160,6 +160,7 @@ class CniService(Service):
 		ep.set_netns("mizar-" + ep.local_id)
 		ep.set_droplet_ip(CniService.droplet.ip)
 		ep.set_droplet_mac(CniService.droplet.mac)
+		ep.set_droplet_obj(CniService.droplet)
 
 		iproute_ns = self.create_mizarnetns(params, ep)
 		self.prepare_veth_pair(ep, iproute_ns, params)

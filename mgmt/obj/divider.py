@@ -12,10 +12,12 @@ class Divider(object):
 		self.obj_api = obj_api
 		self.store = opr_store
 		self.vpc = ""
+		self.vni = ""
 		self.ip = ""
 		self.mac = ""
 		self.droplet = ""
-		self.bouncers = set()
+		self.droplet_obj = None
+		self.bouncers = {}
 		self.status = OBJ_STATUS.divider_status_init
 		if spec is not None:
 			self.set_obj_spec(spec)
@@ -27,6 +29,7 @@ class Divider(object):
 	def get_obj_spec(self):
 		self.obj = {
 			"vpc": self.vpc,
+			"vni": self.vni,
 			"mac": self.mac,
 			"ip": self.ip,
 			"status": self.status,
@@ -80,10 +83,32 @@ class Divider(object):
 	def set_vpc(self, vpc):
 		self.vpc = vpc
 
+	def set_vni(self, vni):
+		self.vni = vni
+
 	def set_droplet(self, droplet):
+		self.droplet_obj = droplet
 		self.droplet = droplet.name
 		self.ip = droplet.ip
 		self.mac = droplet.mac
 
-	def update_bouncers(self, bouncers):
-		self.bouncers = self.bouncers.union(bouncers)
+	def update_net(self, net, add=True): # Fix this
+		logger.info("Len of net bouncer is {}".format(len(net.bouncers)))
+		for bouncer in net.bouncers.values():
+			if add:
+				if bouncer.name not in self.bouncers.keys():
+					logger.info("Bouncer {} added for Net {}".format(bouncer.name, net.name))
+					self.bouncers[bouncer.name] = bouncer
+					self.droplet_obj.update_substrate(bouncer.name)
+			else:
+				if bouncer.name in self.bouncers.keys():
+					logger.info("Bouncer {} removed from Net {}".format(bouncer.name,net.name))
+					self.bouncers[bouncer.name] = bouncer
+					self.droplet_obj.delete_substrate(bouncer.name)
+		self.droplet_obj.update_net(net)
+
+	def delete_net(self, net): # Fix this
+		for name in net.bouncers.values():
+			bouncer = self.bouncers.pop(name)
+			self.droplet_obj.delete_substrate(bouncer)
+		self.droplet_obj.delete_net(net)

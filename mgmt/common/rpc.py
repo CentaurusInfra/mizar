@@ -69,6 +69,18 @@ class TrnRpc:
 		returncode, text = run_cmd(cmd)
 		logger.info("update_agent_substrate_ep returns {} {}".format(returncode, text))
 
+
+	def delete_agent_substrate_ep(self, ep, ip):
+		itf = ep.get_veth_peer()
+		jsonconf = {
+			"tunnel_id": "0",
+			"ip": ip,
+		}
+		cmd = f'''{self.trn_cli_delete_agent_ep} -i \'{itf}\' -j \'{jsonconf}\''''
+		logger.info("update_agent_substrate_ep: {}".format(cmd))
+		returncode, text = run_cmd(cmd)
+		logger.info("update_agent_substrate_ep returns {} {}".format(returncode, text))
+
 	def update_ep(self, ep):
 		peer = ""
 		droplet_ip = ep.get_droplet_ip()
@@ -184,3 +196,55 @@ class TrnRpc:
 		logger.info("unload_transit_agent_xdp: {}".format(cmd))
 		returncode, text = run_cmd(cmd)
 		logger.info("unload_transit_agent_xdp returns {} {}".format(returncode, text))
+
+	def update_vpc(self, bouncer):
+		if len(bouncer.get_divider_ips()) < 1:
+			logger.info("Bouncer list of dividers, LEN IS ZERO")
+			return
+		jsonconf = {
+			"tunnel_id": bouncer.vni,
+			"routers_ips": bouncer.get_divider_ips()
+		}
+		jsonconf = json.dumps(jsonconf)
+		cmd = f'''{self.trn_cli_update_vpc} \'{jsonconf}\''''
+		logger.info("update_vpc: {}".format(cmd))
+		returncode, text = run_cmd(cmd)
+		logger.info("update_vpc returns {} {}".format(returncode, text))
+
+	def delete_vpc(self, bouncer):
+		jsonconf = {
+			"tunnel_id": bouncer.vni
+		}
+		jsonconf = json.dumps(jsonconf)
+		cmd = f'''{self.trn_cli_delete_vpc} \'{jsonconf}\''''
+		logger.info("delete_vpc: {}".format(cmd))
+		returncode, text = run_cmd(cmd)
+		logger.info("delete_vpc returns {} {}".format(returncode, text))
+
+	def update_net(self, net):
+		if len(net.get_bouncers_ips()) < 1:
+			logger.info("net list of bouncers LEN IS ZERO")
+			return
+		jsonconf = {
+			"tunnel_id": net.vni,
+			"nip": net.get_nip(),
+			"prefixlen": net.get_prefixlen(),
+			"switches_ips": net.get_bouncers_ips()
+		}
+		jsonconf = json.dumps(jsonconf)
+		cmd = f'''{self.trn_cli_update_net} \'{jsonconf}\''''
+		logger.info("update_net: {}".format(cmd))
+		returncode, text = run_cmd(cmd)
+		logger.info("update_net returns {} {}".format(returncode, text))
+
+	def delete_net(self, net):
+		jsonconf = {
+			"tunnel_id": net.vni,
+			"nip": net.get_nip(),
+			"prefixlen": net.get_prefixlen()
+		}
+		jsonconf = json.dumps(jsonconf)
+		cmd = f'''{self.trn_cli_delete_net} \'{jsonconf}\''''
+		logger.info("delete_net: {}".format(cmd))
+		returncode, text = run_cmd(cmd)
+		logger.info("delete_net returns {} {}".format(returncode, text))

@@ -88,7 +88,11 @@ class Vpc(object):
 		divider_name = self.name +'-d-' + u
 		d = Divider(divider_name, self.obj_api, None)
 		d.set_vpc(self.name)
+		d.set_vni(self.vni)
+		self.dividers[divider_name] = d
 		d.create_obj()
 
-	def delete_divider(self, droplet):
-		pass
+	def delete_divider(self):
+		logger.info("Delete divider for net {}".format(self.name))
+		d = self.dividers.pop(random.choice(self.dividers.keys()))
+		d.delete_obj()

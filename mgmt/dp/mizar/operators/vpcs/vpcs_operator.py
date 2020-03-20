@@ -34,7 +34,7 @@ class VpcOperator(object):
 				self.store_update(v)
 
 		kube_list_obj(self.obj_api, RESOURCES.vpcs, list_vpc_obj_fn)
-		logger.debug("Bootstrap VPC store: ".format(self.store._dump_vpcs()))
+		logger.debug("Bootstrap VPC store: {}".format(self.store._dump_vpcs()))
 
 	def get_vpc_tmp_obj(self, name, spec):
 		return Vpc(name, self.obj_api, None, spec)
@@ -56,6 +56,11 @@ class VpcOperator(object):
 		for i in range(n):
 			vpc.create_divider()
 
+	def delete_vpc_dividers(self, vpc, n):
+		logger.info("Delete {} dividers for vpc: {}".format(n, vpc.name))
+		for i in range(n):
+			vpc.delete_divider()
+
 	def process_divider_change(self, vpc, old, new):
 		diff = new - old
 		if diff > 0:
@@ -64,9 +69,7 @@ class VpcOperator(object):
 
 		if diff < 0:
 			logger.info("Scaling in VPCs dividers: {}".format(diff))
-			pass
-
-		return
+			return self.delete_vpc_dividers(vpc, abs(diff))
 
 	def set_vpc_provisioned(self, vpc):
 		vpc.set_status(OBJ_STATUS.vpc_status_provisioned)
@@ -93,4 +96,8 @@ class VpcOperator(object):
 		if vpc.name == OBJ_DEFAULTS.default_ep_vpc:
 			return OBJ_DEFAULTS.default_vpc_vni
 		vpc.set_vni(uuid.uuid4().int & (1<<24)-1)
+
+	def deallocate_vni(self, vpc):
+		# TODO: Keep track of VNI allocation
+		pass
 

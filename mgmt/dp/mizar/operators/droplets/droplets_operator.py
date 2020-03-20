@@ -79,6 +79,6 @@ class DropletOperator(object):
 	def on_delete(self, body, spec, **kwargs):
 		name = kwargs['name']
 		logger.info("*delete_droplet {}".format(name))
-		self.ds.delete(name)
+		#self.ds.delete(name)
 
 

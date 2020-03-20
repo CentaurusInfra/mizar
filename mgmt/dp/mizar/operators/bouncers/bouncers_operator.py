@@ -56,7 +56,7 @@ class BouncerOperator(object):
 		# divider.bouncers = net.get_all_bouncers (bouncers_opr)
 		div = Divider(name, self.obj_api, None, spec)
 		bouncers = self.store.get_bouncers_of_vpc(div.vpc)
-		div.update_bouncers(set(bouncers))
+		# div.update_bouncers(set(bouncers))
 		for b in bouncers:
 			b.update_dividers(set([div]))
 		div.set_status(OBJ_STATUS.divider_status_provisioned)
@@ -68,9 +68,14 @@ class BouncerOperator(object):
 
 	def update_bouncers_with_divider(self, div):
 		bouncers = self.store.get_bouncers_of_vpc(div.vpc)
-		div.update_bouncers(set(bouncers))
-		for b in bouncers:
-			b.update_dividers(set([div]))
+		for b in bouncers.values():
+			logger.info("BB {}".format(b.name))
+			b.update_vpc(set([div]))
+
+	def delete_divider_from_bouncers(self, div):
+		bouncers = self.store.get_bouncers_of_vpc(div.vpc)
+		for b in bouncers.values():
+			b.update_vpc(set([div]), False)
 
 	def on_endpoints_allocated(self, body, spec, **kwargs):
 		name = kwargs['name']
@@ -87,6 +92,7 @@ class BouncerOperator(object):
 
 	def update_endpoint_with_bouncers(self, ep):
 		bouncers = self.store.get_bouncers_of_net(ep.net)
+		logger.info("TEST-len of bouncer {}".format(len(bouncers)))
 		eps = set([ep])
 		for key in bouncers:
 			bouncers[key].update_eps(eps)
