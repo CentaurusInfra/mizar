@@ -16,6 +16,7 @@ class OprStore(object):
 		self.droplets_store = {}
 
 		self.vpcs_store = {}
+		self.nets_vpc_store = {}
 		self.nets_store = {}
 
 		self.eps_store = {}
@@ -52,14 +53,32 @@ class OprStore(object):
 	def update_net(self,net):
 		self.nets_store[net.name] = net
 
+		if net.vpc not in self.nets_vpc_store:
+			self.nets_vpc_store[net.vpc] = set()
+		self.nets_vpc_store[net.vpc].add(net)
+
 	def delete_net(self, name):
-		if name in self.nets_store:
-			del self.nets_store[name]
+		if name not in self.nets_store:
+			return
+		net = self.nets_store.pop(name)
+
+		if name not in self.nets_vpc_store[net.vpc]:
+			return  net
+		self.nets_vpc_store[net.vpc].pop(name)
+		l = len(self.nets_vpc_store[net.vpc])
+		if  l == 0:
+			del self.nets_vpc_store[net.vpc]
+		return net
 
 	def get_net(self, name):
 		if name in self.nets_store:
 			return self.nets_store[name]
 		return None
+
+	def get_nets_in_vpc(self, vpc):
+		if vpc in self.nets_vpc_store:
+			return self.nets_vpc_store[vpc]
+		return set()
 
 	def contains_net(self, name):
 		if name in self.nets_store:

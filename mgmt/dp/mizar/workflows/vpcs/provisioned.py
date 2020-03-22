@@ -13,7 +13,8 @@ class VpcProvisioned(WorkflowTask):
 
 	def run(self):
 		logger.info("Run {task}".format(task=self.__class__.__name__))
-		v = vpcs_opr.get_vpc_stored_obj(self.param.name, self.param.spec)
+		v = vpcs_opr.store.get_vpc(self.param.name)
+		v.set_obj_spec(self.param.spec)
 		for d in self.param.diff:
 			if d[0] == 'change':
 				self.process_change(vpc=v, field=d[1], old=d[2], new=d[3])

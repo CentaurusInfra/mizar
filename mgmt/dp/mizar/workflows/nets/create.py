@@ -24,9 +24,5 @@ class NetCreate(WorkflowTask):
 			pass
 
 		nets_opr.create_net_bouncers(n, n.n_bouncers)
-		dividers_opr.update_net(n)
-		dividers = dividers_opr.store.get_dividers_of_vpc(n.vpc)
-		for div in dividers:
-			bouncers_opr.update_bouncers_with_divider(div)
 		nets_opr.set_net_provisioned(n)
 		self.finalize()

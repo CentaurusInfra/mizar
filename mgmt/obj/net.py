@@ -119,7 +119,6 @@ class Net(object):
 		b = self.bouncers.pop(random.choice(self.bouncers.keys()))
 		b.delete_obj()
 
-
 	def allocate_ip(self):
 		return self.cidr.allocate_ip()
 
@@ -135,27 +134,6 @@ class Net(object):
 
 	def delete_gw_endpoint(self):
 		pass
-
-	def update_simple_endpoint(self, ep): # Unused
-		#if ep.status != ep_status_allocated:
-		#	logger.info("Nothing to do for the endpoint {} , status must be allocated!".format(self.name))
-		#	return
-		logger.info("update_simple_endpoint {} of net {} bouncers {}".format(ep.name, self.name, self.bouncers.keys()))
-		self.endpoints[ep.name] = ep
-		bouncers = self.bouncers.values()
-		for b in bouncers:
-			b.update_simple_endpoint(ep)
-
-		logger.info("$$ done update_simple_endpoint {} of net {} bouncers {}".format(ep.name, self.name, self.bouncers.keys()))
-		#ep.status = ep_status_ready
-
-		ep.droplet_obj.load_transit_agent_xdp(ep)
-		ep.droplet_obj.update_agent_metadata(ep, self)
-		for b in bouncers:
-			ep.droplet_obj.update_agent_substrate_ep(ep, b.droplet_obj)
-
-		#update agent metadata
-		ep.update_object()
 
 	def update_host_endpoint(self):
 		pass

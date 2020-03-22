@@ -44,24 +44,6 @@ class BouncerOperator(object):
 	def store_update(self, b):
 		self.store.update_bouncer(b)
 
-	def on_bouncer_provisioned(self, body, spec, **kwargs):
-		name = kwargs['name']
-		logger.info("on_bouncer_provisioned {}".format(spec))
-		b = Bouncer(name, self.obj_api, self.store, spec)
-		self.store.update_bouncer(b)
-
-	def on_divider_placed(self, body, spec, **kwargs):
-		name = kwargs['name']
-		logger.info("on_divider_placed {}".format(spec))
-		# divider.bouncers = net.get_all_bouncers (bouncers_opr)
-		div = Divider(name, self.obj_api, None, spec)
-		bouncers = self.store.get_bouncers_of_vpc(div.vpc)
-		# div.update_bouncers(set(bouncers))
-		for b in bouncers:
-			b.update_dividers(set([div]))
-		div.set_status(OBJ_STATUS.divider_status_provisioned)
-		div.update_obj()
-
 	def set_bouncer_provisioned(self, bouncer):
 		bouncer.set_status(OBJ_STATUS.bouncer_status_provisioned)
 		bouncer.update_obj()
@@ -76,19 +58,6 @@ class BouncerOperator(object):
 		bouncers = self.store.get_bouncers_of_vpc(div.vpc)
 		for b in bouncers.values():
 			b.update_vpc(set([div]), False)
-
-	def on_endpoints_allocated(self, body, spec, **kwargs):
-		name = kwargs['name']
-		logger.info("on_endpoints_allocated {}".format(spec))
-		ep = Endpoint(name, self.obj_api, None, spec)
-		bouncers = self.store.get_bouncers_of_net(ep.net)
-		eps = set([ep])
-		for b in bouncers:
-			b.update_eps(eps)
-		ep.update_bouncers(bouncers)
-		ep.update_agent(bouncers)
-		ep.set_status(OBJ_STATUS.ep_status_provisioned)
-		ep.update_obj()
 
 	def update_endpoint_with_bouncers(self, ep):
 		bouncers = self.store.get_bouncers_of_net(ep.net)
