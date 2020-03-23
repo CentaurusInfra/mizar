@@ -16,10 +16,8 @@ def add():
 
 def delete():
 	logger.info("Delete called")
-	#exit()
-	val, status = conn.root.delete(params)
+	conn.root.delete(params)
 	logger.info("server's delete is {}".format(val))
-	# print(val)
 	exit()
 
 
@@ -47,7 +45,6 @@ def cni():
 	func = switcher.get(params.command, lambda: "Unsuported cni command")
 	if func:
 		func()
-	logger.info("Test=====")
 	print(val)
 	exit(1)
 

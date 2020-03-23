@@ -92,8 +92,7 @@ class Divider(object):
 		self.ip = droplet.ip
 		self.mac = droplet.mac
 
-	def update_net(self, net, add=True): # Fix this
-		logger.info("Len of net bouncer is {}".format(len(net.bouncers)))
+	def update_net(self, net, add=True):
 		for bouncer in net.bouncers.values():
 			if add:
 				if bouncer.name not in self.bouncers.keys():
@@ -107,7 +106,7 @@ class Divider(object):
 					self.droplet_obj.delete_substrate(bouncer.name)
 		self.droplet_obj.update_net(net)
 
-	def delete_net(self, net): # Fix this
+	def delete_net(self, net):
 		for name in net.bouncers.values():
 			bouncer = self.bouncers.pop(name)
 			self.droplet_obj.delete_substrate(bouncer)

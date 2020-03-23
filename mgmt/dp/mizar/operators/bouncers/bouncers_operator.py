@@ -61,7 +61,6 @@ class BouncerOperator(object):
 
 	def update_endpoint_with_bouncers(self, ep):
 		bouncers = self.store.get_bouncers_of_net(ep.net)
-		logger.info("TEST-len of bouncer {}".format(len(bouncers)))
 		eps = set([ep])
 		for key in bouncers:
 			bouncers[key].update_eps(eps)

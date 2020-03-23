@@ -5,6 +5,8 @@ from dp.mizar.operators.droplets.droplets_operator import *
 from dp.mizar.operators.bouncers.bouncers_operator import *
 from dp.mizar.operators.endpoints.endpoints_operator import *
 from dp.mizar.operators.nets.nets_operator import *
+from dp.mizar.operators.vpcs.vpcs_operator import *
+
 logger = logging.getLogger()
 
 dividers_opr = DividerOperator()
@@ -12,7 +14,9 @@ droplets_opr = DropletOperator()
 bouncers_opr = BouncerOperator()
 endpoints_opr = EndpointOperator()
 nets_opr = NetOperator()
+vpcs_opr = VpcOperator()
 
+logger = logging.getLogger()
 class BouncerCreate(WorkflowTask):
 
 	def requires(self):
@@ -34,6 +38,7 @@ class BouncerCreate(WorkflowTask):
 
 		# Update vpc on bouncer
 		# Needs a list of all dividers
+		bouncer.set_vni(vpcs_opr.store.get_vpc(bouncer.vpc).vni)
 		dividers_opr.update_vpc(bouncer)
 
 		endpoints_opr.update_bouncer_with_endpoints(bouncer)

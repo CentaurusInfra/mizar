@@ -71,7 +71,11 @@ class DividerOperator(object):
 		for d in dividers:
 			d.delete_net(net)
 
-	def update_vpc(self, bouncer): # Fix this
+	def delete_nets_from_divider(self, nets, divider):
+		for net in nets:
+			divider.delete_net(net)
+
+	def update_vpc(self, bouncer):
 		dividers = self.store.get_dividers_of_vpc(bouncer.vpc)
 		logger.info("Len of dividers is {}".format(len(dividers)))
 		bouncer.update_vpc(dividers)

@@ -116,7 +116,7 @@ class Net(object):
 
 	def delete_bouncer(self):
 		logger.info("Delete bouncer from net {}".format(self.name))
-		b = self.bouncers.pop(random.choice(self.bouncers.keys()))
+		b = self.bouncers.pop(random.choice(list(self.bouncers.keys())))
 		b.delete_obj()
 
 	def allocate_ip(self):

@@ -12,5 +12,7 @@ class BouncerProvisioned(WorkflowTask):
 
 	def run(self):
 		logger.info("Run {task}".format(task=self.__class__.__name__))
-		bouncers_opr.store.get_bouncer(self.param.name).set_obj_spec(self.param.spec)
+		bouncer = bouncers_opr.store.get_bouncer(self.param.name)
+		bouncer.set_obj_spec(self.param.spec)
+		logger.info("TEST_VNI " + bouncer.vni)
 		self.finalize()

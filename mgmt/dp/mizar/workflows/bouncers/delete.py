@@ -23,7 +23,6 @@ class BouncerDelete(WorkflowTask):
 		bouncer = bouncers_opr.store.get_bouncer(self.param.name)
 		bouncer.set_obj_spec(self.param.spec)
 		net = nets_opr.store.get_net(bouncer.net)
-		net.bouncers.pop(bouncer.name)
 		# Call update_net on all divider objects
 		# Call delete_substrate of bouncer droplet on all divider droplets
 
@@ -32,4 +31,6 @@ class BouncerDelete(WorkflowTask):
 		endpoints_opr.delete_bouncer_from_endpoints(bouncer)
 		dividers_opr.delete_bouncer_from_dividers(bouncer, net)
 		endpoints_opr.delete_endpoints_from_bouncers(bouncer)
+		bouncer.delete_vpc()
+		bouncers_opr.store.delete_bouncer(bouncer.name)
 		self.finalize()

@@ -94,5 +94,5 @@ class Vpc(object):
 
 	def delete_divider(self):
 		logger.info("Delete divider for net {}".format(self.name))
-		d = self.dividers.pop(random.choice(self.dividers.keys()))
+		d = self.dividers.pop(random.choice(list(self.dividers.keys())))
 		d.delete_obj()

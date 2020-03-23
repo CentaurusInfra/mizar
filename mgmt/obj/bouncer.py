@@ -112,7 +112,7 @@ class Bouncer(object):
 		self.rpc.load_transit_xdp_pipeline_stage(CONSTANTS.ON_XDP_SCALED_EP,
 			self.scaled_ep_obj)
 
-	def update_vpc(self, dividers, add=True): # Fix this
+	def update_vpc(self, dividers, add=True):
 		for divider in dividers:
 			if add:
 				logger.info("Divider added: {}".format(divider.name))
@@ -124,8 +124,8 @@ class Bouncer(object):
 				self.droplet_obj.delete_substrate(divider.name)
 		self.droplet_obj.update_vpc(self)
 
-	def delete_vpc(self): # Fix this
-		for name in self.dividers.keys():
+	def delete_vpc(self):
+		for name in list(self.dividers.keys()):
 			divider = self.dividers.pop(name)
 			self.droplet_obj.delete_substrate(divider)
 		self.droplet_obj.delete_vpc(self)
