@@ -30,7 +30,7 @@ class DividerCreate(WorkflowTask):
 
 		# Update divider with bouncers
 		nets = nets_opr.store.get_nets_in_vpc(divider.vpc)
-		for net in nets:
+		for net in nets.values():
 			dividers_opr.update_net(net, set([divider]))
 
 		dividers_opr.set_divider_provisioned(divider)

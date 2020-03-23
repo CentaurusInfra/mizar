@@ -58,11 +58,11 @@ class EndpointOperator(object):
 		self.store.update_ep(ep)
 
 	def update_bouncer_with_endpoints(self, bouncer):
-		eps = self.store.get_eps_in_net(bouncer.net)
+		eps = self.store.get_eps_in_net(bouncer.net).values()
 		bouncer.update_eps(eps)
 
 	def update_endpoints_with_bouncers(self, bouncer):
-		eps = self.store.get_eps_in_net(bouncer.net)
+		eps = self.store.get_eps_in_net(bouncer.net).values()
 		for ep in eps:
 			ep.update_bouncers(set([bouncer]))
 
@@ -103,11 +103,11 @@ class EndpointOperator(object):
 		return self.store.get_ep(name)
 
 	def delete_endpoints_from_bouncers(self, bouncer):
-		eps = self.store.get_eps_in_net(bouncer.net)
+		eps = self.store.get_eps_in_net(bouncer.net).values()
 		bouncer.delete_eps(eps)
 
 	def delete_bouncer_from_endpoints(self, bouncer):
-		eps = self.store.get_eps_in_net(bouncer.net)
+		eps = self.store.get_eps_in_net(bouncer.net).values()
 		for ep in eps:
 			ep.update_bouncers(set([bouncer]), False)
 

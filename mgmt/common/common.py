@@ -113,7 +113,6 @@ def kube_delete_obj(obj):
 			name=obj.name,
 			body=client.V1DeleteOptions(),
 			propagation_policy="Orphan")
-		obj.store_delete_obj()
 	except:
 		logger.debug("Failed to delete {} {}".format(obj.get_kind(), obj.get_name()))
 

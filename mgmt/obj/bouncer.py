@@ -16,7 +16,7 @@ class Bouncer(object):
 		self.vpc = ""
 		self.vni = ""
 		self.nip = ""
-		self.net_prefixlen = ""
+		self.prefix = ""
 		self.net = ""
 		self.ip = ""
 		self.mac = ""
@@ -39,7 +39,10 @@ class Bouncer(object):
 			"ip": self.ip,
 			"mac": self.mac,
 			"status": self.status,
-			"droplet": self.droplet
+			"droplet": self.droplet,
+			"vni": self.vni,
+			"nip": self.nip,
+			"prefix": self.prefix
 		}
 
 		return self.obj
@@ -51,6 +54,9 @@ class Bouncer(object):
 		self.ip = get_spec_val('ip', spec)
 		self.mac = get_spec_val('mac', spec)
 		self.droplet = get_spec_val('droplet', spec)
+		self.vni = get_spec_val('vni', spec)
+		self.nip = get_spec_val('nip', spec)
+		self.prefix = get_spec_val('prefix', spec)
 
 	# K8s APIs
 	def get_name(self):
@@ -69,7 +75,7 @@ class Bouncer(object):
 		return self.nip
 
 	def get_prefixlen(self):
-		return self.net_prefixlen
+		return self.prefix
 
 	def store_update_obj(self):
 		if self.store is None:
@@ -141,7 +147,7 @@ class Bouncer(object):
 
 	def set_cidr(self, cidr):
 		self.nip = str(cidr.ip)
-		self.net_prefixlen = str(cidr.prefixlen)
+		self.prefix = str(cidr.prefixlen)
 
 	def set_droplet(self, droplet):
 		self.droplet_obj = droplet

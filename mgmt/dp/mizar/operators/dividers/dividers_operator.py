@@ -50,24 +50,24 @@ class DividerOperator(object):
 
 
 	def update_divider_with_bouncers(self, bouncer, net):
-		dividers = self.store.get_dividers_of_vpc(bouncer.vpc)
+		dividers = self.store.get_dividers_of_vpc(bouncer.vpc).values()
 		for d in dividers:
 			d.update_net(net)
 
 	def delete_bouncer_from_dividers(self, bouncer, net):
-		dividers = self.store.get_dividers_of_vpc(bouncer.vpc)
+		dividers = self.store.get_dividers_of_vpc(bouncer.vpc).values()
 		for d in dividers:
 			d.update_net(net, False)
 
 	def update_net(self, net, dividers=None):
 		if not dividers:
-			dividers = self.store.get_dividers_of_vpc(net.vpc)
+			dividers = self.store.get_dividers_of_vpc(net.vpc).values()
 		logger.info("Len of dividers is {}".format(len(dividers)))
 		for d in dividers:
 			d.update_net(net)
 
 	def delete_net(self, net):
-		dividers = self.store.get_dividers_of_vpc(net.vpc)
+		dividers = self.store.get_dividers_of_vpc(net.vpc).values()
 		for d in dividers:
 			d.delete_net(net)
 
@@ -76,6 +76,6 @@ class DividerOperator(object):
 			divider.delete_net(net)
 
 	def update_vpc(self, bouncer):
-		dividers = self.store.get_dividers_of_vpc(bouncer.vpc)
+		dividers = self.store.get_dividers_of_vpc(bouncer.vpc).values()
 		logger.info("Len of dividers is {}".format(len(dividers)))
 		bouncer.update_vpc(dividers)

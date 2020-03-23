@@ -23,7 +23,7 @@ class DividerDelete(WorkflowTask):
 
 		# Call delete_net on divider droplet
 		# Call delete_substrate on divider droplet for all bouncer droplets
-		nets = nets_opr.store.get_nets_in_vpc(divider.vpc)
+		nets = nets_opr.store.get_nets_in_vpc(divider.vpc).values()
 		dividers_opr.delete_nets_from_divider(nets, divider)
 
 		# Call update_vpc on all bouncer droplets

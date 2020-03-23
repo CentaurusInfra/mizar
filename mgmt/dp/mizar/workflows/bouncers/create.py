@@ -33,8 +33,9 @@ class BouncerCreate(WorkflowTask):
 
 		# Update net on dividers
 		net = nets_opr.store.get_net(bouncer.net)
+		net.bouncers[bouncer.name] = bouncer
 		if net:
-			dividers_opr.update_divider_with_bouncers(bouncer, net) #Fix this (word choice)
+			dividers_opr.update_divider_with_bouncers(bouncer, net)
 
 		# Update vpc on bouncer
 		# Needs a list of all dividers
@@ -45,5 +46,5 @@ class BouncerCreate(WorkflowTask):
 		endpoints_opr.update_endpoints_with_bouncers(bouncer)
 
 		bouncers_opr.set_bouncer_provisioned(bouncer)
-		bouncers_opr.store_update(bouncer)
+		bouncers_opr.store.update_bouncer(bouncer)
 		self.finalize()
