@@ -17,6 +17,7 @@ nav:
         - 'Management Plane': 'design/management_plane.md'
     - About:
         #- 'License': 'license.md'
+        - 'Use Cases': 'releases/use_cases.md'
         - 'Release Notes': 'releases/release-notes.md'
         - 'Roadmap' : 'releases/roadmap.md'
     - 'Frequently Asked Questions': 'user/faq.md'
