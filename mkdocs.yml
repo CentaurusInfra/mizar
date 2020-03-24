@@ -19,3 +19,4 @@ nav:
         #- 'License': 'license.md'
         - 'Release Notes': 'releases/release-notes.md'
         - 'Roadmap' : 'releases/roadmap.md'
+    - 'Frequently Asked Questions': 'user/faq.md'
