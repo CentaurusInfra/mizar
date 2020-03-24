@@ -6,7 +6,11 @@
 
 ## Release 0.5 (12/30/2019)
 
+ * Fast path (beta)
+ * Scaled endpoint (beta)
+ * Components name changes
+ * Performance improvements
+ * Extensible packet processing pipeline support
+ * Codedeploy support
 
-## Release 0.7
-
-In Progress
+## Release 0.7 (03/30/2020)
