@@ -14,6 +14,7 @@ nav:
         - Contributing: 'dev/contributing.md'
     - Design:
         - 'Direct Path': 'design/direct_path.md'
+        - 'Management Plane': 'design/management_plane.md'
     - About:
         #- 'License': 'license.md'
         - 'Release Notes': 'releases/release-notes.md'
