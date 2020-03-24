@@ -14,7 +14,6 @@ class VpcOperatorStart(WorkflowTask):
 
 	def run(self):
 		logger.info("Run {task}".format(task=self.__class__.__name__))
-		sleep(2)
 		vpcs_opr.query_existing_vpcs()
 		vpcs_opr.create_default_vpc()
 		self.finalize()

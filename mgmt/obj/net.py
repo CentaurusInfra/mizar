@@ -100,7 +100,11 @@ class Net(object):
 		return str(self.cidr.prefixlen)
 
 	def get_bouncers_ips(self):
-		return [str(b.ip) for b in self.bouncers.values()]
+		bouncer_ips = []
+		for b in self.bouncers.values():
+			if b.ip not in bouncer_ips:
+				bouncer_ips.append(b.ip)
+		return bouncer_ips
 
 	def create_bouncer(self):
 		u = str(uuid.uuid4())

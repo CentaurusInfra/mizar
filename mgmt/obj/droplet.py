@@ -20,6 +20,7 @@ class Droplet(object):
 		self.status = OBJ_STATUS.droplet_status_init
 		self.known_substrates = {}
 		self.known_bouncers = {}
+		self.known_nets = {}
 		if spec is not None:
 			self.set_obj_spec(spec)
 
@@ -87,26 +88,31 @@ class Droplet(object):
 	def delete_substrate(self, name):
 		if name in self.known_substrates.keys():
 			self.known_substrates.pop(name)
-		if self.ip not in self.known_substrates.values():
-			logger.info("DROPLET_SUBSTRATE: Deleted")
-			self.rpc.delete_substrate_ep(self.ip)
+			if self.ip not in self.known_substrates.values():
+				logger.info("DROPLET_SUBSTRATE: Deleted")
+				self.rpc.delete_substrate_ep(self.ip)
 
 	def update_vpc(self, bouncer):
 		if bouncer.name not in self.known_bouncers.keys():
 			self.known_bouncers[bouncer.name] = bouncer.vpc
-		logger.info("DROPLET_VPC: Updated")
 		self.rpc.update_vpc(bouncer)
 
 
 	def delete_vpc(self, bouncer):
 		if bouncer.name in self.known_bouncers.keys():
 			self.known_bouncers.pop(bouncer.name)
-		if bouncer.vpc not in self.known_bouncers.values():
-			logger.info("DROPLET_VPC: Deleted")
-			self.rpc.delete_vpc(bouncer)
+			if bouncer.vpc not in self.known_bouncers.values():
+				self.rpc.delete_vpc(bouncer)
 
 	def update_net(self, net):
+		nip = net.get_nip()
+		if net.name not in self.known_nets.keys():
+			self.known_nets[net.name] = nip
 		self.rpc.update_net(net)
 
 	def delete_net(self, net):
-		self.rpc.delete_net(net)
+		nip = net.get_nip()
+		if net.name in self.known_nets.keys():
+			self.known_nets.pop(net.name)
+			if nip not in self.known_nets.values():
+				self.rpc.delete_net(net)
