@@ -1,0 +1,18 @@
+site_name: Mizar Project
+theme:
+    name: readthedocs
+    highlightjs: true
+    hljs_languages:
+        - yaml
+
+nav:
+    - Home: 'index.md'
+    - 'Getting Started':
+        - Basic Usage: 'user/getting_started.md'
+        - Contributing: 'dev/contributing.md'
+    - Design:
+        - 'Direct Path': 'design/direct_path.md'
+    - About:
+        #- 'License': 'license.md'
+        - 'Release Notes': 'releases/release-notes.md'
+        - 'Roadmap' : 'releases/roadmap.md'

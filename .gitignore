@@ -21,4 +21,5 @@ lcov/*
 cov/*
 lib/*
 .vscode/*
-Documentation/design/out
+docs/design/out
+docs/out
