@@ -11,7 +11,7 @@ nav:
     - Home: 'index.md'
     - 'Getting Started':
         - Basic Usage: 'user/getting_started.md'
-        - Contributing: 'dev/contributing.md'
+        - Developement: 'dev/contributing.md'
     - Design:
         - 'Direct Path': 'design/direct_path.md'
         - 'Management Plane': 'design/management_plane.md'
