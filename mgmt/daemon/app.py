@@ -8,6 +8,7 @@ from kubernetes import client, config
 from kubernetes.client import Configuration
 from rpyc.utils.server import ThreadedServer
 from daemon.cni_service import CniService
+from time import sleep
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -41,7 +42,7 @@ logging.info("Removed existing XDP program: {}".format(output))
 cmd = "nsenter -t 1 -m -u -n -i /trn_bin/transitd &"
 r = subprocess.Popen(cmd, shell=True)
 logging.info("Running transitd")
-
+sleep(1)
 config = '{"xdp_path": "/trn_xdp/trn_transit_xdp_ebpf_debug.o", "pcapfile": "/bpffs/transit_xdp.pcap"}'
 cmd = (f'''nsenter -t 1 -m -u -n -i /trn_bin/transit -s {ip} load-transit-xdp -i eth0 -j '{config}' ''')
 

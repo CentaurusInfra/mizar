@@ -12,3 +12,18 @@ nodes:
     extraMounts:
       - hostPath: .
         containerPath: /var/mizar
+  - role: worker
+    image: phudtran/kindnode:latest
+    extraMounts:
+      - hostPath: .
+        containerPath: /var/mizar
+  - role: worker
+    image: phudtran/kindnode:latest
+    extraMounts:
+      - hostPath: .
+        containerPath: /var/mizar
+  - role: worker
+    image: phudtran/kindnode:latest
+    extraMounts:
+      - hostPath: .
+        containerPath: /var/mizar
