@@ -12,6 +12,6 @@ Mizar network has the following advantages:
 
 The following diagram illustrates Mizar's high level architecture.
 
-![Mizar Overview](Mizar.png)
+![Mizar Overview](docs/design/figures/Mizar.png)
 
 [Learn more about Mizar](https://mizar.readthedocs.io/)
