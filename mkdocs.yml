@@ -1,4 +1,6 @@
 site_name: Mizar Project
+docs_dir: 'docs'
+site_dir: '.tmp/documentation'
 theme:
     name: readthedocs
     highlightjs: true
