@@ -25,4 +25,5 @@ class NetCreate(WorkflowTask):
 
 		nets_opr.create_net_bouncers(n, n.n_bouncers)
 		nets_opr.set_net_provisioned(n)
+		nets_opr.store_update(n)
 		self.finalize()

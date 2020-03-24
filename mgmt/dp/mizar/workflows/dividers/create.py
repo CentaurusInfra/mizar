@@ -34,4 +34,5 @@ class DividerCreate(WorkflowTask):
 			dividers_opr.update_net(net, set([divider]))
 
 		dividers_opr.set_divider_provisioned(divider)
+		dividers_opr.store.update_divider(divider)
 		self.finalize()

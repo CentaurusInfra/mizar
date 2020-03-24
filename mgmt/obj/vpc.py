@@ -83,10 +83,11 @@ class Vpc(object):
 		self.status = status
 
 	def create_divider(self):
-		logger.info("Create divider for vpc {}".format(self.name))
 		u = str(uuid.uuid4())
 		divider_name = self.name +'-d-' + u
+		logger.info("Create divider {} for vpc {}".format(divider_name, self.name))
 		d = Divider(divider_name, self.obj_api, None)
+		d.name = divider_name
 		d.set_vpc(self.name)
 		d.set_vni(self.vni)
 		self.dividers[divider_name] = d

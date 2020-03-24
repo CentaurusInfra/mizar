@@ -62,7 +62,6 @@ class DividerOperator(object):
 	def update_net(self, net, dividers=None):
 		if not dividers:
 			dividers = self.store.get_dividers_of_vpc(net.vpc).values()
-		logger.info("Len of dividers is {}".format(len(dividers)))
 		for d in dividers:
 			d.update_net(net)
 
@@ -77,5 +76,4 @@ class DividerOperator(object):
 
 	def update_vpc(self, bouncer):
 		dividers = self.store.get_dividers_of_vpc(bouncer.vpc).values()
-		logger.info("Len of dividers is {}".format(len(dividers)))
 		bouncer.update_vpc(dividers)

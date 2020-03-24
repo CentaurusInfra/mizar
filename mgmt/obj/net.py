@@ -103,9 +103,9 @@ class Net(object):
 		return [str(b.ip) for b in self.bouncers.values()]
 
 	def create_bouncer(self):
-		logger.info("Create bouncer for net {}".format(self.name))
 		u = str(uuid.uuid4())
 		bouncer_name = self.name +'-b-' + u
+		logger.info("Create bouncer {} for net {}".format(bouncer_name, self.name))
 		b = Bouncer(bouncer_name, self.obj_api, None)
 		b.set_vpc(self.vpc)
 		b.set_cidr(self.cidr)

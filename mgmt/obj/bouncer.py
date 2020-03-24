@@ -69,7 +69,7 @@ class Bouncer(object):
 		return "Bouncer"
 
 	def get_divider_ips(self):
-		return [d.ip for d in self.dividers.values()]
+		return [str(d.ip) for d in self.dividers.values()]
 
 	def get_nip(self):
 		return self.nip

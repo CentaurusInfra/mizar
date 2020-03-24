@@ -153,8 +153,7 @@ class OprStore(object):
 
 	def update_divider(self,div):
 		self.dividers_store[div.name] = div
-
-		if div.vpc not in self.dividers_store:
+		if div.vpc not in self.dividers_vpc_store:
 			self.dividers_vpc_store[div.vpc] = {}
 		self.dividers_vpc_store[div.vpc][div.name] = div
 
