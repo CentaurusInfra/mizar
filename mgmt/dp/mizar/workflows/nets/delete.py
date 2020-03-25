@@ -23,5 +23,6 @@ class NetDelete(WorkflowTask):
 		while len(bouncers_opr.store.get_bouncers_of_net(n.name)) > 1:
 			pass
 		dividers_opr.delete_net(n)
+		n.delete_obj()
 		nets_opr.store.delete_net(n.name)
 		self.finalize()
