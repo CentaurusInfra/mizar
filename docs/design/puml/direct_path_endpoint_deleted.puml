@@ -3,7 +3,7 @@ autonumber
 participant "EP_A at Host A" as a
 participant "Old host of b" as old
 participant "New host of b" as b
-participant "Transit Switch" as S
+participant "Bouncer" as S
 a -> old: **direct-path bit** + Packet-1 to b
 old -> a: **RTS with critical bit** + Packet-1 to b
 a -> a: //invalidate endpoint_host_cache//

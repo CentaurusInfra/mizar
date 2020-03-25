@@ -28,7 +28,7 @@ The following diagram illustrates the overall architecture of the
 management plane. The main components of this architectures are
 objects and operators.
 
-![Overall Architecture](./figures/management_plane.png)
+![Overall Architecture](png/management_plane.png)
 
 Objects are any networking object, that the
 management plane derives their life-cycle. When it's first created an
@@ -44,7 +44,7 @@ in the following diagram of a Generic Object Pipeline. We will explain
 several example of the application of this approach to develop Mizar's
 workflows.
 
-![Genric Object Pipeline](./figures/object_pipeline.png)
+![Genric Object Pipeline](png/object_pipeline.png)
 
 Operators program the data-plane through direct RPC interfaces exposed
 by Transid (a daemon-set running in each worker host). These RPC

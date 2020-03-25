@@ -12,9 +12,12 @@ nav:
     - 'Getting Started':
         - Basic Usage: 'user/getting_started.md'
         - Developement: 'dev/contributing.md'
-    - Design:
+    - 'Data Plane Design':
+        - 'Data-Plane Overview': 'design/data_plane.md'
         - 'Direct Path': 'design/direct_path.md'
-        - 'Management Plane': 'design/management_plane.md'
+        - 'Scaled Endpoint': 'design/scaled_endpoint.md'
+    - 'Management Plane Design':
+        - 'Management-Plane Overview': 'design/management_plane.md'
     - About:
         #- 'License': 'license.md'
         - 'Use Cases': 'releases/use_cases.md'

@@ -2,7 +2,7 @@
 autonumber
 participant "EP_A at Host A" as a
 participant "Failed host B" as b
-participant "Transit Switch" as S
+participant "Bouncer" as S
 a ->x b: **direct-path bit** + Packet-1 to b
 a -> a: //add B to active_health_check//
 a ->x b: active health check

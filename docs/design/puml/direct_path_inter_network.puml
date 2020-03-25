@@ -2,16 +2,16 @@
 autonumber
 participant "EP_A at Host A" as a
 participant "EP_B at Host B" as b
-participant "Transit Switch Net 1" as S1
-participant "Transit Switch Net 2" as S2
-participant "Transit Router (TR)" as R
+participant "Bouncer of Net 1" as S1
+participant "Bouncer Net 2" as S2
+participant "Divider (D)" as R
 a -> S1: **RTS Opt (a @ Host A)** + ARP Query (Who has b)
 S1 -> R: **RTS Opt (a @ Host A)** + ARP Query (Who has b)
-R -> R: //update endpoint_host_cache at TR//
-R -> S2: **RTS Opt (a @ TR)** + ARP Query (Who has b)
+R -> R: //update endpoint_host_cache at D//
+R -> S2: **RTS Opt (a @ D)** + ARP Query (Who has b)
 S2 -> R: **RTS Opt (b @ Host B)** + ARP Reply (b at MAC(b))
-R -> R: //update endpoint_host_cache at TR//
-R -> a: **RTS Opt (b @ TR)** + ARP Reply (b at MAC(b))
+R -> R: //update endpoint_host_cache at D//
+R -> a: **RTS Opt (b @ D)** + ARP Reply (b at MAC(b))
 a -> R: **direct-path bit** + Packet to b
 R -> b: **direct-path bit** + Packet to b
 b -> R: **direct-path bit** + Packet to a

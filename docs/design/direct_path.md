@@ -1,20 +1,20 @@
 # Direct Path
 
 The direct path feature allows a flexible data-plane fast path that
-avoids multiple hops of flows through transit switches. Endpoints
+avoids multiple hops of flows through bouncers. Endpoints
 shall be able to communicate directly between their hosting nodes
-without the need to go through transit switches or routers.
+without the need to go through bouncers or dividers.
 
-Transit switches will primarily serve the very first packet between
+Bouncers will primarily serve the very first packet between
 two endpoints. As most of these first packets are ARP requests and the
-transit switches respond to ARPs on behlaf of endpoints, in practice
+bouncers respond to ARPs on behlaf of endpoints, in practice
 _all_ packets within the same network will be direct between the
 endpoints.
 
 The direct path approach tightens the delay bound (due to multiple
 hops) to its minimum. Additionally, by shifting traffic of most of the
-packets from the transit switch, direct path will have the effect of
-reducing the number of transit switches needed. Since scaling
+packets from the bouncer, direct path will have the effect of
+reducing the number of bouncers needed. Since scaling
 decisions will be primarly tken on new packets between new endpoints,
 the number of scale-out decisions as well shall be minimized (unlike
 making scale-out decisions based on all packets in a network).
@@ -39,7 +39,7 @@ transit agent is sending the packet directly to destination endpoint's
 host, it only toggles one bit - __direct-path bit__ - in the outer
 packet's fixed option. The direct-path bit is set to indicate that the
 packet is already in direct path mode, which minimizes the bandwidth
-overhead of the outer header options. The transit switch may also add
+overhead of the outer header options. The bouncer may also add
 the RTS option if it is replying to an ARP request as it maintains the
 configuration of all endpoint's hosts in the network.
 
@@ -72,33 +72,33 @@ the program rewrites the destination IP of the outer header to send
 the packet directly to the destination host and sets the direct-path
 bit. Otherwise, the transit agent sends the packet to the transit
 switch. In the direct-path case, the packet bypasses all hops to the
-transit switches and transit routers. This approach allows the flow's
+bouncers and dividers. This approach allows the flow's
 packets to continue being sent directly between hosts.
 
 The following diagram illustrates the __intra-network__ packet flow with the direct-path.
 
-![Direct-path inter-network packet flow](./figures/direct_path.png)
+![Direct-path inter-network packet flow](png/direct_path.png)
 
-### Transit Router Behavior
+### Divider Behavior
 
-As the Transit router will be evaluating network access control (ACL),
+As the divider will be evaluating network access control (ACL),
 it is important that all inter-network and inter-VPC packets remain
-being processed by the transit routers for the ACLs to take effect.
+being processed by the dividers for the ACLs to take effect.
 The direct-path will still have an effect of bypassing the transit
 switches in such traffic scenarios. Thus, inter-networks packets will
-only exhibit a __normal__ extra-hop and the transit switch hop will
+only exhibit a __normal__ extra-hop and the bouncer hop will
 still be avoided.
 
-To do so, a transit router always before bouncing the packet for
+To do so, a divider always before bouncing the packet for
 transimission it replaces an RTS option, if present, with its own IP
-address. Note that the transit router while still caching the source
+address. Note that the divider while still caching the source
 enpoint's host normally for all ingress packets. This simple behavior
-achieves the goal of bypassing the transit switches (excess hop) and
+achieves the goal of bypassing the bouncers (excess hop) and
 still evaluate inter-network ACLs when needed.
 
 The following diagram illustrates the __inter-network__ packet flow with the direct-path.
 
-![Direct-path inter-network packet flow](./figures/direct_path_inter_network.png)
+![Direct-path inter-network packet flow](png/direct_path_inter_network.png)
 
 ## LRU map Invalidation
 
@@ -122,17 +122,17 @@ that the endpoints_host_cache is outdated.
 When an XDP program receives an RTS option with the critical bit set,
 it simply removes the corresponding entry from the
 endpoints_host_cache and continue to process the packet normall by
-sending it back to the transit switch in a normal path. If the
+sending it back to the bouncer in a normal path. If the
 endpoint was migrated, the new host information gets updated on the
 first reply packet and direct-path continue normally. If the endpoint
-is deleted, the transit switch drops the packet.
+is deleted, the bouncer drops the packet.
 
 
 The following diagram illustrates the packet flow with the direct-path
 in case of an endpoint migration/deletion.
 
 ![Direct-path inter-network packet
-flow](./figures/direct_path_endpoint_deleted.png)
+flow](png/direct_path_endpoint_deleted.png)
 
 ### Case of Endpoint's Host Failure
 
@@ -154,21 +154,21 @@ health check messages. If no response received, the transit daemon
 marks the host as unhealthy. If a transit agent finds a host marked
 unhealthy, if skips the direct-path steps, and remove the
 corresponding endpoing_host_entry for that host, while sending the
-packets normally through the transit switch.
+packets normally through the bouncer.
 
 
 The following diagram illustrates the packet flow with the direct-path
 in case of an endpoint's host failure.
 
 ![Direct-path inter-network packet
-flow](./figures/direct_path_host_failure.png)
+flow](png/direct_path_host_failure.png)
 
 ### Security Group and Monitoring Consideration
 
 Since we will allow packets to be sent directly to hosts, security
-group and monitoring must be on the host. The transit switches/routers
+group and monitoring must be on the host. The bouncers/dividers
 will NOT implement such functions. Network Access Control will remain
-evaluated on the transit routers.
+evaluated on the dividers.
 
 Note: The current version only supports the basic direct-path case.
 Handling of endpoint migration and host failure is planned for future releases.
