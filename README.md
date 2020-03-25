@@ -11,7 +11,7 @@ Mizar network has the following advantages:
 - Unified data plane for VM and container
 - Multi-tenant isolation for traffic and address spaces
 
-The following diagram illustrates Mizar's high level architecture.
+[**Learn more about Mizar**](https://mizar.readthedocs.io/en/latest/)
 
 ![Mizar Overview](docs/design/png/Mizar.png)
 
