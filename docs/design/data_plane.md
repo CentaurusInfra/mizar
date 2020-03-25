@@ -1,86 +1,21 @@
+Mizar's data-plane is the core engine behind its scalability, performance, and programability. The data-plane is primarily a group of XDP programs. Before diving deep into how the data-plane is designed, we need to introduce some terminology:
 
-## Backplane
+* **Droplet**: a physical interface on a host with an IP to the substrate network. In the typical case where a host has a single interface, a droplet represents the host.
+* **Transit Agent**: an XDP/ebpf program that processes an endpoint egress traffic.
+* **Transit XDP**: the main XDP program that processess **all** ingress traffic to a droplet. The transit XDP program is extensible to support several data-plane functions including interacting with user-space networking programs.
+* **Transit Daemon** A user space program that interfaces with the management plane. The daemon primarily passes configuration to the Transit XDP and Transit Agent by updating ebpf maps. It provides RPC services to the management plane to pass these configuration. Additionally the daemon provide services including: controlling kernel networking through netlink interface, programming other components on the host as needed (e.g. OpenVSwitch). Please refer to the [management plane design](management_plane.md) for details on the Transit Daemon functionalities.
 
-Architecturally the back-plane consists of a collection of **virtual transit devices**. The Geneve Internet-Draft defines a transit device as: " A forwarding element (e.g., router or switch) along the path of the tunnel making up a part of the Underlay Network.  A transit device MAY be capable of understanding the Geneve packet format but does not originate or terminate Geneve packets."
+The following diagram illustrates the architecture of a Mizar host (droplet(s)):
 
-The three primary virtual transit devices of the backplane are transit agent, transit switch, and transit router.
+![Mizar host](png/mizar_host.png)
 
-* **Transit Agent:** is an endpoint's localhost gateway to the overlay network and provides necessary tunneling and networking services to the endpoint.
-
-* **Transit Switch:** is a virtual tunnel switch that defines a network boundary within a VPC. It’s primarily responsible for forwarding traffic between endpoints of the same network.
-
-* **Transit Router:** is another virtual device that routes traffic across the network boundaries (Transit Router — to — Transit Switch), as well as the VPC boundary (Transit Router — to — Transit Router, or to the Internet).
-
-The below diagram illustrates the relationships between the transit agent, transit switch, and transit router.
-
-```
-                        VPC boundary
-
-                             **
-      network boundary       ||
-                             ||
-             *               ||
-             |               ||
-   +-----+   |     +-----+   ||     +-----+
-   | EP  |   |     | EP  |   ||     | EP  |
-+--+-----+-+ |  +--+-----+-+ ||  +--+-----+-+
-| EP Agent | |  | EP Agent | ||  | EP Agent |
-+-----^----+ |  +-----^----+ ||  +-----^----+
-      |      |        |      ||        |
-+-----+--+   | +------+-+    || +------+-+
-|+----v--++  | |+-----v-++   || |+-----v-++
-||+-------++ | ||+-------++  || ||+-------++
-++|Transit | | ++|Transit |  || ++|Transit |
- ++ Switch | |  ++ Switch |  ||  ++ Switch |
-  +--------+ |   +--------+  ||   +--------+
-      ^      |        ^      ||        ^
-      |      |        |      ||        |
-      |      *        |      **        |
-     +v---------------v+      +--------v-+
-     | +---------------+-+    | +--------++
-     | +-----------------+    | |+--------++
-     | |                 |    | || Transit |
-     +-+ Transit Router  |<---+->| Router  |
-       |                 |      ++---------+
-       +-----------------+
-```
-
-### Transit Agent
-
-Each endpoint is associated with a transit agent. Some particular endpoint types (e.g., scaled endpoints) may be related to no transit agent at all or more than one agent. The transit agent carries out the following rules:
-
-* Encapsulates the endpoint's egress traffic to one of the transit switches of the endpoint's network.
-* Injects tunnel metadata in outer-packet as needed by the endpoint application type.
-* May implement specific networking functions (e.g., Rate limiting, firewall, etc.).
-
-With this architecture, the control-plane needs only to configure an endpoint's transit agent with the endpoint's network where the transit switches IPs are specified. The control-plane also configures the network's transit switches with the remote IPs of the endpoint (e.g., actual endpoint host) to allow flows to ingress to the endpoint.  This approach minimizes the configuration load required by the control-plane, hence reduces the endpoint (re)provisioning time.
-
-### Transit Switch
-
-Each network defines one or more transit switches. The control-plane dynamically tracks the list of transit switches according to the total traffic within the network. The transit switch roles are:
-
-* Rewrite destination IPs of tunneled packets to its final destination host within a subnet.
-* Forward packets to transit routers if the switch has no forwarding information about the flow.
-* Injects tunnel metadata in outer-packet as necessary.
-* Implements specific networking functions such as network ACLs, or responding to ARP on behalf of the endpoint.
-
-The dynamic association of the transit switches to the network allows control-plane algorithms to optimize the overlay network performance metrics continuously (e.g., minimize latency, maximize throughput, or mitigate noisily neighbor effects).
-
-### Transit Router
-
-Each VPC defines one or more transit routers. Transit routers do not hold the remote IP configuration of endpoints and instead routes traffic between networks or VPCs. The transit router primary roles are:
-
-* Forward packets to a network's transit switches within a VPC.
-* Forward packets outside the VPC boundary (to other VPCs or the Internet).
-* Inject/strip tunnel metadata in outer-packet.
-
-## Data-plane
+## Data-plane Functions
 
 Mizar facilitates the development of **Multi-tenant** networking functions at various levels of the stack!
 
 A network function is primarily an endpoint with the “bypass decapsulation” flag set to allow the back-plane pipeline to deliver the tunnel packets as is so the function has designated access to tunnel metadata as well as the inner packet. Most of the network functions will be scaled.
 
-Network functions shall be primarily implemented as another XDP programs running on the ingress of an endpoint (e.g. L7 Load-balancers). This is required to provide the needed processing isolation of network functions from the main packet processing pipeline and allow such functions to scale independently of transit switches and routers.
+Network functions shall be primarily implemented as another XDP programs (or user space programs) running on the ingress of an endpoint (e.g. L7 Load-balancers). This is required to provide the needed processing isolation of network functions from the main packet processing pipeline and allow such functions to scale independently of transit switches and routers.
 
 Other functions may be developed as a packet processing step in the back-plane packet processing pipeline of the NIC ingress. The design choice to develop a function in-network or as a separate XDP program on the endpoint, is mainly influenced by the processing the criticality of the function. The general guiding design principle in this regard is:
 
@@ -102,7 +37,6 @@ This backplane design allows network functions to access the inner as well as th
    - VPN
    - Nat
    - Cross-VPC routing
-
 
 * **Traffic Shaping Control**
    - QoS
