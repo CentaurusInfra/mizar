@@ -9,30 +9,23 @@ collections CNI_Service
 collections VPC_Operator
 collections Network_Operator
 collections Divider_Operator
-collections Bouncer_Operator
-collections Endpoints_Operator
 
 ==VPC Delete Requested==
-rnote over API_Server: ==VPC Status: TBD
-VPC_Operator --> API_Server: Sees VPC Status: TBD
+VPC_Operator --> API_Server: Sees VPC Delete requested
 group For All Networks
 VPC_Operator -> Network_Operator: Delete Network
 
-rnote over API_Server: ==Network Status: Deprovisioned
+rnote over API_Server: ==Network Deleted
 end
-Network_Operator ->  Divider_Operator: On all Network Deprovisioned
+Network_Operator ->  Divider_Operator: On all Networks Deleted
 group For All Dividers
-Divider_Operator -> API_Server: Update Divider State to Deprovisioned
-rnote over API_Server: ==Divider Status: Deprovisioned
-Divider_Operator --> API_Server: Sees Divider State Deprovisioned
 Divider_Operator -> API_Server: Deletes Divider Object
+rnote over API_Server: ==Divider Deleted
 Divider_Operator -> Divider_Operator: Update cache
 end
-Divider_Operator -> VPC_Operator: On all Divider Deprovisioned
-VPC_Operator -> API_Server: Update state of VPC to Deprovisioned
-rnote over API_Server: ==VPC State: Deprovisioned
-VPC_Operator --> API_Server: Sees VPC state Deprovisioned
+Divider_Operator -> VPC_Operator: On all Divider Deleted
 VPC_Operator -> API_Server: Deletes VPC Object
+rnote over API_Server: ==VPC Deleted
 VPC_Operator -> VPC_Operator: Update cache
 ==VPC Deleted==
 @enduml

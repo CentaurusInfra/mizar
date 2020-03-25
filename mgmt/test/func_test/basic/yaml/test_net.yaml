@@ -6,6 +6,6 @@ spec:
   vni: "1"
   ip: "20.0.20.0"
   prefix: "24"
-  bouncers: 2
+  bouncers: 10
   vpc: "vpc2"
   status: "Init"

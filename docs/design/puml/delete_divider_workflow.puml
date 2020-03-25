@@ -8,22 +8,17 @@ collections VPC_Operator
 collections Divider_Operator
 collections Network_Operator
 collections Bouncer_Operator
-collections Endpoints_Operator
-collections Droplet_Operator
 
 ==Divider Delete Requested==
-rnote over API_Server: ==Divider Status: TBD
-
-Divider_Operator --> API_Server: Sees Divider Status TBD
+Divider_Operator --> API_Server: Sees Divider Delete Requested
 Divider_Operator -> Bouncer_Operator: Remove all Bouncers from Divider
 group For All Bouncers
 Bouncer_Operator -> Bouncer_Operator: Delete Bouncer info from Divider
 Bouncer_Operator -> Bouncer_Operator: Delete Divider info from Bouncer
 end
-Bouncer_Operator -> API_Server: Updates status to Deprovisioned
-rnote over API_Server: ==Divider Status: Provisioned
-Divider_Operator --> API_Server: Sees status deprovisioned
+Bouncer_Operator -> Divider_Operator: On Divider deprovisioned
 Divider_Operator -> API_Server: Deletes Divider Object
+rnote over API_Server: ==Divider Deleted
 Divider_Operator -> Divider_Operator: Update cache
 ==Divider Deleted==
 @enduml
