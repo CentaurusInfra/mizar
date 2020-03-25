@@ -21,6 +21,7 @@ class Droplet(object):
 		self.known_substrates = {}
 		self.known_bouncers = {}
 		self.known_nets = {}
+		self.known_eps = {}
 		if spec is not None:
 			self.set_obj_spec(spec)
 
@@ -79,18 +80,18 @@ class Droplet(object):
 	def set_status(self, status):
 		self.status = status
 
-	def update_substrate(self, name):
-		if name not in self.known_substrates.keys():
+	def update_substrate(self, obj):
+		if obj.name not in self.known_substrates.keys():
 			logger.info("DROPLET_SUBSTRATE: Updated")
-			self.known_substrates[name] = self.ip
-			self.rpc.update_substrate_ep(self.ip, self.mac)
+			self.known_substrates[obj.name] = obj.droplet_obj.ip
+		self.rpc.update_substrate_ep(obj.droplet_obj.ip, obj.droplet_obj.mac)
 
-	def delete_substrate(self, name):
-		if name in self.known_substrates.keys():
-			self.known_substrates.pop(name)
-			if self.ip not in self.known_substrates.values():
+	def delete_substrate(self, obj):
+		if obj.name in self.known_substrates.keys():
+			self.known_substrates.pop(obj.name)
+			if obj.droplet_obj.ip not in self.known_substrates.values():
 				logger.info("DROPLET_SUBSTRATE: Deleted")
-				self.rpc.delete_substrate_ep(self.ip)
+				self.rpc.delete_substrate_ep(obj.droplet_obj.ip)
 
 	def update_vpc(self, bouncer):
 		if bouncer.name not in self.known_bouncers.keys():
@@ -116,3 +117,16 @@ class Droplet(object):
 			self.known_nets.pop(net.name)
 			if nip not in self.known_nets.values():
 				self.rpc.delete_net(net)
+
+	def update_ep(self, name, ep):
+		name = name + ep.name
+		if name not in self.known_eps.keys():
+			self.known_eps[name] = ep.ip
+		self.rpc.update_ep(ep)
+
+	def delete_ep(self, name, ep):
+		name = name + ep.name
+		if name in self.known_eps.keys():
+			self.known_eps.pop(name)
+			if ep.ip not in self.known_eps.values():
+				self.rpc.delete_ep(ep)

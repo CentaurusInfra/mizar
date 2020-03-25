@@ -98,11 +98,6 @@ class TrnRpc:
 		}
 
 		jsonconf = json.dumps(jsonconf)
-		jsonkey = {
-			"tunnel_id": ep.get_tunnel_id(),
-			"ip": ep.get_ip(),
-		}
-		key = ("ep " + self.phy_itf, json.dumps(jsonkey))
 		cmd = f'''{self.trn_cli_update_ep} \'{jsonconf}\''''
 		logger.info("update_ep: {}".format(cmd))
 		returncode, text = run_cmd(cmd)

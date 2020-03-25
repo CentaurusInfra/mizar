@@ -98,12 +98,12 @@ class Divider(object):
 				if bouncer.name not in self.bouncers.keys():
 					logger.info("Bouncer {} added for Net {}".format(bouncer.name, net.name))
 					self.bouncers[bouncer.name] = bouncer
-					self.droplet_obj.update_substrate(bouncer.name)
+					self.droplet_obj.update_substrate(bouncer)
 			else:
 				if bouncer.name in self.bouncers.keys():
 					logger.info("Bouncer {} removed from Net {}".format(bouncer.name,net.name))
 					self.bouncers[bouncer.name] = bouncer
-					self.droplet_obj.delete_substrate(bouncer.name)
+					self.droplet_obj.delete_substrate(bouncer)
 		self.droplet_obj.update_net(net)
 
 	def delete_net(self, net):

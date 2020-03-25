@@ -132,6 +132,7 @@ class NetOperator(object):
 			ep.load_transit_agent()
 
 		n.mark_ip_as_allocated(ip)
+		ep.set_vni(n.vni)
 
 	def deallocate_endpoint(self, ep):
 		n = self.store.get_net(ep.net)

@@ -33,7 +33,6 @@ class Endpoint:
 		self.local_id = ""
 		self.veth_index = ""
 		self.veth_peer_index = ""
-		self.mac = ""
 		self.veth_peer_mac = ""
 		self.bouncers = {}
 		if spec is not None:
@@ -201,6 +200,7 @@ class Endpoint:
 				self.bouncers.pop(bouncer.name)
 				self.droplet_obj.delete_agent_substrate(self, bouncer)
 		self.rpc.update_agent_metadata(self)
+		self.droplet_obj.update_ep(self.name, self)
 
 	def set_backends(self, backends):
 		self.backends = backends

@@ -33,8 +33,8 @@ class BouncerCreate(WorkflowTask):
 
 		# Update net on dividers
 		net = nets_opr.store.get_net(bouncer.net)
-		net.bouncers[bouncer.name] = bouncer
 		if net:
+			net.bouncers[bouncer.name] = bouncer
 			dividers_opr.update_divider_with_bouncers(bouncer, net)
 
 		# Update vpc on bouncer

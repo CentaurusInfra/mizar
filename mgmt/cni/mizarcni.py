@@ -17,7 +17,6 @@ def add():
 def delete():
 	logger.info("Delete called")
 	conn.root.delete(params)
-	logger.info("server's delete is {}".format(val))
 	exit()
 
 

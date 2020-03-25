@@ -112,10 +112,11 @@ class Bouncer(object):
 				logger.info("EEP: Updated")
 				self.eps[ep.name] = ep
 				self._update_ep(ep)
-				self.droplet_obj.update_substrate(ep.name)
+				self.droplet_obj.update_substrate(ep)
 
 	def _update_ep(self, ep):
-		self.rpc.update_ep(ep)
+		logger.info("self ip {} epfuncip {}, field ip {}".format(self.ip, ep.get_droplet_ip(), ep.droplet_obj.ip))
+		self.droplet_obj.update_ep(self.name, ep)
 
 	def _update_scaled_ep(self, ep):
 		self.rpc.update_ep(ep)
@@ -127,11 +128,11 @@ class Bouncer(object):
 			if add:
 				logger.info("Divider added: {}".format(divider.name))
 				self.dividers[divider.name] = divider
-				self.droplet_obj.update_substrate(divider.name)
+				self.droplet_obj.update_substrate(divider)
 			else:
 				logger.info("Divider removed: {}".format(divider.name))
 				self.dividers[divider.name] = divider
-				self.droplet_obj.delete_substrate(divider.name)
+				self.droplet_obj.delete_substrate(divider)
 		self.droplet_obj.update_vpc(self)
 
 	def delete_vpc(self):
@@ -166,6 +167,7 @@ class Bouncer(object):
 				self._delete_ep(ep)
 
 	def _delete_ep(self, ep):
-		self.rpc.delete_ep(ep)
-		self.droplet_obj.delete_substrate(ep.name)
+		self.droplet_obj.delete_ep(self.name, ep)
+		self.droplet_obj.delete_substrate(ep)
+		ep.droplet_obj.delete_ep(ep.name, ep)
 
