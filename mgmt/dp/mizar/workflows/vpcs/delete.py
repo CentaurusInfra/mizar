@@ -17,5 +17,6 @@ class VpcDelete(WorkflowTask):
         v.set_obj_spec(self.param.spec)
         vpcs_opr.deallocate_vni(v)
         vpcs_opr.delete_vpc_dividers(v, v.n_dividers)
+        v.delete_obj()
         vpcs_opr.store.delete_vpc(v.name)
         self.finalize()
