@@ -14,6 +14,9 @@ nav:
         - Developement: 'dev/contributing.md'
     - 'Data Plane Design':
         - 'Data-Plane Overview': 'design/data_plane.md'
+        - 'Tunneling Protocols': 'design/tunneling_protocols.md'
+        - 'Data-Plane Data Model': 'design/dp_datamodel.md'
+        - 'Data-Plane Extensibility': 'design/extensibility.md'
         - 'Direct Path': 'design/direct_path.md'
         - 'Scaled Endpoint': 'design/scaled_endpoint.md'
     - 'Management Plane Design':

@@ -43,5 +43,6 @@ This overall architecture allows - among many advantages - to accelerate endpoin
 
 
 To learn more about Mizar design:
+
 * [Data-plane](design/data_plane.md)
 * [Management Plane](design/management_plane.md)
