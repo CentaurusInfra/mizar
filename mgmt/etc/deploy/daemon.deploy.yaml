@@ -22,7 +22,7 @@ spec:
             path: /home
             type: Directory
       containers:
-        - image: phudtran/dropletd:latest
+        - image: fwnetworking/dropletd:latest
           name: mizar-daemon
           securityContext:
             privileged: true
