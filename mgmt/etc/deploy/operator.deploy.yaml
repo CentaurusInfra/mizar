@@ -16,7 +16,7 @@ spec:
       serviceAccountName: mizar-operator
       hostNetwork: true
       containers:
-        - image: phudtran/endpointopr:latest
+        - image: fwnetworking/endpointopr:latest
           name: mizar-operator
           securityContext:
             privileged: true

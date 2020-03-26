@@ -1,10 +1,14 @@
 #!/bin/bash
 
 DIR=${1:-.}
+USER=${2:-user}
+DOCKER_ACC=${3:-fwnetworking}
 
 # Build the daemon image
-docker image build -t phudtran/dropletd:latest -f $DIR/mgmt/etc/docker/daemon.Dockerfile $DIR
-docker image push phudtran/dropletd:latest
+if [[ "$USER" == "dev" ]]; then
+    docker image build -t $DOCKER_ACC/dropletd:latest -f $DIR/mgmt/etc/docker/daemon.Dockerfile $DIR
+    docker image push $DOCKER_ACC/dropletd:latest
+fi
 
 # Delete existing deployment and deploy
 kubectl delete daemonset.apps/mizar-daemon
