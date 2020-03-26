@@ -15,7 +15,7 @@ We think of Mizar as a server-less platform for networking functions, in which d
 
 ![Mizar Overview](design/png/overall_mgmt_dp.png)
 
-Mizar's [data-plane](design/data_plane.md) provides high performance and extensible packet processing pipeline and functions that achieve Mizar's functional, scale, and performance goals. Mizar's [management-plane](design/management_plane.md) programs the data-plane by translating typical networking related APIs and resources to Mizar specific configuration. The programmability of the data-plane involves loading and unloading network functions at various stages of the packet processing pipeline. Mizar management-plane can support different networking technologies. The data-plane has been successfuly integrated as well in other implementations of management-planes.
+Mizar's [data-plane](design/dp_overview.md) provides high performance and extensible packet processing pipeline and functions that achieve Mizar's functional, scale, and performance goals. Mizar's [management-plane](design/mp_overview.md) programs the data-plane by translating typical networking related APIs and resources to Mizar specific configuration. The programmability of the data-plane involves loading and unloading network functions at various stages of the packet processing pipeline. Mizar management-plane can support different networking technologies. The data-plane has been successfuly integrated as well in other implementations of management-planes.
 
 ## Why Mizar is different?
 
@@ -41,6 +41,6 @@ This overall architecture allows - among many advantages - to accelerate endpoin
 
 To learn more about Mizar design:
 * [*Documentation*](https://mizar.readthedocs.io/en/latest/)
-* [*Data-plane*](design/data_plane.md)
-* [*Management Plane*](design/management_plane.md)
+* [*Data-plane*](design/dp_overview.md)
+* [*Management Plane*](design/mp_overview.md)
 

@@ -1,4 +1,4 @@
-The data-plane supports an internal protocol to facilitate data-plane programming through remote RPC. Any management plane that would incorporate Mizar's data-plane shall use these programming interface. [Mizar management-plane](management_plane.md) provides a detailed workflows.
+The data-plane supports an internal protocol to facilitate data-plane programming through remote RPC. Any management plane that would incorporate Mizar's data-plane shall use these programming interface. [Mizar management-plane](mp_overview.md) provides a detailed workflows.
 
 Fundamentally, users perform nine operations that shall be supported by the management-plane workflow:
 
