@@ -13,15 +13,15 @@ nav:
         - Basic Usage: 'user/getting_started.md'
         - Developement: 'dev/contributing.md'
     - 'Data Plane Design':
-        - 'Overview': 'design/data_plane.md'
+        - 'Overview': 'design/dp_overview.md'
         - 'Data Model': 'design/dp_datamodel.md'
-        - 'Programming': 'design/programability.md'
-        - 'Extensibility': 'design/extensibility.md'
-        - 'Direct Path': 'design/direct_path.md'
-        - 'Tunneling Protocols': 'design/tunneling_protocols.md'
-        - 'Scaled Endpoint': 'design/scaled_endpoint.md'
+        - 'Programming': 'design/dp_programability.md'
+        - 'Extensibility': 'design/dp_extensibility.md'
+        - 'Direct Path': 'design/dp_direct_path.md'
+        - 'Tunneling Protocols': 'design/dp_tunneling_protocols.md'
+        - 'Scaled Endpoint': 'design/dp_scaled_endpoint.md'
     - 'Management Plane Design':
-        - 'Management-Plane Overview': 'design/management_plane.md'
+        - 'Management-Plane Overview': 'design/mp_overview.md'
     - About:
         #- 'License': 'license.md'
         - 'Use Cases': 'releases/use_cases.md'
