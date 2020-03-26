@@ -12,7 +12,7 @@ nav:
     - 'Getting Started':
         - Basic Usage: 'user/getting_started.md'
         - Developement: 'dev/contributing.md'
-    - 'Data Plane Design':
+    - 'Data-Plane Design':
         - 'Overview': 'design/dp_overview.md'
         - 'Data Model': 'design/dp_datamodel.md'
         - 'Programming': 'design/dp_programability.md'
@@ -20,8 +20,11 @@ nav:
         - 'Direct Path': 'design/dp_direct_path.md'
         - 'Tunneling Protocols': 'design/dp_tunneling_protocols.md'
         - 'Scaled Endpoint': 'design/dp_scaled_endpoint.md'
-    - 'Management Plane Design':
-        - 'Management-Plane Overview': 'design/mp_overview.md'
+    - 'Management-Plane Design':
+        - 'Overview': 'design/mp_overview.md'
+        - 'Network Objects and Operators': 'design/mp_datamodel.md'
+        - 'Workflows': 'design/mp_workflows.md'
+        - 'Other Data-plane support': 'design/mp_dpsupport.md'
     - About:
         #- 'License': 'license.md'
         - 'Use Cases': 'releases/use_cases.md'
