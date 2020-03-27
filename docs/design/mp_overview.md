@@ -1,10 +1,8 @@
 
 # Mizar Management Plane
 
-Mizar's management plane is based on refactoring the test controller
-we have in Mizar into Kubernetes based operators. The test controller
-allowed us to design the initial workflows functionality, which we
-extend it here into a fully distributed, elasticaly scaling, and
+Mizar's management plane is based on Kubernetes based operators.
+The management-plane a fully distributed, elasticaly scaling, and
 kubernetes-native design. Several existing components allows this
 design to happen, which we reuse:
 
@@ -18,9 +16,10 @@ design to happen, which we reuse:
    client APIs that _act as a controller_ for CRDs. Operator
    frameworks allow us to write custom lightweight operators the
    derive the networking objects life-cycle. We particulary use
-   [Kopf](https://github.com/zalando-incubator/kopf) extensively as it allows us to easily refactor the test controller.
+   [Kopf](https://github.com/zalando-incubator/kopf) extensively as it allows us to easily refactor the test controlle.
 3. **LMDB**: Provides a light-weight in-memory transactional database
    that is __local__ to each Operator.
+4. **Luigi**: Facilitates deveopling, scheduling and executing workflows.
 
 ## Object-Pipeline Architecture
 
@@ -47,7 +46,7 @@ workflows.
 ![Genric Object Pipeline](png/object_pipeline.png)
 
 Operators program the data-plane through direct RPC interfaces exposed
-by Transid (a daemon-set running in each worker host). These RPC
+by Transitd (a daemon-set running in each worker host). These RPC
 interface allows the management plane to follow the well-known design
 pattern of having less number of management-plane clients call large
 number of servers to prevent failures to cascade between components.
@@ -161,6 +160,13 @@ the local store. In this regard, the local store serves two purposes:
    the need to frequently get the object through the API server.
 1. The store accelerates the starting time of the operators after a
    failure.
+
+#### Extensiton to an extenrnal store
+
+The current implementation uses a simple hash map to cache the local
+state. However, the implementation is extensible if we find a need to
+interface with an external store other than that provided by
+Kubernetes.
 
 ### Horizontal Scaling
 
