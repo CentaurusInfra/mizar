@@ -1,9 +1,11 @@
 import logging
 from common.workflow import *
 from dp.mizar.operators.vpcs.vpcs_operator import *
+from dp.mizar.operators.nets.nets_operator import *
 logger = logging.getLogger()
 
 vpcs_opr = VpcOperator()
+nets_opr = NetOperator()
 
 class VpcDelete(WorkflowTask):
 
@@ -15,6 +17,8 @@ class VpcDelete(WorkflowTask):
         logger.info("Run {task}".format(task=self.__class__.__name__))
         v = vpcs_opr.store.get_vpc(self.param.name)
         v.set_obj_spec(self.param.spec)
+        while len(nets_opr.store.get_nets_in_vpc(v.name)):
+            pass
         vpcs_opr.deallocate_vni(v)
         vpcs_opr.delete_vpc_dividers(v, v.n_dividers)
         v.delete_obj()
