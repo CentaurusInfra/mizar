@@ -123,6 +123,8 @@ class NetOperator(object):
 			ip = n.allocate_ip()
 			n.mark_ip_as_allocated(ip)
 			ep.set_ip(ip)
+		else:
+			n.mark_ip_as_allocated(ep.ip)
 		gw = n.get_gw_ip()
 		prefix = n.get_prefixlen()
 		ep.set_gw(gw)
