@@ -4,8 +4,7 @@ site_dir: '.tmp/documentation'
 repo_url: https://github.com/futurewei-cloud/mizar
 theme:
     name: readthedocs
-    #highlightjs: true
-    nav_style: light
+    highlightjs: true
     hljs_languages:
         - yaml
 
