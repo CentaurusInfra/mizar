@@ -5,8 +5,8 @@ USER=${2:-user}
 DOCKER_ACC=${3:-fwnetworking}
 
 # Build the operator image
+docker image build -t $DOCKER_ACC/endpointopr:latest -f $DIR/mgmt/etc/docker/operator.Dockerfile $DIR
 if [[ "$USER" == "dev" ]]; then
-    docker image build -t $DOCKER_ACC/endpointopr:latest -f $DIR/mgmt/etc/docker/operator.Dockerfile $DIR
     docker image push $DOCKER_ACC/endpointopr:latest
 fi
 
