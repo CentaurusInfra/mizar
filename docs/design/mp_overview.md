@@ -1,6 +1,3 @@
-
-# Mizar Management Plane
-
 Mizar's management plane is based on Kubernetes based operators.
 The management-plane a fully distributed, elasticaly scaling, and
 kubernetes-native design. Several existing components allows this

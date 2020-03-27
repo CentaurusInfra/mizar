@@ -1,6 +1,3 @@
-
-## Mizar Management Workflows
-
 When creating any object, there are **two states** that must be persisted to the API Server.
 
 These states are **Object Init** and **Object Provisioned**.
@@ -27,6 +24,9 @@ For example:
 
 ### VPC Object Create Workflow
 
+#### Triggers:
+1. User creates a VPC
+1. VPC Operator creates a default VPC
 
 ![VPC](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/phudtran/mizar/dev-k8s/Documentation/design/figures/create_vpc_workflow.puml)
 
@@ -44,6 +44,10 @@ For example:
 12. The VPC Operator updates the state of the VPC to **Provisioned** and persists its state to the API Server.
 
 ### Network Object Create Workflow
+
+#### Triggers:
+1. User creates a network
+1. Network operator creates a default network
 
 ![Net](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/phudtran/mizar/dev-k8s/Documentation/design/figures/create_network_workflow.puml)
 
@@ -67,6 +71,13 @@ For example:
 
 ### Endpoint Object Create Workflow
 
+#### Triggers:
+1. User creates a POD.
+1. User creates a Mizar endpoint. Note: It is still possible to explicitly create
+   a Mizar endpoint, but this is not a typical usage within a
+   Kubernetes cluster. We don't have a mechanism to prevent a user
+   from creating a Mizar endpoint that is not attached to a POD.
+
 ![Endpoint](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/phudtran/mizar/dev-k8s/Documentation/design/figures/create_endpoint_workflow.puml)
 
 1. The Network Operator sees that an Endpoint Object with state **Init** has been created.
@@ -82,6 +93,10 @@ For example:
 
 ### Divider Object Create Workflow (Mizar Specific)
 
+#### Triggers:
+1. The VPC operator creates a divider. Initially when the VPC is
+   created or during a divider scale out.
+
 ![Divider](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/phudtran/mizar/dev-k8s/Documentation/design/figures/create_divider_workflow.puml)
 
 1. The VPC Operator creates a new Divider with state **Init** and persists it to the API Server.
@@ -95,6 +110,10 @@ For example:
 9. The Divider Operator updates its state store with the newly provisioned Divider Object.
 
 ### Bouncer Object Create Workflow (Mizar Specific)
+
+#### Triggers:
+1. The network oeprator creates a bouncers. Initially when the Network
+   is created or during a bouncer scale out.
 
 ![Bouncer](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/phudtran/mizar/dev-k8s/Documentation/design/figures/create_bouncer_workflow.puml)
 
@@ -114,6 +133,10 @@ For example:
 
 ### Droplet Object Create Workflow
 
+#### Triggers:
+1. The transit daemon creates the droplet object during bootstrapping
+
+
 ![Droplet](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/phudtran/mizar/dev-k8s/Documentation/design/figures/create_droplet_workflow.puml)
 
 1. The CNI Services creates A Droplet Object with state **Init** for each Node and persists them to the API Server.
@@ -125,12 +148,42 @@ For example:
 
 
 ### VPC Object Delete Workflow
+
+#### Triggers:
+1. User deletes a VPC
+
 ![VPC](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/phudtran/mizar/dev-k8s/Documentation/design/figures/delete_vpc_workflow.puml)
+
 ### Network Object Delete Workflow
+
+#### Triggers:
+1. User deletes a Network
+
 ![Network](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/phudtran/mizar/dev-k8s/Documentation/design/figures/delete_network_workflow.puml)
+
+
 ### Endpoint Object Delete Workflow
+
+#### Triggers:
+1. User deletes the POD atttaching the endpoint
+
 ![Endpoint](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/phudtran/mizar/dev-k8s/Documentation/design/figures/delete_endpoint_workflow.puml)
+
+
 ### Divider Object Delete Workflow
+
+#### Triggers:
+1. User deletes the VPC of the divider
+1. The VPC operator scales down the number of dividers
+
 ![Divider](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/phudtran/mizar/dev-k8s/Documentation/design/figures/delete_divider_workflow.puml)
+
+
 ### Bouncer Object Delete Workflow
+
+#### Triggers:
+1. User deletes the Network of the bouncer
+1. The network operator scales down the number of bouncers
+
+
 ![Bouncer](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/phudtran/mizar/dev-k8s/Documentation/design/figures/delete_bouncer_workflow.puml)
