@@ -33,3 +33,8 @@ sudo systemctl enable docker
 sudo docker build -f ./test/Dockerfile -t buildbox:v2 ./test
 
 git submodule update --init --recursive
+
+ver=$(curl -s https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
+curl -Lo kind https://github.com/kubernetes-sigs/kind/releases/download/$ver/kind-$(uname)-amd64
+chmod +x kind
+mv kind /usr/local/bin
