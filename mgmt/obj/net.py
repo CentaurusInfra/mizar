@@ -115,7 +115,6 @@ class Net(object):
 		b.set_cidr(self.cidr)
 		b.set_vni(self.vni)
 		b.set_net(self.name)
-		self.bouncers[b.name] = b
 		b.create_obj()
 
 	def delete_bouncer(self):
