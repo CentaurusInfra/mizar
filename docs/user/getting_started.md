@@ -10,16 +10,14 @@ The recommended way to try out Mizar is with Kind.
 Kind can be used to run a multi-node Kubernetes cluster with Docker containers locally on your machine.
 You can find [instructions for installing Kind on it's official site here.](https://kind.sigs.k8s.io/docs/user/quick-start/)
 
-### Linux Kernel Update
-
-For TCP to function properly, you will need to update your Kernel version to at least 5.6-rc2 on every node. A script is provided in the Mizar repo to download and update your machine's kernel if you do not wish to build the kernel source code yourself.
-
-### Mizar Compilation Prerequisites
-Make is used to build the entire data-plane code. An Ubuntu-based host is recommended for development and functionality testing. To compile, run Mizar on an existing host, please follow the following steps:
-
-* Clone Mizar
+As of writing this, there is an error in the installation instructions for Kind.
+The commands below can be used to download and install the latest release binary for Kind.
+MacOS/Linux
 ```
-$ git clone --recurse-submodules -j8 https://github.com/futurewei-cloud/mizar.git
+ver=$(curl -s https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
+curl -Lo kind "https://github.com/kubernetes-sigs/kind/releases/download/$ver/kind-$(uname)-amd64"
+chmod +x kind
+mv kind /usr/local/bin
 ```
 * Enter the mizar directory and run the bootstrap.sh script.
     * This script will the neccessary components to compile Mizar, and run it's unit tests. These include
@@ -31,9 +29,9 @@ $ git clone --recurse-submodules -j8 https://github.com/futurewei-cloud/mizar.gi
         * Llvm-7
     * There is also an optional kernel update included in the script if you wish to update to a compatible version
 
-```
-$ ./bootstrap.sh
-```
+### Linux Kernel Update
+
+For TCP to function properly, you will need to update your Kernel version to at least 5.6-rc2 on every node. A script, ```kernel_update.sh``` is provided in the Mizar repo to download and update your machine's kernel if you do not wish to build the kernel source code yourself.
 
 
 ## Setup
@@ -59,7 +57,7 @@ If you are testing out Mizar with Kind, a script has been included to setup a lo
 Simply run the script below in the Mizar directory.
 
 ```
-$ ./kind_setup.sh
+$ sudo ./kind_setup.sh
 ```
 
 This script does the following:
@@ -68,7 +66,7 @@ This script does the following:
 * Build all of the necessary Docker images.
 * Apply all of the Mizar CRDs.
 * Deploy the Mizar Operators
-* Install the Mizar CNI
+* Install the Mizar CNI Plugin
 
 ### Existing Kubernetes Cluster
 
@@ -132,7 +130,7 @@ spec:
             - containerPort: 80
 ```
 Note: To deploy, simply copy this to a file and run
-```kubectl deploy file_name_here.yaml```
+```kubectl create -f file_name_here.yaml```
 
 With 10 replicas as shown in the example, we have Mizar 10 simple endpoints. These endpoints will be a part of the default Network **net0** which itself is part of the default VPC **vpc0**.
 
@@ -153,7 +151,7 @@ spec:
   status: "Init"
 ```
 Note: To deploy, simply copy this to a file and run
-```kubectl deploy file_name_here.yaml```
+```kubectl create -f file_name_here.yaml```
 
 This yaml will create a VPC with CIDR range 20.0.0.0/16,a VNI of 1, and 10 initial Dividers.
 
@@ -175,7 +173,7 @@ spec:
   status: "Init"
 ```
 Note: To deploy, simply copy this to a file and run
-```kubectl deploy file_name_here.yaml```
+```kubectl create -f file_name_here.yaml```
 
 This yaml will create a Network with CIDR range 20.0.20.0/24,a VNI of 1, and 10 initial Bouncers. Notice that the Network's VNI is 1. This Network belongs to the VPC with VNI 1. Thus, its CIDR range is also a subset of the VPC with VNI 1.
 
@@ -192,7 +190,7 @@ spec:
   status: "Init"
 ```
 Note: To deploy, simply copy this to a file and run
-```kubectl deploy file_name_here.yaml```
+```kubectl create -f file_name_here.yaml```
 
 This Divider will be created for the VPC with name "vpc1"
 
@@ -211,6 +209,6 @@ spec:
   status: "Init"
 ```
 Note: To deploy, simply copy this to a file and run
-```kubectl deploy file_name_here.yaml```
+```kubectl create -f file_name_here.yaml```
 
 This Bouncer will be created for the Network with name "net1" that is part of the VPC with name "vpc1"
