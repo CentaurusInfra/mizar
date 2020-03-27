@@ -1,5 +1,3 @@
-### Compatability of other Data-planes (OVS)
-
 This architecture is extensible to derive other data-plane systems and
 is compatible with existing cloud networking solutions (particularly
 neutron). For example, if we would like to introduce a L2 ovs that is
