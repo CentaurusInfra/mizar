@@ -36,5 +36,6 @@ class Cidr:
 	def deallocate_ip(self, ip):
 		ip = ipaddress.IPv4Address(ip)
 		if ip in self.hosts:
-			self.allocated.remove(ip)
+			if ip in self.allocated:
+				self.allocated.remove(ip)
 			heapq.heappush(self.hosts, ip)
