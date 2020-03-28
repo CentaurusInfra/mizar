@@ -2,16 +2,13 @@
 
 To start running Mizar, first you will need a Kubernetes cluster. Running Mizar will  install experimental features on your cluster. **It is recommended that you use a test cluster to run Mizar.**
 
-## Preqrequesites
+## Prerequisites
 
 ### Kind (Kubernetes in Docker)
 
-The recommended way to try out Mizar is with Kind.
-Kind can be used to run a multi-node Kubernetes cluster with Docker containers locally on your machine.
-You can find [instructions for installing Kind on it's official site here.](https://kind.sigs.k8s.io/docs/user/quick-start/)
-
-As of writing this, there is an error in the installation instructions for Kind.
+**Note**: As of writing this, there is an error in the installation instructions for Kind.
 The commands below can be used to download and install the latest release binary for Kind.
+
 MacOS/Linux
 ```
 ver=$(curl -s https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
@@ -19,14 +16,19 @@ curl -Lo kind "https://github.com/kubernetes-sigs/kind/releases/download/$ver/ki
 chmod +x kind
 mv kind /usr/local/bin
 ```
-* Enter the mizar directory and run the bootstrap.sh script.
-    * This script will the neccessary components to compile Mizar, and run it's unit tests. These include
-        * Python
-        * Docker
-        * Build Essentials
-        * Cmocka
-        * Clang-7
-        * Llvm-7
+
+The recommended way to try out Mizar is with Kind.
+Kind can be used to run a multi-node Kubernetes cluster with Docker containers locally on your machine.
+You can find [instructions for installing Kind on it's official site here.](https://kind.sigs.k8s.io/docs/user/quick-start/)
+
+* Enter the mizar directory and run the ```bootstrap.sh``` script.
+    * This script will install the neccessary components to compile Mizar, and run it's unit tests. These include
+        * [Clang-7](https://clang.llvm.org) (For code compilation)
+        * [Llvm-7](https://llvm.org) (For code compilation)
+         * [Cmocka](https://cmocka.org) (For unit testing)
+        * [Build Essentials](https://packages.ubuntu.com/xenial/build-essential) (For code compilation)
+        * [Python](https://www.python.org) (For running the management plane and tests)
+        * [Docker](https://www.docker.com) (For management plane and tests)
     * There is also an optional kernel update included in the script if you wish to update to a compatible version
 
 ### Linux Kernel Update
@@ -47,11 +49,19 @@ $ make
 * You can now optionally run the unit tests and coverage reports by running the commands below.
 
 ```
-$ run_unittests
+$ make run_unittests
 $ make lcov
 ```
 
 ### New Kind Cluster
+**Note**: Before proceeding with the setup script below, please make sure you have [kind](https://kind.sigs.k8s.io/docs/user/quick-start/) and [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) installed.
+Validate your kind and kubectl installations by running:
+
+```
+$ kind --version
+
+$ kubectl version --client
+```
 
 If you are testing out Mizar with Kind, a script has been included to setup a local Kubernetes cluster, and install all of the components needed to run Mizar.
 Simply run the script below in the Mizar directory.
@@ -63,9 +73,10 @@ $ sudo ./kind_setup.sh
 This script does the following:
 
 * Create a multi-node local Kubernetes cluster with Kind.
-* Build all of the necessary Docker images.
-* Apply all of the Mizar CRDs.
-* Deploy the Mizar Operators
+* Build the Kind-Node, Mizar-Daemon, and Mizar-Operator docker images
+* Apply all of the Mizar [CRDs](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
+* Deploy the Mizar [Operators](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
+* Deploy the Mizar Daemon
 * Install the Mizar CNI Plugin
 
 ### Existing Kubernetes Cluster
@@ -76,31 +87,46 @@ To be expanded...
 
 ## Running Mizar Management Plane
 
-When a cluster is brought up with Mizar, a default VPC and default Network are created. We will call these **vpc0** and **net0**. The default VPC will have an initial default number of Dividers provisioned. Similarly the default Network will also have an initial default number of Bouncers provisioned. These resources will automatically scale in and out with depending on the load of the cluster. A user may also manually provision more Bouncers and Dividers at will to fit their needs.
+When a cluster is brought up with Mizar, a default VPC and default Network are created. We will call these **vpc0** and **net0**. The default VPC will have an initial default number of Dividers provisioned. Similarly the default Network will also have an initial default number of Bouncers provisioned. These resources will automatically scale in and out depending on the load of the cluster. A user may also manually provision more Bouncers and Dividers at will to fit their needs.
 
 ### Inspecting the resources.
 
+There are two states for the resources listed below. *Init* and *Provisioned*. When a resource is initially brought online, its state is set to *Init*. Once it has entered the *Provisioned* state, the resource is officially up and ready for use.
+
 You can inspect the following resources by running the commands below with ```kubectl```.
+
 
  * Get all VPCs in the cluster
 
-```kubectl get vpcs```
+```
+$ kubectl get vpcs
+```
 
  * Get all Networks in the cluster
 
-```kubectl get nets```
+```
+$ kubectl get nets
+```
 
  * Get all Dividers in the cluster
 
-```kubectl get dividers```
+```
+$ kubectl get dividers
+```
 
  * Get all Bouncers in the cluster
 
-```kubectl get bouncers```
+```
+$ kubectl get bouncers
+```
 
  * Get all endpoints in the cluster
 
-```kubectl get endpoints```
+```
+$ kubectl get endpoints
+```
+
+For futhure information on the operations taking place, please look at the logs for the Mizar-Operator, and Mizar-Daemon pods with kubectl.
 
 
 ### Creating an endpoint
@@ -130,9 +156,13 @@ spec:
             - containerPort: 80
 ```
 Note: To deploy, simply copy this to a file and run
-```kubectl create -f file_name_here.yaml```
+```
+$ kubectl create -f file_name_here.yaml
+```
 
 With 10 replicas as shown in the example, we have Mizar 10 simple endpoints. These endpoints will be a part of the default Network **net0** which itself is part of the default VPC **vpc0**.
+
+Try out your favorite network test to see the capabilities of Mizar!
 
 ### Creating a new VPC
 
@@ -151,9 +181,11 @@ spec:
   status: "Init"
 ```
 Note: To deploy, simply copy this to a file and run
-```kubectl create -f file_name_here.yaml```
+```
+$ kubectl create -f file_name_here.yaml
+```
 
-This yaml will create a VPC with CIDR range 20.0.0.0/16,a VNI of 1, and 10 initial Dividers.
+This yaml will create a VPC with CIDR range 20.0.0.0/16, a VNI of 1, and 10 initial Dividers.
 
 ### Creating a new Network
 
@@ -173,7 +205,9 @@ spec:
   status: "Init"
 ```
 Note: To deploy, simply copy this to a file and run
-```kubectl create -f file_name_here.yaml```
+```
+$ kubectl create -f file_name_here.yaml
+```
 
 This yaml will create a Network with CIDR range 20.0.20.0/24,a VNI of 1, and 10 initial Bouncers. Notice that the Network's VNI is 1. This Network belongs to the VPC with VNI 1. Thus, its CIDR range is also a subset of the VPC with VNI 1.
 
@@ -190,7 +224,9 @@ spec:
   status: "Init"
 ```
 Note: To deploy, simply copy this to a file and run
-```kubectl create -f file_name_here.yaml```
+```
+$ kubectl create -f file_name_here.yaml
+```
 
 This Divider will be created for the VPC with name "vpc1"
 
@@ -209,6 +245,8 @@ spec:
   status: "Init"
 ```
 Note: To deploy, simply copy this to a file and run
-```kubectl create -f file_name_here.yaml```
+```
+$ kubectl create -f file_name_here.yaml
+```
 
 This Bouncer will be created for the Network with name "net1" that is part of the VPC with name "vpc1"
