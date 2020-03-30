@@ -6,9 +6,7 @@ autonumber
 database API_Server
 collections VPC_Operator
 collections Divider_Operator
-collections Network_Operator
 collections Bouncer_Operator
-collections Endpoints_Operator
 collections Droplet_Operator
 
 VPC_Operator -> API_Server: Create a Divider

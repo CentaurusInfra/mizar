@@ -8,7 +8,6 @@ collections CNI_Service
 collections Network_Operator
 collections Bouncer_Operator
 collections Endpoints_Operator
-collections Droplet_Operator
 
 ==Endpoint Created==
 rnote over API_Server: == Endpoint Status: Init

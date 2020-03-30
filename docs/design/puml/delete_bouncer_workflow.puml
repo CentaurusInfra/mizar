@@ -20,7 +20,7 @@ group For All Dividers
 Divider_Operator -> Divider_Operator: Delete  Bouncer info from Divider
 Divider_Operator -> Divider_Operator: Delete Divider info from Bouncer host
 end
-Divider_Operator -> API_Server: On Bouncer Deprovisioned
+Divider_Operator -> Bouncer_Operator: On Bouncer Deprovisioned
 Bouncer_Operator -> API_Server: Deletes Bouncer Object
 rnote over API_Server: == Bouncer Deleted
 Bouncer_Operator -> Bouncer_Operator: Updates cache
