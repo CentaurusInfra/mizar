@@ -157,9 +157,4 @@ def run_workflow(wf):
     luigi.build(wf, workers=1, local_scheduler=True, log_level='INFO')
 
 def run_task(task):
-	sch = luigi.scheduler.Scheduler()
-
-	# no_install_shutdown_handler makes it thread safe
-	w = luigi.worker.Worker(scheduler=sch, no_install_shutdown_handler=True)
-	w.add(task)
-	w.run()
+	luigi.build([task], detailed_summary=False)
