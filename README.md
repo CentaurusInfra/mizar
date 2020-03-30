@@ -116,5 +116,4 @@ Resources:
 ### Join the Mizar Community
 
 - [**Slack**](https://join.slack.com/t/mizar-group/shared_invite/zt-9md5gw7m-Fp8n1iV9H04Nn8P3lwTEMA)
-- [**Email
-  Group**](https://groups.google.com/forum/#!forum/mizar-cloud-networking)
+- [**Email Group**](https://groups.google.com/forum/#!forum/mizar-cloud-networking)
