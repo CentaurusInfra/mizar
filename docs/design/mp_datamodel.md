@@ -1,31 +1,31 @@
-We categorize network objects and operators as generic, and data-plane
-specific. Generic network object primarily extends [Kubernetes Network
-Model](https://kubernetes.io/docs/concepts/cluster-administration/networking/#the-kubernetes-network-model). Data-plane
-specific network objects are specific to the underlying data-plane
+We categorize network objects and operators as generic, and data-plane specific.
+Generic network object primarily extends [Kubernetes Network
+Model](https://kubernetes.io/docs/concepts/cluster-administration/networking/#the-kubernetes-network-model).
+Data-plane specific network objects are specific to the underlying data-plane
 requirements. For example, in Mizar we have the abstract concpets of Bouncers
 and Dividers, hence we have speific objects and operators for them.
 
-All objects are defined through Kubernetes CRDs under the `mizar.com`
-resource group. An operator exposes interfaces to the management-plane
-workflows. The interface acts on any object if the action requires
-data from the operator's stateful object. For example the droplet
-operator provide interfaces to place a divider or bouncer given that
-it has complete information about the states of droplets (its own
-stateful object).
+All objects are defined through Kubernetes CRDs under the `mizar.com` resource
+group. An operator exposes interfaces to the management-plane workflows. The
+interface acts on any object if the action requires data from the operator's
+stateful object. For example the droplet operator provide interfaces to place a
+divider or bouncer given that it has complete information about the states of
+droplets (its own stateful object).
 
-The operators interfaces by themselves do not carry any weight until
-invoked by a [workflows](md_workflows.md).
+The operators interfaces by themselves do not carry any weight until invoked by
+a [workflows](md_workflows.md).
 
 ### Generic Objects
 
-The current generic objects managed by Mizar are: 1) Droplet, 2) VPC, 3) Network,
-4) Endpoint. As we extend Mizar's features, we will be introducing more operators
-such as: Security Groups, NACLs.
+The current generic objects managed by Mizar are: 1) Droplet, 2) VPC, 3)
+Network,
+4) Endpoint. As we extend Mizar's features, we will be introducing more
+   operators such as: Security Groups, NACLs.
 
 #### **Droplet Operator**:
 
-Droplets refer to a physical interface on a host where the Transit XDP
-program is running. The following CRD spec defines a droplet:
+Droplets refer to a physical interface on a host where the Transit XDP program
+is running. The following CRD spec defines a droplet:
 
 ```yaml
     - name: Mac
@@ -90,8 +90,8 @@ The following CRD spec defines a VPC:
 
 The vpc operator exposes the following interfaces:
 
-1. Create/delete a default VPC (for single-Tenant Kubernetes and for
-   substrate endpoints)
+1. Create/delete a default VPC (for single-Tenant Kubernetes and for substrate
+   endpoints)
 1. Allocate the VPC's VNI
 1. Initial creation of dividers (Mizar DP only)
 1. Elastic scaling of dividers (Mizar DP only)
@@ -226,17 +226,17 @@ The following CRD spec defines an Endpoint:
 
 The endpoint operator exposes the following interfaces:
 
-1. Update bouncers with endpoints information - e.g. add or delete an
-   endpoint (Mizar DP only)
+1. Update bouncers with endpoints information - e.g. add or delete an endpoint
+   (Mizar DP only)
 1. Update endpoints when a bouncer is added or deleted (Mizar DP only)
 1. Create scaled endpoints(Mizar DP only)
 1. Update scaled endpoints remote IPs (Mizar DP only)
 
 ### Data-plane Specific Objects
 
-In case of Mizar, we have two unique objects that the management plane
-manages its life-cyle: Bouncers and Dividers. For these objects, we have
-introduced the following operators:
+In case of Mizar, we have two unique objects that the management plane manages
+its life-cyle: Bouncers and Dividers. For these objects, we have introduced the
+following operators:
 
 #### **Bouncer Operator**:
 

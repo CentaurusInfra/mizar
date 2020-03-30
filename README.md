@@ -1,6 +1,8 @@
 # Mizar – High Scale and High Performance Cloud Network #
 
-Mizar is a high scale and high-performance cloud network to run virtual machines, containers, and other compute workloads. We built Mizar from ground-up on top of [XDP](https://prototype-kernel.readthedocs.io/en/latest/networking/XDP/). Mizar's main building block is an XDP program that runs on each host. The program implements virtual functions including overlay switching, routing, virtual endpoints, load-balancing, NAT, etc.
+Mizar is a large scale and high-performance cloud network to run virtual machines, containers, and other compute workloads. Mizar offers flexible in-network processing, which simplifies the programming of data-plane to scale compared to traditional flow-based programming models. Unlike traditional networking solutions, Mizar relies on the natural partitioning of a cloud network to scale.
+
+We built Mizar from ground-up on top of [XDP](https://prototype-kernel.readthedocs.io/en/latest/networking/XDP/). Mizar's main building block is an XDP program that runs on each host. The program implements virtual functions including overlay switching, routing, virtual endpoints, load-balancing, NAT, etc.
 
 Mizar network has the following advantages:
 
@@ -35,7 +37,7 @@ The following diagram illustrates the overall logical architecture of Mizar:
 
 Traditionally routing between VPCs and subnets is managed by virtual switches and routers. These mandates, for example, that endpoints belong to the same subnets, and a network of endpoints must have a subnet address. Mizar does not have this restriction.
 
-Mizar, introduces new **abstract** components called **Bouncers** and **Dividers**. Bouncers and Dividers are in-network and horizontally scalable hash tables. The management-plane populates the Bouncers and Dividers tables according to network domain partitioning.
+Mizar, introduces new **abstract** components called **Bouncers** and **Dividers**. Bouncers and Dividers are in-network and horizontally scalable hash tables that facilitate packet delivery between endpoints. The management-plane populates the Bouncers and Dividers tables according to network domain partitioning.
 
 Bouncers' decision domain is constrained to a network. A Bouncer holds the configuration of endpoints within a network. When a packet arrives at a Bouncer, it is expected to find the destination endpoint's host and __bounce__ the packet back to the host. Unlike a switch - where packet forwarding is performed by L2 learning - Bouncer's configuration maintains a mapping of an endpoint within a VPC to its host. The endpoint is identified by its IP address within a VPC (VNI). Bouncers rewrite the destination IP address of the outer packet to the endpoint's host.
 
