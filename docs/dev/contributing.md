@@ -23,6 +23,7 @@ We organized the source code as follows:
     * src/rpcgen: XDR protocol for interacting with the transit daemon. During compilation, the rpcgen tool populates this directory with generated header and source files.
     * src/include: include directory used by the source or other dependant projects that require linking to the userspace library.
     * src/extern: submodules and external files that we copied from other projects. Make sure to keep the license and copy-rights. **Usually copying the code in such way is for one of the following reasons. Either it is the recommended approach to reuse the code, or we ported the code from the kernel, or it is temporary until we have an appropriate dependency handling.**
+* mgmt: includes management plane implementation
 * test
     * test/conf: Test scenarios
     * test/ansible: Deployment scripts and playbooks for test scenarios
