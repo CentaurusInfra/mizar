@@ -1,0 +1,25 @@
+@startuml
+
+skinparam monochrome true
+autonumber
+
+database API_Server
+collections CNI_Service
+collections Bouncer_Operator
+collections Endpoints_Operator
+
+==Scaled Endpoint Delete Requested==
+CNI_Service --> API_Server: Sees Endpoint delete request
+CNI_Service -> API_Server: Delete endpoint
+rnote over API_Server: ==Endpoint Deleted
+Endpoints_Operator --> API_Server: Sees Endpoint delete request
+Endpoints_Operator -> Endpoints_Operator: Deallocates IP, MAC, Backend etc.
+Endpoints_Operator -> Bouncer_Operator: On Scaled Endpoint Dealloc
+group For All Bouncers
+Bouncer_Operator -> Bouncer_Operator: Delete Endpoint information from Bouncer
+Bouncer_Operator -> Bouncer_Operator: Delete Bouncer information from Endpoint host
+end
+Bouncer_Operator -> Endpoints_Operator: On Bouncer-Delete-Endpoint
+Endpoints_Operator --> Endpoints_Operator: Update caches
+==Scaled Endpoint Deleted==
+@enduml

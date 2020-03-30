@@ -1,0 +1,27 @@
+@startuml
+
+skinparam monochrome true
+autonumber
+
+database API_Server
+collections CNI_Service
+collections Bouncer_Operator
+collections Endpoints_Operator
+
+==Scaled Endpoint Created==
+Endpoints_Operator --> API_Server: Sees endpoint created
+Endpoints_Operator -> Endpoints_Operator: Allocates IP, Mac, etc.
+Endpoints_Operator -> CNI_Service: On Endpoint-Alloc
+CNI_Service -> CNI_Service: Write to CNI file.
+== Scaled Endpoint Ready==
+
+Endpoints_Operator -> Endpoints_Operator: Update Scaled Endpoint with backends
+Endpoints_Operator -> Endpoints_Operator: Update cache
+Endpoints_Operator -> Bouncer_Operator: On Scaled Endpoint updated
+group For All Bouncers
+Bouncer_Operator -> Bouncer_Operator: Updates Bouncer with new Endpoint
+Bouncer_Operator -> Bouncer_Operator: Updates Endpoint with Bouncer
+end
+
+== Scaled Endpoint Updated with Backends==
+@enduml
