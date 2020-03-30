@@ -93,3 +93,18 @@ Mizar includes unit and functional tests. We strive to maintain code test covera
 1. Unit tests cover almost all your code
 1. You solve all problems discovered by sanitizers
 1. Your code changes reflect in the functional tests.
+
+### Compiling Mizar
+
+Make is used to compile Mizar. Enter the mizar directory and run the command below.
+
+```
+$ make
+```
+
+* You can now optionally run the unit tests and coverage reports by running the commands below.
+
+```
+$ make run_unittests
+$ make lcov
+```

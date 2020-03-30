@@ -21,7 +21,7 @@ class NetDelete(WorkflowTask):
 		logger.info("Run {task}".format(task=self.__class__.__name__))
 		n = nets_opr.store.get_net(self.param.name)
 		n.set_obj_spec(self.param.spec)
-		
+		# TODO: Handle the error when all endpoints have not been deleted.
 		while len(endpoints_opr.store.get_eps_in_net(n.name)):
 			pass
 

@@ -31,29 +31,7 @@ You can find [instructions for installing Kind on it's official site here.](http
         * [Docker](https://www.docker.com) (For management plane and tests)
     * There is also an optional kernel update included in the script if you wish to update to a compatible version
 
-### Linux Kernel Update
-
-For TCP to function properly, you will need to update your Kernel version to at least 5.6-rc2 on every node. A script, ```kernel_update.sh``` is provided in the Mizar repo to download and update your machine's kernel if you do not wish to build the kernel source code yourself.
-
-
-## Setup
-
-### Compiling Mizar
-
-After completing the prerequisites above, you can now compile mizar. Enter the mizar directory and run the command below.
-
-```
-$ make
-```
-
-* You can now optionally run the unit tests and coverage reports by running the commands below.
-
-```
-$ make run_unittests
-$ make lcov
-```
-
-### New Kind Cluster
+#### New Kind Cluster
 **Note**: Before proceeding with the setup script below, please make sure you have [kind](https://kind.sigs.k8s.io/docs/user/quick-start/) and [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) installed.
 Validate your kind and kubectl installations by running:
 
@@ -79,11 +57,9 @@ This script does the following:
 * Deploy the Mizar Daemon
 * Install the Mizar CNI Plugin
 
-### Existing Kubernetes Cluster
+### Linux Kernel Update
 
-If you are installing Mizar on an existing Kubernetes cluster, please complete the following steps.
-
-To be expanded...
+For TCP to function properly, you will need to update your Kernel version to at least 5.6-rc2 on every node. A script, ```kernel_update.sh``` is provided in the Mizar repo to download and update your machine's kernel if you do not wish to build the kernel source code yourself.
 
 ## Running Mizar Management Plane
 
@@ -210,43 +186,3 @@ $ kubectl create -f file_name_here.yaml
 ```
 
 This yaml will create a Network with CIDR range 20.0.20.0/24,a VNI of 1, and 10 initial Bouncers. Notice that the Network's VNI is 1. This Network belongs to the VPC with VNI 1. Thus, its CIDR range is also a subset of the VPC with VNI 1.
-
-### Creating a new Divider
-A user can manually provision a Divider for a specified VPC as they see fit. A sample is shown below
-
-```
-apiVersion: mizar.com/v1
-kind: Divider
-metadata:
-  name: d1
-spec:
-  vpc: "vpc1"
-  status: "Init"
-```
-Note: To deploy, simply copy this to a file and run
-```
-$ kubectl create -f file_name_here.yaml
-```
-
-This Divider will be created for the VPC with name "vpc1"
-
-### Creating a new Bouncer
-
-A user can manually provision a Bouncer for a specified Network as they see fit. A sample is shown below
-
-```
-apiVersion: mizar.com/v1
-kind: Bouncer
-metadata:
-  name: b1
-spec:
-  vpc: "vpc1"
-  net: "net1"
-  status: "Init"
-```
-Note: To deploy, simply copy this to a file and run
-```
-$ kubectl create -f file_name_here.yaml
-```
-
-This Bouncer will be created for the Network with name "net1" that is part of the VPC with name "vpc1"

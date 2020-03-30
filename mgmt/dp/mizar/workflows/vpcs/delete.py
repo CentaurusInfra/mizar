@@ -17,6 +17,7 @@ class VpcDelete(WorkflowTask):
         logger.info("Run {task}".format(task=self.__class__.__name__))
         v = vpcs_opr.store.get_vpc(self.param.name)
         v.set_obj_spec(self.param.spec)
+        # TODO: Handle the error when all nets have not been deleted.
         while len(nets_opr.store.get_nets_in_vpc(v.name)):
             pass
         vpcs_opr.deallocate_vni(v)
