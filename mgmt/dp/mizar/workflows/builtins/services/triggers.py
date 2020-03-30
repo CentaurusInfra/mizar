@@ -1,6 +1,5 @@
 import kopf
 import logging
-import asyncio
 import luigi
 from common.common import *
 from common.constants import *
@@ -11,15 +10,6 @@ logger = logging.getLogger()
 mizar_service_annotation_key = "service.beta.kubernetes.io/mizar-scaled-endpoint-type"
 mizar_service_annotation_val = "scaled-endpoint"
 annotations_filter = {mizar_service_annotation_key: mizar_service_annotation_val}
-
-LOCK: asyncio.Lock
-
-@kopf.on.startup()
-async def services_opr_on_startup(logger, **kwargs):
-	global LOCK
-	LOCK = asyncio.Lock()
-	param = HandlerParam()
-
 
 @kopf.on.resume('', 'v1', 'services', annotations=annotations_filter)
 @kopf.on.update('', 'v1', 'services', annotations=annotations_filter)

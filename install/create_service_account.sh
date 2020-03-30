@@ -1,6 +1,7 @@
 #!/bin/bash
 
 DIR=${1:-.}
+USER=${2:-user}
 
 # Create the service account
 kubectl apply -f $DIR/mgmt/etc/account/serviceaccount.yaml

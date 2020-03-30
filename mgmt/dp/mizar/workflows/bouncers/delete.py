@@ -32,5 +32,6 @@ class BouncerDelete(WorkflowTask):
 		dividers_opr.delete_bouncer_from_dividers(bouncer, net)
 		endpoints_opr.delete_endpoints_from_bouncers(bouncer)
 		bouncers_opr.delete_vpc(bouncer)
+		bouncer.delete_obj()
 		bouncers_opr.store.delete_bouncer(bouncer.name)
 		self.finalize()

@@ -5,22 +5,20 @@ autonumber
 
 database API_Server
 collections CNI_Service
-collections Network_Operator
 collections Bouncer_Operator
 collections Endpoints_Operator
 
-==Endpoint Delete Requested==
-CNI_Service --> API_Server: Sees Endpoint delete request
-CNI_Service -> API_Server: Delete endpoint
-rnote over API_Server: ==Endpoint Deleted
-Network_Operator --> API_Server: Sees Endpoint delete request
-Network_Operator -> Network_Operator: Deallocates IP, Gw, etc.
-Network_Operator -> Bouncer_Operator: On Endpoint-Dealloc
+==Scaled Endpoint Delete Requested==
+Endpoints_Operator --> API_Server: Sees Scaled Endpoint delete request
+Endpoints_Operator -> Endpoints_Operator: Deallocates IP, MAC, Backend etc.
+Endpoints_Operator -> Bouncer_Operator: On Scaled Endpoint Dealloc
 group For All Bouncers
 Bouncer_Operator -> Bouncer_Operator: Delete Endpoint information from Bouncer
 Bouncer_Operator -> Bouncer_Operator: Delete Bouncer information from Endpoint host
 end
 Bouncer_Operator -> Endpoints_Operator: On Bouncer-Delete-Endpoint
+Endpoints_Operator -> API_Server: Delete the Scaled Endpoint Object
+rnote over API_Server: == Scaled Endpoint Deleted
 Endpoints_Operator --> Endpoints_Operator: Update caches
-==Endpoint Deleted==
+==Scaled Endpoint Deleted==
 @enduml

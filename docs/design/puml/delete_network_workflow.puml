@@ -4,38 +4,30 @@ skinparam monochrome true
 autonumber
 
 database API_Server
-collections CNI_Service
 collections Divider_Operator
 collections Network_Operator
 collections Bouncer_Operator
-collections Endpoints_Operator
 
 ==Network Delete Requested==
-rnote over API_Server: ==Network Status: TBD
-Network_Operator --> API_Server: Sees status TBD
+Network_Operator --> API_Server: Sees network delete request
 group For All Endpoints
 Network_Operator -> Network_Operator: Delete all Endpoints
-rnote over API_Server: ==Endpoint Status: Deprovisioned
+rnote over API_Server: ==Endpoint Deleted
 end
-Network_Operator -> Bouncer_Operator: On All Endpoints Deprovisioned
+Network_Operator -> Divider_Operator: On All Endpoints Deleted
 group For All Bouncers
 group For All Dividers
 Divider_Operator -> Divider_Operator: Delete Divider information from Bouncer
 Divider_Operator --> Divider_Operator: Delete Bouncer information from the Divider
-Divider_Operator -> API_Server: Update status to Deprovisioned
 end
-rnote over API_Server: ==Bouncer Status: Deprovisioned
-Bouncer_Operator --> API_Server: Sees status Bouncer Deprovisioned
+Divider_Operator --> Bouncer_Operator: On Bouncer Deprovisioned
 Bouncer_Operator -> API_Server: Delete Bouncer Object
+rnote over API_Server: ==Bouncer Deleted
 Bouncer_Operator -> Bouncer_Operator: Update cache
 end
-Bouncer_Operator -> Network_Operator: On All Bouncers Deprovisioned
-Network_Operator -> API_Server: Update Network status to Deprovisioned.
-rnote over API_Server: ==Network Status: Deprovisioned
-Network_Operator --> API_Server: Sees status Deprovisioned.
+Bouncer_Operator -> Network_Operator: On All Bouncers Deleted
 Network_Operator -> API_Server: Deletes Network Object
+rnote over API_Server: ==Network Deleted
 Network_Operator -> Network_Operator: Update cache.
-
-
 ==Network Deleted==
 @enduml

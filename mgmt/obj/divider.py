@@ -93,7 +93,7 @@ class Divider(object):
 		self.mac = droplet.mac
 
 	def update_net(self, net, add=True):
-		for bouncer in net.bouncers.values():
+		for bouncer in list(net.bouncers.values()):
 			if add:
 				if bouncer.name not in self.bouncers.keys():
 					logger.info("Bouncer {} added for Net {}".format(bouncer.name, net.name))

@@ -6,5 +6,5 @@ spec:
   vni: "1"
   ip: "20.0.0.0"
   prefix: "16"
-  dividers: 2
+  dividers: 10
   status: "Init"

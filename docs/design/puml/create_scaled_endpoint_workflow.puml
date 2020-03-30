@@ -1,0 +1,14 @@
+@startuml
+
+skinparam monochrome true
+autonumber
+
+database API_Server
+collections Endpoints_Operator
+
+==Scaled Endpoint Create Request==
+Endpoints_Operator --> API_Server: Sees scaled endpoint create request
+Endpoints_Operator -> Endpoints_Operator: Allocates IP, Mac, etc.
+Endpoints_Operator -> API_Server: Creates scaled endpoint object
+== Scaled Endpoint Ready==
+@enduml
