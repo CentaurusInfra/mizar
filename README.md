@@ -1,6 +1,6 @@
 # Mizar – High Scale and High Performance Cloud Network #
 
-Mizar is a high scale and high-performance cloud network to run virtual machines, containers, and other compute workloads. We built Mizar from ground-up on top of [Geneve protocol](https://tools.ietf.org/html/draft-ietf-nvo3-geneve-08) and [XDP](https://prototype-kernel.readthedocs.io/en/latest/networking/XDP/). Mizar's main building block is an XDP program that runs on each host. The program implements virtual functions including overlay switching, routing, virtual endpoints, load-balancing, NAT, etc.
+Mizar is a high scale and high-performance cloud network to run virtual machines, containers, and other compute workloads. We built Mizar from ground-up on top of [XDP](https://prototype-kernel.readthedocs.io/en/latest/networking/XDP/). Mizar's main building block is an XDP program that runs on each host. The program implements virtual functions including overlay switching, routing, virtual endpoints, load-balancing, NAT, etc.
 
 Mizar network has the following advantages:
 
@@ -13,9 +13,13 @@ Mizar network has the following advantages:
 
 We think of Mizar as a server-less platform for networking functions, in which developers extend it with capabilities without compromising performance or scale. The following diagram illustrates Mizar's high-level architecture:
 
-![Mizar Overview](design/png/overall_mgmt_dp.png)
+![Mizar Overview](docs/design/png/overall_mgmt_dp.png)
 
+<<<<<<< HEAD
 Mizar's [data-plane](design/data_plane.md) provides high performance and extensible packet processing pipeline and functions that achieve Mizar's functional, scale, and performance goals. Mizar's [management-plane](design/management_plane.md) programs the data-plane by translating typical networking related APIs and resources to Mizar specific configuration. The programmability of the data-plane involves loading and unloading network functions at various stages of the packet processing pipeline. Mizar management-plane can support different networking technologies. The data-plane has been successfuly integrated as well in other implementations of management-planes.
+=======
+Mizar's [data-plane](docs/design/dp_overview.md) provides high performance and extensible packet processing pipeline and functions that achieve Mizar's functional, scale, and performance goals. Mizar's [management-plane](docs/design/mp_overview.md) programs the data-plane by translating typical networking related APIs and resources to Mizar specific configuration. The programmability of the data-plane involves loading and unloading network functions at various stages of the packet processing pipeline. Mizar management-plane can support different networking technologies. The data-plane has been successfuly integrated as well in other implementations of management-planes.
+>>>>>>> Update the readme file
 
 ## Why Mizar is different?
 
@@ -23,7 +27,7 @@ Unlike traditional networking solutions, Mizar relies on the natural partitionin
 
 The following diagram illustrates the overall logical architecture of Mizar:
 
-![Mizar Overview](design/png/Mizar.png)
+![Mizar Overview](docs/design/png/Mizar.png)
 
 * Virtual Private Cloud (VPC) domain: A flat-network of endpoints specific to a single tenant.
 * Networks within a VPC: a group of Endpoints within a VPC. An operator may identify Networks as subnets of the VPC address space or any other partitioning scheme.
@@ -39,16 +43,13 @@ Dividers' decision domain is constrained to VPCs. A Divider holds the configurat
 
 This overall architecture allows - among many advantages - to accelerate endpoints provisioning, as the management plane programs a finite number of hosts designated as Bouncers instead of propagating the endpoint configuration to each host.
 
-To learn more about Mizar design:
+## Learn more about Mizar
+
 * [*Documentation*](https://mizar.readthedocs.io/en/latest/)
-* [*Data-plane*](design/data_plane.md)
-* [*Management Plane*](design/management_plane.md)
+* [*Data-plane*](docs/design/dp_overview.md)
+* [*Management Plane*](docs/design/mp_overview.md)
 
-[Learn more about Mizar](https://mizar.readthedocs.io/)
-
-## Community Meeting
-
-Biweekly Mizar Sprint Planning Meeting
+### Attend Mizar's Biweekly Sprint Planning Meeting
 - Thursday at 10:30AM-12:30PM Pacific Daylight Time (biweekly, starting from April 2nd, 2020)
 
 Resources:
@@ -56,7 +57,7 @@ Resources:
 - [**Mizar’s Sprint Planning Channel**](https://app.slack.com/client/TMNECBVT5/C010VLRH4SZ/thread/G0107KU0Y5Q-1585243073.003900) - 10:30AM to 12:30PM PDT 
 - [**Zoom Meeting**](https://futurewei.zoom.us/j/421246133) - 10:30AM to 11:30AM PDT  (We are including a zoom meeting for the first hour.) 
 
-## Contact Us
+### Join the Mizar Community
 
 - [**Slack**](https://join.slack.com/t/mizar-group/shared_invite/zt-9md5gw7m-Fp8n1iV9H04Nn8P3lwTEMA)
 - [**Email Group**](https://groups.google.com/forum/#!forum/mizar-cloud-networking)
