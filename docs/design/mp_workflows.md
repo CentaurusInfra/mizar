@@ -1,26 +1,10 @@
-When creating any object, there are **two states** that must be persisted to the API Server.
+When creating any object, there are **two states** that must persist to the API Server. These states are **Object Init** and **Object Provisioned**. Any other state may be communicated between operators by the Inter-Operators Communication methods mentioned previously.
 
-These states are **Object Init** and **Object Provisioned**.
-Any other states may be communicated between  operators by the Inter-Operators Communication methods mentioned previously.
+An object's state may be *watched* by many operators, that will take specific actions when the state is changed. However, a general guideline is, only **one operator** may mutate the state of any given object per state. For example, when a  VPC object is in state **Init**, there is only one Operator that may mutate its state to **Provisioned**, which is the VPC Operator.
 
-An object's state may be *watched* by many operators, that will take certain actions when the state is changed.
-However, a general guidline is, only **one operator** may mutate the state of any given object per state.
+### Workflow management
 
-For example:
-   1. A VPC object is in state **Init**
-   2. There is only one Operator that may mutate its state to the next state of **Provisioned**, the VPC Operator.
-
-When creating any object, there are **two states** that must be persisted to the API Server.
-
-These states are **Object Init** and **Object Provisioned**.
-Any other states may be communicated between  operators by the Inter-Operators Communication methods mentioned previously.
-
-An object's state may be *watched* by many operators, that will take certain actions when the state is changed.
-However, a general guidline is, only **one operator** may mutate the state of any given object per state.
-
-For example:
-   1. A VPC object is in state **Init**
-   2. There is only one Operator that may mutate its state to the next state of **Provisioned**, the VPC Operator.
+Mizar uses [luigi](https://github.com/spotify/luigi) to schedule and execute parallel workflows. The operator runs a central scheduler that execute the workflows.
 
 ### VPC Object Create Workflow
 
