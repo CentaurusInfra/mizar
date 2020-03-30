@@ -1,6 +1,6 @@
 ## Release 0.1 (09/30/2019)
 
- *  A basic implementation of data plane and a mini controller;
+ *  A basic implementation of the data plane and a mini controller;
  *  Create and deletion of VPC/subnet/ports objects.
  *  Initial automated test and deployment scripts.
 
@@ -19,16 +19,15 @@
 
 This release introduces a new management plane for Mizar, designed and
 developed from the ground up. The design relies on extensibility
-features in Kubernetes in cluding Custom Resource Definitions and
-Operators. The Management Plane is built with several objectives in
-mind:
+features in Kubernetes including Custom Resource Definitions and
+Operators. Mizar Management Plane has several objectives:
+
 1. Replace Kubeproxy with the scaled endpoint
 1. Improve Mizar usability and deployability
 1. Improve Mizar control-plane and data-plane Interfacing and workflow
 1. Facilitate end-to-end testing, validation, and performance
    benchmarks
-1. Extensibility to support other data-plane technologies including
-   ebpf, OVS, and host-networking.
+1. Extensibility to support other data-plane technologies, including ebpf, OVS, and host-networking.
 
 ### Breaking Changes
 
@@ -72,6 +71,4 @@ integrations.
 * New [documentation readthedocs page](http://mizar.readthedocs.io)
     * Detailed data-plane design
     * Detailed management-plane design
-    * Improvement in getting started guide to use the new management plane
-
-
+    * Improvement in getting started guide to using the new management plane
