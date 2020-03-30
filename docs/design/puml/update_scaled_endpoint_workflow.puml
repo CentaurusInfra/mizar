@@ -1,0 +1,19 @@
+@startuml
+
+skinparam monochrome true
+autonumber
+
+database API_Server
+collections Endpoints_Operator
+collections Bouncer_Operator
+
+== Scaled Endpoint Update Request==
+Endpoints_Operator -> Endpoints_Operator: Update Scaled Endpoint with backends
+Endpoints_Operator -> Endpoints_Operator: Update cache
+Endpoints_Operator -> Bouncer_Operator: On Scaled Endpoint updated
+group For All Bouncers
+Bouncer_Operator -> Bouncer_Operator: Updates Bouncer with new Endpoint
+Bouncer_Operator -> Bouncer_Operator: Updates Endpoint with Bouncer
+end
+== Scaled Endpoint Updated with Backends==
+@enduml

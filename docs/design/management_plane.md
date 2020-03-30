@@ -296,16 +296,17 @@ For example:
 
 1. The Endpoint Operator is notified that a Scaled Endpoint has been created
 2. The Endpoint Operator allocates an IP, mac, etc, for the new Scaled Endpoint Object
-3. CNI Service is informed about the newly created Scaled Endpoint
-4. The CNI Services call backs to the CNI about the new Scaled Endpoint
-5. The Scaled Endpoint object is updated with Endpoint Objects as its backends
-6. The Endpoint Operator updates its cache with this change about the Scaled Endpoint Object
-7. The Endpoint Operator calls back to the Bouncer Operator that the Scaled Endpoint has been updated with backends
-8. The Bouncer Operator updates all Bouncers about the new Scaled Endpoint
-9. The Bouncer Operator updates the Scaled Endpoint with all Bouncers in the Network
+3. The Endpoint Operator creates the Scaled Endpoint Object
 
+### Scaled Endpoint Object Update Workflow
 
+![Scaled_Endpoint](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/futurewei-cloud/mizar/dev-next/docs/design/puml/update_scaled_endpoint_workflow.puml)
 
+1. The Scaled Endpoint object is updated with Endpoint Objects as its backends
+2. The Endpoint Operator updates its cache with this change about the Scaled Endpoint Object
+3. The Endpoint Operator calls back to the Bouncer Operator that the Scaled Endpoint has been updated with backends
+4. The Bouncer Operator updates all Bouncers about the new Scaled Endpoint
+5. The Bouncer Operator updates the Scaled Endpoint with all Bouncers in the Network
 
 ### Divider Object Create Workflow (Mizar Specific)
 
@@ -394,15 +395,14 @@ For example:
 ### Scaled Endpoint Object Delete Workflow
 ![Scaled_Endpoint](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/futurewei-cloud/mizar/dev-next/docs/design/puml/delete_scaled_endpoint_workflow.puml)
 
-1. The CNI Services sees the Scaled Endpoint Delete request.
-2. The CNI service deletes the Scaled Endpoint Object.
-3. The Endpoints Operator sees the Scaled Endpoint Delete request.
-4. The Endpoint operator deallocates the Scaled Endpoints information (IP, MAC, etc).
-5. The Endpoints Operator calls back to the Bouncer Operator after the Scaled Endpoint has been deallocated.
-6. The Bouncer Operator deletes the Scaled Endpoint information from all Bouncers.
-7. The Bouncer Operator deletes all Bouncer information from the Scaled Endpoint.
-8. The Bouncer Operator calls back to the Endpoint Operator.
-9. The Endpoint Operator deletes the Scaled Endpoint Object from its cache.
+1. The Endpoints Operator sees the Scaled Endpoint Delete request.
+2. The Endpoint operator deallocates the Scaled Endpoints information (IP, MAC, etc).
+3. The Endpoints Operator calls back to the Bouncer Operator after the Scaled Endpoint has been deallocated.
+4. The Bouncer Operator deletes the Scaled Endpoint information from all Bouncers.
+5. The Bouncer Operator deletes all Bouncer information from the Scaled Endpoint.
+6. The Bouncer Operator calls back to the Endpoint Operator.
+7. The Endpoint Operator deletes the Scaled Endpoint Object.
+8. The Endpoint Operator deletes the Scaled Endpoint Object from its cache.
 
 ### Divider Object Delete Workflow
 ![Divider](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/futurewei-cloud/mizar/dev-next/docs/design/puml/delete_divider_workflow.puml)
