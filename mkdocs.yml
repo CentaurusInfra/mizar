@@ -24,7 +24,8 @@ nav:
     - 'Management-Plane Design':
         - 'Overview': 'design/mp_overview.md'
         - 'Network Objects and Operators': 'design/mp_datamodel.md'
-        - 'Workflows': 'design/mp_workflows.md'
+        - 'Control Workflows': 'design/mp_workflows.md'
+        - 'IP Address Management': 'design/mp_ipam.md'
         - 'Other Data-plane support': 'design/mp_dpsupport.md'
     - About:
         #- 'License': 'license.md'
