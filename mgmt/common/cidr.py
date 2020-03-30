@@ -1,5 +1,4 @@
 import ipaddress
-import heapq
 
 class Cidr:
 	def __init__(self, prefixlen, ip):
@@ -9,10 +8,20 @@ class Cidr:
 		self.prefixlen = prefixlen
 		self.ip = ip
 		self.ipnet = ipaddress.ip_network("{}/{}".format(self.ip, self.prefixlen))
-		self.hosts = list(self.ipnet.hosts())
-		self.gw = self.hosts.pop(0)
+		self.subnets = self.ipnet.subnets(new_prefix=29)
+
+		self.pool = None
+		self._hosts = set()
+		self.gw = self.get_ip(1)
 		self.allocated = set()
-		heapq.heapify(self.hosts)
+
+	@property
+	def hosts(self):
+
+		self.pool = next(self.subnets)
+		self._hosts.update(set(self.pool.hosts()))
+		self._hosts.discard(self.gw)
+		return self._hosts
 
 	def get_ip(self, idx):
 		return self.ipnet[idx]
@@ -23,10 +32,10 @@ class Cidr:
 	def allocate_ip(self):
 		if not len(self.hosts):
 			return None
-		ip = heapq.heappop(self.hosts)
+		ip = self.hosts.pop()
 		# TODO: bad hack, search the list and remove it!!
 		while ip in self.allocated:
-			ip = heapq.heappop(self.hosts)
+			ip = self.hosts.pop()
 		self.allocated.add(ip)
 		return str(ip)
 
@@ -38,4 +47,5 @@ class Cidr:
 		if ip in self.hosts:
 			if ip in self.allocated:
 				self.allocated.remove(ip)
-			heapq.heappush(self.hosts, ip)
+			ip = self._hosts.add(ip)
+

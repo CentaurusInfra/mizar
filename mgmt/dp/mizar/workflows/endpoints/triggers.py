@@ -1,22 +1,12 @@
 import kopf
 import logging
 import asyncio
-import luigi
 from common.common import *
 from common.constants import *
 from common.wf_factory import *
 from common.wf_param import *
 
 logger = logging.getLogger()
-
-LOCK: asyncio.Lock
-
-@kopf.on.startup()
-async def endpoint_opr_on_startup(logger, **kwargs):
-	global LOCK
-	LOCK = asyncio.Lock()
-	param = HandlerParam()
-	run_task(wffactory().EndpointOperatorStart(param=param))
 
 @kopf.on.resume(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_init)
 @kopf.on.update(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_init)
