@@ -54,6 +54,14 @@ static const struct cmd {
 	{ 0 },
 };
 
+void cleanup(int alloced, void *ptr)
+{
+	if (alloced) {
+		free(ptr);
+		ptr = NULL;
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	ketopt_t om = KETOPT_INIT, os = KETOPT_INIT;
@@ -64,17 +72,21 @@ int main(int argc, char *argv[])
 	char *protocol = NULL;
 	int rc = 0;
 	const struct cmd *c;
+	int malloc_server = 0;
+	int malloc_protocol = 0;
 
 	while ((o = ketopt(&om, argc, argv, 0, "s:p:", 0)) >= 0) {
 		if (o == 's') {
-			server = malloc(sizeof(char) * strlen(om.arg));
+			server = malloc(sizeof(char) * strlen(om.arg) + 1);
 			strcpy(server, om.arg);
 			printf("main -s %s\n", server);
+			malloc_server = 1;
 		}
 		if (o == 'p') {
-			protocol = malloc(sizeof(char) * strlen(om.arg));
+			protocol = malloc(sizeof(char) * strlen(om.arg) + 1);
 			strcpy(protocol, om.arg);
 			printf("main -s %s\n", server);
+			malloc_protocol = 1;
 		}
 	}
 
@@ -93,11 +105,15 @@ int main(int argc, char *argv[])
 
 	if (clnt == NULL) {
 		clnt_pcreateerror(server);
+		cleanup(malloc_server, server);
+		cleanup(malloc_protocol, protocol);
 		exit(1);
 	}
 
 	if (om.ind == argc) {
 		fprintf(stderr, "missing subcommand.\n");
+		cleanup(malloc_server, server);
+		cleanup(malloc_protocol, protocol);
 		exit(1);
 	}
 
@@ -108,10 +124,15 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (rc)
+	if (rc) {
+		cleanup(malloc_server, server);
+		cleanup(malloc_protocol, protocol);
 		exit(1);
+	}
 
 	clnt_destroy(clnt);
+	cleanup(malloc_server, server);
+	cleanup(malloc_protocol, protocol);
 
 	return 0;
 }

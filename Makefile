@@ -7,7 +7,6 @@ CC = gcc
 ARCH := $(shell uname -m)
 
 # Sanitizer
-SANITIZE.x86_64 += -mmpx
 SANITIZE.aarch64 :=
 
 SANITIZE += $(SANITIZE.$(ARCH))
@@ -45,6 +44,7 @@ CFLAGS += -Wall
 CFLAGS += -Wextra
 CFLAGS += -Werror
 CFLAGS += -pedantic -Wpedantic
+CLFAGS += -Wno-cast-function-type -Wno-error=cast-function-type
 
 CFLAGS += -fno-common
 CFLAGS += -fstrict-aliasing
