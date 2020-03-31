@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-modules := src test
+modules := src test test-e2e
 build := build
 
 CC = gcc
