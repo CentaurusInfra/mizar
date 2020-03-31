@@ -86,22 +86,22 @@ class test_multi_net_multi_switches_routers(unittest.TestCase):
             "router-2": droplet("router-2"),
         }
 
-        c = controller(self.droplets)
+        self.c = controller(self.droplets)
 
-        c.create_vpc(3, cidr("16", "10.0.0.0"),
-                     ["router-1", "router-2", "d5"])
+        self.c.create_vpc(3, cidr("16", "10.0.0.0"),
+                          ["router-1", "router-2", "d5"])
 
-        c.create_network(3, 10, cidr("24", "10.0.0.0"),
-                         ["switch-1", "d3", "d5"])
+        self.c.create_network(3, 10, cidr("24", "10.0.0.0"),
+                              ["switch-1", "d3", "d5"])
 
-        c.create_network(3, 20, cidr("24", "10.20.0.0"),
-                         ["switch-4", "d2", "d5"])
+        self.c.create_network(3, 20, cidr("24", "10.20.0.0"),
+                              ["switch-4", "d2", "d5"])
 
-        self.ep1 = c.create_simple_endpoint(3, 10, "10.0.0.2", "d1")
-        self.ep2 = c.create_simple_endpoint(3, 10, "10.0.0.3", "d2")
+        self.ep1 = self.c.create_simple_endpoint(3, 10, "10.0.0.2", "d1")
+        self.ep2 = self.c.create_simple_endpoint(3, 10, "10.0.0.3", "d2")
 
-        self.ep3 = c.create_simple_endpoint(3, 20, "10.20.0.4", "d3")
-        self.ep4 = c.create_simple_endpoint(3, 20, "10.20.0.5", "d4")
+        self.ep3 = self.c.create_simple_endpoint(3, 20, "10.20.0.4", "d3")
+        self.ep4 = self.c.create_simple_endpoint(3, 20, "10.20.0.5", "d4")
 
     def test_multi_net_multi_switches_routers(self):
         logger.info(

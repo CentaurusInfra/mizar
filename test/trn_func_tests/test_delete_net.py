@@ -80,26 +80,26 @@ class test_delete_net(unittest.TestCase):
             "router-1": droplet("router-1")
         }
 
-        c = controller(self.droplets)
+        self.c = controller(self.droplets)
 
-        c.create_vpc(3, cidr("16", "10.0.0.0"), ["router-1"])
-        c.create_network(3, 10, cidr("24", "10.0.0.0"), ["switch-1"])
+        self.c.create_vpc(3, cidr("16", "10.0.0.0"), ["router-1"])
+        self.c.create_network(3, 10, cidr("24", "10.0.0.0"), ["switch-1"])
 
         # Clear update information about "10.0.0.0" subnet
         # When comparing update and delete RPC calls, we don't delete subnet "10.0.0.0".
         # Thus, there is no corresponding delete_net in the droplet's rpc_deletes map
         self.droplets["router-1"].clear_update_call_state()
 
-        c.create_network(3, 20, cidr("24", "10.20.0.0"), ["switch-2"])
+        self.c.create_network(3, 20, cidr("24", "10.20.0.0"), ["switch-2"])
 
-        self.ep1 = c.create_simple_endpoint(3, 10, "10.0.0.2", "d1")
-        self.ep2 = c.create_simple_endpoint(3, 10, "10.0.0.3", "d2")
+        self.ep1 = self.c.create_simple_endpoint(3, 10, "10.0.0.2", "d1")
+        self.ep2 = self.c.create_simple_endpoint(3, 10, "10.0.0.3", "d2")
 
-        self.ep3 = c.create_simple_endpoint(3, 20, "10.20.0.4", "d3")
-        self.ep4 = c.create_simple_endpoint(3, 20, "10.20.0.5", "d4")
+        self.ep3 = self.c.create_simple_endpoint(3, 20, "10.20.0.4", "d3")
+        self.ep4 = self.c.create_simple_endpoint(3, 20, "10.20.0.5", "d4")
 
         # Delete the network and its corresponding endpoints
-        c.delete_network(3, 20)
+        self.c.delete_network(3, 20)
 
     def tearDown(self):
         pass

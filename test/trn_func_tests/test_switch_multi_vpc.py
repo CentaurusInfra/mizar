@@ -57,19 +57,19 @@ class test_switch_multi_vpc(unittest.TestCase):
             "right": droplet("right"),
             "switch": droplet("switch"),
         }
-        c = controller(self.droplets)
+        self.c = controller(self.droplets)
 
-        c.create_vpc(3, cidr("16", "10.0.0.0"), [])
-        c.create_network(3, 1, cidr("16", "10.0.0.0"), ["switch"])
+        self.c.create_vpc(3, cidr("16", "10.0.0.0"), [])
+        self.c.create_network(3, 1, cidr("16", "10.0.0.0"), ["switch"])
 
-        c.create_vpc(4, cidr("16", "20.0.0.0"), [])
-        c.create_network(4, 2, cidr("16", "20.0.0.0"), ["switch"])
+        self.c.create_vpc(4, cidr("16", "20.0.0.0"), [])
+        self.c.create_network(4, 2, cidr("16", "20.0.0.0"), ["switch"])
 
-        self.ep1 = c.create_simple_endpoint(3, 1, "10.0.0.2", "left")
-        self.ep2 = c.create_simple_endpoint(4, 2, "20.0.0.2", "left")
+        self.ep1 = self.c.create_simple_endpoint(3, 1, "10.0.0.2", "left")
+        self.ep2 = self.c.create_simple_endpoint(4, 2, "20.0.0.2", "left")
 
-        self.ep3 = c.create_simple_endpoint(3, 1, "10.0.0.3", "right")
-        self.ep4 = c.create_simple_endpoint(4, 2, "20.0.0.3", "right")
+        self.ep3 = self.c.create_simple_endpoint(3, 1, "10.0.0.3", "right")
+        self.ep4 = self.c.create_simple_endpoint(4, 2, "20.0.0.3", "right")
 
     def tearDown(self):
         pass

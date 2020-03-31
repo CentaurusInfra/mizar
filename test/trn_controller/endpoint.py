@@ -60,6 +60,7 @@ class endpoint:
         if host_ep:
             self.veth_name = "host_" + self.veth_name
             self.veth_peer = "host_" + self.veth_peer
+            self.saved_ns = self.ns
             self.ns = ""
             self.ns_exec = ""
         self.backends = backends
@@ -85,7 +86,7 @@ class endpoint:
         self.udp_server_cmd = f'''{self.bash_cmd} '(nc -u -l -p 5001 > {self.udp_recv_file})' '''
         self.iperf3_server_cmd = f'''{self.bash_cmd} 'iperf3 -s > /tmp/{self.ns}_{self.ip}/iperf_server.log 2>&1' '''
 
-        self.tcp_serv_idle_cmd = f'''{self.bash_cmd} './mnt/Transit/tools/tcp_server.py' '''
+        self.tcp_serv_idle_cmd = f'''{self.bash_cmd} './mnt/Transit/tools/tcp_server.py '''
         self.tcp_client_idle_cmd = f'''{self.bash_cmd} './mnt/Transit/tools/tcp_client.py '''
 
     def provision(self):
@@ -109,20 +110,19 @@ class endpoint:
     def unprovision(self):
         if self.tuntype == 'vxn':
             return
-
-        if self.host is None:
-            veth_allocator.getInstance().reclaim_veth(
-                self.mac, self.ns.replace(self.tuntype + '_', ''), self.veth_peer.replace(self.tuntype + '_', ''))
-            self.veth_allocated = False
-            return
-        else:
+        if self.host is not None:
             self.transit_agent = None
             self.host.delete_ep(self)
             self.host.unprovision_simple_endpoint(self)
+
+        if self.ns == "":  # Host endpoint case
+            veth_allocator.getInstance().reclaim_veth(
+                self.mac, self.saved_ns.replace(self.tuntype + '_', ''), self.veth_peer.replace("host_" + self.tuntype + '_', ''))
+        else:
             veth_allocator.getInstance().reclaim_veth(
                 self.mac, self.ns.replace(self.tuntype + '_', ''), self.veth_peer.replace(self.tuntype + '_', ''))
-            self.veth_allocated = False
 
+        self.veth_allocated = False
         self.ready = False
 
     def __del__(self):
@@ -130,8 +130,13 @@ class endpoint:
             if self.transit_agent is not None:
                 self.host.unload_transit_agent_xdp(self.veth_peer)
         if self.veth_allocated:
-            veth_allocator.getInstance().reclaim_veth(
-                self.mac, self.ns.replace(self.tuntype + '_', ''), self.veth_peer.replace(self.tuntype + '_', ''))
+            if self.ns == "":  # Host endpoint case
+                veth_allocator.getInstance().reclaim_veth(
+                    self.mac, self.saved_ns.replace(self.tuntype + '_', ''), self.veth_peer.replace("host_" + self.tuntype + '_', ''))
+            else:
+                veth_allocator.getInstance().reclaim_veth(
+                    self.mac, self.ns.replace(self.tuntype + '_', ''), self.veth_peer.replace(self.tuntype + '_', ''))
+
             self.veth_allocated = False
 
     def get_tunnel_id(self):
@@ -249,8 +254,8 @@ class endpoint:
         cmd = f'''{self.bash_cmd} 'iperf3 -c {ip} {args}' '''
         return self.host.run(cmd)
 
-    def do_tcp_serve_idle(self, detach=True):
-        return self.host.run(self.tcp_serv_idle_cmd, detach=detach)
+    def do_tcp_serve_idle(self, connections, idle=0, detach=True):
+        return self.host.run(self.tcp_serv_idle_cmd + " " + str(connections) + " " + str(idle) + "'", detach=detach)
 
-    def do_tcp_client_idle(self, ip, message_count=2, delay=5, detach=True):
-        return self.host.run(self.tcp_client_idle_cmd + str(ip) + " " + str(message_count) + " " + str(delay) + "'", detach=detach)
+    def do_tcp_client_idle(self, ip, connection, message_count=2, delay=5, detach=True):
+        return self.host.run(self.tcp_client_idle_cmd + str(ip) + " " + str(message_count) + " " + str(delay) + " " + str(connection) + "'", detach=detach)

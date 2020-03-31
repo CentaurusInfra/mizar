@@ -255,6 +255,14 @@ static __inline int trn_switch_handle_pkt(struct transit_packet *pkt,
 	ep = bpf_map_lookup_elem(&endpoints_map, &epkey);
 
 	if (!ep) {
+		/* If the scaled endpoint modify option is present,
+		   make TR route to the inner packet source */
+		if (pkt->scaled_ep_opt->type == TRN_GNV_SCALED_EP_OPT_TYPE &&
+		    pkt->scaled_ep_opt->scaled_ep_data.msg_type ==
+			    TRN_SCALED_EP_MODIFY)
+			return trn_router_handle_pkt(pkt, inner_dst_ip,
+						     inner_src_ip);
+
 		return trn_router_handle_pkt(pkt, inner_src_ip, inner_dst_ip);
 	}
 
@@ -326,6 +334,7 @@ static __inline int trn_handle_scaled_ep_modify(struct transit_packet *pkt)
 		  bpf_ntohl(pkt->scaled_ep_opt->scaled_ep_data.target.daddr));
 
 	__be64 tunnel_id = trn_vni_to_tunnel_id(pkt->geneve->vni);
+
 	struct scaled_endpoint_remote_t out_tuple;
 	struct ipv4_tuple_t in_tuple;
 
@@ -395,6 +404,10 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 		return XDP_ABORTED;
 	}
 
+	/* For whatever compiler reason, we need to perform reverse flow modification
+	 in this function instead of trn_switch_handle_pkt so we keep the orig_src_ip */
+	__u32 orig_src_ip = pkt->inner_ip->saddr;
+
 	pkt->inner_ipv4_tuple.saddr = pkt->inner_ip->saddr;
 	pkt->inner_ipv4_tuple.daddr = pkt->inner_ip->daddr;
 	pkt->inner_ipv4_tuple.protocol = pkt->inner_ip->protocol;
@@ -430,9 +443,21 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 		pkt->inner_ipv4_tuple.dport = pkt->inner_udp->dest;
 	}
 
+	/* Lookup the source endpoint*/
+	__be64 tunnel_id = trn_vni_to_tunnel_id(pkt->geneve->vni);
+	struct endpoint_t *src_ep;
+	struct endpoint_key_t src_epkey;
+
+	__builtin_memcpy(&src_epkey.tunip[0], &tunnel_id, sizeof(tunnel_id));
+	src_epkey.tunip[2] = pkt->inner_ip->saddr;
+	src_ep = bpf_map_lookup_elem(&endpoints_map, &src_epkey);
+
+	/* If this is not the source endpoint's host,
+	skip reverse flow modification, or scaled endpoint modify handling */
 	if (pkt->scaled_ep_opt->type == TRN_GNV_SCALED_EP_OPT_TYPE &&
 	    pkt->scaled_ep_opt->scaled_ep_data.msg_type ==
-		    TRN_SCALED_EP_MODIFY) {
+		    TRN_SCALED_EP_MODIFY &&
+	    src_ep && src_ep->hosted_iface != -1) {
 		return trn_handle_scaled_ep_modify(pkt);
 	}
 
@@ -443,7 +468,6 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 			 sizeof(struct ipv4_tuple_t));
 
 	inner_mod = bpf_map_lookup_elem(&rev_flow_mod_cache, &inner);
-	__u32 orig_src_ip = pkt->inner_ip->saddr;
 	if (inner_mod) {
 		/* Modify the inner packet accordingly */
 		trn_set_src_dst_inner_ip_csum(pkt, inner_mod->saddr,
