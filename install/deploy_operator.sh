@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DIR=${1:-.}
-USER=${2:-user}
+USER=${2:-dev}
 DOCKER_ACC=${3:-"localhost:5000"}
 YAML_FILE="operator.deploy.yaml"
 
