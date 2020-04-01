@@ -10,11 +10,10 @@ kind delete cluster
 
 if [[ "$USER" == "dev" ]]; then
     DOCKER_ACC="localhost:5000"
-    docker image build -t $DOCKER_ACC/kindnode:latest -f k8s/kind/Dockerfile .
 else
     DOCKER_ACC="fwnetworking"
-    docker image build -t $DOCKER_ACC/kindnode:latest -f k8s/kind/Dockerfile .
 fi
+docker image build -t $DOCKER_ACC/kindnode:latest -f k8s/kind/Dockerfile .
 
 source install/create_cluster.sh $KINDCONF $USER
 

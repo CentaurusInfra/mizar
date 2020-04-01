@@ -16,5 +16,5 @@ if [[ "$USER" == "dev" ]]; then
 fi
 
 # Delete existing deployment and deploy
-kubectl delete deployment.apps/mizar-operator 2> /dev/null
+kubectl delete deployment.apps/mizar-operator 2> /tmp/kubetctl.err
 kubectl apply -f $DIR/mgmt/etc/deploy/$YAML_FILE

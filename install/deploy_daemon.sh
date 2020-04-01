@@ -16,5 +16,5 @@ if [[ "$USER" == "dev" ]]; then
 fi
 
 # Delete existing deployment and deploy
-kubectl delete daemonset.apps/mizar-daemon 2> /dev/null
+kubectl delete daemonset.apps/mizar-daemon 2> /tmp/kubetctl.err
 kubectl apply -f $DIR/mgmt/etc/deploy/$YAML_FILE
