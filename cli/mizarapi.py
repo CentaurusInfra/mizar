@@ -1,4 +1,5 @@
 import logging
+import datetime
 from kubernetes import client, config
 
 logger = logging.getLogger()
@@ -53,6 +54,7 @@ class MizarApi:
 			},
 			"spec": spec
 		}
+		body['spec']['createtime'] = datetime.datetime.now().isoformat()
 		self.obj_api.create_namespaced_custom_object(
 			group="mizar.com",
 			version="v1",

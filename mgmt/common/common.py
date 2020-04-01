@@ -23,8 +23,11 @@ import subprocess
 import ctypes
 import logging
 import luigi
+import datetime
+import dateutil.parser
 from kubernetes import watch, client
 from ctypes.util import find_library
+from common.constants import *
 from pathlib import Path
 _libc = ctypes.CDLL(find_library('c'), use_errno=True)
 
@@ -88,6 +91,9 @@ def kube_create_obj(obj):
 			"spec": obj.get_obj_spec()
 		}
 
+		if body['spec']['status'] == OBJ_STATUS.obj_init:
+			body['spec']['createtime'] = datetime.datetime.now().isoformat()
+
 		obj.obj_api.create_namespaced_custom_object(
 			group="mizar.com",
 			version="v1",
@@ -109,7 +115,18 @@ def kube_update_obj(obj):
 			plural=obj.get_plural(),
 			name=obj.get_name())
 
-		body['spec'] = obj.get_obj_spec()
+		spec = obj.get_obj_spec()
+
+		if 'createtime' in body['spec'] and spec['status'] == OBJ_STATUS.obj_provisioned:
+			spec['createtime'] = body['spec']['createtime']
+			now = datetime.datetime.now()
+
+			created = dateutil.parser.parse(body['spec']['createtime'])
+			delay = now - created
+			spec['provisiondelay'] = str(delay.total_seconds() * 1000)
+
+		body['spec'] = spec
+
 		try:
 			obj.obj_api.patch_namespaced_custom_object(
 				group="mizar.com",

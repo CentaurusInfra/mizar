@@ -63,3 +63,13 @@ spec:
       priority: 0
       JSONPath: .spec.status
       description: The Current Provisioning Status of the net
+    - name: CreateTime
+      type: string
+      priority: 0
+      JSONPath: .spec.createtime
+      description: Time the object is created
+    - name: ProvisionDelay
+      type: string
+      priority: 0
+      JSONPath: .spec.provisiondelay
+      description: Time to provision an object from creation
