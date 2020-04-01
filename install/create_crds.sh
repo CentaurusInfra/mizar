@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DIR=${1:-.}
-USER=${2:-user}
+USER=${2:-dev}
 
 # Create the CRDs
 kubectl delete bouncers.mizar.com --all 2> /tmp/kubetctl.err

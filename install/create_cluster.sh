@@ -1,7 +1,7 @@
 #!/bin/bash
 
 KINDCONF=${1:-"${HOME}/mizar/build/tests/kind/config"}
-USER=${2:-user}
+USER=${2:-dev}
 
 # create registry container unless it already exists
 reg_name='local-kind-registry'
