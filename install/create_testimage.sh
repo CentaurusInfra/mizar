@@ -1,8 +1,8 @@
 #!/bin/bash
 
 DIR=${1:-.}
-USER=${2:-user}
-DOCKER_ACC=${3:-fwnetworking}
+USER=${2:-dev}
+DOCKER_ACC=${3:-"localhost:5000"}
 
 # Build the daemon image
 docker image build -t $DOCKER_ACC/testpod:latest -f $DIR/mgmt/etc/docker/test.Dockerfile $DIR

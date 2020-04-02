@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mizar-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mizar-operator
+  template:
+    metadata:
+      labels:
+        app: mizar-operator
+        mizar: operator
+    spec:
+      serviceAccountName: mizar-operator
+      hostNetwork: true
+      containers:
+        - image: localhost:5000/endpointopr:latest
+          name: mizar-operator
+          securityContext:
+            privileged: true
