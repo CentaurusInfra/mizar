@@ -102,16 +102,15 @@ to each host.
 * [*Management Plane*](docs/design/mp_overview.md)
 
 ### Attend Mizar's Biweekly Sprint Planning Meeting
-- Thursday at 10:30AM-12:30PM Pacific Daylight Time (biweekly, starting from
+- Thursday at 6:00PM - 8:00PM Pacific Time (biweekly, starting from
   April 2nd, 2020)
 
 Resources:
 
 - [**Mizar’s Sprint Planning
   Channel**](https://app.slack.com/client/TMNECBVT5/C010VLRH4SZ/thread/G0107KU0Y5Q-1585243073.003900)
-  - 10:30AM to 12:30PM PDT 
-- [**Zoom Meeting**](https://futurewei.zoom.us/j/421246133) - 10:30AM to 11:30AM
-  PDT  (We are including a zoom meeting for the first hour.) 
+  - 6:00PM to 8:00PM Pacific Time 
+- [**Zoom Meeting**](https://futurewei.zoom.us/j/421246133) - 6:00PM to 7:00PM Pacific Time (We are including a zoom meeting for the first hour.) 
 
 ### Join the Mizar Community
 
