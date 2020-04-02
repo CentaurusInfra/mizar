@@ -3,6 +3,7 @@ import unittest
 import os
 from common import *
 from k8s import *
+import time
 
 
 class test_basic_switch(unittest.TestCase):

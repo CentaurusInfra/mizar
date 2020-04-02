@@ -55,6 +55,8 @@ class Endpoint:
 		self.veth_index = ""
 		self.veth_peer_index = ""
 		self.veth_peer_mac = ""
+		self.cnidelay = ""
+		self.provisiondelay = ""
 		self.bouncers = {}
 		if spec is not None:
 			self.set_obj_spec(spec)
@@ -91,7 +93,9 @@ class Endpoint:
 				"veth": self.veth_peer,
 				"netns": self.netns,
 				"hostip": self.droplet_ip,
-				"hostmac": self.droplet_mac
+				"hostmac": self.droplet_mac,
+				"cnidelay": self.cnidelay,
+				"provisiondelay": self.provisiondelay
 		}
 
 		return self.obj
@@ -112,6 +116,14 @@ class Endpoint:
 		self.netns = get_spec_val('netns', spec)
 		self.droplet_ip = get_spec_val('hostip', spec)
 		self.droplet_mac = get_spec_val('hostmac', spec)
+		self.cnidelay = get_spec_val('cnidelay', spec)
+		self.provisiondelay = get_spec_val('provisiondelay', spec)
+
+	def set_cnidelay(self, delay):
+		self.cnidelay = delay
+
+	def set_provisiondelay(self, delay):
+		self.provisiondelay = delay
 
 	def get_name(self):
 		return self.name

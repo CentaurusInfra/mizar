@@ -29,9 +29,8 @@ class Cidr:
 		self.prefixlen = prefixlen
 		self.ip = ip
 		self.ipnet = ipaddress.ip_network("{}/{}".format(self.ip, self.prefixlen))
-		self.subnets = self.ipnet.subnets(new_prefix=29)
+		self.subnets = self.ipnet.subnets(new_prefix=30)
 
-		self.pool = None
 		self._hosts = set()
 		self.gw = self.get_ip(1)
 		self.allocated = set()
@@ -39,8 +38,8 @@ class Cidr:
 	@property
 	def hosts(self):
 
-		self.pool = next(self.subnets)
-		self._hosts.update(set(self.pool.hosts()))
+		pool = next(self.subnets)
+		self._hosts.update(set(pool.hosts()))
 		self._hosts.discard(self.gw)
 		return self._hosts
 

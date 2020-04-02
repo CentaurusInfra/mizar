@@ -149,8 +149,9 @@ class NetOperator(object):
 		ep.set_gw(gw)
 		ep.set_prefix(prefix)
 
-		if ep.type == OBJ_DEFAULTS.ep_type_simple:
-			ep.load_transit_agent()
+		#TODO: Most of the time is spent in loading the transit agent
+		#if ep.type == OBJ_DEFAULTS.ep_type_simple:
+		#	ep.load_transit_agent()
 
 		n.mark_ip_as_allocated(ip)
 		ep.set_vni(n.vni)

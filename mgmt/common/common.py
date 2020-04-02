@@ -91,8 +91,8 @@ def kube_create_obj(obj):
 			"spec": obj.get_obj_spec()
 		}
 
-		if body['spec']['status'] == OBJ_STATUS.obj_init:
-			body['spec']['createtime'] = datetime.datetime.now().isoformat()
+		body['spec']['createtime'] = datetime.datetime.now().isoformat()
+		logger.info("Init {} at {}".format(obj.get_name(), body['spec']['createtime']))
 
 		obj.obj_api.create_namespaced_custom_object(
 			group="mizar.com",
@@ -117,13 +117,16 @@ def kube_update_obj(obj):
 
 		spec = obj.get_obj_spec()
 
-		if 'createtime' in body['spec'] and spec['status'] == OBJ_STATUS.obj_provisioned:
-			spec['createtime'] = body['spec']['createtime']
-			now = datetime.datetime.now()
+		if 'provisiondelay' not in spec or spec['provisiondelay'] == "":
+			if 'createtime' in body['spec'] and spec['status'] == OBJ_STATUS.obj_provisioned:
+				spec['createtime'] = body['spec']['createtime']
+				now = datetime.datetime.now()
 
-			created = dateutil.parser.parse(body['spec']['createtime'])
-			delay = now - created
-			spec['provisiondelay'] = str(delay.total_seconds() * 1000)
+				created = dateutil.parser.parse(body['spec']['createtime'])
+				delay = now - created
+				spec['provisiondelay'] = str(delay.total_seconds())
+				logger.info("Provisioned {} at {}, delay {} / {}".format(obj.get_name(), now, delay.total_seconds(), spec['provisiondelay']))
+
 
 		body['spec'] = spec
 

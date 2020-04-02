@@ -123,4 +123,9 @@ spec:
       priority: 0
       JSONPath: .spec.provisiondelay
       description: Time to provision an object from creation
+    - name: CniDelay
+      type: string
+      priority: 0
+      JSONPath: .spec.cnidelay
+      description: Time to setup endpoint on droplet
 
