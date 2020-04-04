@@ -27,9 +27,13 @@ nav:
         - 'Control Workflows': 'design/mp_workflows.md'
         - 'IP Address Management': 'design/mp_ipam.md'
         - 'Other Data-plane support': 'design/mp_dpsupport.md'
+    - Releases:
+        - '0.3': 'CHANGELOG/CHANGELOG-0.3.md'
+        - '0.2': 'CHANGELOG/CHANGELOG-0.2.md'
+        - '0.1': 'CHANGELOG/CHANGELOG-0.1.md'
     - About:
-        #- 'License': 'license.md'
+        - 'Licenses': 'licenses/license.md'
         - 'Use Cases': 'releases/use_cases.md'
-        - 'Release Notes': 'releases/release-notes.md'
         - 'Roadmap' : 'releases/roadmap.md'
+        - 'Outreach': 'outreach/community.md'
     - 'Frequently Asked Questions': 'user/faq.md'
