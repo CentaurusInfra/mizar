@@ -730,8 +730,6 @@ static __inline int trn_process_ip(struct transit_packet *pkt)
 	}
 
 	if (pkt->ip->protocol != IPPROTO_UDP) {
-		bpf_debug("[Transit:%d:0x%x] PASS non-UDP packet \n", __LINE__,
-			  bpf_ntohl(pkt->itf_ipv4));
 		return XDP_PASS;
 	}
 

@@ -33,3 +33,7 @@ if [ "$kernel_ver" != "5.6.0-rc2" ]; then
 	  * ) echo "Please run kernelupdate.sh to download and update the kernel!"; exit;;
 	esac
 fi
+ver=$(curl -s https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
+curl -Lo kind https://github.com/kubernetes-sigs/kind/releases/download/$ver/kind-$(uname)-amd64
+chmod +x kind
+mv kind /usr/local/bin

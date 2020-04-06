@@ -1,0 +1,49 @@
+@startuml
+
+' SPDX-License-Identifier: MIT
+' Copyright (c) 2020 The Authors.
+
+' Authors: Sherif Abdelwahab <@zasherif>
+'          Phu Tran          <@phudtran>
+
+' Permission is hereby granted, free of charge, to any person obtaining a copy
+' of this software and associated documentation files (the "Software"), to deal
+' in the Software without restriction, including without limitation the rights
+' to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+' copies of the Software, and to permit persons to whom the Software is
+' furnished to do so, subject to the following conditions:The above copyright
+' notice and this permission notice shall be included in all copies or
+' substantial portions of the Software.THE SOFTWARE IS PROVIDED "AS IS",
+' WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+' TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+' NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+' FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+' TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+' THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+skinparam monochrome true
+autonumber
+
+database API_Server
+collections CNI_Service
+collections Network_Operator
+collections Bouncer_Operator
+collections Endpoints_Operator
+
+==Endpoint Created==
+rnote over API_Server: == Endpoint Status: Init
+Network_Operator --> API_Server: Sees Endpoint status Init
+Network_Operator -> Network_Operator: Allocates IP, Gw, etc.
+Network_Operator -> Bouncer_Operator: On Endpoint-Alloc
+group For All Bouncers
+Bouncer_Operator -> Bouncer_Operator: Updates Bouncer with new Endpoint
+Bouncer_Operator -> Bouncer_Operator: Updates Endpoint with Bouncer
+end
+Bouncer_Operator -> CNI_Service: On Endpoint-Provisioned
+CNI_Service -> CNI_Service: Write to CNI file.
+Bouncer_Operator -> API_Server: Updates status to Provisioned
+rnote over API_Server: ==Endpoint Status: Provisioned
+Endpoints_Operator --> API_Server: Sees Endpoint status Provisioned
+Endpoints_Operator --> Endpoints_Operator: Update cache
+==Endpoint Ready==
+@enduml

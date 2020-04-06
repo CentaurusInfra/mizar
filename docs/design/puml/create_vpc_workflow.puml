@@ -1,0 +1,55 @@
+@startuml
+
+' SPDX-License-Identifier: MIT
+' Copyright (c) 2020 The Authors.
+
+' Authors: Sherif Abdelwahab <@zasherif>
+'          Phu Tran          <@phudtran>
+
+' Permission is hereby granted, free of charge, to any person obtaining a copy
+' of this software and associated documentation files (the "Software"), to deal
+' in the Software without restriction, including without limitation the rights
+' to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+' copies of the Software, and to permit persons to whom the Software is
+' furnished to do so, subject to the following conditions:The above copyright
+' notice and this permission notice shall be included in all copies or
+' substantial portions of the Software.THE SOFTWARE IS PROVIDED "AS IS",
+' WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+' TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+' NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+' FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+' TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+' THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+skinparam monochrome true
+autonumber
+database API_Server
+collections VPC_Operator
+collections Divider_Operator
+collections Bouncer_Operator
+collections Droplet_Operator
+
+==VPC Created==
+rnote over API_Server: ==VPC Status: Init
+VPC_Operator --> API_Server: Sees VPC Status: Init
+VPC_Operator -> API_Server: Creates a Divider Object
+rnote over API_Server: ==Divider Status: Init
+Divider_Operator --> API_Server: Sees Divider Status Init
+Divider_Operator --> Droplet_Operator: Place Divider
+Droplet_Operator -> Droplet_Operator: Places Divider on a Droplet
+Droplet_Operator -> Bouncer_Operator: On Divider Placed
+group For All Bouncers
+Bouncer_Operator -> Bouncer_Operator: Updates  Bouncer with Divider info (No Bouncers)
+Bouncer_Operator -> Bouncer_Operator: Updates Divider with Bouncer info (No Bouncers)
+end
+Bouncer_Operator -> API_Server: Updates status to Provisioned
+rnote over API_Server: ==Divider Status: Provisioned
+Divider_Operator --> API_Server: Sees status Provisioned
+Divider_Operator -> Divider_Operator: Update cache
+VPC_Operator -> API_Server : Updates VPC Status to Provisioned
+rnote over API_Server: ==VPC Status: Provisioned
+VPC_Operator --> API_Server: Sees VPC status Provisioned
+VPC_Operator -> VPC_Operator: Update cache
+==VPC Ready==
+
+@enduml

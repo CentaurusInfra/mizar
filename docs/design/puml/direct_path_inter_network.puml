@@ -1,0 +1,41 @@
+@startuml
+
+' SPDX-License-Identifier: MIT
+' Copyright (c) 2020 The Authors.
+
+' Authors: Sherif Abdelwahab <@zasherif>
+'          Phu Tran          <@phudtran>
+
+' Permission is hereby granted, free of charge, to any person obtaining a copy
+' of this software and associated documentation files (the "Software"), to deal
+' in the Software without restriction, including without limitation the rights
+' to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+' copies of the Software, and to permit persons to whom the Software is
+' furnished to do so, subject to the following conditions:The above copyright
+' notice and this permission notice shall be included in all copies or
+' substantial portions of the Software.THE SOFTWARE IS PROVIDED "AS IS",
+' WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+' TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+' NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+' FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+' TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+' THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+autonumber
+participant "EP_A at Host A" as a
+participant "EP_B at Host B" as b
+participant "Bouncer of Net 1" as S1
+participant "Bouncer Net 2" as S2
+participant "Divider (D)" as R
+a -> S1: **RTS Opt (a @ Host A)** + ARP Query (Who has b)
+S1 -> R: **RTS Opt (a @ Host A)** + ARP Query (Who has b)
+R -> R: //update endpoint_host_cache at D//
+R -> S2: **RTS Opt (a @ D)** + ARP Query (Who has b)
+S2 -> R: **RTS Opt (b @ Host B)** + ARP Reply (b at MAC(b))
+R -> R: //update endpoint_host_cache at D//
+R -> a: **RTS Opt (b @ D)** + ARP Reply (b at MAC(b))
+a -> R: **direct-path bit** + Packet to b
+R -> b: **direct-path bit** + Packet to b
+b -> R: **direct-path bit** + Packet to a
+R -> a: **direct-path bit** + Packet to a
+@enduml

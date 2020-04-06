@@ -115,10 +115,6 @@ lcov:gcov
 	genhtml lcov/transit_cov_filtered.info -o lcov/report
 	@echo "see lcov/report/index.html"
 
-.PHONY: doc
-doc:
-	asciidoctor-pdf docs/modules/ROOT/pages/index.adoc -o build/design.pdf
-	antora generate docsite/site.yml  --to-dir docsite/build/site --stacktrace
 dirmake:
 	mkdir -p core
 	mkdir -p cov

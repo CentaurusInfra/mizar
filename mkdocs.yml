@@ -1,0 +1,39 @@
+site_name: Mizar Project
+docs_dir: 'docs'
+site_dir: '.tmp/documentation'
+repo_url: https://github.com/futurewei-cloud/mizar
+theme:
+    name: readthedocs
+    highlightjs: true
+    hljs_languages:
+        - yaml
+
+nav:
+    - Home: 'index.md'
+    - 'Getting Started':
+        - Basic Usage: 'user/getting_started.md'
+        - Developement: 'dev/contributing.md'
+    - 'Data-Plane Design':
+        - 'Overview': 'design/dp_overview.md'
+        - 'Data Model': 'design/dp_datamodel.md'
+        - 'Programming': 'design/dp_programability.md'
+        - 'Extensibility': 'design/dp_extensibility.md'
+        - 'Direct Path': 'design/dp_direct_path.md'
+        - 'Tunneling Protocols': 'design/dp_tunneling_protocols.md'
+        - 'Scaled Endpoint': 'design/dp_scaled_endpoint.md'
+    - 'Management-Plane Design':
+        - 'Overview': 'design/mp_overview.md'
+        - 'Network Objects and Operators': 'design/mp_datamodel.md'
+        - 'Control Workflows': 'design/mp_workflows.md'
+        - 'IP Address Management': 'design/mp_ipam.md'
+        - 'Other Data-plane support': 'design/mp_dpsupport.md'
+    - Releases:
+        - '0.3': 'CHANGELOG/CHANGELOG-0.3.md'
+        - '0.2': 'CHANGELOG/CHANGELOG-0.2.md'
+        - '0.1': 'CHANGELOG/CHANGELOG-0.1.md'
+    - About:
+        - 'Licenses': 'licenses/license.md'
+        - 'Use Cases': 'releases/use_cases.md'
+        - 'Roadmap' : 'releases/roadmap.md'
+        - 'Outreach': 'outreach/community.md'
+    - 'Frequently Asked Questions': 'user/faq.md'
