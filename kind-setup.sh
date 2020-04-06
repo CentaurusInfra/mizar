@@ -21,12 +21,47 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+# Checks for status: Provisioned for given object
+function get_status() {
+    OBJECT=$1
+
+    kubectl get $OBJECT 2> /tmp/kubetctl.err | awk '
+    NR==1 {
+        for (i=1; i<=NF; i++) {
+            f[$i] = i
+        }
+    }
+    { print $f["STATUS"] }
+    ' | grep Provisioned > /dev/null
+
+    return $?
+}
+
+# Checks for status Provisioned of array of objects
+function check_ready() {
+    objects=("droplets" "vpcs" "nets" "dividers" "bouncers")
+    sum=0
+    for i in "${objects[@]}"
+    do
+        get_status $i
+        let sum+=$((sum + $?))
+    done
+    if [[ $sum == 0 ]]; then
+        return 1
+    else
+        sleep 2
+        echo -n "."
+        return 0
+    fi
+}
+
 CWD=$(pwd)
 KINDCONF="${HOME}/mizar/build/tests/kind/config"
 MIZARCONF="${HOME}/mizar/build/tests/mizarcni.config"
 KINDHOME="${HOME}/.kube/config"
 USER=${1:-user}
 NODES=${2:-3}
+timeout=120
 
 kind delete cluster
 
@@ -48,3 +83,16 @@ source install/create_service_account.sh $CWD $USER
 
 source install/deploy_daemon.sh $CWD $USER $DOCKER_ACC
 source install/deploy_operator.sh $CWD $USER $DOCKER_ACC
+
+end=$((SECONDS + $timeout))
+echo -n "Waiting for cluster to come up."
+while [[ $SECONDS -lt $end ]]; do
+    check_ready || break
+done
+echo
+if [[ $SECONDS -lt $end ]]; then
+    echo "Cluster now ready!"
+else
+    echo "ERROR: Cluster setup timed out after $timeout seconds!"
+    exit 1
+fi
