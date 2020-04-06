@@ -23,6 +23,7 @@
 
 KINDCONF=${1:-"${HOME}/mizar/build/tests/kind/config"}
 USER=${2:-dev}
+NODES=${3:-1}
 
 # create registry container unless it already exists
 reg_name='local-kind-registry'
@@ -46,7 +47,20 @@ else
   REPO="fwnetworking"
 fi
 
-# create a cluster with the local registry enabled in containerd
+NODE_TEMPLATE="  - role: worker
+    image: ${REPO}/kindnode:latest
+    extraMounts:
+      - hostPath: .
+        containerPath: /var/mizar
+"
+FINAL_NODES=""
+
+for ((i=1; i<=NODES; i++));
+do
+  FINAL_NODES=$FINAL_NODES$NODE_TEMPLATE
+done
+
+# create a cluster with the local registry enabled in containerd and n Nodes.
 cat <<EOF | kind create cluster --name kind --kubeconfig ${KINDCONF} --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -59,24 +73,5 @@ nodes:
     extraMounts:
       - hostPath: .
         containerPath: /var/mizar
-  - role: worker
-    image: ${REPO}/kindnode:latest
-    extraMounts:
-      - hostPath: .
-        containerPath: /var/mizar
-  - role: worker
-    image: ${REPO}/kindnode:latest
-    extraMounts:
-      - hostPath: .
-        containerPath: /var/mizar
-  - role: worker
-    image: ${REPO}/kindnode:latest
-    extraMounts:
-      - hostPath: .
-        containerPath: /var/mizar
-  - role: worker
-    image: ${REPO}/kindnode:latest
-    extraMounts:
-      - hostPath: .
-        containerPath: /var/mizar
+${FINAL_NODES}
 EOF

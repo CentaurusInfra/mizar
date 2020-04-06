@@ -26,6 +26,7 @@ KINDCONF="${HOME}/mizar/build/tests/kind/config"
 MIZARCONF="${HOME}/mizar/build/tests/mizarcni.config"
 KINDHOME="${HOME}/.kube/config"
 USER=${1:-user}
+NODES=${2:-3}
 
 kind delete cluster
 
@@ -36,7 +37,7 @@ else
 fi
 docker image build -t $DOCKER_ACC/kindnode:latest -f k8s/kind/Dockerfile .
 
-source k8s/kind/create_cluster.sh $KINDCONF $USER
+source k8s/kind/create_cluster.sh $KINDCONF $USER $NODES
 
 api_ip=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' kind-control-plane`
 sed "s/server: https:\/\/127.0.0.1:[[:digit:]]\+/server: https:\/\/$api_ip:6443/" $KINDCONF > $MIZARCONF
