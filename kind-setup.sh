@@ -36,7 +36,7 @@ else
 fi
 docker image build -t $DOCKER_ACC/kindnode:latest -f k8s/kind/Dockerfile .
 
-source install/create_cluster.sh $KINDCONF $USER
+source k8s/kind/create_cluster.sh $KINDCONF $USER
 
 api_ip=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' kind-control-plane`
 sed "s/server: https:\/\/127.0.0.1:[[:digit:]]\+/server: https:\/\/$api_ip:6443/" $KINDCONF > $MIZARCONF
@@ -47,4 +47,3 @@ source install/create_service_account.sh $CWD $USER
 
 source install/deploy_daemon.sh $CWD $USER $DOCKER_ACC
 source install/deploy_operator.sh $CWD $USER $DOCKER_ACC
-source install/disable_kubeproxy.sh $CWD $USER
