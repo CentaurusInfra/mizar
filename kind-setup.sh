@@ -83,6 +83,7 @@ source install/create_service_account.sh $CWD $USER
 
 source install/deploy_daemon.sh $CWD $USER $DOCKER_ACC
 source install/deploy_operator.sh $CWD $USER $DOCKER_ACC
+source install/create_testimage.sh $CWD $USER $DOCKER_ACC
 
 end=$((SECONDS + $timeout))
 echo -n "Waiting for cluster to come up."

@@ -1,5 +1,5 @@
 
-e2efunctest::
+e2efunctest:: all
 ifdef nocleanup
 	echo "Retaining test environment. Please delete containers after debugging"
 	export NOCLEANUP=1; sudo python3 -W ignore -m unittest discover test-e2e/ -v

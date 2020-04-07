@@ -1,8 +1,10 @@
+import yaml
 from common import *
 from cli.mizarapi import *
 from kubernetes import client, config
 from kubernetes.stream import stream
-
+from k8spod import *
+from kubernetes.stream.ws_client import ERROR_CHANNEL
 
 class k8sCluster:
     _instance = None
@@ -22,7 +24,7 @@ class k8sCluster:
 
     def start_cluster(self):
         logger.info("Start test cluster")
-        run_cmd("./kind-setup.sh")
+        run_cmd("./kind-setup.sh dev 2")
 
     def is_running(self):
         ret, val = run_cmd("kind get clusters")
@@ -32,14 +34,12 @@ class k8sCluster:
         logger.info("Delete test cluster")
         run_cmd("kind delete cluster")
 
-
 class k8sApi:
 
     def __init__(self):
         self.api = MizarApi()
         config.load_kube_config()
-#		config.load_incluster_config()
-        self.api_instance = client.CoreV1Api()
+        self.k8sapi = client.CoreV1Api()
 
     def create_vpc(self, name, ip, prefix, dividers=1, vni=None):
         self.api.create_vpc(name, ip, prefix, dividers, vni)
@@ -62,38 +62,50 @@ class k8sApi:
             },
             'spec': {
                 'containers': [{
-                    'image': 'nginx:1.7.9',
+                    'image': 'localhost:5000/testpod:latest',
                     'name': 'box1'
                 }]
             }
         }
 
-        resp = self.api_instance.create_namespaced_pod(
+        resp = self.k8sapi.create_namespaced_pod(
             body=pod_manifest, namespace='default')
 
-        status = None
+        status = resp.status.phase
         while status != 'Running':
-            resp = self.api_instance.read_namespaced_pod(
+            resp = self.k8sapi.read_namespaced_pod(
                 name=name, namespace='default')
             status = resp.status.phase
-        print("Done")
-        print(status)
 
-    def pod_exec(self, name):
-        exec_command = [
-            '/bin/bash',
-            'tail -f /dev/null']
-        resp = stream(self.api_instance.connect_get_namespaced_pod_exec,
+        pod = k8sPod(self, name, resp.status.pod_ip)
+        logger.info("Pod {} IP {}".format(pod.name, pod.ip))
+        return pod
+
+    def delete_pod(self, name):
+        self.k8sapi.delete_namespaced_pod(name=name, namespace='default')
+
+        deleted = False
+        while deleted:
+            try:
+                self.k8sapi.read_namespaced_pod(name=name, namespace='default')
+            except:
+                deleted = True
+
+        logger.info("Deleted {}".format(name))
+
+
+    def pod_exec(self, name, cmd):
+        exec_command = cmd.split()
+        resp = stream(self.k8sapi.connect_get_namespaced_pod_exec,
                       name,
                       'default',
                       command=exec_command,
                       stderr=True, stdin=False,
-                      stdout=True, tty=False)
-        print("Response: " + resp)
+                      stdout=True, tty=False,
+                      _preload_content=False)
 
-#	def list_ip(self):
-#		print("Listing pods with their IPs:")
-#		ret = self.api_instance.list_pod_for_all_namespaces(watch=False)
-#		for i in ret.items:
-#			print("%s\t%s\t%s" %
-#					(i.status.pod_ip, i.metadata.namespace, i.metadata.name))
+        while resp.is_open():
+            resp.update(timeout=1)
+            err = resp.read_channel(ERROR_CHANNEL)
+            if err:
+                return yaml.load(err)
