@@ -52,3 +52,11 @@ async def services_opr_on_endpoints(body, spec, **kwargs):
 	param.body = body
 	param.spec = spec
 	run_task(wffactory().k8sEndpointsUpdate(param=param))
+
+@kopf.on.delete('', 'v1', 'services', annotations=annotations_filter)
+async def services_opr_on_services(body, spec, **kwargs):
+	param = HandlerParam()
+	param.name = kwargs['name']
+	param.body = body
+	param.spec = spec
+	run_task(wffactory().k8sServiceDelete(param=param))

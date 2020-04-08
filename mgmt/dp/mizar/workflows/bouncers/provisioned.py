@@ -42,5 +42,6 @@ class BouncerProvisioned(WorkflowTask):
 		bouncer = bouncers_opr.get_bouncer_stored_obj(self.param.name, self.param.spec)
 		bouncer.set_vni(vpcs_opr.store.get_vpc(bouncer.vpc).vni)
 		bouncer.droplet_obj = droplets_opr.store.get_droplet(bouncer.droplet)
+		bouncer.load_transit_xdp_pipeline_stage()
 		bouncers_opr.store_update(bouncer)
 		self.finalize()

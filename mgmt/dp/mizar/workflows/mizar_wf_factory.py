@@ -132,3 +132,6 @@ class MizarWorkflowFactory():
 
 	def k8sEndpointsUpdate(self, param):
 		return k8sEndpointsUpdate(param=param)
+
+	def k8sServiceDelete(self, param):
+		return k8sServiceDelete(param=param)
