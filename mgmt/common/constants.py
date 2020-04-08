@@ -96,6 +96,9 @@ class OBJ_DEFAULTS:
 	ep_type_simple = 'simple'
 	ep_type_scaled = 'scaled'
 
+	mizar_service_annotation_key = "service.beta.kubernetes.io/mizar-scaled-endpoint-type"
+	mizar_service_annotation_val = "scaled-endpoint"
+
 class RESOURCES:
 	endpoints = "endpoints"
 	nets = "nets"
@@ -138,3 +141,4 @@ class LAMBDAS:
 	divider_status_allocated = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.divider_status_allocated
 	divider_status_provisioned = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.divider_status_provisioned
 	divider_status_placed = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.divider_status_placed
+

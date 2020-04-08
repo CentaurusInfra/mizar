@@ -44,6 +44,7 @@ class EndpointOperator(object):
 		self.store = OprStore()
 		config.load_incluster_config()
 		self.obj_api = client.CustomObjectsApi()
+		self.core_api = client.CoreV1Api()
 
 	def query_existing_endpoints(self):
 		def list_endpoint_obj_fn(name, spec, plurals):
@@ -90,7 +91,6 @@ class EndpointOperator(object):
 
 	def create_scaled_endpoint(self, name, spec):
 		logger.info("Create scaled endpoint {} spec {}".format(name, spec))
-
 		ep = Endpoint(name, self.obj_api, self.store)
 		ip = spec['clusterIP']
 		# If not provided in Pod, use defaults
@@ -103,6 +103,25 @@ class EndpointOperator(object):
 		ep.set_type(OBJ_DEFAULTS.ep_type_scaled)
 		ep.set_status(OBJ_STATUS.ep_status_init)
 		ep.create_obj()
+		self.annotate_builtin_endpoints(name)
+
+	def annotate_builtin_endpoints(self, name, namespace='default'):
+		get_body = True
+		while get_body:
+			endpoint = self.core_api.read_namespaced_endpoints(
+				name=name,
+				namespace=namespace)
+			endpoint.metadata.annotations[OBJ_DEFAULTS.mizar_service_annotation_key] = OBJ_DEFAULTS.mizar_service_annotation_val
+			try:
+				self.core_api.patch_namespaced_endpoints(
+					name=name,
+					namespace=namespace,
+					body=endpoint)
+				get_body = False
+			except:
+				logger.debug("Retry updating annotating endpoints {}".format(name))
+				get_body = True
+
 
 	def rand_mac(self):
 		return "a5:5b:00:%02x:%02x:%02x" % (
