@@ -85,7 +85,9 @@ class BouncerOperator(object):
 		eps = set([ep])
 		for key in bouncers:
 			bouncers[key].update_eps(eps)
-		ep.update_bouncers(bouncers)
+
+		if ep.type == OBJ_DEFAULTS.ep_type_simple:
+			ep.update_bouncers(bouncers)
 
 	def delete_endpoint_from_bouncers(self, ep):
 		bouncers = self.store.get_bouncers_of_net(ep.net)

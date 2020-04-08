@@ -58,6 +58,7 @@ class Endpoint:
 		self.cnidelay = ""
 		self.provisiondelay = ""
 		self.bouncers = {}
+		self.backends = {}
 		if spec is not None:
 			self.set_obj_spec(spec)
 		self.deleted = False

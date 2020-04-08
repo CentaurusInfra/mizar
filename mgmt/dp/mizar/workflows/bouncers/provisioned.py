@@ -33,7 +33,6 @@ class BouncerProvisioned(WorkflowTask):
 
 	def run(self):
 		logger.info("Run {task}".format(task=self.__class__.__name__))
-		bouncer = bouncers_opr.store.get_bouncer(self.param.name)
-		bouncer.set_obj_spec(self.param.spec)
-		bouncers_opr.store.update_bouncer(bouncer)
+		bouncer = bouncers_opr.get_bouncer_stored_obj(self.param.name, self.param.spec)
+		bouncers_opr.store_update(bouncer)
 		self.finalize()

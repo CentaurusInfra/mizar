@@ -49,7 +49,8 @@ class EndpointOperator(object):
 		def list_endpoint_obj_fn(name, spec, plurals):
 			logger.info("Bootstrapped {}".format(name))
 			ep = Endpoint(name, self.obj_api, self.store, spec)
-			self.store_update(ep)
+			if ep.status == OBJ_STATUS.ep_status_provisioned:
+				self.store_update(ep)
 
 		kube_list_obj(self.obj_api, RESOURCES.endpoints, list_endpoint_obj_fn)
 

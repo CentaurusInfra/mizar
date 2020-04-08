@@ -132,12 +132,16 @@ class Bouncer(object):
 			if ep.name not in self.eps.keys():
 				logger.info("EEP: Updated")
 				self.eps[ep.name] = ep
-				self._update_ep(ep)
-				self.droplet_obj.update_substrate(ep)
+				if ep.type == OBJ_DEFAULTS.ep_type_simple:
+					self._update_simple_ep(ep)
+				if ep.type == OBJ_DEFAULTS.ep_type_scaled:
+					self._update_scaled_ep(ep)
 
-	def _update_ep(self, ep):
+
+	def _update_simple_ep(self, ep):
 		logger.info("self ip {} epfuncip {}, field ip {}".format(self.ip, ep.get_droplet_ip(), ep.droplet_obj.ip))
 		self.droplet_obj.update_ep(self.name, ep)
+		self.droplet_obj.update_substrate(ep)
 
 	def _update_scaled_ep(self, ep):
 		self.rpc.update_ep(ep)

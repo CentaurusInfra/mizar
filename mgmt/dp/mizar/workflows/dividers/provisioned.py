@@ -35,5 +35,6 @@ class DividerProvisioned(WorkflowTask):
 
 	def run(self):
 		logger.info("Run {task}".format(task=self.__class__.__name__))
-		dividers_opr.store.get_divider(self.param.name).set_obj_spec(self.param.spec)
+		divider = dividers_opr.get_divider_stored_obj(self.param.name, self.param.spec)
+		dividers_opr.store_update(divider)
 		self.finalize()

@@ -34,5 +34,6 @@ class DropletProvisioned(WorkflowTask):
 
 	def run(self):
 		logger.info("Run {task}".format(task=self.__class__.__name__))
-		droplets_opr.store.get_droplet(self.param.name).set_obj_spec(self.param.spec)
+		droplet = droplets_opr.get_droplet_stored_obj(self.param.name, self.param.spec)
+		droplets_opr.store_update(droplet)
 		self.finalize()

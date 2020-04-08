@@ -35,5 +35,6 @@ class EndpointProvisioned(WorkflowTask):
 
 	def run(self):
 		logger.info("Run {task}".format(task=self.__class__.__name__))
-		endpoints_opr.store.get_ep(self.param.name).set_obj_spec(self.param.spec)
+		endpoint = endpoints_opr.get_endpoint_stored_obj(self.param.name, self.param.spec)
+		endpoints_opr.store_update(endpoint)
 		self.finalize()
