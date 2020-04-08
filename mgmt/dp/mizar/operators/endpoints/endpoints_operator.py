@@ -122,6 +122,9 @@ class EndpointOperator(object):
 				logger.debug("Retry updating annotating endpoints {}".format(name))
 				get_body = True
 
+	def delete_scaled_endpoint(self, ep):
+		logger.info("Delete scaled endpoint {}".format(ep.name))
+		ep.delete_obj()
 
 	def rand_mac(self):
 		return "a5:5b:00:%02x:%02x:%02x" % (
@@ -153,7 +156,7 @@ class EndpointOperator(object):
 			ep.update_bouncers(set([bouncer]), False)
 
 	def set_endpoint_deprovisioned(self, ep):
-		ep.set_status(OBJ_STATUS.ep_status_deprovisioned)
-		ep.unload_transit_agent_xdp()
-		ep.update_obj()
-
+		if ep.type == OBJ_DEFAULTS.ep_type_simple:
+			ep.set_status(OBJ_STATUS.ep_status_deprovisioned)
+			ep.unload_transit_agent_xdp()
+			ep.update_obj()
