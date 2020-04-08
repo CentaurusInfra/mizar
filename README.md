@@ -109,8 +109,9 @@ Resources:
 
 - [**Mizar’s Sprint Planning
   Channel**](https://app.slack.com/client/TMNECBVT5/C010VLRH4SZ/thread/G0107KU0Y5Q-1585243073.003900)
-  - 6:00PM to 8:00PM Pacific Time 
-- [**Zoom Meeting**](https://futurewei.zoom.us/j/421246133) - 6:00PM to 7:00PM Pacific Time (We are including a zoom meeting for the first hour.) 
+- [**Zoom Meeting**](https://futurewei.zoom.us/j/421246133)
+- [**Meeting Notes**](https://docs.google.com/document/d/1cz9j_QFriaM8DRBTP8HBhg8bm9NIrLl8MlZ0iQCDqUM/edit#) 
+- [**Meeting Recordings**](https://www.youtube.com/playlist?list=PL_7gYB_Le9d31Bpd3ZfyNE-c3AY-fYYw1) 
 
 ### Join the Mizar Community
 
