@@ -22,7 +22,4 @@
 FROM python:3.7
 RUN apt-get update -y
 RUN apt-get install iputils-ping
-RUN apt-get install -y netcat
-COPY mgmt/test.sh /var/mizar/mgmt/test.sh
-RUN ["chmod", "+x", "/var/mizar/mgmt/test.sh"]
-CMD ["/var/mizar/mgmt/test.sh"]
+CMD while true; do echo "test"; sleep 2; done
