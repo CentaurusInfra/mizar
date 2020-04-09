@@ -8,83 +8,82 @@ class k8sPod:
         self.name = name
         self.ip = ip
 
-    def ping(self, ip):
-        cmd = 'ping -c 3 {}'.format(ip)
+    def do_ping(self, ip, count=1, wait=5):
+        cmd = 'ping -w {} -c {} {}'.format(wait, count, ip)
         err = self.api.pod_exec(self.name, cmd)
+        logging.debug("PING OUTPUT {}:".format(err))
         if err['status'] != "Success":
             return False
         return True
 
-    def http(self, client_name):
-        httpd_cmd = '/bin/sh -c python3 -m http.server'
-        self.api.pod_exec2(self.name, httpd_cmd)
-        sleep(1)
-        #print("OUTPUT {}".format(err))
-
-        curl_cmd = 'curl http://{}:8000 -Ss -m 1'.format(self.ip)
-        self.api.pod_exec2(client_name, curl_cmd)
-#        err = self.api.pod_exec(client_name, curl_cmd)
-#        print("OUTPUT CURL {}".format(err))
-#        if err['status'] != "Success":
-#            return False
-        return True
-
-    def tcp(self, client_name):
-        output_dir = '/tmp'
-        tcp_recv_file = '{}/{}_{}_tcp_recv'.format(output_dir, self.name, self.ip)
-        tcp_sent_file = '{}/{}_{}_tcp_sent'.format(output_dir, self.name, self.ip)
-
-        cmd_nc = '/bin/sh -c (nc -l -p 9001 > {})'.format(tcp_recv_file)
-        err = self.api.pod_exec(self.name, cmd_nc)
-        print("OUTPUT NC {}".format(err))
-        if err['status'] != "Success":
-            return False
-
-        self.tcp_client(client_name, self.ip, tcp_sent_file)
-        
-        cmd_diff = 'diff {} {}'.format(tcp_recv_file, tcp_sent_file)
-        err = self.api.pod_exec(client_name, cmd_diff)
+    def do_curl(self, args):
+        cmd = 'curl {}'.format(args)
+        err = self.api.pod_exec(self.name, cmd)
+        logging.debug("CURL OUTPUT {}:".format(err))
         if err['status'] != "Success":
             return False
         return True
 
-    def tcp_client(self, name, ip, tcp_sent_file, bs=100, count=1, interval=0, detach=False):
+    # def do_httpd(self):
+    #     cmd = 'pushd /tmp; python3 -m http.server > /tmp/httpd.log 2>&1'
+    #     err = self.api.pod_exec(self.name, cmd)
+    #     sleep(1)
+    #     if err['status'] != "Success":
+    #         return False
+    #     return True
+
+    # def do_tcp_serve(self):
+    #     cmd = "nc -l -p 9001 > /tmp/tcp_recv_file"
+    #     err = self.api.pod_exec(self.name, cmd)
+    #     if err['status'] != "Success":
+    #         return False
+    #     return True
+
+    # def do_udp_serve(self):
+    #     cmd = "nc -u -l -p 5001 > /tmp/udp_recv_file"
+    #     err = self.api.pod_exec(self.name, cmd)
+    #     if err['status'] != "Success":
+    #         return False
+    #     return True
+
+    def do_tcp_client(self, ip, bs=100, count=1, interval=0, detach=False):
         delay = ''
         if interval > 0:
             delay = '-i{}'.format(interval)
-        dd_cmd = 'dd if=/dev/urandom  bs={bs} count={count} | tee {}'.format(tcp_sent_file)
-        cmd = '/bin/sh ({} | nc {} 9001 {} -w1)'.format(dd_cmd, ip, delay)
-        err = self.api.pod_exec(name, cmd)
-        print("OUTPUT CLIENT {}".format(err))
-        if err['status'] != "Success":
-            return False
-
-    def udp(self):
-        output_dir = '/tmp'
-        udp_recv_file = '{}/{}_{}_udp_recv'.format(output_dir, self.name, self.ip)
-        udp_sent_file = '{}/{}_{}_udp_sent'.format(output_dir, self.name, self.ip)
-
-        cmd_nc = '/bin/sh -c (nc -u -l -p 5001 > {})'.format(udp_recv_file)
-        err = self.api.pod_exec(self.name, cmd_nc)
-        print("OUTPUT NC {}".format(err))
-        if err['status'] != "Success":
-            return False
-
-        self.udp_client(client_name, self.ip, udp_sent_file)
-
-        cmd_diff = 'diff {} {}'.format(tcp_recv_file, tcp_sent_file)
-        err = self.api.pod_exec(client_name, cmd_diff)
+        #dd_cmd = 'dd if=/dev/urandom  bs={} count={} | tee /tmp/tcp_sent_file'.format(bs, count)
+        #cmd = '/bin/sh -c ({} | nc {} 9001 {} -w1)'.format(dd_cmd, ip, delay)
+        cmd = 'nc -z -v -n {} 9001'.format(self.ip)
+        err = self.api.pod_exec(self.name, cmd)
+        logging.debug("NC TCP OUTPUT: {}".format(err))
         if err['status'] != "Success":
             return False
         return True
 
-    def udp_client(self, name, ip, udp_sent_file, bs=100, count=1, interval=0, detach=False):
+    def do_udp_client(self, ip, bs=100, count=1, interval=0, detach=False):
         delay = ''
         if interval > 0:
             delay = '-i{}'.format(interval)
-        dd_cmd = 'dd if=/dev/urandom  bs={bs} count={count} | tee {}'.format(udp_sent_file)
-        cmd = '/bin/sh ({} | nc -u {} 5001 {} -w1)'.format(dd_cmd, ip, delay)
-        err = self.api.pod_exec(name, cmd)
-        print("OUTPUT CLIENT {}".format(err))
+        #dd_cmd = 'dd if=/dev/urandom  bs={} count={} | tee /tmp/udp_sent_file'.format(bs, count)
+        #cmd = '/bin/sh -c ({} | nc -u {} 5001 {} -w1)'.format(dd_cmd, ip, delay)
+        cmd = 'nc -u -z -v -n {} 5001'.format(self.ip)
+        err = self.api.pod_exec(self.name, cmd)
+        logging.debug("NC UDP OUTPUT: {}".format(err))
         if err['status'] != "Success":
             return False
+        return True
+
+    # def do_diff_tcp(self, client_ep, server_ep):
+    #     cmd = 'diff /tmp/tcp_recv_file /tmp/tcp_sent_file'
+    #     err = self.api.pod_exec(self.name, cmd)
+    #     print("DIFF TCP ERROR: {}".format(err))
+    #     if err['status'] != "Success":
+    #         return False
+    #     return True
+    #
+    # def do_diff_tcp(self, client_ep, server_ep):
+    #     cmd = 'diff /tmp/udp_recv_file /tmp/udp_sent_file'
+    #     err = self.api.pod_exec(self.name, cmd)
+    #     print("DIFF UDP ERROR: {}".format(err))
+    #     if err['status'] != "Success":
+    #         return False
+    #     return True
