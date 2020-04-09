@@ -90,7 +90,9 @@ class k8sApi:
                 self.k8sapi.read_namespaced_pod(name=name, namespace='default')
             except:
                 deleted = True
+
         logger.info("Deleted {}".format(name))
+
 
     def pod_exec(self, name, cmd):
         exec_command = cmd.split()
@@ -101,6 +103,7 @@ class k8sApi:
                       stderr=True, stdin=False,
                       stdout=True, tty=False,
                       _preload_content=False)
+
         while resp.is_open():
             resp.update(timeout=1)
             err = resp.read_channel(ERROR_CHANNEL)
