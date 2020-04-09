@@ -154,9 +154,3 @@ class EndpointOperator(object):
 		eps = self.store.get_eps_in_net(bouncer.net).values()
 		for ep in eps:
 			ep.update_bouncers(set([bouncer]), False)
-
-	def set_endpoint_deprovisioned(self, ep):
-		if ep.type == OBJ_DEFAULTS.ep_type_simple:
-			ep.set_status(OBJ_STATUS.ep_status_deprovisioned)
-			ep.unload_transit_agent_xdp()
-			ep.update_obj()
