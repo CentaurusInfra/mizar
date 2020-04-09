@@ -95,7 +95,8 @@ class BouncerOperator(object):
 		for key in bouncers:
 			bouncers[key].delete_eps(eps)
 		self.store.update_bouncers_of_net(ep.net, bouncers)
-		# No need to delete agent info, it gets deleted with agent unload
+		if ep.type == OBJ_DEFAULTS.ep_type_simple:
+			ep.unload_transit_agent_xdp()
 
 	def delete_vpc(self, bouncer):
 		bouncer.delete_vpc()

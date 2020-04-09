@@ -300,13 +300,3 @@ class CniService(Service):
 	def delete_veth_pair(self, ep):
 		self.iproute.link('del', index=ep.veth_peer_index)
 		logging.debug("Deleted veth-pair {}, from {}".format(ep.veth_peer, ep.netns))
-
-	def ep_deprovisioned_fn(self, event, ep):
-		name = event['object']['metadata']['name']
-		status = event['object']['spec']['status']
-		logging.debug("Object info {}".format(event['object']))
-		if name != ep.name:
-			return False
-		if status != OBJ_STATUS.ep_status_deprovisioned:
-			return False
-		return True
