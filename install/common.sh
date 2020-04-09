@@ -21,23 +21,16 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-DIR=${1:-.}
-USER=${2:-dev}
-DOCKER_ACC=${3:-"localhost:5000"}
-YAML_FILE="dev.operator.deploy.yaml"
-. $(dirname "$0")/common.sh
-
-if [[ "$USER" == "user" || "$USER" == "final" ]]; then
-    DOCKER_ACC="fwnetworking"
-    YAML_FILE="operator.deploy.yaml"
-fi
-
-# Build the operator image
-docker image build -t $DOCKER_ACC/endpointopr:latest -f $DIR/mgmt/etc/docker/operator.Dockerfile $DIR
-if [[ "$USER" == "dev" || "$USER" == "final" ]]; then
-    docker image push $DOCKER_ACC/endpointopr:latest
-fi
-
-# Delete existing deployment and deploy
-delete_pods mizar-operator deployment
-kubectl apply -f $DIR/mgmt/etc/deploy/$YAML_FILE
+function delete_pods {
+    NAME=$1
+    TYPE=$2
+    kubectl delete $TYPE.apps/$NAME 2> /tmp/kubetctl.err
+    echo -n "Waiting for ${NAME} pods to terminate."
+    kubectl get pods | grep $NAME > /dev/null
+    while [[ $? -eq 0 ]]; do
+        echo -n "."
+        sleep 1
+        kubectl get pods | grep $NAME > /dev/null
+    done
+    echo
+}
