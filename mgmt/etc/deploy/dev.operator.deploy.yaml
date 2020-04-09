@@ -35,6 +35,7 @@ spec:
         mizar: operator
     spec:
       serviceAccountName: mizar-operator
+      terminationGracePeriodSeconds: 0
       hostNetwork: true
       containers:
         - image: localhost:5000/endpointopr:latest
