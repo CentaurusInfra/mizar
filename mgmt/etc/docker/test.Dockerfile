@@ -23,6 +23,8 @@ FROM python:3.7
 RUN apt-get update -y
 RUN apt-get install iputils-ping
 RUN apt-get install -y netcat
+RUN apt-get install -y iperf3
 COPY mgmt/test.sh /var/mizar/mgmt/test.sh
 RUN ["chmod", "+x", "/var/mizar/mgmt/test.sh"]
+EXPOSE 8000 9001 5001
 CMD ["/var/mizar/mgmt/test.sh"]

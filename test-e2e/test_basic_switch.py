@@ -1,7 +1,5 @@
 
 import unittest
-import os
-from common import *
 from k8s import *
 from helper import *
 
@@ -15,7 +13,7 @@ class test_basic_switch(unittest.TestCase):
         self.ep2 = self.api.create_pod("ep2")
 
     def tearDown(self):
-        print("Tearing down endpoints....")
+        logger.info("Tearing down endpoints....")
         self.api.delete_pod("ep1")
         self.api.delete_pod("ep2")
 
