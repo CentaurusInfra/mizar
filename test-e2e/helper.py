@@ -1,7 +1,4 @@
-import unittest
-import os
 from common import *
-from k8s import *
 
 def do_common_tests(test, ep1, ep2):
     do_ping_test(test, ep1, ep2)
@@ -11,12 +8,13 @@ def do_common_tests(test, ep1, ep2):
 
 def do_ping_test(test, ep1, ep2, both_ways=True):
     logger.info("-------Test: PING test-------")
+    logger.info("Test: {} ping {}".format(ep1.ip, ep2.ip))
     if ep1.do_ping(ep2.ip):
         logger.info("Ping test from {} to {} was Successfull".format(ep1.name, ep2.name))
     else:
         logger.info("Ping test from {} to {} FAILED".format(ep1.name, ep2.name))
     if both_ways:
-        logger.info("Test: {} can ping {}".format(ep2.ip, ep1.ip))
+        logger.info("Test: {} ping {}".format(ep2.ip, ep1.ip))
         if ep2.do_ping(ep1.ip):
             logger.info("Ping test from {} to {} was Successfull".format(ep2.name, ep1.name))
         else:
@@ -24,8 +22,6 @@ def do_ping_test(test, ep1, ep2, both_ways=True):
 
 def do_http_test(test, ep1, ep2):
     logger.info("-------Test: HTTP test-------")
-    #ep1.do_httpd()
-    #ep2.do_httpd()
 
     if ep2.do_curl("http://{}:8000 -Ss -m 1".format(ep1.ip)):
         logger.info("Http test from {} to {} was Successfull".format(ep2.name, ep1.name))
@@ -39,14 +35,14 @@ def do_http_test(test, ep1, ep2):
 
 def do_tcp_test(test, ep1, ep2):
     logger.info("-------Test: TCP test-------")
-    #ep1.do_tcp_serve()
-    #ep2.do_tcp_serve()
 
+    #if ep2.do_tcp_client(ep1.ip) and ep2.do_tcp_diff(ep1.name):
     if ep2.do_tcp_client(ep1.ip):
         logger.info("TCP test from {} to {} was Successfull".format(ep1.name, ep2.name))
     else:
         logger.info("TCP test from {} to {} FAILED".format(ep1.name, ep2.name))
 
+    #if ep1.do_tcp_client(ep2.ip) and ep1.do_tcp_diff(ep2.name):
     if ep1.do_tcp_client(ep2.ip):
         logger.info("TCP test from {} to {} was Successfull".format(ep2.name, ep1.name))
     else:
@@ -54,13 +50,14 @@ def do_tcp_test(test, ep1, ep2):
 
 def do_udp_test(test, ep1, ep2):
     logger.info("-------Test: UDP test-------")
-    #ep1.do_udp_serve()
-    #ep2.do_udp_serve()
 
+    #if ep2.do_udp_client(ep1.ip) and ep2.do_udp_diff(ep1.name):
     if ep2.do_udp_client(ep1.ip):
         logger.info("UDP test from {} to {} was Successfull".format(ep1.name, ep2.name))
     else:
         logger.info("UDP test from {} to {} FAILED".format(ep1.name, ep2.name))
+
+    #if ep1.do_udp_client(ep2.ip) and ep1.do_udp_diff(ep2.name):
     if ep1.do_udp_client(ep2.ip):
         logger.info("UDP test from {} to {} was Successfull".format(ep2.name, ep1.name))
     else:

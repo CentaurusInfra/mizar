@@ -106,3 +106,13 @@ class k8sApi:
             err = resp.read_channel(ERROR_CHANNEL)
             if err:
                 return yaml.load(err)
+
+    def pod_exec_stdout(self, name, cmd):
+        exec_command = cmd.split()
+        resp = stream(self.k8sapi.connect_get_namespaced_pod_exec,
+                      name,
+                      'default',
+                      command=exec_command,
+                      stderr=True, stdin=False,
+                      stdout=True, tty=False)
+        return resp
