@@ -36,13 +36,11 @@ def do_http_test(test, ep1, ep2):
 def do_tcp_test(test, ep1, ep2):
     logger.info("-------Test: TCP test-------")
 
-    #if ep2.do_tcp_client(ep1.ip) and ep2.do_tcp_diff(ep1.name):
     if ep2.do_tcp_client(ep1.ip):
         logger.info("TCP test from {} to {} was Successfull".format(ep1.name, ep2.name))
     else:
         logger.info("TCP test from {} to {} FAILED".format(ep1.name, ep2.name))
 
-    #if ep1.do_tcp_client(ep2.ip) and ep1.do_tcp_diff(ep2.name):
     if ep1.do_tcp_client(ep2.ip):
         logger.info("TCP test from {} to {} was Successfull".format(ep2.name, ep1.name))
     else:
@@ -51,13 +49,11 @@ def do_tcp_test(test, ep1, ep2):
 def do_udp_test(test, ep1, ep2):
     logger.info("-------Test: UDP test-------")
 
-    #if ep2.do_udp_client(ep1.ip) and ep2.do_udp_diff(ep1.name):
     if ep2.do_udp_client(ep1.ip):
         logger.info("UDP test from {} to {} was Successfull".format(ep1.name, ep2.name))
     else:
         logger.info("UDP test from {} to {} FAILED".format(ep1.name, ep2.name))
 
-    #if ep1.do_udp_client(ep2.ip) and ep1.do_udp_diff(ep2.name):
     if ep1.do_udp_client(ep2.ip):
         logger.info("UDP test from {} to {} was Successfull".format(ep2.name, ep1.name))
     else:
