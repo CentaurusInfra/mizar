@@ -27,13 +27,36 @@ Please do not ever hesitate to ask a question or send a pull request.
 
 This is a rough outline of what a contributor's workflow looks like:
 
+- Fork the repository and clone your fork.
+```
+$ git clone git@github.com:your_username/mizar.git
+```
+- Add the official mizar repository as an upstream remote.
+```
+$ git remote add upstream git@github.com:futurewei-cloud/mizar.git
+```
 - Create a topic branch from where to base the contribution. This is usually master.
+```
+$ git fetch upstream
+$ git checkout upstream/master
+$ git checkout -b your_topic_branch_name
+$ git push -u origin your_topic_branch_name
+```
 - Make commits of logical units.
 - Make sure commit messages are in the proper format (see below).
-- Push changes in a topic branch to a personal fork of the repository.
-- Submit a pull request to [mizar](https://github.com/futurewei-cloud/mizar).
+- Once ready, rebase with the topic branch, push to your fork, and submit a pull request to [mizar](https://github.com/futurewei-cloud/mizar).
+```
+$ git fetch upstream
+$ git rebase upstream/master
+$ git push
+```
 - The PR must receive approvals from two team members including at least one maintainer.
-
+- If you wish to push commits to an open PR, please make sure to rebase with the upstream topic branch prior to pushing.
+```
+$ git fetch upstream
+$ git rebase upstream/master
+$ git push
+```
 
 ### Directory Organization
 
