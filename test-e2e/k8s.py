@@ -4,7 +4,7 @@ from cli.mizarapi import *
 from kubernetes import client, config
 from kubernetes.stream import stream
 from k8spod import *
-from kubernetes.stream.ws_client import ERROR_CHANNEL
+from kubernetes.stream.ws_client import ERROR_CHANNEL, STDOUT_CHANNEL, STDERR_CHANNEL
 
 class k8sCluster:
     _instance = None
@@ -82,7 +82,8 @@ class k8sApi:
         return pod
 
     def delete_pod(self, name):
-        self.k8sapi.delete_namespaced_pod(name=name, namespace='default')
+        self.k8sapi.delete_namespaced_pod(name=name, namespace='default',
+                                        grace_period_seconds=0)
 
         deleted = False
         while deleted:
@@ -94,12 +95,13 @@ class k8sApi:
 
     def pod_exec(self, name, cmd):
         exec_command = cmd.split()
-        resp = stream(self.k8sapi.connect_get_namespaced_pod_exec,
+        resp = stream(self.k8sapi.connect_post_namespaced_pod_exec,
                       name,
                       'default',
+                      container='box1',
                       command=exec_command,
                       stderr=True, stdin=False,
-                      stdout=True, tty=False,
+                      stdout=True, tty=True,
                       _preload_content=False)
         while resp.is_open():
             resp.update(timeout=1)
