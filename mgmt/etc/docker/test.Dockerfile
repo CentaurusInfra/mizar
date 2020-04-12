@@ -25,7 +25,7 @@ RUN apt-get install iputils-ping
 RUN apt-get install -y netcat
 RUN apt-get install -y iperf3
 RUN apt install -y net-tools
-COPY test-e2e/ /var/mizar/test
+COPY teste2e/ /var/mizar/test
 EXPOSE 8000 9001 5001
 CMD /var/mizar/test/scripts/run_servers.sh
 

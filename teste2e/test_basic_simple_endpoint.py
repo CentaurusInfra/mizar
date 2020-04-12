@@ -1,9 +1,9 @@
 
 import unittest
-from k8s import *
-from helper import *
+from teste2e.common.k8s import *
+from teste2e.common.helper import *
 
-class test_basic_switch(unittest.TestCase):
+class test_basic_simple_endpoint(unittest.TestCase):
 
     def setUp(self):
         # This test will use the default VPC and Net
@@ -17,5 +17,5 @@ class test_basic_switch(unittest.TestCase):
         self.api.delete_pod("ep1")
         self.api.delete_pod("ep2")
 
-    def test_basic_switch(self):
+    def test_basic_simple_endpoint(self):
         do_common_tests(self, self.ep1, self.ep2)
