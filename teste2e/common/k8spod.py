@@ -1,4 +1,4 @@
-from common import *
+from teste2e.common.helper import *
 from time import sleep
 
 SCRIPTS_DIR = '/var/mizar/test/scripts'
