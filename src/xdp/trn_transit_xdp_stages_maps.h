@@ -81,3 +81,39 @@ struct bpf_map_def SEC("maps") interfaces_map_ref = {
 	.map_flags = 0,
 };
 BPF_ANNOTATE_KV_PAIR(interface_map_ref, int, __u32);
+
+struct bpf_map_def SEC("maps") fwd_flow_mod_cache_ref = {
+	.type = BPF_MAP_TYPE_ARRAY_OF_MAPS,
+	.key_size = sizeof(int),
+	.value_size = sizeof(__u32),
+	.max_entries = 1,
+	.map_flags = 0,
+};
+BPF_ANNOTATE_KV_PAIR(fwd_flow_mod_cache_ref, int, __u32);
+
+struct bpf_map_def SEC("maps") rev_flow_mod_cache_ref = {
+	.type = BPF_MAP_TYPE_ARRAY_OF_MAPS,
+	.key_size = sizeof(int),
+	.value_size = sizeof(__u32),
+	.max_entries = 1,
+	.map_flags = 0,
+};
+BPF_ANNOTATE_KV_PAIR(rev_flow_mod_cache_ref, int, __u32);
+
+struct bpf_map_def SEC("maps") ep_flow_host_cache_ref = {
+	.type = BPF_MAP_TYPE_ARRAY_OF_MAPS,
+	.key_size = sizeof(int),
+	.value_size = sizeof(__u32),
+	.max_entries = 1,
+	.map_flags = 0,
+};
+BPF_ANNOTATE_KV_PAIR(ep_flow_host_cache_ref, int, __u32);
+
+struct bpf_map_def SEC("maps") ep_host_cache_ref = {
+	.type = BPF_MAP_TYPE_ARRAY_OF_MAPS,
+	.key_size = sizeof(int),
+	.value_size = sizeof(__u32),
+	.max_entries = 1,
+	.map_flags = 0,
+};
+BPF_ANNOTATE_KV_PAIR(ep_host_cache_ref, int, __u32);

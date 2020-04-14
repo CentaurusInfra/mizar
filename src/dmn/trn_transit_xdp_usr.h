@@ -61,6 +61,10 @@ struct ebpf_prog_stage_t {
 	int hosted_endpoints_iface_map_ref_fd;
 	int interfaces_map_ref_fd;
 	int xdpcap_hook_ref_fd;
+	int fwd_flow_mod_cache_ref_fd;
+	int rev_flow_mod_cache_ref_fd;
+	int ep_flow_host_cache_ref_fd;
+	int ep_host_cache_ref_fd;
 
 	struct bpf_map *networks_map_ref;
 	struct bpf_map *vpc_map_ref;
@@ -69,6 +73,10 @@ struct ebpf_prog_stage_t {
 	struct bpf_map *interface_config_map_ref;
 	struct bpf_map *interfaces_map_ref;
 	struct bpf_map *xdpcap_hook_ref;
+	struct bpf_map *fwd_flow_mod_cache_ref;
+	struct bpf_map *rev_flow_mod_cache_ref;
+	struct bpf_map *ep_flow_host_cache_ref;
+	struct bpf_map *ep_host_cache_ref;
 };
 
 struct user_metadata_t {
