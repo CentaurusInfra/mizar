@@ -35,6 +35,24 @@
 #include "trn_transit_xdp_usr.h"
 #include "trn_log.h"
 
+#define _SET_INNER_MAP(map)                                                    \
+	do {                                                                   \
+		if (_trn_set_inner_map(stage, &stage->map##_ref, #map "_ref",  \
+				       md->map##_fd)) {                        \
+			stage->map##_ref = NULL;                               \
+			TRN_LOG_INFO(#map " is not used by %s\n", prog_path);  \
+		}                                                              \
+	} while (0)
+
+#define _UPDATE_INNER_MAP(map)                                                 \
+	do {                                                                   \
+		if (stage->map##_ref &&                                        \
+		    _trn_update_inner_map_fd(#map "_ref", stage->map##_ref,    \
+					     &stage->map##_ref_fd,             \
+					     md->map##_fd))                    \
+			goto error;                                            \
+	} while (0)
+
 int trn_user_metadata_free(struct user_metadata_t *md)
 {
 	__u32 curr_prog_id = 0;
@@ -276,45 +294,16 @@ int trn_add_prog(struct user_metadata_t *md, unsigned int prog_idx,
 		return 1;
 	}
 
-	if (_trn_set_inner_map(stage, &stage->networks_map_ref,
-			       "networks_map_ref", md->networks_map_fd)) {
-		stage->networks_map_ref = NULL;
-		TRN_LOG_INFO("networks_map is not used by %s\n", prog_path);
-	}
-
-	if (_trn_set_inner_map(stage, &stage->vpc_map_ref, "vpc_map_ref",
-			       md->vpc_map_fd)) {
-		stage->vpc_map_ref = NULL;
-		TRN_LOG_INFO("vpc_map is not used by %s\n", prog_path);
-	}
-
-	if (_trn_set_inner_map(stage, &stage->endpoints_map_ref,
-			       "endpoints_map_ref", md->endpoints_map_fd)) {
-		stage->endpoints_map_ref = NULL;
-		TRN_LOG_INFO("endpoints_map is not used by %s\n", prog_path);
-	}
-
-	if (_trn_set_inner_map(stage, &stage->hosted_endpoints_iface_map_ref,
-			       "hosted_endpoints_iface_map_ref",
-			       md->hosted_endpoints_iface_map_fd)) {
-		stage->hosted_endpoints_iface_map_ref = NULL;
-		TRN_LOG_INFO("hosted_endpoints_iface_map is not used by %s\n",
-			     prog_path);
-	}
-
-	if (_trn_set_inner_map(stage, &stage->interface_config_map_ref,
-			       "interface_config_map_ref",
-			       md->interface_config_map_fd)) {
-		stage->interface_config_map_ref = NULL;
-		TRN_LOG_INFO("interface_config_map is not used by %s\n",
-			     prog_path);
-	}
-
-	if (_trn_set_inner_map(stage, &stage->interfaces_map_ref,
-			       "interfaces_map_ref", md->interfaces_map_fd)) {
-		stage->interfaces_map_ref = NULL;
-		TRN_LOG_INFO("interfaces_map is not used by %s\n", prog_path);
-	}
+	_SET_INNER_MAP(networks_map);
+	_SET_INNER_MAP(vpc_map);
+	_SET_INNER_MAP(endpoints_map);
+	_SET_INNER_MAP(hosted_endpoints_iface_map);
+	_SET_INNER_MAP(interface_config_map);
+	_SET_INNER_MAP(interfaces_map);
+	_SET_INNER_MAP(fwd_flow_mod_cache);
+	_SET_INNER_MAP(rev_flow_mod_cache);
+	_SET_INNER_MAP(ep_flow_host_cache);
+	_SET_INNER_MAP(ep_host_cache);
 
 	/* Only one prog is supported */
 	bpf_object__for_each_program(prog, stage->obj)
@@ -340,42 +329,16 @@ int trn_add_prog(struct user_metadata_t *md, unsigned int prog_idx,
 		goto error;
 	}
 
-	if (stage->networks_map_ref &&
-	    _trn_update_inner_map_fd(
-		    "networks_map_ref", stage->networks_map_ref,
-		    &stage->networks_map_ref_fd, md->networks_map_fd))
-		goto error;
-
-	if (stage->vpc_map_ref &&
-	    _trn_update_inner_map_fd("vpc_map_ref", stage->vpc_map_ref,
-				     &stage->vpc_map_ref_fd, md->vpc_map_fd))
-		goto error;
-
-	if (stage->endpoints_map_ref &&
-	    _trn_update_inner_map_fd(
-		    "endpoints_map_ref", stage->endpoints_map_ref,
-		    &stage->endpoints_map_ref_fd, md->endpoints_map_fd))
-		goto error;
-
-	if (stage->hosted_endpoints_iface_map_ref &&
-	    _trn_update_inner_map_fd("hosted_endpoints_iface_map_ref",
-				     stage->hosted_endpoints_iface_map_ref,
-				     &stage->hosted_endpoints_iface_map_ref_fd,
-				     md->hosted_endpoints_iface_map_fd))
-		goto error;
-
-	if (stage->interface_config_map_ref &&
-	    _trn_update_inner_map_fd("interface_config_map_ref",
-				     stage->interface_config_map_ref,
-				     &stage->interface_config_map_ref_fd,
-				     md->interface_config_map_fd))
-		goto error;
-
-	if (stage->interfaces_map_ref &&
-	    _trn_update_inner_map_fd(
-		    "interfaces_map_ref", stage->interfaces_map_ref,
-		    &stage->interfaces_map_ref_fd, md->interfaces_map_fd))
-		goto error;
+	_UPDATE_INNER_MAP(networks_map);
+	_UPDATE_INNER_MAP(vpc_map);
+	_UPDATE_INNER_MAP(endpoints_map);
+	_UPDATE_INNER_MAP(hosted_endpoints_iface_map);
+	_UPDATE_INNER_MAP(interface_config_map);
+	_UPDATE_INNER_MAP(interfaces_map);
+	_UPDATE_INNER_MAP(fwd_flow_mod_cache);
+	_UPDATE_INNER_MAP(rev_flow_mod_cache);
+	_UPDATE_INNER_MAP(ep_flow_host_cache);
+	_UPDATE_INNER_MAP(ep_host_cache);
 
 	return 0;
 error:
