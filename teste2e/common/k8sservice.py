@@ -9,3 +9,16 @@ class k8sService:
         self.api = api
         self.name = name
         self.ip = ip
+        self.endpoints = {}
+
+    @property
+    def eptype(self):
+        return "scaled"
+
+    @property
+    def backends(self):
+        return set(self.endpoints.keys())
+
+    def add_endpoint(self, name):
+        ep = self.api.create_pod(name, scaledep=self.name)
+        self.endpoints[ep.name] = ep
