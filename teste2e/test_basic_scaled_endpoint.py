@@ -12,8 +12,8 @@ class test_basic_scaled_endpoint(unittest.TestCase):
         self.ep1 = self.api.create_pod("ep1")
 
         self.sep1 = self.api.create_service("sep1")
-        self.ep3 = self.api.create_pod("ep2", scaledep="sep1")
-        self.ep4 = self.api.create_pod("ep3", scaledep="sep1")
+        self.sep1.add_endpoint("ep2")
+        self.sep1.add_endpoint("ep3")
 
     def tearDown(self):
         logger.info("Tearing down endpoints....")
