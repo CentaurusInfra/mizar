@@ -10,6 +10,10 @@ class k8sPod:
         self.name = name
         self.ip = ip
 
+    @property
+    def eptype(self):
+        return "simple"
+
     def do_ping(self, server, count=1, wait=5):
         ip = server.ip
         cmd = 'ping -w {} -c {} {}'.format(wait, count, ip)
@@ -22,18 +26,33 @@ class k8sPod:
         cmd = f'''/bin/bash {SCRIPTS_DIR}/curl_client_hostname.sh {ip}'''
         out = self.api.pod_exec_stdout(self.name, cmd)
         logger.info("do_curl_client {}, got: {}".format(self.name, out))
-        return out == server.name
+
+        if server.eptype == "simple":
+            return out == server.name
+
+        if server.eptype == "scaled":
+            return out in server.backends
 
     def do_tcp_hostname(self, server):
         ip = server.ip
         cmd = f'''/bin/bash {SCRIPTS_DIR}/nc_client_hostname.sh {ip}'''
         out = self.api.pod_exec_stdout(self.name, cmd)
         logger.info("do_tcp_client {}, got: {}".format(self.name, out))
-        return out == server.name
+
+        if server.eptype == "simple":
+            return out == server.name
+
+        if server.eptype == "scaled":
+            return out in server.backends
 
     def do_udp_hostname(self, server):
         ip = server.ip
         cmd = f'''/bin/bash {SCRIPTS_DIR}/nc_client_hostname.sh {ip} udp'''
         out = self.api.pod_exec_stdout(self.name, cmd)
         logger.info("do_udp_client {}, got: {}".format(self.name, out))
-        return out == server.name
+
+        if server.eptype == "simple":
+            return out == server.name
+
+        if server.eptype == "scaled":
+            return out in server.backends
