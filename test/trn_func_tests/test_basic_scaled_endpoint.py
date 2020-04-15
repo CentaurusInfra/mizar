@@ -62,7 +62,7 @@ class test_basic_scaled_endpoint(unittest.TestCase):
         self.c = controller(self.droplets)
 
         self.c.create_vpc(3, cidr("16", "10.0.0.0"), [])
-        self.c.create_network(3, 1, cidr("16", "10.0.0.0"), ["d4"])
+        self.c.create_network(3, 1, cidr("16", "10.0.0.0"), ["d0"])
         self.ep0 = self.c.create_simple_endpoint(3, 1, "10.0.0.2", "d0")
         self.ep1 = self.c.create_simple_endpoint(3, 1, "10.0.0.3", "d1")
         self.ep2 = self.c.create_simple_endpoint(3, 1, "10.0.0.4", "d2")

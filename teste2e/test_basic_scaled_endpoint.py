@@ -25,3 +25,6 @@ class test_basic_scaled_endpoint(unittest.TestCase):
 
     def test_basic_scaled_endpoint(self):
         self.assertTrue(self.ep1.do_ping(self.sep1))
+        self.assertTrue(self.ep1.do_curl_hostname(self.sep1))
+        self.assertTrue(self.ep1.do_tcp_hostname(self.sep1))
+        self.assertTrue(self.ep1.do_udp_hostname(self.sep1))
