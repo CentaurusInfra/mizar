@@ -370,6 +370,10 @@ static inline void trn_inner_l4_csum_update(struct transit_packet *pkt,
 		return;
 
 	if (pkt->inner_ip->protocol == IPPROTO_UDP) {
+		if (!pkt->inner_udp) {
+			return;
+		}
+
 		if (pkt->inner_udp + 1 > pkt->data_end) {
 			return;
 		}
@@ -380,6 +384,10 @@ static inline void trn_inner_l4_csum_update(struct transit_packet *pkt,
 	}
 
 	if (pkt->inner_ip->protocol == IPPROTO_TCP) {
+		if (!pkt->inner_tcp) {
+			return;
+		}
+
 		if (pkt->inner_tcp + 1 > pkt->data_end) {
 			return;
 		}

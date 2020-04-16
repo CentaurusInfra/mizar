@@ -27,6 +27,7 @@ import uuid
 import pprint
 import subprocess
 import tempfile
+import time
 from common.common import *
 from common.constants import *
 from store.operator_store import OprStore
@@ -161,6 +162,7 @@ class CniService(Service):
 		if CniService.store.contains_ep(name):
 			return CniService.store.get_ep(name)
 
+		start_time = time.time()
 		ep = Endpoint(name, self.obj_api, CniService.store)
 
 		# If not provided in Pod, use defaults
@@ -185,11 +187,14 @@ class CniService(Service):
 
 		iproute_ns = self.create_mizarnetns(params, ep)
 		self.prepare_veth_pair(ep, iproute_ns, params)
+		ep.load_transit_agent()
 
+		ep.set_cnidelay(time.time() - start_time)
 		ep.create_obj()
 		ep.watch_obj(self.ep_ready_fn)
 		self.provision_endpoint(ep, iproute_ns)
 		ep.set_status(OBJ_STATUS.ep_status_provisioned)
+		ep.set_provisiondelay(time.time() - start_time)
 		ep.update_obj()
 		CniService.store.update_ep(ep)
 
@@ -295,13 +300,3 @@ class CniService(Service):
 	def delete_veth_pair(self, ep):
 		self.iproute.link('del', index=ep.veth_peer_index)
 		logging.debug("Deleted veth-pair {}, from {}".format(ep.veth_peer, ep.netns))
-
-	def ep_deprovisioned_fn(self, event, ep):
-		name = event['object']['metadata']['name']
-		status = event['object']['spec']['status']
-		logging.debug("Object info {}".format(event['object']))
-		if name != ep.name:
-			return False
-		if status != OBJ_STATUS.ep_status_deprovisioned:
-			return False
-		return True

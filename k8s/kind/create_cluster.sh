@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020 The Authors.
 
@@ -19,31 +21,57 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+KINDCONF=${1:-"${HOME}/mizar/build/tests/kind/config"}
+USER=${2:-dev}
+NODES=${3:-1}
+
+# create registry container unless it already exists
+reg_name='local-kind-registry'
+reg_port='5000'
+running="$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)"
+if [ "${running}" != 'true' ]; then
+  docker run \
+    -d --restart=always -p "${reg_port}:5000" --name "${reg_name}" \
+    registry:2
+fi
+reg_ip="$(docker inspect -f '{{.NetworkSettings.IPAddress}}' "${reg_name}")"
+
+if [[ $USER == "dev" ]]; then
+  PATCH="containerdConfigPatches:
+- |-
+  [plugins.\"io.containerd.grpc.v1.cri\".registry.mirrors.\"localhost:${reg_port}\"]
+    endpoint = [\"http://${reg_ip}:${reg_port}\"]"
+  REPO="localhost:5000"
+else
+  PATCH=""
+  REPO="fwnetworking"
+fi
+
+NODE_TEMPLATE="  - role: worker
+    image: ${REPO}/kindnode:latest
+    extraMounts:
+      - hostPath: .
+        containerPath: /var/mizar
+"
+FINAL_NODES=""
+
+for ((i=1; i<=NODES; i++));
+do
+  FINAL_NODES=$FINAL_NODES$NODE_TEMPLATE
+done
+
+# create a cluster with the local registry enabled in containerd and n Nodes.
+cat <<EOF | kind create cluster --name kind --kubeconfig ${KINDCONF} --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  disableDefaultCNI: true
+${PATCH}
 nodes:
   - role: control-plane
-    image: fwnetworking/kindnode:latest
+    image: ${REPO}/kindnode:latest
     extraMounts:
       - hostPath: .
         containerPath: /var/mizar
-  - role: worker
-    image: fwnetworking/kindnode:latest
-    extraMounts:
-      - hostPath: .
-        containerPath: /var/mizar
-  - role: worker
-    image: fwnetworking/kindnode:latest
-    extraMounts:
-      - hostPath: .
-        containerPath: /var/mizar
-  - role: worker
-    image: fwnetworking/kindnode:latest
-    extraMounts:
-      - hostPath: .
-        containerPath: /var/mizar
-  - role: worker
-    image: fwnetworking/kindnode:latest
-    extraMounts:
-      - hostPath: .
-        containerPath: /var/mizar
+${FINAL_NODES}
+EOF

@@ -35,6 +35,7 @@ spec:
         job: mizar-daemon
     spec:
       serviceAccountName: mizar-operator
+      terminationGracePeriodSeconds: 0
       hostNetwork: true
       hostPID: true
       volumes:

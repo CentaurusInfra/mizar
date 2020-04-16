@@ -22,9 +22,15 @@
 import logging
 from common.workflow import *
 from dp.mizar.operators.bouncers.bouncers_operator import *
+from dp.mizar.operators.droplets.droplets_operator import *
+from dp.mizar.operators.vpcs.vpcs_operator import *
+
 logger = logging.getLogger()
 
 bouncers_opr = BouncerOperator()
+vpcs_opr = VpcOperator()
+droplets_opr = DropletOperator()
+
 class BouncerProvisioned(WorkflowTask):
 
 	def requires(self):
@@ -33,7 +39,8 @@ class BouncerProvisioned(WorkflowTask):
 
 	def run(self):
 		logger.info("Run {task}".format(task=self.__class__.__name__))
-		bouncer = bouncers_opr.store.get_bouncer(self.param.name)
-		bouncer.set_obj_spec(self.param.spec)
-		bouncers_opr.store.update_bouncer(bouncer)
+		bouncer = bouncers_opr.get_bouncer_stored_obj(self.param.name, self.param.spec)
+		bouncer.set_vni(vpcs_opr.store.get_vpc(bouncer.vpc).vni)
+		bouncer.droplet_obj = droplets_opr.store.get_droplet(bouncer.droplet)
+		bouncers_opr.store_update(bouncer)
 		self.finalize()

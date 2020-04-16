@@ -127,22 +127,27 @@ class Bouncer(object):
 	def set_status(self, status):
 		self.status = status
 
-	def update_eps(self, eps):
-		for ep in eps:
-			if ep.name not in self.eps.keys():
-				logger.info("EEP: Updated")
-				self.eps[ep.name] = ep
-				self._update_ep(ep)
-				self.droplet_obj.update_substrate(ep)
-
-	def _update_ep(self, ep):
-		logger.info("self ip {} epfuncip {}, field ip {}".format(self.ip, ep.get_droplet_ip(), ep.droplet_obj.ip))
-		self.droplet_obj.update_ep(self.name, ep)
-
-	def _update_scaled_ep(self, ep):
-		self.rpc.update_ep(ep)
+	def load_transit_xdp_pipeline_stage(self):
 		self.rpc.load_transit_xdp_pipeline_stage(CONSTANTS.ON_XDP_SCALED_EP,
 			self.scaled_ep_obj)
+
+	def update_eps(self, eps):
+		for ep in eps:
+			self.eps[ep.name] = ep
+			if ep.type == OBJ_DEFAULTS.ep_type_simple:
+				self._update_simple_ep(ep)
+			if ep.type == OBJ_DEFAULTS.ep_type_scaled:
+				self._update_scaled_ep(ep)
+
+
+	def _update_simple_ep(self, ep):
+		logger.info("self ip {} epfuncip {}, field ip {}".format(self.ip, ep.get_droplet_ip(), ep.droplet_obj.ip))
+		self.droplet_obj.update_ep(self.name, ep)
+		self.droplet_obj.update_substrate(ep)
+
+	def _update_scaled_ep(self, ep):
+		if ep.backends:
+			self.droplet_obj.update_ep(self.name, ep)
 
 	def update_vpc(self, dividers, add=True):
 		for divider in dividers:
@@ -185,10 +190,15 @@ class Bouncer(object):
 		for ep in eps:
 			if ep.name in self.eps.keys():
 				self.eps.pop(ep.name)
-				self._delete_ep(ep)
+				if ep.type == OBJ_DEFAULTS.ep_type_simple:
+					self._delete_ep(ep)
+				if ep.type == OBJ_DEFAULTS.ep_type_scaled:
+					self._delete_scaled_ep(ep)
 
 	def _delete_ep(self, ep):
 		self.droplet_obj.delete_ep(self.name, ep)
 		self.droplet_obj.delete_substrate(ep)
 		ep.droplet_obj.delete_ep(ep.name, ep)
 
+	def _delete_scaled_ep(self, ep):
+		self.droplet_obj.delete_ep(self.name, ep)

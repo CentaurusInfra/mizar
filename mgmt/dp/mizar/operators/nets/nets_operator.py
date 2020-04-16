@@ -142,17 +142,17 @@ class NetOperator(object):
 		n = self.store.get_net(ep.net)
 		if ep.ip == "":
 			ip = n.allocate_ip()
-			n.mark_ip_as_allocated(ip)
 			ep.set_ip(ip)
 		gw = n.get_gw_ip()
 		prefix = n.get_prefixlen()
 		ep.set_gw(gw)
 		ep.set_prefix(prefix)
 
-		if ep.type == OBJ_DEFAULTS.ep_type_simple:
-			ep.load_transit_agent()
+		#TODO: Most of the time is spent in loading the transit agent
+		#if ep.type == OBJ_DEFAULTS.ep_type_simple:
+		#	ep.load_transit_agent()
 
-		n.mark_ip_as_allocated(ip)
+		n.mark_ip_as_allocated(ep.ip)
 		ep.set_vni(n.vni)
 
 	def deallocate_endpoint(self, ep):

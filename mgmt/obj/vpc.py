@@ -58,8 +58,8 @@ class Vpc(object):
 		return self.obj
 
 	def set_obj_spec(self, spec):
-		self.status = get_spec_val('status', spec)
-		self.vni = get_spec_val('vni', spec)
+		self.status = get_spec_val('status', spec, OBJ_STATUS.vpc_status_init)
+		self.vni = get_spec_val('vni', spec, None)
 		self.n_dividers = int(get_spec_val('dividers', spec, OBJ_DEFAULTS.default_n_dividers))
 		ip = get_spec_val('ip', spec, OBJ_DEFAULTS.default_net_ip)
 		prefix = get_spec_val('prefix', spec, OBJ_DEFAULTS.default_net_prefix)

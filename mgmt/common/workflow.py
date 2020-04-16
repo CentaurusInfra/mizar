@@ -55,6 +55,10 @@ class WorkflowFactory(ABC):
 		pass
 
 	@abstractmethod
+	def VpcDelete(self, param):
+		pass
+
+	@abstractmethod
 	def DividerOperatorStart(self, param):
 		pass
 
@@ -64,6 +68,10 @@ class WorkflowFactory(ABC):
 
 	@abstractmethod
 	def DividerProvisioned(self, param):
+		pass
+
+	@abstractmethod
+	def DividerDelete(self, param):
 		pass
 
 	@abstractmethod
@@ -79,6 +87,10 @@ class WorkflowFactory(ABC):
 		pass
 
 	@abstractmethod
+	def DropletDelete(self, param):
+		pass
+
+	@abstractmethod
 	def NetOperatorStart(self, param):
 		pass
 
@@ -88,6 +100,10 @@ class WorkflowFactory(ABC):
 
 	@abstractmethod
 	def NetProvisioned(self, param):
+		pass
+
+	@abstractmethod
+	def NetDelete(self, param):
 		pass
 
 	@abstractmethod
@@ -103,9 +119,17 @@ class WorkflowFactory(ABC):
 		pass
 
 	@abstractmethod
+	def BouncerDelete(self, param):
+		pass
+
+	@abstractmethod
 	def k8sServiceCreate(self, param):
 		pass
 
 	@abstractmethod
 	def k8sEndpointsUpdate(self, param):
+		pass
+
+	@abstractmethod
+	def k8sEndpointsDelete(self, param):
 		pass

@@ -44,6 +44,5 @@ class EndpointDelete(WorkflowTask):
 		ep.set_obj_spec(self.param.spec)
 		nets_opr.deallocate_endpoint(ep)
 		bouncers_opr.delete_endpoint_from_bouncers(ep)
-		endpoints_opr.set_endpoint_deprovisioned(ep)
 		endpoints_opr.store.delete_ep(ep.name)
 		self.finalize()

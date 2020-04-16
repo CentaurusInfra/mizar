@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-modules := src test
+modules := src test teste2e
 build := build
 
 CC = gcc
@@ -76,7 +76,7 @@ CLANGFLAGS= -I.\
 CLANGFLAGS_DEBUG:= -DDEBUG -D__KERNEL__ -g -D__BPF_TRACING__ $(CLANGFLAGS)
 
 #all:  rpcgen transit transitd xdp
-all:: dirmake libbpf update_modules
+all:: dirmake update_modules libbpf
 
 .PHONY: update_modules
 update_modules:

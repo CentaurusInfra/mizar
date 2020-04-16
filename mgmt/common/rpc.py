@@ -45,6 +45,7 @@ class TrnRpc:
 		self.trn_cli_get_ep = f'''{self.trn_cli} get-ep -i {self.phy_itf} -j'''
 		self.trn_cli_delete_ep = f'''{self.trn_cli} delete-ep -i {self.phy_itf} -j'''
 		self.trn_cli_load_pipeline_stage = f'''{self.trn_cli} load-pipeline-stage -i {self.phy_itf} -j'''
+		self.trn_cli_unload_pipeline_stage = f'''{self.trn_cli} unload-pipeline-stage -i {self.phy_itf} -j'''
 
 		self.trn_cli_load_transit_agent_xdp = f'''{self.trn_cli} load-agent-xdp'''
 		self.trn_cli_unload_transit_agent_xdp = f'''{self.trn_cli} unload-agent-xdp'''
@@ -178,6 +179,16 @@ class TrnRpc:
 		returncode, text = run_cmd(cmd)
 		logger.info("load_transit_xdp_pipeline_stage returns {} {}".format(returncode, text))
 
+	def unload_transit_xdp_pipeline_stage(self, stage, obj_file):
+		jsonconf = {
+			"stage": stage
+		}
+		jsonconf = json.dumps(jsonconf)
+		cmd = f'''{self.trn_cli_unload_pipeline_stage} \'{jsonconf}\' '''
+		logger.info("unload_transit_xdp_pipeline_stage: {}".format(cmd))
+		returncode, text = run_cmd(cmd)
+		logger.info("unload_transit_xdp_pipeline_stage returns {} {}".format(returncode, text))
+
 	def delete_substrate_ep(self, ip):
 		jsonconf = {
 			"tunnel_id": "0",
@@ -196,10 +207,7 @@ class TrnRpc:
 		}
 		jsonconf = json.dumps(jsonconf)
 		cmd = f'''{self.trn_cli_delete_ep} \'{jsonconf}\''''
-		if ep.droplet != "":
-			log_string = "delete_ep {}".format(ep.ip)
-		else:
-			log_string = "delete_ep for a phantom ep {}".format(ep.ip)
+		log_string = "delete_ep for a {} {}".format(ep.type, ep.ip)
 		logger.info(log_string)
 		returncode, text = run_cmd(cmd)
 		logger.info("returns {} {}".format(returncode, text))
