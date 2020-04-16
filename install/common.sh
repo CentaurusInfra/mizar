@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020 The Authors.
 
@@ -19,13 +21,16 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-apiVersion: mizar.com/v1
-kind: Vpc
-metadata:
-  name: vpc2
-spec:
-  vni: "1"
-  ip: "20.0.0.0"
-  prefix: "16"
-  dividers: 10
-  status: "Init"
+function delete_pods {
+    NAME=$1
+    TYPE=$2
+    kubectl delete $TYPE.apps/$NAME 2> /tmp/kubetctl.err
+    echo -n "Waiting for ${NAME} pods to terminate."
+    kubectl get pods | grep $NAME > /dev/null
+    while [[ $? -eq 0 ]]; do
+        echo -n "."
+        sleep 1
+        kubectl get pods | grep $NAME > /dev/null
+    done
+    echo
+}

@@ -714,7 +714,7 @@ cp /var/log/syslog /trn_test_out/syslog_{self.ip}
             "ln -s /mnt/Transit/test/trn_func_tests/output /trn_test_out")
 
         # Run the transitd in the background
-        container.exec_run("/trn_bin/transitd ",
+        container.exec_run("/trn_bin/transitd >/tmp/transitd.std 2>&1 ",
                            detach=True)
 
         if not self.benchmark:

@@ -1,10 +1,11 @@
 import yaml
-from common import *
+from teste2e.common.helper import *
 from cli.mizarapi import *
 from kubernetes import client, config
 from kubernetes.stream import stream
-from k8spod import *
-from kubernetes.stream.ws_client import ERROR_CHANNEL
+from teste2e.common.k8spod import *
+from teste2e.common.k8sservice import *
+from kubernetes.stream.ws_client import ERROR_CHANNEL, STDOUT_CHANNEL, STDERR_CHANNEL
 
 class k8sCluster:
     _instance = None
@@ -53,12 +54,15 @@ class k8sApi:
     def delete_net(self, name):
         self.api.delete_net(name)
 
-    def create_pod(self, name):
+    def create_pod(self, name, scaledep = ''):
         pod_manifest = {
             'apiVersion': 'v1',
             'kind': 'Pod',
             'metadata': {
-                    'name': name
+                    'name': name,
+                    'labels': {
+                        'scaledep': scaledep
+                    }
             },
             'spec': {
                 'containers': [{
@@ -82,7 +86,8 @@ class k8sApi:
         return pod
 
     def delete_pod(self, name):
-        self.k8sapi.delete_namespaced_pod(name=name, namespace='default')
+        self.k8sapi.delete_namespaced_pod(name=name, namespace='default',
+                                        grace_period_seconds=0)
 
         deleted = False
         while deleted:
@@ -90,22 +95,77 @@ class k8sApi:
                 self.k8sapi.read_namespaced_pod(name=name, namespace='default')
             except:
                 deleted = True
-
         logger.info("Deleted {}".format(name))
 
-
     def pod_exec(self, name, cmd):
+        exec_command = cmd.split()
+        resp = stream(self.k8sapi.connect_post_namespaced_pod_exec,
+                      name,
+                      'default',
+                      container='box1',
+                      command=exec_command,
+                      stderr=True, stdin=False,
+                      stdout=True, tty=True,
+                      _preload_content=False)
+        while resp.is_open():
+            resp.update(timeout=1)
+            err = resp.read_channel(ERROR_CHANNEL)
+            if err:
+                return yaml.load(err)
+
+    def pod_exec_stdout(self, name, cmd):
         exec_command = cmd.split()
         resp = stream(self.k8sapi.connect_get_namespaced_pod_exec,
                       name,
                       'default',
                       command=exec_command,
                       stderr=True, stdin=False,
-                      stdout=True, tty=False,
-                      _preload_content=False)
+                      stdout=True, tty=False)
+        return resp
 
-        while resp.is_open():
-            resp.update(timeout=1)
-            err = resp.read_channel(ERROR_CHANNEL)
-            if err:
-                return yaml.load(err)
+    def create_service(self, name):
+        service_manifest = {
+            'apiVersion': 'v1',
+            'kind': 'Service',
+            'metadata': {
+                'labels': {
+                    'name': name
+                    },
+                'name': name,
+                'resourceversion': 'v1',
+                'annotations': {
+                        'service.beta.kubernetes.io/mizar-scaled-endpoint-type': "scaled-endpoint"
+                    }
+            },
+            'spec': {
+                'ports': [
+                    {'port': 80,
+                    'protocol': 'TCP'}],
+            'selector': {'scaledep': name}
+            }
+        }
+
+        resp = self.k8sapi.create_namespaced_service(
+            body=service_manifest, namespace='default')
+
+        ip = None
+        while not ip:
+            resp = self.k8sapi.read_namespaced_service(
+                name=name, namespace='default')
+            ip = resp.spec.cluster_ip
+
+        svc = k8sService(self, name, ip)
+        logger.info("Service {} IP {}".format(svc.name, svc.ip))
+        return svc
+
+    def delete_service(self, name):
+        self.k8sapi.delete_namespaced_service(name=name, namespace='default',
+                                        grace_period_seconds=0)
+
+        deleted = False
+        while deleted:
+            try:
+                self.k8sapi.read_namespaced_service(name=name, namespace='default')
+            except:
+                deleted = True
+        logger.info("Deleted {}".format(name))

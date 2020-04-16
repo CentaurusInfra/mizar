@@ -25,6 +25,7 @@ DIR=${1:-.}
 USER=${2:-dev}
 DOCKER_ACC=${3:-"localhost:5000"}
 YAML_FILE="dev.operator.deploy.yaml"
+. $(dirname "$0")/common.sh
 
 if [[ "$USER" == "user" || "$USER" == "final" ]]; then
     DOCKER_ACC="fwnetworking"
@@ -38,5 +39,5 @@ if [[ "$USER" == "dev" || "$USER" == "final" ]]; then
 fi
 
 # Delete existing deployment and deploy
-kubectl delete deployment.apps/mizar-operator 2> /tmp/kubetctl.err
+delete_pods mizar-operator deployment
 kubectl apply -f $DIR/mgmt/etc/deploy/$YAML_FILE
