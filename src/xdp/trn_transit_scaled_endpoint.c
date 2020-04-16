@@ -53,6 +53,13 @@ static __inline int trn_sep_rewrite_remote_mac(struct transit_packet *pkt,
 	struct endpoint_t *remote_ep = NULL;
 	struct endpoint_key_t epkey = {};
 
+	int map_idx = 0;
+	void *interfaces_map =
+		bpf_map_lookup_elem(&interfaces_map_ref, &map_idx);
+	if (!interfaces_map) {
+		return XDP_DROP;
+	}
+
 	/* The TTL must have been decremented before this step, Drop the
 	packet if TTL is zero */
 	if (!pkt->ip->ttl)
@@ -74,7 +81,7 @@ static __inline int trn_sep_rewrite_remote_mac(struct transit_packet *pkt,
 
 	trn_set_src_mac(pkt->data, pkt->eth->h_dest);
 	trn_set_dst_mac(pkt->data, remote_ep->mac);
-	return XDP_TX;
+	return bpf_redirect_map(interfaces_map, pkt->itf_idx, 0);
 }
 
 static __inline int trn_sep_decapsulate_and_redirect(struct transit_packet *pkt,
