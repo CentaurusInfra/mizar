@@ -59,14 +59,14 @@ async def on_startup(logger, **kwargs):
 
 	start_time = time.time()
 
-	run_task(wffactory().DropletOperatorStart(param=param))
-	run_task(wffactory().DividerOperatorStart(param=param))
+	run_workflow(wffactory().DropletOperatorStart(param=param))
+	run_workflow(wffactory().DividerOperatorStart(param=param))
 
-	run_task(wffactory().VpcOperatorStart(param=param))
+	run_workflow(wffactory().VpcOperatorStart(param=param))
 
-	run_task(wffactory().BouncerOperatorStart(param=param))
+	run_workflow(wffactory().BouncerOperatorStart(param=param))
 
-	run_task(wffactory().NetOperatorStart(param=param))
-	run_task(wffactory().EndpointOperatorStart(param=param))
+	run_workflow(wffactory().NetOperatorStart(param=param))
+	run_workflow(wffactory().EndpointOperatorStart(param=param))
 
 	logger.info("Bootstrap time:  %s seconds ---" % (time.time() - start_time))

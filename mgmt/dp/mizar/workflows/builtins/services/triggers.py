@@ -40,7 +40,7 @@ async def services_opr_on_services(body, spec, **kwargs):
 	param.name = kwargs['name']
 	param.body = body
 	param.spec = spec
-	run_task(wffactory().k8sServiceCreate(param=param))
+	run_workflow(wffactory().k8sServiceCreate(param=param))
 
 
 @kopf.on.resume('', 'v1', 'endpoints', annotations=annotations_filter)
@@ -51,7 +51,7 @@ async def services_opr_on_endpoints(body, spec, **kwargs):
 	param.name = kwargs['name']
 	param.body = body
 	param.spec = spec
-	run_task(wffactory().k8sEndpointsUpdate(param=param))
+	run_workflow(wffactory().k8sEndpointsUpdate(param=param))
 
 @kopf.on.delete('', 'v1', 'services', annotations=annotations_filter)
 async def services_opr_on_services(body, spec, **kwargs):
@@ -59,4 +59,4 @@ async def services_opr_on_services(body, spec, **kwargs):
 	param.name = kwargs['name']
 	param.body = body
 	param.spec = spec
-	run_task(wffactory().k8sServiceDelete(param=param))
+	run_workflow(wffactory().k8sServiceDelete(param=param))

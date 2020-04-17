@@ -35,7 +35,7 @@ def droplet_opr_on_droplet_init(body, spec, **kwargs):
 	param.name = kwargs['name']
 	param.body = body
 	param.spec = spec
-	run_task(wffactory().DropletCreate(param=param))
+	run_workflow(wffactory().DropletCreate(param=param))
 
 @kopf.on.resume(group, version, RESOURCES.droplets, when=LAMBDAS.droplet_status_provisioned)
 @kopf.on.update(group, version, RESOURCES.droplets, when=LAMBDAS.droplet_status_provisioned)
@@ -45,4 +45,4 @@ def droplet_opr_on_droplet_provisioned(body, spec, **kwargs):
 	param.name = kwargs['name']
 	param.body = body
 	param.spec = spec
-	run_task(wffactory().DropletProvisioned(param=param))
+	run_workflow(wffactory().DropletProvisioned(param=param))

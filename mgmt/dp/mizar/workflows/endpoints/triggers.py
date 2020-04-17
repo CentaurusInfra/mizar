@@ -37,7 +37,7 @@ def endpoint_opr_on_endpoint_init(body, spec, **kwargs):
 	param.name = kwargs['name']
 	param.body = body
 	param.spec = spec
-	run_task(wffactory().EndpointCreate(param=param))
+	run_workflow(wffactory().EndpointCreate(param=param))
 
 
 @kopf.on.resume(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_provisioned)
@@ -48,7 +48,7 @@ def endpoint_opr_on_endpoint_provisioned(body, spec, **kwargs):
 	param.name = kwargs['name']
 	param.body = body
 	param.spec = spec
-	run_task(wffactory().EndpointProvisioned(param=param))
+	run_workflow(wffactory().EndpointProvisioned(param=param))
 
 @kopf.on.delete(group, version, RESOURCES.endpoints)
 def endpoint_opr_on_endpoint_delete(body, spec, **kwargs):
@@ -56,4 +56,4 @@ def endpoint_opr_on_endpoint_delete(body, spec, **kwargs):
 	param.name = kwargs['name']
 	param.body = body
 	param.spec = spec
-	run_task(wffactory().EndpointDelete(param=param))
+	run_workflow(wffactory().EndpointDelete(param=param))
