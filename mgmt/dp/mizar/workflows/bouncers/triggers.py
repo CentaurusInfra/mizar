@@ -36,7 +36,7 @@ def bouncer_opr_on_bouncer_init(body, spec, **kwargs):
 	param.name = kwargs['name']
 	param.body = body
 	param.spec = spec
-	run_task(wffactory().BouncerCreate(param=param))
+	run_workflow(wffactory().BouncerCreate(param=param))
 
 
 @kopf.on.resume(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_provisioned)
@@ -47,7 +47,7 @@ def bouncer_opr_on_bouncer_provisioned(body, spec, **kwargs):
 	param.name = kwargs['name']
 	param.body = body
 	param.spec = spec
-	run_task(wffactory().BouncerProvisioned(param=param))
+	run_workflow(wffactory().BouncerProvisioned(param=param))
 
 @kopf.on.delete(group, version, RESOURCES.bouncers)
 def  bouncer_opr_on_bouncer_delete(body, spec, **kwargs):
@@ -55,4 +55,4 @@ def  bouncer_opr_on_bouncer_delete(body, spec, **kwargs):
 	param.name = kwargs['name']
 	param.body = body
 	param.spec = spec
-	run_task(wffactory().BouncerDelete(param=param))
+	run_workflow(wffactory().BouncerDelete(param=param))

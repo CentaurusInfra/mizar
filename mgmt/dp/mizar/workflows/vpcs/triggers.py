@@ -40,7 +40,7 @@ def vpc_opr_on_vpc_init(body, spec, **kwargs):
 	param.name = kwargs['name']
 	param.body = body
 	param.spec = spec
-	run_task(wffactory().VpcCreate(param=param))
+	run_workflow(wffactory().VpcCreate(param=param))
 
 @kopf.on.resume(group, version, RESOURCES.vpcs, when=LAMBDAS.vpc_status_provisioned)
 @kopf.on.update(group, version, RESOURCES.vpcs, when=LAMBDAS.vpc_status_provisioned)
@@ -51,7 +51,7 @@ def vpc_opr_on_vpc_provisioned(body, spec, **kwargs):
 	param.body = body
 	param.spec = spec
 	param.diff = kwargs['diff']
-	run_task(wffactory().VpcProvisioned(param=param))
+	run_workflow(wffactory().VpcProvisioned(param=param))
 
 @kopf.on.delete(group, version, RESOURCES.vpcs)
 def  vpc_opr_on_vpc_delete(body, spec, **kwargs):
@@ -59,4 +59,4 @@ def  vpc_opr_on_vpc_delete(body, spec, **kwargs):
 	param.name = kwargs['name']
 	param.body = body
 	param.spec = spec
-	run_task(wffactory().VpcDelete(param=param))
+	run_workflow(wffactory().VpcDelete(param=param))

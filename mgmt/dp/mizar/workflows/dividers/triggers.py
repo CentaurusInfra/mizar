@@ -35,7 +35,7 @@ def divider_opr_on_divider_init(body, spec, **kwargs):
 	param.name = kwargs['name']
 	param.body = body
 	param.spec = spec
-	run_task(wffactory().DividerCreate(param=param))
+	run_workflow(wffactory().DividerCreate(param=param))
 
 
 @kopf.on.resume(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_provisioned)
@@ -46,7 +46,7 @@ def divider_opr_on_divider_provisioned(body, spec, **kwargs):
 	param.name = kwargs['name']
 	param.body = body
 	param.spec = spec
-	run_task(wffactory().DividerProvisioned(param=param))
+	run_workflow(wffactory().DividerProvisioned(param=param))
 
 @kopf.on.delete(group, version, RESOURCES.dividers)
 def  divider_opr_on_divider_delete(body, spec, **kwargs):
@@ -54,4 +54,4 @@ def  divider_opr_on_divider_delete(body, spec, **kwargs):
 	param.name = kwargs['name']
 	param.body = body
 	param.spec = spec
-	run_task(wffactory().DividerDelete(param=param))
+	run_workflow(wffactory().DividerDelete(param=param))
