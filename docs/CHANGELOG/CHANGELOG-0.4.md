@@ -30,21 +30,16 @@ THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ### Management plane
 
 ### Tests
-* Basic end-to-end tests
-[#147](https://github.com/futurewei-cloud/mizar/pull/147),
-[#142](https://github.com/futurewei-cloud/mizar/pull/142),
-[#134](https://github.com/futurewei-cloud/mizar/pull/134)
+* (v0.3.1) Basic end-to-end tests
+  [#147](https://github.com/futurewei-cloud/mizar/pull/147),
+  [#142](https://github.com/futurewei-cloud/mizar/pull/142), [#134](https://github.com/futurewei-cloud/mizar/pull/134)
 
 ### Fixes
 
-* Fix scaled endpoint bug when bouncer is on same client host
-[#146](https://github.com/futurewei-cloud/mizar/pull/146),
-[#150](https://github.com/futurewei-cloud/mizar/pull/150)
-
-* Fix for intermittent Luigi scheduler disconnect
-[#143](https://github.com/futurewei-cloud/mizar/pull/143)
-
-* Fix scaled endpoint delete workflow
-[#138](https://github.com/futurewei-cloud/mizar/pull/138)
+* (v0.3.1) Fix scaled endpoint bug when bouncer is on same client host
+  [#146](https://github.com/futurewei-cloud/mizar/pull/146),
+  [#150](https://github.com/futurewei-cloud/mizar/pull/150)
+* (v0.3.1) Fix for intermittent Luigi scheduler disconnect [#143](https://github.com/futurewei-cloud/mizar/pull/143)
+* (v0.3.1) Fix scaled endpoint delete workflow [#138](https://github.com/futurewei-cloud/mizar/pull/138)
 
 ### Documentation
