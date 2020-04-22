@@ -24,6 +24,7 @@ class MaglevTable:
             self._populate_table()
         if not self.table:
             raise Exception("Table is empty.")
+        self.altered = False
         return self.table
 
     def add(self, element):
