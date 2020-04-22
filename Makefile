@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-modules := src test teste2e
+modules := src test teste2e mgmt
 build := build
 
 CC = gcc
@@ -114,6 +114,9 @@ lcov:gcov
 	lcov --remove lcov/transit_cov.info '/usr/*' '*src/rpcgen/*' '*src/extern/*' -o lcov/transit_cov_filtered.info
 	genhtml lcov/transit_cov_filtered.info -o lcov/report
 	@echo "see lcov/report/index.html"
+
+.PHONY: mgmt_tests
+mgmt::
 
 dirmake:
 	mkdir -p core
