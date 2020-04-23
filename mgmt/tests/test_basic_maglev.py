@@ -27,17 +27,20 @@ class test_basic_maglev(unittest.TestCase):
         logger.info("Testing adding and removing from the maglev hash table.")
 
         exp_table = ["chain0", "chain0", "chain0", "chain1", "chain1", "chain2", "chain2"]
-        do_add_remove_maglev(self, self.table, None, None, exp_table)
+        do_add_remove_maglev(self, self.table, None, None, exp_table, {})
 
         exp_table = ["chain1", "chain0", "chain0", "chain1", "chain1", "chain0", "chain0"]
-        do_add_remove_maglev(self, self.table, None, "chain2", exp_table)
+        exp_prev_ele_map = {'chain1': ['chain0'], 'chain0': ['chain2']}
+        do_add_remove_maglev(self, self.table, None, "chain2", exp_table, exp_prev_ele_map)
 
         exp_table = ["chain0", "chain0", "chain0", "chain2", "chain0", "chain2", "chain2"]
-        do_add_remove_maglev(self, self.table, "chain2", "chain1", exp_table)
+        exp_prev_ele_map = {'chain0': ['chain1'], 'chain2': ['chain1', 'chain0']}
+        do_add_remove_maglev(self, self.table, "chain2", "chain1", exp_table, exp_prev_ele_map)
 
         exp_table = ["chain1", "chain2", "chain1", "chain1", "chain1", "chain2", "chain2"]
-        do_add_remove_maglev(self, self.table, "chain1", "chain0", exp_table)
+        exp_prev_ele_map = {'chain1': ['chain0', 'chain2'], 'chain2': ['chain0']}
+        do_add_remove_maglev(self, self.table, "chain1", "chain0", exp_table, exp_prev_ele_map)
 
         exp_table = ["chain0", "chain0", "chain0", "chain1", "chain1", "chain2", "chain2"]
-        do_add_remove_maglev(self, self.table, "chain0", None, exp_table)
-
+        exp_prev_ele_map = {'chain0': ['chain1', 'chain2']}
+        do_add_remove_maglev(self, self.table, "chain0", None, exp_table, exp_prev_ele_map)
