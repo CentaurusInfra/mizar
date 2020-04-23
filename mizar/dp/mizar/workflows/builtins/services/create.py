@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020 The Authors.
 
@@ -21,10 +19,39 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-DIR=${1:-.}
-USER=${2:-dev}
-DOCKER_ACC=${3:-"localhost:5000"}
+import logging
+from mizar.common.workflow import *
+from mizar.dp.mizar.operators.bouncers.bouncers_operator import *
+from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
+from mizar.dp.mizar.operators.nets.nets_operator import *
+logger = logging.getLogger()
 
-# Build the daemon image
-docker image build -t $DOCKER_ACC/testpod:latest -f $DIR/etc/docker/test.Dockerfile $DIR
-docker image push $DOCKER_ACC/testpod:latest
+endpoints_opr = EndpointOperator()
+bouncers_opr = BouncerOperator()
+
+class k8sServiceCreate(WorkflowTask):
+
+	def requires(self):
+		logger.info("Requires {task}".format(task=self.__class__.__name__))
+		return []
+
+	def run(self):
+		logger.info("Run {task}".format(task=self.__class__.__name__))
+		endpoints_opr.create_scaled_endpoint(self.param.name, self.param.spec)
+		self.finalize()
+
+
+class k8sEndpointsUpdate(WorkflowTask):
+
+	def requires(self):
+		logger.info("Requires {task}".format(task=self.__class__.__name__))
+		return []
+
+	def run(self):
+		logger.info("Run {task}".format(task=self.__class__.__name__))
+		if 'subsets' not in self.param.body:
+			return
+		ep = endpoints_opr.update_scaled_endpoint_backend(self.param.name, self.param.body['subsets'])
+		if ep:
+			bouncers_opr.update_endpoint_with_bouncers(ep)
+		self.finalize()

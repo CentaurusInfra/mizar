@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020 The Authors.
 
@@ -21,10 +19,37 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-DIR=${1:-.}
-USER=${2:-dev}
-DOCKER_ACC=${3:-"localhost:5000"}
+import logging
+from mizar.common.workflow import *
+from mizar.dp.mizar.operators.nets.nets_operator import *
+from mizar.dp.mizar.operators.dividers.dividers_operator import *
+from mizar.dp.mizar.operators.bouncers.bouncers_operator import *
+from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
+logger = logging.getLogger()
 
-# Build the daemon image
-docker image build -t $DOCKER_ACC/testpod:latest -f $DIR/etc/docker/test.Dockerfile $DIR
-docker image push $DOCKER_ACC/testpod:latest
+nets_opr = NetOperator()
+dividers_opr = DividerOperator()
+bouncers_opr = BouncerOperator()
+endpoints_opr = EndpointOperator()
+
+class NetDelete(WorkflowTask):
+
+	def requires(self):
+		logger.info("Requires {task}".format(task=self.__class__.__name__))
+		return []
+
+	def run(self):
+		logger.info("Run {task}".format(task=self.__class__.__name__))
+		n = nets_opr.store.get_net(self.param.name)
+		n.set_obj_spec(self.param.spec)
+		# TODO: Handle the error when all endpoints have not been deleted.
+		while len(endpoints_opr.store.get_eps_in_net(n.name)):
+			pass
+
+		nets_opr.delete_net_bouncers(n, n.n_bouncers)
+		while len(bouncers_opr.store.get_bouncers_of_net(n.name)) > 1:
+			pass
+		dividers_opr.delete_net(n)
+		n.delete_obj()
+		nets_opr.store.delete_net(n.name)
+		self.finalize()
