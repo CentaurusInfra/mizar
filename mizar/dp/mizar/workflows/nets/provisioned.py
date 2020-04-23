@@ -26,24 +26,25 @@ logger = logging.getLogger()
 
 nets_opr = NetOperator()
 
+
 class NetProvisioned(WorkflowTask):
 
-	def requires(self):
-		logger.info("Requires {task}".format(task=self.__class__.__name__))
-		return []
+    def requires(self):
+        logger.info("Requires {task}".format(task=self.__class__.__name__))
+        return []
 
-	def run(self):
-		logger.info("Run {task}".format(task=self.__class__.__name__))
-		net = nets_opr.get_net_stored_obj(self.param.name, self.param.spec)
-		nets_opr.store_update(net)
+    def run(self):
+        logger.info("Run {task}".format(task=self.__class__.__name__))
+        net = nets_opr.get_net_stored_obj(self.param.name, self.param.spec)
+        nets_opr.store_update(net)
 
-		for d in self.param.diff:
-			if d[0] == 'change':
-				self.process_change(net=net, field=d[1], old=d[2], new=d[3])
+        for d in self.param.diff:
+            if d[0] == 'change':
+                self.process_change(net=net, field=d[1], old=d[2], new=d[3])
 
-		self.finalize()
+        self.finalize()
 
-	def process_change(self, net, field, old, new):
-		logger.info("diff_field:{}, from:{}, to:{}".format(field, old, new))
-		if field[0] == 'spec' and field[1] == 'bouncers':
-			return nets_opr.process_bouncer_change(net, int(old), int(new))
+    def process_change(self, net, field, old, new):
+        logger.info("diff_field:{}, from:{}, to:{}".format(field, old, new))
+        if field[0] == 'spec' and field[1] == 'bouncers':
+            return nets_opr.process_bouncer_change(net, int(old), int(new))

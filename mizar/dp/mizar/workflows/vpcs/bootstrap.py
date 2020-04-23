@@ -27,14 +27,15 @@ logger = logging.getLogger()
 
 vpcs_opr = VpcOperator()
 
+
 class VpcOperatorStart(WorkflowTask):
 
-	def requires(self):
-		logger.info("Requires {task}".format(task=self.__class__.__name__))
-		return []
+    def requires(self):
+        logger.info("Requires {task}".format(task=self.__class__.__name__))
+        return []
 
-	def run(self):
-		logger.info("Run {task}".format(task=self.__class__.__name__))
-		vpcs_opr.query_existing_vpcs()
-		vpcs_opr.create_default_vpc()
-		self.finalize()
+    def run(self):
+        logger.info("Run {task}".format(task=self.__class__.__name__))
+        vpcs_opr.query_existing_vpcs()
+        vpcs_opr.create_default_vpc()
+        self.finalize()

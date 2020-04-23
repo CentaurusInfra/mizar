@@ -30,33 +30,35 @@ from mizar.common.wf_param import *
 logger = logging.getLogger()
 
 annotations_filter = {OBJ_DEFAULTS.mizar_service_annotation_key:
-						OBJ_DEFAULTS.mizar_service_annotation_val}
+                      OBJ_DEFAULTS.mizar_service_annotation_val}
+
 
 @kopf.on.resume('', 'v1', 'services', annotations=annotations_filter)
 @kopf.on.update('', 'v1', 'services', annotations=annotations_filter)
 @kopf.on.create('', 'v1', 'services', annotations=annotations_filter)
 async def services_opr_on_services(body, spec, **kwargs):
-	param = HandlerParam()
-	param.name = kwargs['name']
-	param.body = body
-	param.spec = spec
-	run_workflow(wffactory().k8sServiceCreate(param=param))
+    param = HandlerParam()
+    param.name = kwargs['name']
+    param.body = body
+    param.spec = spec
+    run_workflow(wffactory().k8sServiceCreate(param=param))
 
 
 @kopf.on.resume('', 'v1', 'endpoints', annotations=annotations_filter)
 @kopf.on.update('', 'v1', 'endpoints', annotations=annotations_filter)
 @kopf.on.create('', 'v1', 'endpoints', annotations=annotations_filter)
 async def services_opr_on_endpoints(body, spec, **kwargs):
-	param = HandlerParam()
-	param.name = kwargs['name']
-	param.body = body
-	param.spec = spec
-	run_workflow(wffactory().k8sEndpointsUpdate(param=param))
+    param = HandlerParam()
+    param.name = kwargs['name']
+    param.body = body
+    param.spec = spec
+    run_workflow(wffactory().k8sEndpointsUpdate(param=param))
+
 
 @kopf.on.delete('', 'v1', 'services', annotations=annotations_filter)
 async def services_opr_on_services(body, spec, **kwargs):
-	param = HandlerParam()
-	param.name = kwargs['name']
-	param.body = body
-	param.spec = spec
-	run_workflow(wffactory().k8sServiceDelete(param=param))
+    param = HandlerParam()
+    param.name = kwargs['name']
+    param.body = body
+    param.spec = spec
+    run_workflow(wffactory().k8sServiceDelete(param=param))

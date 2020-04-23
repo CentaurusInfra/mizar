@@ -26,22 +26,23 @@ logger = logging.getLogger()
 
 vpcs_opr = VpcOperator()
 
+
 class VpcProvisioned(WorkflowTask):
 
-	def requires(self):
-		logger.info("Requires {task}".format(task=self.__class__.__name__))
-		return []
+    def requires(self):
+        logger.info("Requires {task}".format(task=self.__class__.__name__))
+        return []
 
-	def run(self):
-		logger.info("Run {task}".format(task=self.__class__.__name__))
-		vpc = vpcs_opr.get_vpc_stored_obj(self.param.name, self.param.spec)
-		vpcs_opr.store_update(vpc)
-		for d in self.param.diff:
-			if d[0] == 'change':
-				self.process_change(vpc=vpc, field=d[1], old=d[2], new=d[3])
-		self.finalize()
+    def run(self):
+        logger.info("Run {task}".format(task=self.__class__.__name__))
+        vpc = vpcs_opr.get_vpc_stored_obj(self.param.name, self.param.spec)
+        vpcs_opr.store_update(vpc)
+        for d in self.param.diff:
+            if d[0] == 'change':
+                self.process_change(vpc=vpc, field=d[1], old=d[2], new=d[3])
+        self.finalize()
 
-	def process_change(self, vpc, field, old, new):
-		logger.info("diff_field:{}, from:{}, to:{}".format(field, old, new))
-		if field[0] == 'spec' and field[1] == 'dividers':
-			return vpcs_opr.process_divider_change(vpc, int(old), int(new))
+    def process_change(self, vpc, field, old, new):
+        logger.info("diff_field:{}, from:{}, to:{}".format(field, old, new))
+        if field[0] == 'spec' and field[1] == 'dividers':
+            return vpcs_opr.process_divider_change(vpc, int(old), int(new))

@@ -22,4 +22,3 @@
 import logging
 from mizar.common.workflow import *
 logger = logging.getLogger()
-

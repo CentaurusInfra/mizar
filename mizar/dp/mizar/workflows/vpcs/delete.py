@@ -28,6 +28,7 @@ logger = logging.getLogger()
 vpcs_opr = VpcOperator()
 nets_opr = NetOperator()
 
+
 class VpcDelete(WorkflowTask):
 
     def requires(self):
