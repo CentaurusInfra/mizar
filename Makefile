@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-modules := src test teste2e mgmt
+modules := src test teste2e mizar
 build := build
 
 CC = gcc
@@ -116,7 +116,7 @@ lcov:gcov
 	@echo "see lcov/report/index.html"
 
 .PHONY: mgmt_tests
-mgmt::
+mizar::
 
 dirmake:
 	mkdir -p core
