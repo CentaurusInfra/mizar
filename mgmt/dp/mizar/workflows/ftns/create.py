@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020 The Authors.
 
@@ -21,22 +19,40 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-DIR=${1:-.}
-USER=${2:-dev}
+import logging
+from common.workflow import *
+from dp.mizar.operators.dividers.dividers_operator import *
+from dp.mizar.operators.droplets.droplets_operator import *
+from dp.mizar.operators.ftns.ftns_operator import *
+from dp.mizar.operators.endpoints.endpoints_operator import *
+from dp.mizar.operators.nets.nets_operator import *
+from dp.mizar.operators.vpcs.vpcs_operator import *
 
-# Create the CRDs
-kubectl delete bouncers.mizar.com --all 2> /tmp/kubetctl.err
-kubectl delete dividers.mizar.com --all 2> /tmp/kubetctl.err
-kubectl delete droplets.mizar.com --all 2> /tmp/kubetctl.err
-kubectl delete endpoints.mizar.com --all 2> /tmp/kubetctl.err
-kubectl delete nets.mizar.com --all 2> /tmp/kubetctl.err
-kubectl delete vpcs.mizar.com --all 2> /tmp/kubetctl.err
-kubectl delete ftns.mizar.com --all 2> /tmp/kubetctl.err
+logger = logging.getLogger()
 
-kubectl apply -f $DIR/mgmt/etc/crds/bouncers.crd.yaml
-kubectl apply -f $DIR/mgmt/etc/crds/dividers.crd.yaml
-kubectl apply -f $DIR/mgmt/etc/crds/droplets.crd.yaml
-kubectl apply -f $DIR/mgmt/etc/crds/endpoints.crd.yaml
-kubectl apply -f $DIR/mgmt/etc/crds/nets.crd.yaml
-kubectl apply -f $DIR/mgmt/etc/crds/vpcs.crd.yaml
-kubectl apply -f $DIR/mgmt/etc/crds/ftns.crd.yaml
+dividers_opr = DividerOperator()
+droplets_opr = DropletOperator()
+ftns_opr = FtnOperator()
+endpoints_opr = EndpointOperator()
+nets_opr = NetOperator()
+vpcs_opr = VpcOperator()
+
+logger = logging.getLogger()
+class FtnCreate(WorkflowTask):
+
+	def requires(self):
+		logger.info("Requires {task}".format(task=self.__class__.__name__))
+		return []
+
+	def run(self):
+		logger.info("Run {task}".format(task=self.__class__.__name__))
+		ftn = ftns_opr.get_ftn_stored_obj(self.param.name, self.param.spec)
+		while not droplets_opr.is_bootstrapped():
+			pass
+
+		droplets_opr.assign_ftn_droplet(ftn)
+
+		ftn.load_transit_xdp_pipeline_stage()
+		ftns_opr.set_ftn_provisioned(ftn)
+		ftns_opr.store.update_ftn(ftn)
+		self.finalize()

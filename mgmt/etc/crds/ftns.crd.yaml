@@ -21,7 +21,7 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: ftnnodes.mizar.com
+  name: ftns.mizar.com
 spec:
   scope: Namespaced
   group: mizar.com
@@ -31,32 +31,55 @@ spec:
       storage: true
   names:
     kind: Ftn
-    plural: ftnnodes
-    singular: ftnnode
+    plural: ftns
+    singular: ftn
     shortNames:
       - ftn
       - ftns
+  validation:
+    openAPIV3Schema:
+      properties:
+        name:
+          type: string
+        ip:
+          type: string
+        droplet:
+          type: string
+        mac:
+          type: string
+        chains:
+          type: array
+          items:
+            type: string
+          minItems: 1
+        nextnode:
+          type: string
   additionalPrinterColumns:
-    - name: Ip
+    - name: ip
       type: string
       priority: 0
       JSONPath: .spec.ip
-      description: The IP of this chain node
-    - name: Iplist
-      type: list of strings
-      priority: 0
-      JSONPath: .spec.iplist
-      description: The IP list of the chain nodes
-    - name: Sc
-      type: integer
-      priority: 0
-      JSONPath: .spec.sc
-      description: The switch count denotes the number of remaining nodes in the chain
-    - name: Destip
+      description: The IP address of ftn chain node
+    - name: droplet
       type: string
       priority: 0
-      JSONPath: .spec.destip
-      description: The IP of the next chain node for the query
+      JSONPath: .spec.droplet
+      description: The droplet where this ftn chain node deployed
+    - name: mac
+      type: string
+      priority: 0
+      JSONPath: .spec.mac
+      description: The Mac address of this ftn chain node
+    - name: chains
+      type: string
+      priority: 0
+      JSONPath: .spec.chains
+      description: The chain(s) that has this ftn chain node
+    - name: nextnode
+      type: string
+      priority: 0
+      JSONPath: .spec.nextnode
+      description: The next replica node following this ftn chain node
     - name: Status
       type: string
       priority: 0

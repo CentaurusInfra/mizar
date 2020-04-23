@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020 The Authors.
 
@@ -21,22 +19,17 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-DIR=${1:-.}
-USER=${2:-dev}
+import kopf
+import logging
+import luigi
+from common.common import *
+from common.constants import *
+from common.wf_factory import *
+from common.wf_param import *
 
-# Create the CRDs
-kubectl delete bouncers.mizar.com --all 2> /tmp/kubetctl.err
-kubectl delete dividers.mizar.com --all 2> /tmp/kubetctl.err
-kubectl delete droplets.mizar.com --all 2> /tmp/kubetctl.err
-kubectl delete endpoints.mizar.com --all 2> /tmp/kubetctl.err
-kubectl delete nets.mizar.com --all 2> /tmp/kubetctl.err
-kubectl delete vpcs.mizar.com --all 2> /tmp/kubetctl.err
-kubectl delete ftns.mizar.com --all 2> /tmp/kubetctl.err
-
-kubectl apply -f $DIR/mgmt/etc/crds/bouncers.crd.yaml
-kubectl apply -f $DIR/mgmt/etc/crds/dividers.crd.yaml
-kubectl apply -f $DIR/mgmt/etc/crds/droplets.crd.yaml
-kubectl apply -f $DIR/mgmt/etc/crds/endpoints.crd.yaml
-kubectl apply -f $DIR/mgmt/etc/crds/nets.crd.yaml
-kubectl apply -f $DIR/mgmt/etc/crds/vpcs.crd.yaml
-kubectl apply -f $DIR/mgmt/etc/crds/ftns.crd.yaml
+def ftn_opr_on_ftn_init(body, spec, **kwargs):
+	param = HandlerParam()
+	param.name = kwargs['name']
+	param.body = body
+	param.spec = spec
+	run_workflow(wffactory().FtnCreate(param=param))

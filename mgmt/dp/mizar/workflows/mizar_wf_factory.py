@@ -56,6 +56,11 @@ from dp.mizar.workflows.builtins.services.create import *
 from dp.mizar.workflows.builtins.services.provisioned import *
 from dp.mizar.workflows.builtins.services.delete import *
 
+from dp.mizar.workflows.ftns.bootstrap import *
+from dp.mizar.workflows.ftns.create import *
+from dp.mizar.workflows.ftns.provisioned import *
+from dp.mizar.workflows.ftns.delete import *
+
 class MizarWorkflowFactory():
 
 	def VpcOperatorStart(self, param):
@@ -135,3 +140,15 @@ class MizarWorkflowFactory():
 
 	def k8sServiceDelete(self, param):
 		return k8sServiceDelete(param=param)
+
+	def FtnOperatorStart(self, param):
+		return FtnOperatorStart(param=param)
+
+	def FtnCreate(self, param):
+		return FtnCreate(param=param)
+
+	def FtnProvisioned(self, param):
+		return FtnProvisioned(param=param)
+
+	def FtnDelete(self, param):
+		return FtnDelete(param=param)

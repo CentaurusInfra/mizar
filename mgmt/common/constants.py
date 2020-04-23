@@ -73,6 +73,9 @@ class OBJ_STATUS:
 	divider_status_provisioned = obj_provisioned
 	divider_status_placed = 'Placed'
 
+	ftn_status_init = obj_init
+	ftn_status_provisioned = obj_provisioned
+
 class OBJ_DEFAULTS:
 	default_ep_vpc = 'vpc0'
 	default_ep_net = 'net0'
@@ -129,4 +132,3 @@ class LAMBDAS:
 	divider_status_allocated = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.divider_status_allocated
 	divider_status_provisioned = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.divider_status_provisioned
 	divider_status_placed = lambda body, **_: body.get('spec', {}).get('status', '') == OBJ_STATUS.divider_status_placed
-

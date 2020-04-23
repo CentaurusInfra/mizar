@@ -50,6 +50,8 @@ class OprStore(object):
 		self.bouncers_net_store = {}
 		self.bouncers_vpc_store = {}
 
+		self.ftns_store = {}
+
 	def update_vpc(self,vpc):
 		self.vpcs_store[vpc.name] = vpc
 
@@ -268,3 +270,16 @@ class OprStore(object):
 	def _dump_bouncers(self):
 		for b in self.bouncers_store.values():
 			logger.info("Bouncer: {}, Spec: {}".format(b.name, b.get_obj_spec()))
+
+	def get_ftn(self):
+		if name in self.ftns_store:
+			return self.ftns_store[name]
+		return None
+
+	def update_ftn(self, f):
+		self.ftns_store[f.name] = f
+
+	def delete_ftn(self, name):
+		if name not in self.ftns_store:
+			return
+		b = self.ftns_store.pop(name)

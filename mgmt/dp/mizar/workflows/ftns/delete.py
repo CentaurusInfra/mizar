@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020 The Authors.
 
@@ -21,22 +19,24 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-DIR=${1:-.}
-USER=${2:-dev}
+import logging
+from common.workflow import *
+from dp.mizar.operators.dividers.dividers_operator import *
+from dp.mizar.operators.ftns.ftns_operator import *
+from dp.mizar.operators.endpoints.endpoints_operator import *
+from dp.mizar.operators.nets.nets_operator import *
 
-# Create the CRDs
-kubectl delete bouncers.mizar.com --all 2> /tmp/kubetctl.err
-kubectl delete dividers.mizar.com --all 2> /tmp/kubetctl.err
-kubectl delete droplets.mizar.com --all 2> /tmp/kubetctl.err
-kubectl delete endpoints.mizar.com --all 2> /tmp/kubetctl.err
-kubectl delete nets.mizar.com --all 2> /tmp/kubetctl.err
-kubectl delete vpcs.mizar.com --all 2> /tmp/kubetctl.err
-kubectl delete ftns.mizar.com --all 2> /tmp/kubetctl.err
+logger = logging.getLogger()
 
-kubectl apply -f $DIR/mgmt/etc/crds/bouncers.crd.yaml
-kubectl apply -f $DIR/mgmt/etc/crds/dividers.crd.yaml
-kubectl apply -f $DIR/mgmt/etc/crds/droplets.crd.yaml
-kubectl apply -f $DIR/mgmt/etc/crds/endpoints.crd.yaml
-kubectl apply -f $DIR/mgmt/etc/crds/nets.crd.yaml
-kubectl apply -f $DIR/mgmt/etc/crds/vpcs.crd.yaml
-kubectl apply -f $DIR/mgmt/etc/crds/ftns.crd.yaml
+ftns_opr = FtnOperator()
+
+class FtnDelete(WorkflowTask):
+
+	def requires(self):
+		logger.info("Requires {task}".format(task=self.__class__.__name__))
+		return []
+
+	def run(self):
+		logger.info("Run {task}".format(task=self.__class__.__name__))
+		ftn = ftns_opr.store.get_ftn(self.param.name)
+		ftn.set_obj_spec(self.param.spec)

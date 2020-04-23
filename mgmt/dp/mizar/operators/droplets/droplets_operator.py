@@ -92,6 +92,11 @@ class DropletOperator(object):
 		d = random.sample(droplets, 1)[0]
 		bouncer.set_droplet(d)
 
+	def assign_ftn_droplet(self, ftn):
+		droplets = set(self.store.get_all_droplets())
+		d = random.sample(droplets, 1)[0]
+		ftn.set_droplet(d)
+
 	def assign_divider_droplet(self, divider):
 		droplets = set(self.store.get_all_droplets())
 		d = random.sample(droplets, 1)[0]
@@ -101,5 +106,3 @@ class DropletOperator(object):
 		name = kwargs['name']
 		logger.info("*delete_droplet {}".format(name))
 		#self.ds.delete(name)
-
-
