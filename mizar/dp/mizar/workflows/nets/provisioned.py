@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020 The Authors.
 
@@ -21,10 +19,31 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-DIR=${1:-.}
-USER=${2:-dev}
-DOCKER_ACC=${3:-"localhost:5000"}
+import logging
+from mizar.common.workflow import *
+from mizar.dp.mizar.operators.nets.nets_operator import *
+logger = logging.getLogger()
 
-# Build the daemon image
-docker image build -t $DOCKER_ACC/testpod:latest -f $DIR/etc/docker/test.Dockerfile $DIR
-docker image push $DOCKER_ACC/testpod:latest
+nets_opr = NetOperator()
+
+class NetProvisioned(WorkflowTask):
+
+	def requires(self):
+		logger.info("Requires {task}".format(task=self.__class__.__name__))
+		return []
+
+	def run(self):
+		logger.info("Run {task}".format(task=self.__class__.__name__))
+		net = nets_opr.get_net_stored_obj(self.param.name, self.param.spec)
+		nets_opr.store_update(net)
+
+		for d in self.param.diff:
+			if d[0] == 'change':
+				self.process_change(net=net, field=d[1], old=d[2], new=d[3])
+
+		self.finalize()
+
+	def process_change(self, net, field, old, new):
+		logger.info("diff_field:{}, from:{}, to:{}".format(field, old, new))
+		if field[0] == 'spec' and field[1] == 'bouncers':
+			return nets_opr.process_bouncer_change(net, int(old), int(new))

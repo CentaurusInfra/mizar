@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020 The Authors.
 
@@ -21,10 +19,32 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-DIR=${1:-.}
-USER=${2:-dev}
-DOCKER_ACC=${3:-"localhost:5000"}
+import logging
+from mizar.common.workflow import *
+from mizar.dp.mizar.operators.nets.nets_operator import *
+from mizar.dp.mizar.operators.dividers.dividers_operator import *
+from mizar.dp.mizar.operators.bouncers.bouncers_operator import *
 
-# Build the daemon image
-docker image build -t $DOCKER_ACC/testpod:latest -f $DIR/etc/docker/test.Dockerfile $DIR
-docker image push $DOCKER_ACC/testpod:latest
+logger = logging.getLogger()
+
+nets_opr = NetOperator()
+dividers_opr = DividerOperator()
+bouncers_opr = BouncerOperator()
+
+class NetCreate(WorkflowTask):
+
+	def requires(self):
+		logger.info("Requires {task}".format(task=self.__class__.__name__))
+		return []
+
+	def run(self):
+		logger.info("Run {task}".format(task=self.__class__.__name__))
+		n = nets_opr.get_net_stored_obj(self.param.name, self.param.spec)
+
+		while len(dividers_opr.store.get_dividers_of_vpc(n.vpc)) < 1:
+			pass
+
+		nets_opr.create_net_bouncers(n, n.n_bouncers)
+		nets_opr.set_net_provisioned(n)
+		nets_opr.store_update(n)
+		self.finalize()

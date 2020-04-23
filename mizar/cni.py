@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/python3
 
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020 The Authors.
@@ -21,10 +21,4 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-DIR=${1:-.}
-USER=${2:-dev}
-DOCKER_ACC=${3:-"localhost:5000"}
-
-# Build the daemon image
-docker image build -t $DOCKER_ACC/testpod:latest -f $DIR/etc/docker/test.Dockerfile $DIR
-docker image push $DOCKER_ACC/testpod:latest
+from mizar.cni.mizarcni import *

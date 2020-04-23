@@ -21,7 +21,7 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-KINDCONF=${1:-"${HOME}/mizar/build/tests/kind/config"}
+KINDCONF=${1:-"${PWD}/build/tests/kind/config"}
 USER=${2:-dev}
 NODES=${3:-1}
 
@@ -49,9 +49,6 @@ fi
 
 NODE_TEMPLATE="  - role: worker
     image: ${REPO}/kindnode:latest
-    extraMounts:
-      - hostPath: .
-        containerPath: /var/mizar
 "
 FINAL_NODES=""
 
@@ -70,8 +67,5 @@ ${PATCH}
 nodes:
   - role: control-plane
     image: ${REPO}/kindnode:latest
-    extraMounts:
-      - hostPath: .
-        containerPath: /var/mizar
 ${FINAL_NODES}
 EOF

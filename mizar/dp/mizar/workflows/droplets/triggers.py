@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020 The Authors.
 
@@ -21,10 +19,30 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-DIR=${1:-.}
-USER=${2:-dev}
-DOCKER_ACC=${3:-"localhost:5000"}
+import kopf
+import logging
+import asyncio
+from mizar.common.common import *
+from mizar.common.constants import *
+from mizar.common.wf_factory import *
+from mizar.common.wf_param import *
 
-# Build the daemon image
-docker image build -t $DOCKER_ACC/testpod:latest -f $DIR/etc/docker/test.Dockerfile $DIR
-docker image push $DOCKER_ACC/testpod:latest
+@kopf.on.resume(group, version, RESOURCES.droplets, when=LAMBDAS.droplet_status_init)
+@kopf.on.update(group, version, RESOURCES.droplets, when=LAMBDAS.droplet_status_init)
+@kopf.on.create(group, version, RESOURCES.droplets, when=LAMBDAS.droplet_status_init)
+def droplet_opr_on_droplet_init(body, spec, **kwargs):
+	param = HandlerParam()
+	param.name = kwargs['name']
+	param.body = body
+	param.spec = spec
+	run_workflow(wffactory().DropletCreate(param=param))
+
+@kopf.on.resume(group, version, RESOURCES.droplets, when=LAMBDAS.droplet_status_provisioned)
+@kopf.on.update(group, version, RESOURCES.droplets, when=LAMBDAS.droplet_status_provisioned)
+@kopf.on.create(group, version, RESOURCES.droplets, when=LAMBDAS.droplet_status_provisioned)
+def droplet_opr_on_droplet_provisioned(body, spec, **kwargs):
+	param = HandlerParam()
+	param.name = kwargs['name']
+	param.body = body
+	param.spec = spec
+	run_workflow(wffactory().DropletProvisioned(param=param))

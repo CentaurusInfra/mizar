@@ -32,11 +32,11 @@ if [[ "$USER" == "user" || "$USER" == "final" ]]; then
 fi
 
 # Build the daemon image
-docker image build -t $DOCKER_ACC/dropletd:latest -f $DIR/mgmt/etc/docker/daemon.Dockerfile $DIR
+docker image build -t $DOCKER_ACC/dropletd:latest -f $DIR/etc/docker/daemon.Dockerfile $DIR
 if [[ "$USER" == "dev" || "$USER" == "final" ]]; then
     docker image push $DOCKER_ACC/dropletd:latest
 fi
 
 # Delete existing deployment and deploy
 kubectl delete daemonset.apps/mizar-daemon 2> /tmp/kubetctl.err
-kubectl apply -f $DIR/mgmt/etc/deploy/$YAML_FILE
+kubectl apply -f $DIR/etc/deploy/$YAML_FILE

@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020 The Authors.
 
@@ -21,10 +19,15 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-DIR=${1:-.}
-USER=${2:-dev}
-DOCKER_ACC=${3:-"localhost:5000"}
-
-# Build the daemon image
-docker image build -t $DOCKER_ACC/testpod:latest -f $DIR/etc/docker/test.Dockerfile $DIR
-docker image push $DOCKER_ACC/testpod:latest
+FROM python:3.7
+RUN apt-get update -y
+RUN apt-get install net-tools
+COPY . /var/mizar/
+RUN pip3 install /var/mizar/
+RUN ln -snf /var/mizar/build/bin /trn_bin
+RUN mkdir -p /var/run/luigi
+RUN mkdir -p /var/log/luigi
+RUN mkdir -p /var/lib/luigi
+RUN mkdir -p /etc/luigi
+COPY etc/luigi.cfg /etc/luigi/luigi.cfg
+CMD kopf run --standalone /var/mizar/mizar/operator.py
