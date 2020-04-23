@@ -31,32 +31,34 @@ from mizar.common.wf_param import *
 # def vpc_opr_on_vpc_delete(body, **kwargs):
 #     vpc_operator.on_vpc_delete(body, **kwargs)
 
+
 @kopf.on.resume(group, version, RESOURCES.nets, when=LAMBDAS.net_status_init)
 @kopf.on.update(group, version, RESOURCES.nets, when=LAMBDAS.net_status_init)
 @kopf.on.create(group, version, RESOURCES.nets, when=LAMBDAS.net_status_init)
 def net_opr_on_net_init(body, spec, **kwargs):
-	param = HandlerParam()
-	param.name = kwargs['name']
-	param.body = body
-	param.spec = spec
-	run_workflow(wffactory().NetCreate(param=param))
+    param = HandlerParam()
+    param.name = kwargs['name']
+    param.body = body
+    param.spec = spec
+    run_workflow(wffactory().NetCreate(param=param))
+
 
 @kopf.on.resume(group, version, RESOURCES.nets, when=LAMBDAS.net_status_provisioned)
 @kopf.on.update(group, version, RESOURCES.nets, when=LAMBDAS.net_status_provisioned)
 @kopf.on.create(group, version, RESOURCES.nets, when=LAMBDAS.net_status_provisioned)
 def net_opr_on_net_provisioned(body, spec, **kwargs):
-	param = HandlerParam()
-	param.name = kwargs['name']
-	param.body = body
-	param.spec = spec
-	param.diff = kwargs['diff']
-	run_workflow(wffactory().NetProvisioned(param=param))
+    param = HandlerParam()
+    param.name = kwargs['name']
+    param.body = body
+    param.spec = spec
+    param.diff = kwargs['diff']
+    run_workflow(wffactory().NetProvisioned(param=param))
 
 
 @kopf.on.delete(group, version, RESOURCES.nets)
-def  net_opr_on_net_delete(body, spec, **kwargs):
-	param = HandlerParam()
-	param.name = kwargs['name']
-	param.body = body
-	param.spec = spec
-	run_workflow(wffactory().NetDelete(param=param))
+def net_opr_on_net_delete(body, spec, **kwargs):
+    param = HandlerParam()
+    param.name = kwargs['name']
+    param.body = body
+    param.spec = spec
+    run_workflow(wffactory().NetDelete(param=param))

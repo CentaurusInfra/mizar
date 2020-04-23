@@ -32,71 +32,73 @@ from mizar.store.operator_store import OprStore
 
 logger = logging.getLogger()
 
+
 class BouncerOperator(object):
-	_instance = None
+    _instance = None
 
-	def __new__(cls, **kwargs):
-		if cls._instance is None:
-			cls._instance = super(BouncerOperator, cls).__new__(cls)
-			cls._init(cls, **kwargs)
-		return cls._instance
+    def __new__(cls, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(BouncerOperator, cls).__new__(cls)
+            cls._init(cls, **kwargs)
+        return cls._instance
 
-	def _init(self, **kwargs):
-		logger.info(kwargs)
-		self.store = OprStore()
-		config.load_incluster_config()
-		self.obj_api = client.CustomObjectsApi()
+    def _init(self, **kwargs):
+        logger.info(kwargs)
+        self.store = OprStore()
+        config.load_incluster_config()
+        self.obj_api = client.CustomObjectsApi()
 
-	def query_existing_bouncers(self):
-		logger.info("bouncer on_startup")
-		def list_bouncers_obj_fn(name, spec, plurals):
-			logger.info("Bootstrapped Bouncer {}".format(name))
-			b = Bouncer(name, self.obj_api, self.store, spec)
-			self.store_update(b)
+    def query_existing_bouncers(self):
+        logger.info("bouncer on_startup")
 
-		kube_list_obj(self.obj_api, RESOURCES.droplets, list_bouncers_obj_fn)
+        def list_bouncers_obj_fn(name, spec, plurals):
+            logger.info("Bootstrapped Bouncer {}".format(name))
+            b = Bouncer(name, self.obj_api, self.store, spec)
+            self.store_update(b)
 
-	def get_bouncer_tmp_obj(self, name, spec):
-		return Bouncer(name, self.obj_api, None, spec)
+        kube_list_obj(self.obj_api, RESOURCES.droplets, list_bouncers_obj_fn)
 
-	def get_bouncer_stored_obj(self, name, spec):
-		return Bouncer(name, self.obj_api, self.store, spec)
+    def get_bouncer_tmp_obj(self, name, spec):
+        return Bouncer(name, self.obj_api, None, spec)
 
-	def store_update(self, b):
-		self.store.update_bouncer(b)
+    def get_bouncer_stored_obj(self, name, spec):
+        return Bouncer(name, self.obj_api, self.store, spec)
 
-	def set_bouncer_provisioned(self, bouncer):
-		bouncer.set_status(OBJ_STATUS.bouncer_status_provisioned)
-		bouncer.update_obj()
+    def store_update(self, b):
+        self.store.update_bouncer(b)
 
-	def update_bouncers_with_divider(self, div):
-		bouncers = self.store.get_bouncers_of_vpc(div.vpc)
-		for b in bouncers.values():
-			logger.info("BB {}".format(b.name))
-			b.update_vpc(set([div]))
+    def set_bouncer_provisioned(self, bouncer):
+        bouncer.set_status(OBJ_STATUS.bouncer_status_provisioned)
+        bouncer.update_obj()
 
-	def delete_divider_from_bouncers(self, div):
-		bouncers = self.store.get_bouncers_of_vpc(div.vpc)
-		for b in bouncers.values():
-			b.update_vpc(set([div]), False)
+    def update_bouncers_with_divider(self, div):
+        bouncers = self.store.get_bouncers_of_vpc(div.vpc)
+        for b in bouncers.values():
+            logger.info("BB {}".format(b.name))
+            b.update_vpc(set([div]))
 
-	def update_endpoint_with_bouncers(self, ep):
-		bouncers = self.store.get_bouncers_of_net(ep.net)
-		eps = set([ep])
-		for key in bouncers:
-			bouncers[key].update_eps(eps)
+    def delete_divider_from_bouncers(self, div):
+        bouncers = self.store.get_bouncers_of_vpc(div.vpc)
+        for b in bouncers.values():
+            b.update_vpc(set([div]), False)
 
-		if ep.type == OBJ_DEFAULTS.ep_type_simple:
-			ep.update_bouncers(bouncers)
+    def update_endpoint_with_bouncers(self, ep):
+        bouncers = self.store.get_bouncers_of_net(ep.net)
+        eps = set([ep])
+        for key in bouncers:
+            bouncers[key].update_eps(eps)
 
-	def delete_endpoint_from_bouncers(self, ep):
-		bouncers = self.store.get_bouncers_of_net(ep.net)
-		eps = set([ep])
-		for key in bouncers:
-			bouncers[key].delete_eps(eps)
-		self.store.update_bouncers_of_net(ep.net, bouncers)
-		if ep.type == OBJ_DEFAULTS.ep_type_simple:
-			ep.unload_transit_agent_xdp()
+        if ep.type == OBJ_DEFAULTS.ep_type_simple:
+            ep.update_bouncers(bouncers)
 
-	def delete_vpc(self, bouncer):
-		bouncer.delete_vpc()
+    def delete_endpoint_from_bouncers(self, ep):
+        bouncers = self.store.get_bouncers_of_net(ep.net)
+        eps = set([ep])
+        for key in bouncers:
+            bouncers[key].delete_eps(eps)
+        self.store.update_bouncers_of_net(ep.net, bouncers)
+        if ep.type == OBJ_DEFAULTS.ep_type_simple:
+            ep.unload_transit_agent_xdp()
+
+    def delete_vpc(self, bouncer):
+        bouncer.delete_vpc()

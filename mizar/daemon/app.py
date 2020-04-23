@@ -66,7 +66,8 @@ r = subprocess.Popen(cmd, shell=True)
 logging.info("Running transitd")
 sleep(1)
 config = '{"xdp_path": "/trn_xdp/trn_transit_xdp_ebpf_debug.o", "pcapfile": "/bpffs/transit_xdp.pcap"}'
-cmd = (f'''nsenter -t 1 -m -u -n -i /trn_bin/transit -s {ip} load-transit-xdp -i eth0 -j '{config}' ''')
+cmd = (
+    f'''nsenter -t 1 -m -u -n -i /trn_bin/transit -s {ip} load-transit-xdp -i eth0 -j '{config}' ''')
 
 r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
 output = r.stdout.read().decode().strip()
@@ -76,7 +77,7 @@ logging.info("Droplet is ready!")
 
 
 with open(cert_file) as f:
-	CniService.cert = f.read()
+    CniService.cert = f.read()
 
 host_nsenter(1)
 
@@ -85,13 +86,15 @@ svc_server = None
 server_class = {}
 # Populate for 'ForkingServer', 'GeventServer', 'OneShotServer', 'ThreadPoolServer', and 'ThreadedServer'
 for name, value in inspect.getmembers(rpyc.utils.server, inspect.isclass):
-	if rpyc.utils.server.Server in getattr(value, '__mro__', []):
-		server_class[name] = value
+    if rpyc.utils.server.Server in getattr(value, '__mro__', []):
+        server_class[name] = value
 print(server_class.keys())
 svc_server = server_class[choice]
-svc = svc_server(service=CniService, hostname='localhost', port=18861, protocol_config={'allow_all_attrs': True})
+svc = svc_server(service=CniService, hostname='localhost',
+                 port=18861, protocol_config={'allow_all_attrs': True})
 svc.start()
 logging.info("Server ####!!!")
 
+
 def main():
-	logging.info("Daemon Running")
+    logging.info("Daemon Running")
