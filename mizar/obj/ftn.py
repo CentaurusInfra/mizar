@@ -9,14 +9,15 @@ logger = logging.getLogger()
 
 class Ftn(object):
 	def __init__(self, obj_api, opr_store, spec=None):
+		self.name = ""
+		self.ip = ""
 		self.obj_api = obj_api
 		self.store = opr_store
+		self.droplet = ""
 		self.droplet_obj = None
-		self.vpc = ""
-		self.vni = ""
-		self.nip = ""
-		self.prefix = ""
-		self.net = ""
+		self.mac = ""
+		self.chains = []
+		self.nextnode = ""
 		self.status = OBJ_STATUS.ftn_status_init
 		self.scaled_ep_obj = '/trn_xdp/trn_transit_scaled_endpoint_ebpf_debug.o'
 		if spec is not None:
@@ -91,12 +92,18 @@ class Ftn(object):
 	def set_status(self, status):
 		self.status = status
 
-	def load_transit_xdp_pipeline_stage(self):
-		self.rpc.load_transit_xdp_pipeline_stage(CONSTANTS.ON_XDP_SCALED_EP,
-			self.scaled_ep_obj)
+	def set_name(self, name):
+		self.name = name
+
+	def set_chains(self, chain_name):
+		self.chains.append(chain_name)
 
 	def set_droplet(self, droplet):
 		self.droplet_obj = droplet
 		self.droplet = droplet.name
 		self.ip = droplet.ip
 		self.mac = droplet.mac
+
+	def load_transit_xdp_pipeline_stage(self):
+		self.rpc.load_transit_xdp_pipeline_stage(CONSTANTS.ON_XDP_SCALED_EP,
+			self.scaled_ep_obj)

@@ -35,5 +35,4 @@ class FtnOperatorStart(WorkflowTask):
 	def run(self):
 		logger.info("Run {task}".format(task=self.__class__.__name__))
 		ftns_opr.query_existing_ftns()
-		ftns_opr.create_default_ftn()
 		self.finalize()
