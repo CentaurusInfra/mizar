@@ -5,16 +5,13 @@ logging.basicConfig()
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-
 class MaglevTable:
 
     def __init__(self, table_size=101):
         # Some good prime numbers: 101, 211, 307, 401, 503, 601, 701, 809, 907, 1009, 2003
-        # at least 100x greater than size and prime.
-        self.table_size = table_size
+        self.table_size = table_size # at least 100x greater than size and prime.
         self.permutations_table = {}
-        # total unique elements
-        self.size = len(self.permutations_table.keys())
+        self.size = len(self.permutations_table.keys()) # total unique elements
         self.table = []
         self.prev_table = []
         self.prev_elements_map = {}
@@ -84,13 +81,13 @@ class MaglevTable:
         for i in range(0, self.table_size):
             prev = self.prev_table[i]
             curr = self.table[i]
-            if curr not in prev_elements_map.keys():  # Initialize
+            if curr not in prev_elements_map.keys(): # Initialize
                 prev_elements_map[curr] = []
             if curr != prev and prev not in prev_elements_map[curr]:
                 prev_elements_map[curr].append(prev)
         for ele in list(prev_elements_map):
             elements_replaced += len(prev_elements_map[ele])
-            if not prev_elements_map[ele]:  # Remove empty list mappings
+            if not prev_elements_map[ele]: # Remove empty list mappings
                 prev_elements_map.pop(ele)
         self.prev_elements_map = prev_elements_map
         self.elements_replaced = elements_replaced
@@ -123,11 +120,9 @@ class MaglevTable:
         Computes the permutation array for the given element
         """
         permutations = [None] * self.table_size
-        for i in range(0, self.table_size):
-            offset = (crc32(element.encode("ascii"))
-                      & 0xffffffff) % self.table_size
-            skip = (adler32(element.encode("ascii")) &
-                    0xffffffff) % (self.table_size - 1) + 1
+        for i in range (0, self.table_size):
+            offset = (crc32(element.encode("ascii")) & 0xffffffff) % self.table_size
+            skip = (adler32(element.encode("ascii")) & 0xffffffff) % (self.table_size - 1) + 1
             index = (offset + i * skip) % self.table_size
             permutations[i] = index
         return permutations
@@ -137,5 +132,4 @@ class MaglevTable:
 
     def dump_permutations_table(self):
         for key in sorted(self.permutations_table.keys()):
-            logger.info("Element name: {}, Permutations {}".format(
-                key, self.permutations_table[key]))
+            logger.info("Element name: {}, Permutations {}".format(key,self.permutations_table[key]))
