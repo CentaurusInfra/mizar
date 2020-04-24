@@ -7,11 +7,11 @@ logger.setLevel(logging.INFO)
 
 class MaglevTable:
 
-    def __init__(self, table_size=101):
+    def __init__(self, size, table_size=101):
+        self.size = size # total unique elements
         # Some good prime numbers: 101, 211, 307, 401, 503, 601, 701, 809, 907, 1009, 2003
         self.table_size = table_size # at least 100x greater than size and prime.
         self.permutations_table = {}
-        self.size = len(self.permutations_table.keys()) # total unique elements
         self.table = []
         self.altered = False
 
@@ -47,17 +47,11 @@ class MaglevTable:
         self.permutations_table.pop(element)
         self.altered = True
 
-    def get_size(self):
-        return len(self.permutations_table.keys())
-
-    def get_table_size(self):
-        return self.table_size
-
     def _populate_table(self):
         """
         Populates the lookup table based upon the current permuations table.
         """
-        next_ind = [0] * self.get_size()
+        next_ind = [0] * self.size
         table = [None] * self.table_size
         n = 0
         while True:

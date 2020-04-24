@@ -15,7 +15,7 @@ class test_basic_maglev(unittest.TestCase):
 # Element name: chain1, Permutations [4, 3, 2, 1, 0, 6, 5]
 # Element name: chain2, Permutations [5, 3, 1, 6, 4, 2, 0]
 
-        self.table = MaglevTable(7)
+        self.table = MaglevTable(3, 7)
         self.table.add("chain0")
         self.table.add("chain1")
         self.table.add("chain2")
