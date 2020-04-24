@@ -71,4 +71,6 @@ async def on_startup(logger, **kwargs):
     run_workflow(wffactory().NetOperatorStart(param=param))
     run_workflow(wffactory().EndpointOperatorStart(param=param))
 
+    run_workflow(wffactory().FtnOperatorStart(param=param))
+
     logger.info("Bootstrap time:  %s seconds ---" % (time.time() - start_time))

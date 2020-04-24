@@ -1,0 +1,13 @@
+apiVersion: "mizar.com/v1"
+kind: Ftn
+metadata:
+  name: ftn1
+spec:
+  name: "FT1"
+  dtf: "DF1"
+  ip: "20.0.0.2"
+  droplet: "D1"
+  mac: "a:b:c:d:1"
+  chains: ["C0", "C1"]
+  nextnode: "T2"
+  status: "Init"

@@ -135,3 +135,15 @@ class WorkflowFactory(ABC):
     @abstractmethod
     def k8sEndpointsDelete(self, param):
         pass
+
+    @abstractmethod
+    def FtnOperatorStart(self, param):
+        pass
+
+    @abstractmethod
+    def FtnCreate(self, param):
+        pass
+
+    @abstractmethod
+    def FtnProvisioned(self, param):
+        pass

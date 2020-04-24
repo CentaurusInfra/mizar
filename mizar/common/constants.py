@@ -72,6 +72,8 @@ class OBJ_STATUS:
     divider_status_provisioned = obj_provisioned
     divider_status_placed = 'Placed'
 
+    ftn_status_init = obj_init
+    ftn_status_provisioned = obj_provisioned
 
 class OBJ_DEFAULTS:
     default_ep_vpc = 'vpc0'
@@ -97,7 +99,7 @@ class RESOURCES:
     droplets = "droplets"
     bouncers = "bouncers"
     dividers = "dividers"
-
+    ftns = "ftns"
 
 class LAMBDAS:
     ep_status_init = lambda body, **_: body.get('spec', {}).get(
@@ -157,3 +159,8 @@ class LAMBDAS:
         'status', '') == OBJ_STATUS.divider_status_provisioned
     divider_status_placed = lambda body, **_: body.get('spec', {}).get(
         'status', '') == OBJ_STATUS.divider_status_placed
+
+    ftn_status_init = lambda body, **_: body.get('spec', {}).get(
+        'status', '') == OBJ_STATUS.ftn_status_init
+    ftn_status_provisioned = lambda body, **_: body.get('spec', {}).get(
+        'status', '') == OBJ_STATUS.ftn_status_provisioned
