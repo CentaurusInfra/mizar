@@ -13,10 +13,6 @@ class MaglevTable:
         self.permutations_table = {}
         self.size = len(self.permutations_table.keys()) # total unique elements
         self.table = []
-        self.prev_table = []
-        self.prev_elements_map = {}
-        self.elements_replaced = 0
-        self.elements_replacing = 0
         self.altered = False
 
     def get_table(self):
@@ -25,10 +21,7 @@ class MaglevTable:
         The table must be repopulated if a change has been made.
         """
         if self.altered:
-            self.prev_table = self.table
             self._populate_table()
-            if self.prev_table:
-                self._generate_prev_elements_map()
         if not self.table:
             raise Exception("Table is empty.")
         self.altered = False
@@ -60,39 +53,6 @@ class MaglevTable:
     def get_table_size(self):
         return self.table_size
 
-    def get_prev_elements_map(self):
-        """
-        Returns a table mapping each unique
-        element in the new table to elements
-        it replaced in the previous table.
-        """
-        return self.prev_elements_map
-
-    def _generate_prev_elements_map(self):
-        """
-        Generates a table mapping each unique
-        element in the new table to elements
-        it replaced in the previous table.
-        """
-        if not self.prev_table:
-            raise Exception("Previous table is empty.")
-        prev_elements_map = {}
-        elements_replaced = 0
-        for i in range(0, self.table_size):
-            prev = self.prev_table[i]
-            curr = self.table[i]
-            if curr not in prev_elements_map.keys(): # Initialize
-                prev_elements_map[curr] = []
-            if curr != prev and prev not in prev_elements_map[curr]:
-                prev_elements_map[curr].append(prev)
-        for ele in list(prev_elements_map):
-            elements_replaced += len(prev_elements_map[ele])
-            if not prev_elements_map[ele]: # Remove empty list mappings
-                prev_elements_map.pop(ele)
-        self.prev_elements_map = prev_elements_map
-        self.elements_replaced = elements_replaced
-        self.elements_replacing = len(prev_elements_map.keys())
-
     def _populate_table(self):
         """
         Populates the lookup table based upon the current permuations table.
@@ -108,12 +68,14 @@ class MaglevTable:
                     next_ind[i] += 1
                     cand = self.permutations_table[element][next_ind[i]]
                 table[cand] = element
+                logger.debug("Element {} picked index {}".format(element, cand))
                 next_ind[i] += 1
                 n += 1
                 if n == self.table_size:
                     self.table = table
                     return
                 i += 1
+
 
     def _compute_permutations(self, element):
         """
@@ -124,6 +86,7 @@ class MaglevTable:
             offset = (crc32(element.encode("ascii")) & 0xffffffff) % self.table_size
             skip = (adler32(element.encode("ascii")) & 0xffffffff) % (self.table_size - 1) + 1
             index = (offset + i * skip) % self.table_size
+            logger.debug("offset {}, skip {}, index {}".format(offset, skip, index))
             permutations[i] = index
         return permutations
 
