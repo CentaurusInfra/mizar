@@ -39,23 +39,11 @@ spec:
   validation:
     openAPIV3Schema:
       properties:
-        name:
-          type: string
-        dft:
-          type: string
-        ip:
-          type: string
-        droplet:
-          type: string
-        mac:
-          type: string
         chains:
           type: array
           items:
             type: string
           minItems: 1
-        nextnode:
-          type: string
   additionalPrinterColumns:
     - name: dft
       type: string
@@ -77,11 +65,6 @@ spec:
       priority: 0
       JSONPath: .spec.mac
       description: The Mac address of this ftn chain node
-    - name: chains
-      type: string
-      priority: 0
-      JSONPath: .spec.chains
-      description: The chain(s) that has this ftn chain node
     - name: nextnode
       type: string
       priority: 0

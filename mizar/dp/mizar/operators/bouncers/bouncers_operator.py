@@ -56,7 +56,7 @@ class BouncerOperator(object):
             b = Bouncer(name, self.obj_api, self.store, spec)
             self.store_update(b)
 
-        kube_list_obj(self.obj_api, RESOURCES.droplets, list_bouncers_obj_fn)
+        kube_list_obj(self.obj_api, RESOURCES.bouncers, list_bouncers_obj_fn)
 
     def get_bouncer_tmp_obj(self, name, spec):
         return Bouncer(name, self.obj_api, None, spec)

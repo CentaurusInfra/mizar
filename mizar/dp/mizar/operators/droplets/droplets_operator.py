@@ -99,6 +99,13 @@ class DropletOperator(object):
         d = random.sample(droplets, 1)[0]
         divider.set_droplet(d)
 
+    def assign_ftn_droplet(self, ftn):
+        droplets = set(self.store.get_all_droplets())
+        for d in droplets:
+            if not d.known_ftn:
+                ftn.set_droplet(d)
+                break
+
     def on_delete(self, body, spec, **kwargs):
         name = kwargs['name']
         logger.info("*delete_droplet {}".format(name))

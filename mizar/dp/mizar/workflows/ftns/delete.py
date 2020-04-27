@@ -40,3 +40,7 @@ class FtnDelete(WorkflowTask):
 		logger.info("Run {task}".format(task=self.__class__.__name__))
 		ftn = ftns_opr.store.get_ftn(self.param.name)
 		ftn.set_obj_spec(self.param.spec)
+		ftns_opr.delete_dft(ftn)
+		ftn.delete_obj()
+		ftns_opr.store.delete_ftn(ftn.name)
+		self.finalize()

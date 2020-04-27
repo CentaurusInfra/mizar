@@ -35,6 +35,8 @@ class FtnProvisioned(WorkflowTask):
 
 	def run(self):
 		logger.info("Run {task}".format(task=self.__class__.__name__))
-		ftn = ftns_opr.get_ftn_stored_obj(self.param.name, self.param.spec)
+		ftn = ftns_opr.get_ftn_stored_obj(
+			self.param.name, self.param.spec)
+		ftn.droplet_obj = ftns_opr.store.get_droplet(ftn.droplet)
 		ftns_opr.store_update(ftn)
 		self.finalize()

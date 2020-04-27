@@ -52,16 +52,10 @@ class FtnOperator(object):
 			f = Ftn(self.obj_api, self.store, spec)
 			self.store_update(f)
 
-		kube_list_obj(self.obj_api, RESOURCES.droplets, list_ftns_obj_fn)
+		kube_list_obj(self.obj_api, RESOURCES.ftns, list_ftns_obj_fn)
 
 	def get_ftn_stored_obj(self, name, spec):
 		return Ftn(self.obj_api, self.store, spec)
-
-	def create_default_ftn(self):
-		if self.store.get_ftn():
-			return
-		f = Ftn(self.obj_api, self.store)
-		f.create_obj()
 
 	def store_update(self, b):
 		self.store.update_ftn(b)
@@ -69,3 +63,6 @@ class FtnOperator(object):
 	def set_ftn_provisioned(self, ftn):
 		ftn.set_status(OBJ_STATUS.ftn_status_provisioned)
 		ftn.update_obj()
+
+	def delete_dft(self, bouncer):
+		ftn.delete_dft()

@@ -107,3 +107,9 @@ class Ftn(object):
 	def load_transit_xdp_pipeline_stage(self):
 		self.rpc.load_transit_xdp_pipeline_stage(CONSTANTS.ON_XDP_SCALED_EP,
 			self.scaled_ep_obj)
+
+	def update_dft(self):
+		self.droplet_obj.update_dft(self)
+
+	def delete_dft(self):
+		self.droplet_obj.delete_dft(self)
