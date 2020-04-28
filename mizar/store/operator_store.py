@@ -272,8 +272,10 @@ class OprStore(object):
             logger.info("Bouncer: {}, Spec: {}".format(
                 b.name, b.get_obj_spec()))
 
-    def get_ftn(self):
-        return self.ftns_store
+    def get_ftn(self, name):
+        if name in self.ftns_store:
+            return self.ftns_store[name]
+        return None
 
     def update_ftn(self, f):
         self.ftns_store[f.name] = f

@@ -21,14 +21,13 @@
 
 import logging
 from common.workflow import *
-from dp.mizar.operators.dividers.dividers_operator import *
+from dp.mizar.operators.droplets.droplets_operator import *
 from dp.mizar.operators.ftns.ftns_operator import *
-from dp.mizar.operators.endpoints.endpoints_operator import *
-from dp.mizar.operators.nets.nets_operator import *
 
 logger = logging.getLogger()
 
 ftns_opr = FtnOperator()
+droplets_opr = DropletOperator()
 
 class FtnDelete(WorkflowTask):
 
@@ -40,7 +39,10 @@ class FtnDelete(WorkflowTask):
 		logger.info("Run {task}".format(task=self.__class__.__name__))
 		ftn = ftns_opr.store.get_ftn(self.param.name)
 		ftn.set_obj_spec(self.param.spec)
-		ftns_opr.delete_dft(ftn)
+
+		droplet = droplets_opr.store.get_droplet(ftn.droplet)
+		droplet.delete_dft(ftn)
+
 		ftn.delete_obj()
 		ftns_opr.store.delete_ftn(ftn.name)
 		self.finalize()

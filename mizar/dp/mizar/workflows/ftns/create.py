@@ -20,7 +20,7 @@
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import logging
-from common.workflow import *
+from mizar.common.workflow import *
 from dp.mizar.operators.droplets.droplets_operator import *
 from dp.mizar.operators.ftns.ftns_operator import *
 
@@ -39,10 +39,12 @@ class FtnCreate(WorkflowTask):
 		logger.info("Run {task}".format(task=self.__class__.__name__))
 		ftn = ftns_opr.get_ftn_stored_obj(
 					self.param.name, self.param.spec)
+		droplets_opr.query_existing_droplets()
 		while not droplets_opr.is_bootstrapped():
 			pass
 
 		droplets_opr.assign_ftn_droplet(ftn)
+		ftns_opr.update_dft(ftn)
 
 		ftn.load_transit_xdp_pipeline_stage()
 		ftns_opr.set_ftn_provisioned(ftn)

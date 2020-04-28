@@ -154,11 +154,11 @@ class Droplet(object):
 
     def update_dft(self, ftn):
         if not self.known_ftn:
-            self.known_ftn[ftn.name] = ftn.dtf
-        self.rpc.update_dft(ftn)
+            self.known_ftn[ftn.name] = ftn.dft
+        #self.rpc.update_dft(ftn)
 
     def delete_dft(self, ftn):
         if ftn.name in self.known_ftn.keys():
             self.known_ftn.pop(ftn.name)
-            if ftn.dft not in self.known_ftn.values():
-                self.rpc.delete_dft(ftn)
+            #if ftn.dft not in self.known_ftn.values():
+                #self.rpc.delete_dft(ftn)

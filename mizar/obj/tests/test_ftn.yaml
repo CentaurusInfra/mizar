@@ -3,8 +3,8 @@ kind: Ftn
 metadata:
   name: ftn1
 spec:
-  name: "FT1"
-  dtf: "DF1"
+  name: "ftn1"
+  dft: "DF1"
   ip: "20.0.0.2"
   droplet: "D1"
   mac: "a:b:c:d:1"

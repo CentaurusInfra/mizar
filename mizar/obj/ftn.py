@@ -13,6 +13,7 @@ class Ftn(object):
 		self.ip = ""
 		self.obj_api = obj_api
 		self.store = opr_store
+		self.dft = ""
 		self.droplet = ""
 		self.droplet_obj = None
 		self.mac = ""
@@ -30,6 +31,7 @@ class Ftn(object):
 	def get_obj_spec(self):
 		self.obj = {
 			"name": self.name,
+			"dft": self.dft,
 			"ip": self.ip,
 			"droplet": self.droplet,
 			"mac": self.mac,
@@ -41,6 +43,7 @@ class Ftn(object):
 
 	def set_obj_spec(self, spec):
 		self.name = get_spec_val('name', spec)
+		self.dft = get_spec_val('dft', spec)
 		self.ip = get_spec_val('ip', spec)
 		self.droplet = get_spec_val('droplet', spec)
 		self.mac = get_spec_val('mac', spec)
@@ -66,6 +69,9 @@ class Ftn(object):
 
 	def get_nextnode(self):
 		return self.nextnode
+
+	def get_dft(self):
+		return self.dft
 
 	def store_update_obj(self):
 		if self.store is None:

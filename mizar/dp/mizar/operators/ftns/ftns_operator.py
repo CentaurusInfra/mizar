@@ -46,7 +46,6 @@ class FtnOperator(object):
 		self.obj_api = client.CustomObjectsApi()
 
 	def query_existing_ftns(self):
-		logger.info("ftns on_startup")
 		def list_ftns_obj_fn(name, spec, plurals):
 			logger.info("Bootstrapped Ftn {}".format(name))
 			f = Ftn(self.obj_api, self.store, spec)
@@ -64,5 +63,8 @@ class FtnOperator(object):
 		ftn.set_status(OBJ_STATUS.ftn_status_provisioned)
 		ftn.update_obj()
 
-	def delete_dft(self, bouncer):
+	def update_dft(self, ftn):
+		ftn.update_dft()
+
+	def delete_dft(self, ftn):
 		ftn.delete_dft()

@@ -35,6 +35,7 @@ from mizar.dp.mizar.workflows.dividers.triggers import *
 from mizar.dp.mizar.workflows.bouncers.triggers import *
 from mizar.dp.mizar.workflows.droplets.triggers import *
 from mizar.dp.mizar.workflows.endpoints.triggers import *
+from mizar.dp.mizar.workflows.ftns.triggers import *
 from mizar.dp.mizar.workflows.builtins.services.triggers import *
 
 logger = logging.getLogger()
