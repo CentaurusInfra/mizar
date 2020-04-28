@@ -43,7 +43,7 @@ class Droplet(object):
         self.known_bouncers = {}
         self.known_nets = {}
         self.known_eps = {}
-        self.known_ftn = {}
+        self.has_ftn = False
         if spec is not None:
             self.set_obj_spec(spec)
 
@@ -152,13 +152,10 @@ class Droplet(object):
             if ep.ip not in self.known_eps.values():
                 self.rpc.delete_ep(ep)
 
-    def update_dft(self, ftn):
-        if not self.known_ftn:
-            self.known_ftn[ftn.name] = ftn.dft
-        #self.rpc.update_dft(ftn)
+    def update_ftn(self):
+        self.has_ftn = True
+        self.store.delete_non_ftn_droplet(self)
 
-    def delete_dft(self, ftn):
-        if ftn.name in self.known_ftn.keys():
-            self.known_ftn.pop(ftn.name)
-            #if ftn.dft not in self.known_ftn.values():
-                #self.rpc.delete_dft(ftn)
+    def delete_ftn(self):
+        self.has_ftn = False
+        self.store.update_non_ftn_droplet(self)

@@ -44,7 +44,7 @@ class FtnCreate(WorkflowTask):
 			pass
 
 		droplets_opr.assign_ftn_droplet(ftn)
-		ftns_opr.update_dft(ftn)
+		droplets_opr.add_ftn_onto_droplet(ftn.droplet_obj)
 
 		ftn.load_transit_xdp_pipeline_stage()
 		ftns_opr.set_ftn_provisioned(ftn)

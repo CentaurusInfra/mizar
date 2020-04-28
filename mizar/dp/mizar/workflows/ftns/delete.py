@@ -41,7 +41,7 @@ class FtnDelete(WorkflowTask):
 		ftn.set_obj_spec(self.param.spec)
 
 		droplet = droplets_opr.store.get_droplet(ftn.droplet)
-		droplet.delete_dft(ftn)
+		droplets_opr.remove_ftn_on_droplet(droplet)
 
 		ftn.delete_obj()
 		ftns_opr.store.delete_ftn(ftn.name)

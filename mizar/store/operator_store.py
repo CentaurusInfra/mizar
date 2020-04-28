@@ -36,6 +36,7 @@ class OprStore(object):
     def _init(self, **kwargs):
         logger.info(kwargs)
         self.droplets_store = {}
+        self.non_ftn_droplet_store = {}
 
         self.vpcs_store = {}
         self.nets_vpc_store = {}
@@ -153,10 +154,13 @@ class OprStore(object):
 
     def update_droplet(self, droplet):
         self.droplets_store[droplet.name] = droplet
+        self.non_ftn_droplet_store[droplet.name] = droplet
 
     def delete_droplet(self, name):
         if name in self.droplets_store:
             del self.droplets_store[name]
+        if name in self.non_ftn_droplet_store:
+            del self.non_ftn_droplet_store[name]
 
     def get_droplet(self, name):
         if name in self.droplets_store:
@@ -288,3 +292,13 @@ class OprStore(object):
     def _dump_ftns(self):
         for f in self.ftns_store.values():
             logger.info("Ftn: {}, Spec: {}".format(f.name, f.get_obj_spec()))
+
+    def get_all_non_ftn_droplet(self):
+        return self.non_ftn_droplet_store.values()
+
+    def delete_non_ftn_droplet(self, droplet):
+        if droplet.name in self.non_ftn_droplet_store:
+            del self.non_ftn_droplet_store[droplet.name]
+
+    def update_non_ftn_droplet(self, droplet):
+        self.non_ftn_droplet_store[droplet.name] = droplet

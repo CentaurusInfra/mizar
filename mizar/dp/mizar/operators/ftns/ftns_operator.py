@@ -56,15 +56,9 @@ class FtnOperator(object):
 	def get_ftn_stored_obj(self, name, spec):
 		return Ftn(self.obj_api, self.store, spec)
 
-	def store_update(self, b):
-		self.store.update_ftn(b)
+	def store_update(self, f):
+		self.store.update_ftn(f)
 
 	def set_ftn_provisioned(self, ftn):
 		ftn.set_status(OBJ_STATUS.ftn_status_provisioned)
 		ftn.update_obj()
-
-	def update_dft(self, ftn):
-		ftn.update_dft()
-
-	def delete_dft(self, ftn):
-		ftn.delete_dft()
