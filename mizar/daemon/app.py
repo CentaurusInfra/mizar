@@ -37,7 +37,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 # Setup the droplet's host
 script = (f''' bash -c '\
-nsenter -t 1 -m -u -n -i rm /etc/cni/net.d/10-kindnet.conflist &&\
+nsenter -t 1 -m -u -n -i rm -rf /etc/cni/net.d/10-kindnet.conflist && \
 nsenter -t 1 -m -u -n -i /etc/init.d/rpcbind restart && \
 nsenter -t 1 -m -u -n -i /etc/init.d/rsyslog restart && \
 nsenter -t 1 -m -u -n -i ip link set dev eth0 up mtu 9000' ''')

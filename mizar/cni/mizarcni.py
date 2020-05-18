@@ -23,6 +23,7 @@ import sys
 import logging
 import rpyc
 import logging
+import json
 from common.cniparams import CniParams
 
 logging.basicConfig(level=logging.INFO, filename='/tmp/cni.log')
@@ -51,7 +52,8 @@ def get():
 
 
 def version():
-    val, status = conn.root.version(params)
+    val, status = json.dumps({'cniVersion': '0.3.1', "supportedVersions": [
+        "0.2.0", "0.3.0", "0.3.1"]}), 0
     logger.info("server's version is {}".format(val))
     print(val)
     exit(status)
