@@ -33,8 +33,8 @@ if [[ "$USER" == "user" || "$USER" == "final" ]]; then
 fi
 
 # Build the operator image
-docker image build -t $DOCKER_ACC/endpointopr:latest -f $DIR/etc/docker/operator.Dockerfile $DIR
 if [[ "$USER" == "dev" || "$USER" == "final" ]]; then
+    docker image build -t $DOCKER_ACC/endpointopr:latest -f $DIR/etc/docker/operator.Dockerfile $DIR
     docker image push $DOCKER_ACC/endpointopr:latest
 fi
 

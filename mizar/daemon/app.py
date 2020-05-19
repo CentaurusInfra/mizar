@@ -37,7 +37,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 # Setup the droplet's host
 script = (f''' bash -c '\
-nsenter -t 1 -m -u -n -i ls -1 /etc/cni/net.d/*conf* | grep -v '10-mizarcni.conf$' | xargs rm && \
+nsenter -t 1 -m -u -n -i ls -1 /etc/cni/net.d/*conf* | grep -v '10-mizarcni.conf$' | xargs rm -rf && \
 nsenter -t 1 -m -u -n -i /etc/init.d/rpcbind restart && \
 nsenter -t 1 -m -u -n -i /etc/init.d/rsyslog restart && \
 nsenter -t 1 -m -u -n -i ip link set dev eth0 up mtu 9000' ''')

@@ -28,19 +28,28 @@ NODES=${3:-1}
 # create registry container unless it already exists
 reg_name='local-kind-registry'
 reg_port='5000'
+reg_network='kind'
 running="$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)"
+reg_url=$reg_name
+kind_version=$(kind version)
 if [ "${running}" != 'true' ]; then
   docker run \
     -d --restart=always -p "${reg_port}:5000" --name "${reg_name}" \
     registry:2
 fi
-reg_ip="$(docker inspect -f '{{.NetworkSettings.IPAddress}}' "${reg_name}")"
+
+case "${kind_version}" in
+  "kind v0.7."* | "kind v0.6."* | "kind v0.5."*)
+    reg_url="$(docker inspect -f '{{.NetworkSettings.IPAddress}}' "${reg_name}")"
+    reg_network='bridge'
+    ;;
+esac
 
 if [[ $USER == "dev" ]]; then
   PATCH="containerdConfigPatches:
 - |-
   [plugins.\"io.containerd.grpc.v1.cri\".registry.mirrors.\"localhost:${reg_port}\"]
-    endpoint = [\"http://${reg_ip}:${reg_port}\"]"
+    endpoint = [\"http://${reg_url}:${reg_port}\"]"
   REPO="localhost:5000"
 else
   PATCH=""
@@ -69,3 +78,10 @@ nodes:
     image: ${REPO}/kindnode:latest
 ${FINAL_NODES}
 EOF
+
+if [[ $reg_network == "kind" ]]; then
+  docker network connect $reg_network "${reg_name}"
+  for node in $(kind get nodes); do
+    kubectl annotate node "${node}" "kind.x-k8s.io/registry=localhost:${reg_port}";
+  done
+fi

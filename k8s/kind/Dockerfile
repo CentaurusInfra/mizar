@@ -19,7 +19,7 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-FROM kindest/node:v1.17.2
+FROM kindest/node:v1.18.2
 RUN apt-get update -y
 RUN apt-get install -y apt-utils
 RUN apt-get install -y sudo

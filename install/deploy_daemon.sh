@@ -32,8 +32,8 @@ if [[ "$USER" == "user" || "$USER" == "final" ]]; then
 fi
 
 # Build the daemon image
-docker image build -t $DOCKER_ACC/dropletd:latest -f $DIR/etc/docker/daemon.Dockerfile $DIR
 if [[ "$USER" == "dev" || "$USER" == "final" ]]; then
+    docker image build -t $DOCKER_ACC/dropletd:latest -f $DIR/etc/docker/daemon.Dockerfile $DIR
     docker image push $DOCKER_ACC/dropletd:latest
 fi
 
