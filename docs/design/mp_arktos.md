@@ -49,7 +49,7 @@ spec:
 ## Proposal 
 Given the fact that Arktos network object is equivalent to vpc object in Mizar, I would like to propose two options: 
 
-# OPTION ONE: 
+### OPTION ONE: 
 Arktos adds two more optional fields into its spec, ip and prefix. This will address situations where the custom vpcID listed in Arktos network object has not been created, and Mizar needs to know the CIDR range in order to create a VPC object. The spec should show something like this: 
 ```yaml
 spec:
@@ -60,7 +60,7 @@ spec:
 ```
 When new VPC is created and mapped with Arktos network object, the data is stored as a key/value pair in Mizar’s object store (i.e. ```dict = {Arktos_network : vpcid}```)
 
-# OPTION TWO: 
+### OPTION TWO: 
 Arktos can directly use Mizar’s VPC CRD to define its network object. As mentioned in Arktos network object overview section, Arktos network object is equivalent to VPC object in Mizar. Thus, Arktos can adapt Mizar’s VPC CRD to define Arktos network object: 
 ```yaml
 apiVersion: mizar.com/v1
