@@ -2,9 +2,7 @@
 SPDX-License-Identifier: MIT
 Copyright (c) 2020 The Authors.
 
-Authors: Sherif Abdelwahab <@zasherif>
-         Phu Tran          <@phudtran>
-         Catherine Lu      <@clu2>
+Authors: Catherine Lu      <@clu2>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -58,7 +56,7 @@ spec:
   ip: 10.0.0.0
   prefix: 16
 ```
-When new VPC is created and mapped with Arktos network object, the data is stored as a key/value pair in Mizar’s object store (i.e. ```dict = {Arktos_network : vpcid}```)
+When new VPC is created and mapped with Arktos network object, the data is stored as a key/value pair in Mizar’s object store, ```self.store.vpcs_arktosnet_store[arktosnet.name][vpc.name] = vpc_object```
 
 ### OPTION TWO: 
 Arktos can directly use Mizar’s VPC CRD to define its network object. As mentioned in Arktos network object overview section, Arktos network object is equivalent to VPC object in Mizar. Thus, Arktos can adapt Mizar’s VPC CRD to define Arktos network object: 
@@ -73,7 +71,28 @@ spec:
   status: Init
   dividers: 2
 ```
-where status is always “Init” when creating a new VPC object, and dividers specifies the number of dividers/subnets desired. The ip and prefix fields as mentioned previous, together they define the CIDR range of the VPC. 
+where status is always “Init” when creating a new VPC object, and dividers specifies the number of dividers/subnets desired. The ip and prefix fields as mentioned previous, together they define the CIDR range of the VPC.
+
+### Network Object Association
+
+In both options, the association of all network objects are stored as key/value sets in Mizar’s object store. For instance, 
+
+The Arktos network object is associated with Mizar vpc as: 
+	```self.store.vpcs_arktosnet_store[arktosnet.name] = {}```
+    ```self.store.vpcs_arktosnet_store[arktosnet.name][vpc.name] = vpc_object```
+
+The Arktos network object is associated with services in similar ways: 
+    ```self.store.services_arktosnet_store[arktosnet.name] = {}```
+    ```self.store.services_arktosnet_store[arktosnet.name][service.name] = service_object```
+
+The subnet object is associated with pods as: 
+    ```self.store.pods_net_store[net.name] = {}```
+    ```self.store.pods_net_store[net.name][pod.name] = pod_object```
+
+In addition, Mizar already provides key/value sets to store relationships between endpoints/pods, subnets/nets and vpcs: 
+
+* ```nets_vpc_store```
+* ```eps_net_store```
 
 ## Analysis
 The following describes in detail on the steps involved during creation of each network object such as services and vpcs. 
@@ -85,10 +104,14 @@ spec:
   vpcID: vpc01
   ip: 10.0.0.0
   prefix: 16
+  subnets:
+  -  net1
+  -  net2
 ```
-* List Kubernetes cluster object
+* List Kubernetes cluster object / Arktos newtork object
 * Find vpc object that is associated with the vpcID
 * Update object stores: map Arktos network with vpc id and stored as a key/value pair. 
+* If subnet objects (which is equivalent to nets in Mizar language) are also listed, Mizar has object store to specify net objects to vpc object association: ```self.nets_vpc_store[net.vpc][net.name] = net_object``` Thus, the net objects can be linked with arktos network object through ```nets_vpc_store``` and ```vpcs_arktosnet_store``` (mentioned in proposal section)
 
 ### The Arktos network object is associated with a vpcID that does not exist yet: 
 ```yaml
@@ -98,48 +121,52 @@ spec:
   ip: 172.0.0.0
   prefix: 16
 ```
-* List Kubernetes cluster object
-* Not able to find vpc object with specified vpcID. 
-* trigger VPC creation workflow to create a new VPC with listed CIDR range. 
-* Update object store: add the new VPC object into vpc object store, and then map this Arktos network with this new vpcID.
+* List Kubernetes cluster object / Arktos newtork object
+* If not able to find vpc object with specified vpcID, trigger VPC creation workflow to create a new VPC with listed CIDR range. 
+* The following steps are the same as previous section. 
 
 ### The Arktos network object is associated with multiple services and the default network is used:
 ```yaml
 spec:
   type: mizar
 ```
-* List Kubernetes cluster object
+* List Kubernetes cluster object / Arktos newtork object
 * In case of using services, vpcID should not listed, and default network is selected
-* Waiting on customer to create services using kubectl commands: 
-```
-kubectl create -f test_service.yaml
-kubectl run pod1 --image=localhost:5000/testpod
-kubectl label pods pod1 run=example3 –overwrite
-```
+* Waiting on customer to create service using yaml file:  
 ```yaml
+apiVersion: v1
+kind: Service
 metadata:
-  name: test-service-3
-  annotations: 
-        service.beta.kubernetes.io/mizar-scaled-endpoint-type: “scaled-endpoint”
-  lables: 
-    run: test-service-3
+  name: my-service
 spec:
-  ports: 
--	port: 80
-     protocol: TCP
-  selector: 
-     run: example3
+  network: my-network
+  selector:
+    app: MyApp
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 9376
 ```
+* Create ```my-service```
+* Update object store: map Arktos network with services: ```self.store.services_arktosnet_store[my-network][my-service] = service_object```
 
-* Update object store: map Arktos network with services. 
-
-###	Pod creation
-* Customer creates a new pod using command: 
+###	Pod creation 
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    ports:
+      - containerPort: 443
+  network: vpc-1
+  nics:
+    - subnet: subnet-1
+      ip: 192.168.0.12
 ```
-kubectl run pod1 --image=localhost:5000/testpod
-```
-* Then this newly created pod is placed on one of the host/droplet. 
-* Customer has the choice of associating this pod with a service using label flag:
-```
-kubectl label pods pod1 run=example3 –overwrite
-```
+* Create pod (equivalent to ```endpoint``` in Mizar) named ```nginx``` 
+* Update object store: map subnet object (which is equivalent to net object in Mizar) with pod: ```self.store.eps_net_store[subnet-1][nginx] = pod_object```
+Note: Integrity checks are needed here, where we need make sure that the ip address falls within subnet CIDR range, and subnet CIDR range falls within the VPC's (vpc-1) CIDR range. 
