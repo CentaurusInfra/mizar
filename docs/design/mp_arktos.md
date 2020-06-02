@@ -85,10 +85,6 @@ The Arktos network object is associated with services in similar ways:
     ```self.store.services_arktosnet_store[arktosnet.name] = {}```
     ```self.store.services_arktosnet_store[arktosnet.name][service.name] = service_object```
 
-The subnet object is associated with pods as: 
-    ```self.store.pods_net_store[net.name] = {}```
-    ```self.store.pods_net_store[net.name][pod.name] = pod_object```
-
 In addition, Mizar already provides key/value sets to store relationships between endpoints/pods, subnets/nets and vpcs: 
 
 * ```nets_vpc_store```
@@ -169,4 +165,5 @@ spec:
 ```
 * Create pod (equivalent to ```endpoint``` in Mizar) named ```nginx``` 
 * Update object store: map subnet object (which is equivalent to net object in Mizar) with pod: ```self.store.eps_net_store[subnet-1][nginx] = pod_object```
-Note: Integrity checks are needed here, where we need make sure that the ip address falls within subnet CIDR range, and subnet CIDR range falls within the VPC's (vpc-1) CIDR range. 
+Note: Integrity checks are needed here, where we need make sure that the ip address falls within subnet CIDR range, and subnet CIDR range falls within the VPC's (vpc-1) CIDR range.
+* If neither IP or subnet is specified, Mizar will pick the first subnet within ```vpc-1``` and assign pod to that subnet.
