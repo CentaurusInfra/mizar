@@ -88,6 +88,10 @@ If subnet is the only specified information, Mizar will launch the Pod in ```net
 
 In Mizar, the association of all network objects are stored as key/value sets in Mizar’s object store. For instance, 
 
+The Arktos tenant is associated with Arktos network objects as: 
+	```self.store.arktosnets_tenant_store[tenant.name] = {}```
+    ```self.store.arktosnets_tenant_store[tenant.name][arktosnet.name] = arktosnet_object```
+
 The Arktos network object is associated with Mizar vpc as: 
 	```self.store.vpcs_arktosnet_store[arktosnet.name] = {}```
     ```self.store.vpcs_arktosnet_store[arktosnet.name][vpc.name] = vpc_object```
@@ -96,10 +100,10 @@ The Arktos network object is associated with services in similar ways:
     ```self.store.services_arktosnet_store[arktosnet.name] = {}```
     ```self.store.services_arktosnet_store[arktosnet.name][service.name] = service_object```
 
-In addition, Mizar already provides key/value sets to store relationships between endpoints/pods, subnets/nets and vpcs: 
+In addition, Mizar also provides key/value sets to store relationships between pods, subnets/nets and vpcs: 
 
 * ```nets_vpc_store```
-* ```eps_net_store```
+* ```pods_net_store```
 
 ## Arktos Network Object Creation 
 
@@ -107,19 +111,7 @@ For now, Mizar will only support VPC object and Arktos network object associatio
 
 Mizar has operator that is in charge of managing lifecycle of Arktos network object. 
 
-In case of flat network: 
-```yaml
-apiVersion: arktos.futurewei.com/v1
-kind: Network
-metadata:
-  name: default
-spec:
-  type: flat
-```
-Operator kicks off Arktos network object ```default``` creation process, and then associated with the default network ```vpc0``` in Mizar:
-```self.store.vpcs_arktosnet_store[default][vpc0] = vpc0 object```
-
-In case of vpc network: 
+When creating a mizar type network: 
 ```yaml
 apiVersion: arktos.futurewei.com/v1
 kind: Network
@@ -129,10 +121,9 @@ spec:
   type: mizar
   vpcID: vpc-1a2b3c4d
 ```
-Operator starts creation process for Arktos network object ```vpc-1```, and then search for existing vpc object in Mizar to find vpc with id = vpc-1a2b3c4d. Once the vpc object is found, it then associated with the newly created Arktos network object ```vpc-1```: 
-    ```self.store.vpcs_arktosnet_store[vpc-1][vpc-1a2b3c4d] = vpc-1a2b3c4d object```
-
-When customer initiates a Network creation, Mizar will first create an Arktos network object named ```vpc-1```, then it search for an existing VPC named ```vpc-1a2b3c4d```. Once the specified vpcID is found, it then associates the vpc object ```vpc-1a2b3c4d``` with the Arktos network object ```vpc-1```.  
+* When customer initiates an Arktos Network creation, Mizar will first create an Arktos network object named ```vpc-1```, then it search for an existing VPC named ```vpc-1a2b3c4d```. Once the specified vpcID is found, it then associates the vpc object ```vpc-1a2b3c4d``` with the Arktos network object ```vpc-1```:   
+    * ```self.store.vpcs_arktosnet_store[vpc-1][vpc-1a2b3c4d] = vpc-1a2b3c4d object```
+* Then, mizar retrieves metadata information: ```metadata.tenant = customerA```, and map ```metadata.tenant``` with arktos network object: ```self.store.arktosnets_tenant_store[customerA][vpc-1] = arktosnet_object```
 
 ## Pod Creation
  Sample Pod definition:
@@ -155,22 +146,28 @@ spec:
 ```
 Operator kicks off creation process:
 * List Kubernetes cluster object / Arktos newtork object
-* Retrieve ```labels``` and ```annotations``` information: 
+* Retrieve metadata information: ```metadata.tenant```, ```metadata.namespace```, ```metadata.labels``` and ```metadata.annotations```: 
+    * ```tenant```: customerA
+    * ```namespace```: internal
     * ```arktos.futurewei.com/network```: vpc-1
     * ```arktos.futurewei.com/nic```: {"name": "eth0", "ip": "10.10.1.12", "subnet": "net1"}
+* Get container id of the pod, i.e. ```status.containerStatuses[0].containerID```
+* Set pod name as: ```{name}```-```{status.containerStatuses[0].containerID[-9:]}``` (use last 9 characters of container id to differentiate containers with the same ```name``` field)
 * Find Arktos network object that is listed in ```arktos.futurewei.com/network```
 * Find subnet and ip information from ```arktos.futurewei.com/nic```, and choose the correct subnet to place the new pod. 
   * If subnet is the only specified information, Mizar will launch the Pod in ```net1``` and assign an ip address to the Pod. Please note that Mizar only supports Pod creation in an existing subnet. In other words, if ```net1``` listed in definition does not exist, Mizar will throw an error. 
   * If only  ```ip``` is specified, Mizar needs to figure out which subnet this ip falls into, and then creates the pod into the correct subnet. 
   * If both ip and subnet are missing, Mizar will choose the first subnet within ```vpc-1``` to launch the Pod and assign an ip address to that Pod. 
-* Update object store: map subnet object (which is equivalent to net object in Mizar) with pod: ```self.store.eps_net_store[net1][nginx] = pod object```
+* Update object store:
+    * map subnet object (which is equivalent to net object in Mizar) with pod: ```self.store.pods_net_store[net1][nginx] = pod object```
+
 * After Pod creation is completed, update Pod object with new annotations: ```mizar.futurewei.com/network_user_input``` and ```arktos.futurewei.com/network-readiness```.      
 * ```mizar.futurewei.com/network_user_input``` will include Mizar network information such as ```vpc name```, ```subnet name``` and ```ip address```
 * In cni daemon service, it will retrieve newly created Pod object, and pass in required network configuration. See below: 
 
 ```
     def cni_add(self, params):
-        ep = self.get_pod_obj(params)
+        pod = self.get_pod_obj(params)
 
         result = {
             "cniVersion": params.cni_version,
@@ -192,13 +189,18 @@ Operator kicks off creation process:
         }
 
     def get_pod_obj(self, params):
-        logger.debug("Allocate endpoint name")
         name = ""
+        id = ""
         if 'K8S_POD_NAME' in params.cni_args_dict:
             name = params.cni_args_dict['K8S_POD_NAME']
-        
-        if CniService.store.contains_ep(name):
-            return CniService.store.get_ep(name)
+
+        if 'K8S_POD_INFRA_CONTAINER_ID' in params.cni_args_dict:
+            id = params.cni_args_dict['K8S_POD_INFRA_CONTAINER_ID'][-9:]
+
+        name = name + "-" + id
+
+        if CniService.store.contains_pod(name):
+            return CniService.store.get_pod(name)
 ```
 
 * Once creation is completed, operator will set ```arktos.futurewei.com/network-readiness == true```. 
@@ -236,6 +238,6 @@ spec:
 * Note that if ```arktos.futurewei.com/network``` not listed, and default network is selected
 * Build-in operator kicks off ```my-service``` creation
 * Use endpoint operator to create a scaled endpoint object within ```vpc-1```. 
-* Once scaled endpoint is created, ```my-service``` is assigned with the ip address of this scaled endpoint object.
+* Once scaled endpoint is created, ```my-service``` is assigned with the ip address of this scaled endpoint object, and set spec.ClusterIP with this ip address. 
 * Update the scaled endpoint with bouncers within ```vpc-1```
 * Update object store: map Arktos network with services: ```self.store.services_arktosnet_store[vpc-1][my-service] = service_object```
