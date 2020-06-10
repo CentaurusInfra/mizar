@@ -70,7 +70,6 @@ metadata:
     arktos.futurewei.com/network: vpc-1
   annotations:
     arktos.futurewei.com/nic: {"name": "eth0", "ip": "10.10.1.12", "subnet": "net1"}
-    arktos.futurewei.com/vip-hint: {"cidr":"10.10.1.0/26", "ip":"10.10.1.12", "policy":"BestEffort"}
 spec:
   containers:
   - name: nginx
@@ -136,7 +135,7 @@ metadata:
     arktos.futurewei.com/network: vpc-1
   annotations:
     arktos.futurewei.com/nic: {"name": "eth0", "ip": "10.10.1.12", "subnet": "net1"}
-    arktos.futurewei.com/vip-hint: {"cidr":"10.10.1.0/26", "ip":"10.10.1.12", "policy":"BestEffort"}
+
 spec:
   containers:
   - name: nginx
@@ -151,18 +150,17 @@ Operator kicks off creation process:
     * ```namespace```: internal
     * ```arktos.futurewei.com/network```: vpc-1
     * ```arktos.futurewei.com/nic```: {"name": "eth0", "ip": "10.10.1.12", "subnet": "net1"}
-* Get container id of the pod, i.e. ```status.containerStatuses[0].containerID```
-* Set pod name as: ```{name}```-```{status.containerStatuses[0].containerID[-9:]}``` (use last 9 characters of container id to differentiate containers with the same ```name``` field)
+* Set pod name as {```name```}-{```namespace```}-{```tenant```}
 * Find Arktos network object that is listed in ```arktos.futurewei.com/network```
 * Find subnet and ip information from ```arktos.futurewei.com/nic```, and choose the correct subnet to place the new pod. 
   * If subnet is the only specified information, Mizar will launch the Pod in ```net1``` and assign an ip address to the Pod. Please note that Mizar only supports Pod creation in an existing subnet. In other words, if ```net1``` listed in definition does not exist, Mizar will throw an error. 
   * If only  ```ip``` is specified, Mizar needs to figure out which subnet this ip falls into, and then creates the pod into the correct subnet. 
   * If both ip and subnet are missing, Mizar will choose the first subnet within ```vpc-1``` to launch the Pod and assign an ip address to that Pod. 
 * Update object store:
-    * map subnet object (which is equivalent to net object in Mizar) with pod: ```self.store.pods_net_store[net1][nginx] = pod object```
-
+    * map subnet object (which is equivalent to net object in Mizar) with pod: ```self.store.pods_net_store[net1][nginx-internal-customerA] = pod object```
 * After Pod creation is completed, update Pod object with new annotations: ```mizar.futurewei.com/network_user_input``` and ```arktos.futurewei.com/network-readiness```.      
 * ```mizar.futurewei.com/network_user_input``` will include Mizar network information such as ```vpc name```, ```subnet name``` and ```ip address```
+* ```mizar.futurewei.com/cni-args``` will include tenant information, which will later be used when calling CNI plugin. 
 * In cni daemon service, it will retrieve newly created Pod object, and pass in required network configuration. See below: 
 
 ```
@@ -190,14 +188,16 @@ Operator kicks off creation process:
 
     def get_pod_obj(self, params):
         name = ""
-        id = ""
+        namespace = ""
+        tenant = ""
         if 'K8S_POD_NAME' in params.cni_args_dict:
             name = params.cni_args_dict['K8S_POD_NAME']
+        if 'K8S_POD_NAMESPACE' in params.cni_args_dict:
+            namespace = params.cni_args_dict['K8S_POD_NAMESPACE']
+        if 'K8S_POD_TENANT' in params.cni_args_dict:
+            tenant = params.cni_args_dict['K8S_POD_TENANT']
 
-        if 'K8S_POD_INFRA_CONTAINER_ID' in params.cni_args_dict:
-            id = params.cni_args_dict['K8S_POD_INFRA_CONTAINER_ID'][-9:]
-
-        name = name + "-" + id
+        name = name + "-" + namespace + "-" + tenant
 
         if CniService.store.contains_pod(name):
             return CniService.store.get_pod(name)
@@ -209,9 +209,9 @@ Operator kicks off creation process:
 ```yaml
   annotations:
     arktos.futurewei.com/nic: {"name": "eth0", "ip": "10.10.1.12", "subnet": "net1"}
-    arktos.futurewei.com/vip-hint: {"cidr":"10.10.1.0/26", "ip":"10.10.1.12", "policy":"BestEffort"}
     arktos.futurewei.com/network-readiness: "true"
     mizar.futurewei.com/network_user_input: {"vpc": "vpc-1", "net": "net1", "ip": "10.10.1.12"}
+    arktos.futurewei.com/cni-args: {"tenant": "customerA"}
 ```
 Note: Integrity checks are needed here, where we need make sure that the ip address falls within subnet CIDR range and service CIDR range, and subnet CIDR range falls within the VPC's (vpc-1) CIDR range.
 
