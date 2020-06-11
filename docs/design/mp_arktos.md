@@ -160,7 +160,6 @@ Operator kicks off creation process:
     * map subnet object (which is equivalent to net object in Mizar) with pod: ```self.store.pods_net_store[net1][nginx-internal-customerA] = pod object```
 * After Pod creation is completed, update Pod object with new annotations: ```mizar.futurewei.com/network_user_input``` and ```arktos.futurewei.com/network-readiness```.      
 * ```mizar.futurewei.com/network_user_input``` will include Mizar network information such as ```vpc name```, ```subnet name``` and ```ip address```
-* ```mizar.futurewei.com/cni-args``` will include tenant information, which will later be used when calling CNI plugin. 
 * In cni daemon service, it will retrieve newly created Pod object, and pass in required network configuration. See below: 
 
 ```
@@ -211,7 +210,6 @@ Operator kicks off creation process:
     arktos.futurewei.com/nic: {"name": "eth0", "ip": "10.10.1.12", "subnet": "net1"}
     arktos.futurewei.com/network-readiness: "true"
     mizar.futurewei.com/network_user_input: {"vpc": "vpc-1", "net": "net1", "ip": "10.10.1.12"}
-    arktos.futurewei.com/cni-args: {"tenant": "customerA"}
 ```
 Note: Integrity checks are needed here, where we need make sure that the ip address falls within subnet CIDR range and service CIDR range, and subnet CIDR range falls within the VPC's (vpc-1) CIDR range.
 
