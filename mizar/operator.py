@@ -36,6 +36,8 @@ from mizar.dp.mizar.workflows.bouncers.triggers import *
 from mizar.dp.mizar.workflows.droplets.triggers import *
 from mizar.dp.mizar.workflows.endpoints.triggers import *
 from mizar.dp.mizar.workflows.builtins.services.triggers import *
+from mizar.dp.mizar.workflows.builtins.nodes.triggers import *
+from mizar.dp.mizar.workflows.builtins.pods.triggers import *
 
 logger = logging.getLogger()
 LOCK: asyncio.Lock

@@ -56,6 +56,16 @@ from mizar.dp.mizar.workflows.builtins.services.create import *
 from mizar.dp.mizar.workflows.builtins.services.provisioned import *
 from mizar.dp.mizar.workflows.builtins.services.delete import *
 
+from mizar.dp.mizar.workflows.builtins.nodes.bootstrap import *
+from mizar.dp.mizar.workflows.builtins.nodes.create import *
+from mizar.dp.mizar.workflows.builtins.nodes.provisioned import *
+from mizar.dp.mizar.workflows.builtins.nodes.delete import *
+
+from mizar.dp.mizar.workflows.builtins.pods.bootstrap import *
+from mizar.dp.mizar.workflows.builtins.pods.create import *
+from mizar.dp.mizar.workflows.builtins.pods.provisioned import *
+from mizar.dp.mizar.workflows.builtins.pods.delete import *
+
 
 class MizarWorkflowFactory():
 
@@ -136,3 +146,9 @@ class MizarWorkflowFactory():
 
     def k8sServiceDelete(self, param):
         return k8sServiceDelete(param=param)
+
+    def k8sDropletCreate(self, param):
+        return k8sDropletCreate(param=param)
+
+    def k8sPodCreate(self, param):
+        return k8sPodCreate(param=param)

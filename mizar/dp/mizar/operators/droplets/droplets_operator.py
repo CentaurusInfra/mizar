@@ -27,6 +27,7 @@ from kubernetes import client, config
 from mizar.obj.droplet import Droplet
 from mizar.obj.bouncer import Bouncer
 from mizar.obj.divider import Divider
+from mizar.daemon.droplet_service import DropletClient
 from mizar.store.operator_store import OprStore
 
 logger = logging.getLogger()
@@ -103,3 +104,15 @@ class DropletOperator(object):
         name = kwargs['name']
         logger.info("*delete_droplet {}".format(name))
         # self.ds.delete(name)
+
+    def create_droplet(self, ip):
+        clnt = DropletClient(ip)
+        info = clnt.GetDropletInfo()
+        spec = {
+            'ip': info.ip,
+            'mac': info.mac,
+            'itf': info.itf,
+            'status': OBJ_STATUS.droplet_status_init
+        }
+        droplet = Droplet(info.name, self.obj_api, self.store, spec)
+        droplet.create_obj()

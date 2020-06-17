@@ -25,17 +25,22 @@ import logging
 import json
 import os
 from mizar.daemon.cni_service import CniClient
-from mizar.proto.cni_pb2 import CniParameters
-from mizar.common.cniparams import CniParams
+from mizar.proto.cni_pb2 import Pod
 
-cniparams = CniParams(''.join(sys.stdin.readlines()))
+# 1. The pod operator will get create pod CRD event
+# 2. It will create a simple endpoint (for the pod)
+# 3. When the endpoint status is PROVISIONED, it will make an AddPod RPC call to
+#    the host's CNI service
 
-results = CniClient("localhost").Cni(CniParameters(
-    command=cniparams.command,
-    k8s_pod_name=cniparams.k8s_pod_name,
-    container_id=cniparams.container_id,
-    netns=cniparams.netns
-))
+# simulate that the built-in POD operator data
+pod = Pod(
+    name='TEST',
+    veth_name='veth_peer_1',
+    mac="01:02:03:04:05:06",
+    netns='mizar-netns-0x3473',
+    ip='10.0.0.3',
+    prefix='24',
+    gw='10.0.0.1'
+)
 
-print(results.result)
-exit(results.value)
+CniClient("localhost").AddPod(pod)
