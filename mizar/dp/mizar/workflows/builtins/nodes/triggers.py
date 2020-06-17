@@ -19,23 +19,24 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import sys
+import kopf
 import logging
-import logging
-import json
-import os
-from mizar.daemon.cni_service import CniClient
-from mizar.proto.cni_pb2 import CniParameters
-from mizar.common.cniparams import CniParams
+import luigi
+from mizar.common.common import *
+from mizar.common.constants import *
+from mizar.common.wf_factory import *
+from mizar.common.wf_param import *
 
-cniparams = CniParams(''.join(sys.stdin.readlines()))
+logger = logging.getLogger()
 
-results = CniClient("localhost").Cni(CniParameters(
-    command=cniparams.command,
-    k8s_pod_name=cniparams.k8s_pod_name,
-    container_id=cniparams.container_id,
-    netns=cniparams.netns
-))
 
-print(results.result)
-exit(results.value)
+@kopf.on.resume('', 'v1', 'nodes')
+@kopf.on.update('', 'v1', 'nodes')
+@kopf.on.create('', 'v1', 'nodes')
+async def droplet_opr_on_node(body, spec, **kwargs):
+    logger.info("!! NODES NODES {}".format(spec))
+    param = HandlerParam()
+    param.name = kwargs['name']
+    param.body = body
+    param.spec = spec
+    run_workflow(wffactory().k8sDropletCreate(param=param))

@@ -19,23 +19,28 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import sys
 import logging
-import logging
-import json
-import os
-from mizar.daemon.cni_service import CniClient
-from mizar.proto.cni_pb2 import CniParameters
-from mizar.common.cniparams import CniParams
+from mizar.common.workflow import *
+from mizar.dp.mizar.operators.droplets.droplets_operator import *
 
-cniparams = CniParams(''.join(sys.stdin.readlines()))
+logger = logging.getLogger()
 
-results = CniClient("localhost").Cni(CniParameters(
-    command=cniparams.command,
-    k8s_pod_name=cniparams.k8s_pod_name,
-    container_id=cniparams.container_id,
-    netns=cniparams.netns
-))
+droplet_opr = DropletOperator()
 
-print(results.result)
-exit(results.value)
+
+class k8sDropletCreate(WorkflowTask):
+
+    def requires(self):
+        logger.info("Requires {task}".format(task=self.__class__.__name__))
+        return []
+
+    def run(self):
+
+        logger.info("Run {task}".format(task=self.__class__.__name__))
+        for addr in self.param.body['status']['addresses']:
+            if addr['type'] != 'InternalIP':
+                continue
+            ip = addr['address']
+            droplet_opr.create_droplet(ip)
+
+        self.finalize()

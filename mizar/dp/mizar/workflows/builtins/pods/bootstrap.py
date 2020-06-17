@@ -19,23 +19,6 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import sys
 import logging
-import logging
-import json
-import os
-from mizar.daemon.cni_service import CniClient
-from mizar.proto.cni_pb2 import CniParameters
-from mizar.common.cniparams import CniParams
-
-cniparams = CniParams(''.join(sys.stdin.readlines()))
-
-results = CniClient("localhost").Cni(CniParameters(
-    command=cniparams.command,
-    k8s_pod_name=cniparams.k8s_pod_name,
-    container_id=cniparams.container_id,
-    netns=cniparams.netns
-))
-
-print(results.result)
-exit(results.value)
+from mizar.common.workflow import *
+logger = logging.getLogger()

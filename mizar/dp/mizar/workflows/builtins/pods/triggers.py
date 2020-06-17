@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020 The Authors.
 
@@ -21,28 +19,36 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import os
-import subprocess
-import sys
-from subprocess import Popen, PIPE, STDOUT
+import kopf
+import logging
+import luigi
+from mizar.common.common import *
+from mizar.common.constants import *
+from mizar.common.wf_factory import *
+from mizar.common.wf_param import *
+
+logger = logging.getLogger()
 
 
-def main():
+@kopf.on.resume('', 'v1', 'pods')
+@kopf.on.update('', 'v1', 'pods')
+@kopf.on.create('', 'v1', 'pods')
+async def builtins_on_pod(body, spec, **kwargs):
+    param = HandlerParam()
+    param.name = kwargs['name']
+    param.body = body
+    param.spec = spec
 
-    os.environ["CNI_COMMAND"] = 'ADD'
-    os.environ["CNI_CONTAINERID"] = '320f60a0fce865a9e05a6b8e65dcb0a691d699adafe6dbf4d978b5a718ec822a'
-    os.environ["CNI_NETNS"] = '/var/run/netns/cni-825fc751-3ab9-45f2-420d-2159647a0500'
-    os.environ["CNI_IFNAME"] = 'eth0'
-    os.environ["CNI_PATH"] = '/opt/cni/bin'
-    os.environ["CNI_ARGS"] = 'IgnoreUnknown=1;K8S_POD_NAMESPACE=default;K8S_POD_NAME=hello-world2-7556f76cd-8drvm;K8S_POD_INFRA_CONTAINER_ID=320f60a0fce865a9e05a6b8e65dcb0a691d699adafe6dbf4d978b5a718ec822a'
+    logger.info("metadata: ---- ")
+    for k in param.body['metadata']:
+        print("metadata k:{}, v:{}".format(
+            k, param.body['metadata'].get(k, None)))
 
-    stdin = '{"cniVersion":"0.2.0","k8sconfig":"/tmp/config","name":"mizarcni","type":"mizarcni.py"}'
+    logger.info("status: ---- ")
+    for k in param.body['status']:
+        print("status k:{}, v:{}".format(k, param.body['status'].get(k, None)))
 
-    p = Popen(['./mizarcni.py'], stdout=PIPE, stdin=PIPE, stderr=PIPE)
-    (stdout_data, stderr_data) = p.communicate(input=stdin.encode('utf8'))
-
-    print(stdout_data)
-    print(stderr_data)
-
-
-main()
+    logger.info("spec: ---- ")
+    for k in param.spec:
+        print("spec k:{}, v:{}".format(k, param.spec.get(k, None)))
+    run_workflow(wffactory().k8sPodCreate(param=param))

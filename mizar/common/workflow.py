@@ -135,3 +135,11 @@ class WorkflowFactory(ABC):
     @abstractmethod
     def k8sEndpointsDelete(self, param):
         pass
+
+    @abstractmethod
+    def k8sDropletCreate(self, param):
+        pass
+
+    @abstractmethod
+    def k8sPodCreate(self, param):
+        pass
