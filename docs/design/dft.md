@@ -18,15 +18,15 @@ Endpoint in which we detail its essential design techniques:
   virtual machines or containers, hence improves cost
 
 -   Native data-plane failure detection that minimizes the time to
-  recover a connection by means of gossip proto- cols
+  recover a connection by means of gossip protocols
 
 # Software Organization
 
-We will manages two separate pools of nodes. The
+We will manage two separate pools of nodes. The
 first pool consists of data-plane nodes (D-Nodes) that are responsible
 for all packet processing. The other pool consists of management-plane
 nodes (M-Nodes) that run a set of Kubernetes custom resource operators
-and Kubernetes services . The operators implement the management- plane logic,
+and Kubernetes services . The operators implement the management-plane logic,
 and the other services cooperate with the operators to manage the
 D-Nodes and the middleboxes as we will detail in the Management Plane
 Section. The D,M-Nodes may join and leave the cluster dynamically,
@@ -37,14 +37,14 @@ The management-plane exposes network services as endpoints of a single
 IP address (VIP), each implements a chain of one or more middleboxes.
 We refer to such network service as (Scaled Endpoint),as an endpoint
 scale-out and in across multiple D-Nodes according to its bandwidth
-demand. The following is a non-exhaustive list of poten- tial Scaled
+demand. The following is a non-exhaustive list of potential Scaled
 Endpoint types: Bouncer, Divider, Load-balancer, Nat, DPI, QoS,
 Tunnel, Firewall, Protocol Translators IPv6/IPv4, Access Control List
 (ACL) or a combination of these. A typical example from production
 systems is a Scaled Endpoint that implements a secure load-balancer
 and consists of two middleboxes: ACL Loadlancer). Developers shall
 be able to specify and verify different Scaled Endpoints
-functionalities through a specification inter- face.
+functionalities through a specification interface.
 
 # Dataplane Nodes
 
@@ -74,7 +74,7 @@ Figure 1: Dataplane Node Worker Architecture
 Each droplet runs an XDP program that implements the data-plane
 functions (Figure [2]. The droplet's XDP program
 consists of a Primary XDP (P-XDP) program that performs initial packet
-classification and invokes middlebox func- tions. A middlebox is an
+classification and invokes middlebox functions. A middlebox is an
 ebpf program (M-XDP) that implements ClickOS like middleboxes and
 elements. The most important elements for most of the network
 services are the IPRewriter, IPClassifier, and IPFilter. We
@@ -109,7 +109,7 @@ closing). There are several types of f-maps that we will detail as we
 describe specific use cases.
 
 -   **Configuration maps (c-map)**: Read only maps storing configuration
-  of different network service and mid- dlebox configuration. Only the
+  of different network service and middlebox configuration. Only the
   droplet-d writes to c-maps and P-XDPs and M-XDPs only read
   configuration from c-maps. We will describe several types of c-maps
   throughout the text.
@@ -189,7 +189,7 @@ diagram, the middleboxes collocated with FTN-T3, T6, T9 are all active
 single DFT. A single chain has a minimum of two FTNs. The DFT operator
 designates one of the FTNs in a chain as a tail node, one as head and
 the remaining nodes - if any as replicas. For example, Chain-C0 in
-the previous diagram hasFTN-T1 as head, FTN-T2 as a replica, and FTN-T3
+the previous diagram has FTN-T1 as head, FTN-T2 as a replica, and FTN-T3
 as a tail. The number of chains can increase and decrease for scale
 out/in. The DFT operator maintains the Maglev hashing table and
 propagates the table to FWDs or any other entity that may communicate
@@ -313,7 +313,7 @@ SI:254 Action: the ACL M-XDP tail-calls droplet-1's FWD
 
 SI:251 Action: droplet-2's P-XDP tail-calls the packet to the LB M-XDP
 
--   determines the IP address of the back-end to send the packet to
+-   determines the IP address of the backend to send the packet to
 
 -   the LB M-XDP decrements SI by one
 
@@ -348,7 +348,7 @@ SI:247 Action: the MON M-XDP sends the packet to its original source
 Figure 7: Scaled Endpoint Programming Model
 
 The Scaled Endpoint specification table enables flexible programming
-of the Scaled Endpoint logic in a mod- ular way. Most of the
+of the Scaled Endpoint logic in a modular way. Most of the
 specification branching will invoke M-XDP on the same droplet, with
 the exception of the cases where the flow states must be updated
 through the DFT. In both cases the specification itself is generic
@@ -394,7 +394,7 @@ operations in the same metadata header as long as there is a room in
 the packet permitted by the network MTU. Figure [9]
 shows the header structure of a DFT operation, with fields:
 
-<img src="png/dftop.png" width="600" height="130">
+<img src="png/dftop.png" width="600" height="170">
 
 Figure 9: DFT operation
 
@@ -465,7 +465,7 @@ The packet progresses from source to destination as follows:
     2.  If no entry exists, we assume a new flow and the FWD tail-calls
         the first M-XDP in the Scaled Endpoint specification table. The
         specification table progresses until the final flow-entry is
-        concluded, then the M- XDP adds an Update DFT operation to the
+        concluded, then the M-XDP adds an Update DFT operation to the
         NSH header and sends the packet to the Chain's head (FTN-T1 in
         Figure [10].
 
@@ -479,7 +479,7 @@ The packet progresses from source to destination as follows:
         scenarios for the Head FTN to perform before sending packet
         4(b):
 
-        1.  If non-expired flow-entry exists, the FTN ignores any Update
+        1.  If non-expired flow-entries exists, the FTN ignores any Update
             request in packet 3(b) and resets the flow-entry expiry
             timer. This condition indicates that the tail node is
             recovering from failure, or a repartitioning (scale out/in)
@@ -522,11 +522,11 @@ uniform distribution of all flow entries, while also preserving
 previously made flow decisions.
 
 **Chain Augmentation:** The management plane performs
-chain-augmentation in the case of the removal(scale- in) or
+chain-augmentation in the case of the removal(scale-in) or
 addition(scale-out) of a chain to a DFT. During either scenario, the
 management plane will attach chainstogether by first determining a
 "predecessor" and a "successor" chain. Next, the tail node of the
-predecessor chain is recognized as thepseudo-head of the successor
+predecessor chain is recognized as the pseudo-head of the successor
 chain. Finally, both active and passivereplication will work in
 tandem to repartition and distribute the flowentries amongst the active chains.
 
@@ -541,7 +541,7 @@ hash to both Chain-C0 and Chain-C1
 **Repartitioning** There are two approaches to repartitioning; passive
 and active. In both cases, we rely on the replication protocols by
 having the management plane do chain augmentation. In Figure
-[11], FTN-T9, and FTN- T3 become pseudo-heads of
+[11], FTN-T9, and FTN-T3 become pseudo-heads of
 Chain-C0 and Chain-C1, respectively. The active replication protocol
 is activated to copy the chain's new indexes from its predecessor to
 the successor. All flows of index 0 and 2 from FTN-T3 are hashed to
@@ -576,7 +576,7 @@ and instead replicate it's own existing entry.
 
 Figure 11: FTN Scale Out
 
-<img src="png/scalein.png" width="600" height="250">
+<img src="png/scalein.png" width="600" height="350">
 
 Figure 12: FTN Scale In
 
@@ -696,7 +696,7 @@ summarize the roles of each operators. Figure [15] shows
 the organization of the operators within a Kubernetes
 cluster. The operators exposes interfaces to users and administrators,
 and internal interfaces for the operators to communicate with each
-other during a management- plane workflow.
+other during a management-plane workflow.
 
 <img src="png/management.png" width="500" height="250">
 
@@ -792,7 +792,7 @@ The Droplet operator is also responsible for exposing an interface to
 load any M-XDP program onto its interface.
 
 On droplet creation, the droplet object will be assigned to host node
-and initialized with host specific infor- mation such as IP, MAC, etc.
+and initialized with host specific information such as IP, MAC, etc.
 On droplet delete, the droplet object will simply be removed from the
 datastore as an available resource.
 
@@ -807,7 +807,7 @@ various components.
 **East/West Traffic:** Figure
 [16] shows an example of traffic between two VMs; 10.0.0.2 and 10.0.0.3
 in the same virtual network (i.e. share the same VNI in the
-encapsulated packets). The following enumerates the packet se- quence:
+encapsulated packets). The following enumerates the packet sequence:
 
 1.  10.0.0.2 sends a packet 10.0.0.3 via it's bouncer. The
   bouncer is a Scaled Endpoint itself, thus the host selects one of
@@ -826,7 +826,7 @@ encapsulated packets). The following enumerates the packet se- quence:
   to persist that decision in the DFT and the FTN tail replies
   immediately to the FWD.
 
-5.  The FWD caches the flow entry, strips-out the NSH header, rewrite
+5.  The FWD caches the flow entry, strips out the NSH header, rewrite
   the outer IP header and send the packet to 10.0.0.3's host.
 
 The reverse flow follows the same procedure and the remaining flow
@@ -872,7 +872,7 @@ Endpoint. The following enumerates the packet sequence:
   replicas, until it returns to the tail. The DFT persists both the
   forward and the reverse flow entries.
 
-- 8.,9.The tail FTN returns the packet back to the FWD, which strips-out
+- 8.,9.The tail FTN returns the packet back to the FWD, which strips out
 the NSH header, apply the changes in the flow-entry
 (modify vni, out.daddr, in.daddr) and sends the packet to10.0.0.3's host.
 
