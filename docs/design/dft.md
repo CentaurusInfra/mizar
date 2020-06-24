@@ -26,7 +26,7 @@ We will manage two separate pools of nodes. The
 first pool consists of data-plane nodes (D-Nodes) that are responsible
 for all packet processing. The other pool consists of management-plane
 nodes (M-Nodes) that run a set of Kubernetes custom resource operators
-and Kubernetes services . The operators implement the management-plane logic,
+and Kubernetes services. The operators implement the management-plane logic,
 and the other services cooperate with the operators to manage the
 D-Nodes and the middleboxes as we will detail in the Management Plane
 Section. The D,M-Nodes may join and leave the cluster dynamically,
@@ -35,34 +35,34 @@ be external to a Kubernetes cluster.
 
 The management-plane exposes network services as endpoints of a single
 IP address (VIP), each implements a chain of one or more middleboxes.
-We refer to such network service as (Scaled Endpoint),as an endpoint
+We refer to such network service as (Scaled Endpoint), as an endpoint
 scale-out and in across multiple D-Nodes according to its bandwidth
-demand. The following is a non-exhaustive list of potential Scaled
+demands. The following is a non-exhaustive list of potential Scaled
 Endpoint types: Bouncer, Divider, Load-balancer, Nat, DPI, QoS,
 Tunnel, Firewall, Protocol Translators IPv6/IPv4, Access Control List
 (ACL) or a combination of these. A typical example from production
 systems is a Scaled Endpoint that implements a secure load-balancer
-and consists of two middleboxes: ACL Loadlancer). Developers shall
-be able to specify and verify different Scaled Endpoints
+and consists of two middleboxes: ACL Load-lancer). Developers shall
+be able to specify and verify different Scaled Endpoint
 functionalities through a specification interface.
 
 # Dataplane Nodes
 
 D-Nodes (Figure [1] are Virtual Machines (VMs) or SmartNiCs
 that support turnkey Linux distributions or XDP offloading
-(e.g., Broadcom PS225 , Netronome Agilio. Each D-Node may
+(e.g., Broadcom PS225, Netronome Agilio). Each D-Node may
 have multiple network interfaces. The management-plane abstracts
 network interfaces as droplets running on the D-Node. A droplet is
 a one-to-one mapping to a network interface. A droplet daemon
-(droplet-d) manages the dropletswhere it attaches an XDP program to
+(droplet-d) manages the droplets where it attaches an XDP program to
 each interface, populates ebpf maps storing configuration, flow-caching,
 and metrics. The droplet-d also manages data plane userspace
 middleboxes, where packet processing may be offloaded to the userspace
-using AF XDP. The D-Nodesalso deploy a nomad driver and device plugins
-that extends Nomad/Consul  for health checks, telemetry, placement, and
+using AF XDP. The D-Nodes also deploy a nomad driver and relevent device plugins
+that extends Nomad/Consul for health checks, telemetry, placement, and
 autoscaling. In the case of SmartNics, the D-Node's management plane
 components may be deployed to a common server -- installing multiple
-SmartNics -- which acts as aproxy to manage the dataplane through an RPC interface.
+SmartNics -- which acts as a proxy to manage the dataplane through an RPC interface.
 
 
 <img src="png/dnode.png" width="300" height="400">
@@ -86,11 +86,11 @@ functionalities; Forwarder (FWD) and Flow Table Node (FTN)
 Figure 2: Droplet Architecture
 
 An M-XDP entirely runs in the kernel or offloaded to a SmartNIC. For
-some complex middleboxes , may send packets to userspace through AF
+some complex middleboxes, may send packets to userspace through AF
 XDP in case the D-Node is a Virtual Machine. The P-XDP and M-XDPs all
 share the same ebpf maps. The management plane provides packet
 classification rules by which a P-XDP determines which M-XDP shall
-handles the packet and tail-calls the corresponding ebpf program. A
+handle the packet and tail-call the corresponding ebpf program. A
 droplet also maintains a set of ebpf maps shared with all P-XDP and
 M-XDP programs. The maps have four categories:
 
@@ -98,7 +98,7 @@ M-XDP programs. The maps have four categories:
   read/write flow status. A typical flow map tracks the IP rewrite
   rules of a flow and the connection status with a flow entry such as:
 
-*(saddr, sport, daddr, dport, protocol, vni) −→ (saddr , sport , daddr , dport , protocol , vni , conntrack)*
+*(saddr, sport, daddr, dport, protocol, vni) −→ (saddr, sport, daddr, dport, protocol, vni, conntrack)*
 
 where *saddr* is the source IP address, *daddr* is the destination IP
 address, *sport* is the source port, *dport* is the destination port,
@@ -126,15 +126,15 @@ describe specific use cases.
 
 Users, administrators, and management plane operators interact with a
 the cluster through the Kubernetes API server. Through
-Custom Resource Definition , we extend the API
+Custom Resource Definition, we extend the API
 server functionalities to manage new types of objects.
 Each object has a custom resource operator that
 manages its life-cycle from creation, to provisioning, to deletion
 through various workflows. An administrator deploys an operator as a
 pod, that's integrated in the control-loop of Kubernetes.
 
-The management-plane employs a Nomad and Consul clusters to provide
-off-the-shelf services for large scale clusters of several thousands
+The management-plane employs a Nomad and Consul cluster to provide
+off-the-shelf services for large scale clusters of several thousand
 D-Nodes. Similar to operators, an administrator shall deploy
 Nomad/Consul clusters as Kubernetes Pods. Nomad exposes
 functionalities to operators for placement and autoscaling of various
@@ -358,8 +358,7 @@ the Scaled Endpoint logic through a high
 level description language. Figure [7] shows a high level
 layout of this idea. The Scaled Endpoint operator takes the Scaled
 Endpoint configuration - written in a high level language - and
-generates a specification table. A function verifier, such as Gravel
-, takes the specification table and predefined
+generates a specification table. A function verifier, such as Gravel, takes the specification table and predefined
 specification of the middleboxes as inputs and provide a proof of the
 correctness of the Scaled Endpoint configuration. If proved correct,
 the Scaled Endpoint propagates the specification table to
@@ -444,7 +443,7 @@ the regular packet flow and interaction between the FWDs and the DFT.
 The packet progresses from source to destination as follows:
 
 1. FWD receives a packet from source
-2. FWD lookup the packet's flow entry in its flow f-map (cached)
+2. FWD looks up the packet's flow entry in its flow f-map (cached)
     1. If an entry exists, FWD rewrites the packet's header according to the
     flow-entry and bounce the packet back for transmission to its destination.
 
@@ -456,7 +455,7 @@ The packet progresses from source to destination as follows:
         encapsulated (external traffic), the FWD
         encapsulates the packet.
 
-3.  When the tail FTN receives packet 2(b), it lookup the packet flow
+3.  When the tail FTN receives packet 2(b), it does a lookup of the packet's flow
   entry in its flow f-map, there is two possible cases:
 
     1.  If an entry exists, the FTN replies with the flow entry and
@@ -698,7 +697,7 @@ cluster. The operators exposes interfaces to users and administrators,
 and internal interfaces for the operators to communicate with each
 other during a management-plane workflow.
 
-<img src="png/management.png" width="500" height="250">
+<img src="png/management.png" width="500" height="260">
 
 Figure 15: Management Plane Architecture
 
@@ -838,7 +837,7 @@ the DFT partitioning through consistent hashing, introducing a new VM
 to the system only requires programming the FTNs of only one replica,
 tightening the management-plane complexity to O(1).
 
-<img src="png/eastwest.png" width="330" height="450">
+<img src="png/eastwest.png" width="350" height="450">
 
 Figure 16: Example east/west traffic VM. In case the destination IP
 is for a Scaled Endpoint, the out.daddr is one of the Scaled Endpoint's
@@ -879,7 +878,7 @@ the NSH header, apply the changes in the flow-entry
 Subsequent flow forward packets only get processes through the FWD
 (i.e. two hops).
 
-<img src="png/northsouthfwd.png" width="630" height="350">
+<img src="png/northsouthfwd.png" width="630" height="400">
 
 Figure 17: North/Sourth forward traffic to VM. In case the destination
 IP is for another Scaled Endpoint, the in.daddr is the Scaled
@@ -919,11 +918,11 @@ selects Scaled Endpoint's FWD and sends the packet.
   M-XDP, where ACL filters the packet according to configured access
   rules.
 
-<img src="png/northsouthrev.png" width="380" height="450">
+<img src="png/northsouthrev.png" width="400" height="450">
 
 Figure 18: North/Sourth reverse traffic.
 
-<img src="png/ipv4ipv6.png" width="630" height="450">
+<img src="png/ipv4ipv6.png" width="730" height="550">
 
 Figure 19: IPv4 to IPv6 Transmission.
 
