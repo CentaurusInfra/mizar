@@ -15,7 +15,7 @@ class DropletServiceStub(object):
             channel: A grpc.Channel.
         """
         self.GetDropletInfo = channel.unary_unary(
-                '/DropletService/GetDropletInfo',
+                '/mizar.DropletService/GetDropletInfo',
                 request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
                 response_deserializer=mizar_dot_proto_dot_droplet__pb2.Droplet.FromString,
                 )
@@ -40,7 +40,7 @@ def add_DropletServiceServicer_to_server(servicer, server):
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'DropletService', rpc_method_handlers)
+            'mizar.DropletService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
 
@@ -58,7 +58,7 @@ class DropletService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/DropletService/GetDropletInfo',
+        return grpc.experimental.unary_unary(request, target, '/mizar.DropletService/GetDropletInfo',
             google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             mizar_dot_proto_dot_droplet__pb2.Droplet.FromString,
             options, channel_credentials,

@@ -39,6 +39,8 @@ async def builtins_on_pod(body, spec, **kwargs):
     param.body = body
     param.spec = spec
 
+    logger.info("body: {}".format(body))
+
     logger.info("metadata: ---- ")
     for k in param.body['metadata']:
         print("metadata k:{}, v:{}".format(

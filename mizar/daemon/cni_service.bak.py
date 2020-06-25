@@ -186,14 +186,20 @@ class CniService(Service):
         ep.set_droplet_mac(CniService.droplet.mac)
         ep.set_droplet_obj(CniService.droplet)
 
+        # 1.
         iproute_ns = self.create_mizarnetns(params, ep)
+
+        #2.
         self.prepare_veth_pair(ep, iproute_ns, params)
         ep.load_transit_agent()
 
         ep.set_cnidelay(time.time() - start_time)
         ep.create_obj()
         ep.watch_obj(self.ep_ready_fn)
+
+        # 3.
         self.provision_endpoint(ep, iproute_ns)
+
         ep.set_status(OBJ_STATUS.ep_status_provisioned)
         ep.set_provisiondelay(time.time() - start_time)
         ep.update_obj()

@@ -276,7 +276,7 @@ class Endpoint:
         return self.droplet_ip
 
     def load_transit_agent(self):
-        self.rpc.load_transit_agent_xdp(self)
+        self.rpc.load_transit_agent_xdp(self.veth_peer)
 
     def unload_transit_agent_xdp(self):
         self.rpc.unload_transit_agent_xdp(self)

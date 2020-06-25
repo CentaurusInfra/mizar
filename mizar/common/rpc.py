@@ -159,8 +159,8 @@ class TrnRpc:
         logger.info(
             "update_agent_metadata returns {} {}".format(returncode, text))
 
-    def load_transit_agent_xdp(self, ep):
-        itf = ep.veth_peer
+    def load_transit_agent_xdp(self, veth_peer):
+        itf = veth_peer
         agent_pcap_file = itf + '.pcap'
         jsonconf = {
             "xdp_path": self.agent_xdp_path,
