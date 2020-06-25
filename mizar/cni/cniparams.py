@@ -40,7 +40,17 @@ class CniParams:
 
         self.cni_args_dict = dict(i.split("=")
                                   for i in self.cni_args.split(";"))
-        self.k8s_namespace = self.cni_args_dict.get('K8S_POD_NAMESPACE', None)
-        self.k8s_pod_name = self.cni_args_dict.get('K8S_POD_NAME', None)
+        self.k8s_namespace = self.cni_args_dict.get('K8S_POD_NAMESPACE', '')
+        self.k8s_pod_name = self.cni_args_dict.get('K8S_POD_NAME', '')
+
+        logging.info("CNI ARGS {}".format(self.cni_args_dict))
+
+        config_json = json.loads(stdin)
+
+        # expected parameters in the CNI specification:
+        self.cni_version = config_json["cniVersion"]
+        self.network_name = config_json["name"]
+        self.plugin = config_json["type"]
 
         # TODO: parse 'Arktos specific' CNI_ARGS
+        self.k8s_pod_tenant = self.cni_args_dict.get('K8S_POD_TENANT', '')

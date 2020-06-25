@@ -213,3 +213,7 @@ def get_spec_val(key, spec, default=""):
 
 def run_workflow(task):
     luigi.build([task], detailed_summary=False)
+
+
+def get_pod_name(pod_id):
+    return pod_id.k8s_pod_name + '-' + pod_id.k8s_namespace + '-' + pod_id.k8s_pod_tenant

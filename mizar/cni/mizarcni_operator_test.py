@@ -24,23 +24,60 @@ import logging
 import logging
 import json
 import os
-from mizar.daemon.cni_service import CniClient
-from mizar.proto.cni_pb2 import Pod
+import uuid
+from mizar.daemon.interface_service import InterfaceServiceClient
+from mizar.proto.interface_pb2 import *
+from mizar.common.common import *
 
-# 1. The pod operator will get create pod CRD event
-# 2. It will create a simple endpoint (for the pod)
-# 3. When the endpoint status is PROVISIONED, it will make an AddPod RPC call to
-#    the host's CNI service
-
-# simulate that the built-in POD operator data
-pod = Pod(
-    name='TEST',
-    veth_name='veth_peer_1',
-    mac="01:02:03:04:05:06",
-    netns='mizar-netns-0x3473',
-    ip='10.0.0.3',
-    prefix='24',
-    gw='10.0.0.1'
+pod_id = PodId(
+    k8s_pod_name="name",
+    k8s_namespace="namespace",
+    k8s_pod_tenant="tenant"
 )
 
-CniClient("localhost").AddPod(pod)
+interface_id = InterfaceId(pod_id=pod_id, interface="eth0")
+
+interface_address = InterfaceAddress(version="4",
+                                     ip_address="10.0.0.2",
+                                     ip_prefix="32",
+                                     gateway_ip="10.0.0.1",
+                                     mac="0a:0b:0c:0d:0e:0f",
+                                     tunnel_id="3"
+                                     )
+droplet = SubstrateAddress(
+    version="4", ip_address="172.0.0.1", mac="01:02:03:04:05:06")
+
+bouncers = [SubstrateAddress(
+    version="4", ip_address="172.0.0.2", mac="01:02:03:04:05:06"),
+    SubstrateAddress(
+    version="4", ip_address="172.0.0.3", mac="02:02:03:04:05:06"),
+    SubstrateAddress(
+    version="4", ip_address="172.0.0.4", mac="03:02:03:04:05:06")]
+
+pod_name = get_pod_name(interface_id.pod_id)
+local_id = str(uuid.uuid3(uuid.NAMESPACE_URL, pod_name))[0:8]
+veth_name = "eth-" + local_id
+veth_peer = "veth-" + local_id
+veth = VethInterface(name=veth_name, peer=veth_peer)
+
+interface = Interface(
+    interface_id=interface_id,
+    interface_type=InterfaceType.veth,
+    pod_provider=PodProvider.K8S,
+    veth=veth,
+    address=interface_address,
+    droplet=droplet,
+    bouncers=bouncers,
+    status=InterfaceStatus.init
+)
+
+interfaces = InterfacesList(interfaces=[interface])
+
+interface = InterfaceServiceClient("localhost").ProduceInterfaces(interfaces)
+
+print("Produced {}".format(interface))
+
+interface_id = InterfaceId(pod_id=pod_id, interface="eth0")
+interfaces = InterfaceServiceClient("localhost").ConsumeInterfaces(pod_id)
+
+print("Consumed {}".format(interfaces))

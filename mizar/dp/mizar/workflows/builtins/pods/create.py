@@ -53,4 +53,6 @@ class k8sPodCreate(WorkflowTask):
         logger.info("phase: {}".format(self.param.body['status']['phase']))
         logger.info("podIPs: {}".format(self.param.body['status']['podIPs']))
 
+        # Get the droplet object given the hostIP
+
         self.finalize()

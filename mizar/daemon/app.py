@@ -3,10 +3,10 @@ import grpc
 import time
 from google.protobuf import empty_pb2
 from concurrent import futures
-from mizar.daemon.cni_service import CniServer
+from mizar.daemon.interface_service import InterfaceServer
 from mizar.daemon.droplet_service import DropletServer
-import mizar.proto.cni_pb2_grpc as cni_pb2_grpc
-import mizar.proto.cni_pb2 as cni_pb2
+import mizar.proto.interface_pb2_grpc as interface_pb2_grpc
+import mizar.proto.interface_pb2 as interface_pb2
 import mizar.proto.droplet_pb2_grpc as droplet_pb2_grpc
 import mizar.proto.droplet_pb2 as droplet_pb2
 import os
@@ -26,8 +26,8 @@ def serve():
         DropletServer(), server
     )
 
-    cni_pb2_grpc.add_CniServiceServicer_to_server(
-        CniServer(), server
+    interface_pb2_grpc.add_InterfaceServiceServicer_to_server(
+        InterfaceServer(), server
     )
 
     server.add_insecure_port('[::]:50051')

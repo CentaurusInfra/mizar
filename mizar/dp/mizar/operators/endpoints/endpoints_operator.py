@@ -157,3 +157,29 @@ class EndpointOperator(object):
         eps = self.store.get_eps_in_net(bouncer.net).values()
         for ep in eps:
             ep.update_bouncers(set([bouncer]), False)
+
+    def create_simple_endpoint(self, name, spec):
+        logger.info("Create simple endpoint {} spec {}".format(name, spec))
+        ep = Endpoint(name, self.obj_api, self.store)
+
+        ep.set_type(OBJ_DEFAULTS.ep_type_simple)
+        ep.set_status(OBJ_STATUS.ep_status_init)
+
+        # If not provided in Pod, use defaults
+        # TODO: have it pod :)
+        ep.set_vni(params.default_vni)  # VPC Operator lookup VPC
+        ep.set_vpc(params.default_vpc)  # Annotations
+        ep.set_net(params.default_net)  # Annotations
+
+        ep.set_veth_name(params.interface)  # ? (CNI Param)
+        ep.set_droplet(CniService.droplet.name)  # hostIP
+        ep.set_container_id(params.container_id)  # (CNI Param)
+        self.allocate_local_id(ep)
+
+        ep.set_veth_name("eth-" + ep.local_id)  # ?
+        ep.set_veth_peer("veth-" + ep.local_id)  # ?
+        ep.set_netns("mizar-" + ep.local_id)  # ?
+        ep.set_droplet_ip(CniService.droplet.ip)  # hostIP
+        ep.set_droplet_mac(CniService.droplet.mac)  # hostIP
+        ep.set_droplet_obj(CniService.droplet)  # hostIP
+        ep.create_obj()
