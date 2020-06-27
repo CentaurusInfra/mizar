@@ -1,6 +1,6 @@
-### On-demand installing of table entries based on basic gateways
+## On-demand installing of table entries based on basic gateways
 
-#### 1. Requirements
+### 1. Requirements
 
 In a cloud network, rules need to be installed on the computing nodes when the virtual machine is online. If the scale of the VPC is large, it takes a long time to get VMs online. In order to increase the speed of the virtual machine going online, it is necessary to install the rules on the computing nodes as needed. It needs to satisfy:
 
@@ -10,7 +10,7 @@ In a cloud network, rules need to be installed on the computing nodes when the v
 
 -   The number of rules deployed on the compute node is greatly reduced, reducing the risk of overload and failure of high-density servers；
 
-#### 2. Gateway node forwarding model
+### 2. Gateway node forwarding model
 
 In order to reduce the number of rules installed when the virtual machine is online and increase the speed of the virtual machine going online, we designe a gateway node forwarding model. Each gateway node stores the global rule information of one VPC or multiple VPCs. In the gateway node forwarding model, when a virtual machine is online, the rules configuration is mainly divided into two parts:
 
@@ -22,17 +22,17 @@ In order to reduce the number of rules installed when the virtual machine is onl
 
 <center>Figure 1. Gateway node model</center>
 
-#### 3. Gateway node cluster management
+### 3. Gateway node cluster management
 
 All the gateway nodes in the network are divided into several clusters of gateway nodes. The gateway nodes in the cluster are identical, which means that the rules in gateway nodes are identical. And the gateway nodes between clusters can be heterogeneous. Traffic from the same VPC will only be forwarded to the same cluster. Moreover, the number of VPCs managed by the same gateway cluster is limited, thereby improving the robustness of the network.
 
 The main functions of the gateway node cluster management include: the initialization of the gateway node cluster, the determination of the mapping of the VPC to the bucket (gateway node cluster) and the update of the gateway node cluster.
 
-##### 3.1 Initialization of the gateway node cluster
+#### 3.1 Initialization of the gateway node cluster
 
 When the system starts to run, the gateway nodes are divided into several gateway node clusters according to the network status (e.g. the number of gateway nodes, the number of computing nodes, the estimated number of VPC). The simplest solution is to divide them equally.
 
-##### 3.2 Select the corresponding bucket for each VPC
+#### 3.2 Select the corresponding bucket for each VPC
 
 In order to achieve load balancing of different gateway nodes in the same cluster from the source node, a set of buckets is designed on the OVS of each computing node. The number of buckets on each computing node is the same as the number of gateway node clusters, and it corresponds to the gateway node cluster one by one, without dynamic adjustment. The bucket can send the data packet to a gateway node in the gateway node cluster corresponding to the bucket. We map the flow to different buckets at the granularity of VPC_id. We can use the flow table to forward the flow to a bucket (group rules), and then use the group rules to achieve load balancing between the gateway node clusters. Refer to the "The specific implementation of the bucket" section for details.
 
@@ -44,7 +44,7 @@ The mapping of flows to buckets (gateway node clusters) ensures the following pr
 
 -   The traffic forwarded by each gateway node cannot exceed the capacity limit of the gateway node. Later, if the corresponding gateway node cluster is overloaded due to the expansion of a certain VPC or increased traffic, the gateway node cluster needs to be expanded, that is, the mapping between the bucket and the gateway node will be updated to ensure that the gateway node is not overloaded.
 
-##### 3.3 Update of the gateway node cluster (the update is a small probability event and does not occur frequently)
+#### 3.3 Update of the gateway node cluster (the update is a small probability event and does not occur frequently)
 
 The update of the gateway node in the gateway node cluster is triggered by the following events:
 
@@ -60,7 +60,7 @@ It is worth noting that when the gateway node cluster updats, we only update the
 
 <center>Figure 2. Gateway cluster management process</center>
 
-#### 4. The specific implementation of bucket
+### 4. The specific implementation of bucket
 
 We can use the group rules to implement the bucket. Specifically, we consider each group rule as a bucket, and the action buckets in the group rules store the corresponding outgoing ports of all gateway nodes in the corresponding gateway node cluster. That is, each bucket corresponds to a gateway node cluster. The number of buckets on each computing node is the same as the number of gateway node clusters. In addition, we use flow table rules to map VM to buckets.
 
@@ -70,7 +70,7 @@ We can use the group rules to implement the bucket. Specifically, we consider ea
 
 We use an example to illustrate, as shown in Figure 3, VMX belongs to VPC1, VMA belongs to VPC2. The flows of VPC1 and VPC2 are arranged by us to gateway node cluster 1, which includes two gateway nodes gateway1 and gateway2. The gw_port1 and gw_port2 ports of computing node1 are respectively connected to the gateway nodes gateway1 and gateway2. Then we install a group rule on computing node1, the group identifier is 4, and the action buckets are: bucket1:output=gw_port1; bucket2:output=gw_port2. In addition, by installing a low-priority rule, the flow of the VPC1 that does not match the high-priority rule (vm-vm direct path forwarding rule) is directed to the group rule 4, so that all flow of VPC1 on computing node1 will be directed to group rule 4, which will be forwarded to gateway node gateway1 or gateway2 through the group rule 4. Through the flow table rules + group table rules, we can achieve the mapping of vpc to the gateway node cluster.
 
-#### 5. Interface design
+### 5. Interface design
 
 Key interface outline design:
 
@@ -86,7 +86,7 @@ The gateway node is divided into three modules: the control module, the forwardi
 
 <center>Figure 4. Gateway module</center>
 
-##### 1. Interface of control and management plane:
+#### 1. Interface of control and management plane:
 
 The management plane can access the interface provided by the gateway node through RPC calls. The main function is to realize the management of global rules in the gateway node through the management plane (addition, deletion, and modification of flow tables).
 
@@ -143,7 +143,7 @@ The management plane can access the interface provided by the gateway node throu
 
     -   ep_key: Uniquely identify a endpoint
 
-##### 2. Interface of control and forward：
+#### 2. Interface of control and forward：
 
 -   of_parse(packet)
 
@@ -175,7 +175,7 @@ The management plane can access the interface provided by the gateway node throu
 
     -   rule: Matching rules found
 
-##### 3. Interface of control and OVS-vswitchd：
+#### 3. Interface of control and OVS-vswitchd：
 
 -   of_flow_mod(dp, rule)
 
@@ -268,7 +268,7 @@ The management plane can access the interface provided by the gateway node throu
 
     When the virtual machine is online, if the computing node where the virtual machine is located does not have a bucket corresponding to the VPC, add a bucket (group rule) on the ovs side of the computing node to direct the flow of the vm to the corresponding gateway node cluster.
 
-##### 4. Key functions of gateway node cluster management in Management Plane：
+#### 4. Key functions of gateway node cluster management in Management Plane：
 
 -   create_cluster_set(gw_total_set)
 
