@@ -31,7 +31,7 @@ type VpcClient struct {
 func (c *VpcClient) Create(obj *Vpc) (*Vpc, error) {
 	result := &Vpc{}
 	err := c.client.Post().
-		Namespace(c.ns).Resource("sslconfigs").
+		Namespace(c.ns).Resource("Vpc").
 		Body(obj).Do().Into(result)
 	return result, err
 }
@@ -39,7 +39,7 @@ func (c *VpcClient) Create(obj *Vpc) (*Vpc, error) {
 func (c *VpcClient) Update(obj *Vpc) (*Vpc, error) {
 	result := &Vpc{}
 	err := c.client.Put().
-		Namespace(c.ns).Resource("sslconfigs").
+		Namespace(c.ns).Resource("Vpcs").
 		Body(obj).Do().Into(result)
 	return result, err
 }

@@ -8,7 +8,15 @@ type Vpc struct {
 	Spec               VpcSpec   `json:"spec"`
 	Status             VpcStatus `json:"status,omitempty"`
 }
+
 type VpcSpec struct {
+	Ip             string `json:",ip"`
+	Prefix         string `json:",prefix"`
+	Vni            string `json:",vni"`
+	Deviders       int    `json:",deviders"`
+	Status         string `json:",status"`
+	CreateTime     string `json:",createTime"`
+	ProvisionDelay string `json:",provisiondelay"`
 }
 
 type VpcStatus struct {
