@@ -68,7 +68,7 @@ If you are testing out Mizar with Kind, a script has been included to setup a lo
 Simply run the script below in the Mizar directory.
 
 ```
-$ sudo ./kind_setup.sh
+$ ./kind-setup.sh
 ```
 
 This script does the following:
