@@ -39,18 +39,4 @@ async def builtins_on_pod(body, spec, **kwargs):
     param.body = body
     param.spec = spec
 
-    # logger.info("body: {}".format(body))
-
-    # logger.info("metadata: ---- ")
-    # for k in param.body['metadata']:
-    #     print("metadata k:{}, v:{}".format(
-    #         k, param.body['metadata'].get(k, None)))
-
-    # logger.info("status: ---- ")
-    # for k in param.body['status']:
-    #     print("status k:{}, v:{}".format(k, param.body['status'].get(k, None)))
-
-    # logger.info("spec: ---- ")
-    # for k in param.spec:
-    #     print("spec k:{}, v:{}".format(k, param.spec.get(k, None)))
     run_workflow(wffactory().k8sPodCreate(param=param))
