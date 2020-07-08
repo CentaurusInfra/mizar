@@ -47,5 +47,6 @@ class EndpointCreate(WorkflowTask):
         ep.droplet_obj = droplets_opr.store.get_droplet(ep.droplet)
         nets_opr.allocate_endpoint(ep)
         bouncers_opr.update_endpoint_with_bouncers(ep)
+        endpoints_opr.produce_simple_endpoint_interface(ep)
         endpoints_opr.set_endpoint_provisioned(ep)
         self.finalize()

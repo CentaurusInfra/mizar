@@ -41,7 +41,7 @@ interface_address = InterfaceAddress(version="4",
                                      ip_address="10.0.0.2",
                                      ip_prefix="32",
                                      gateway_ip="10.0.0.1",
-                                     mac="0a:0b:0c:0d:0e:0f",
+                                     mac="",
                                      tunnel_id="3"
                                      )
 droplet = SubstrateAddress(
@@ -72,6 +72,9 @@ interface = Interface(
 )
 
 interfaces = InterfacesList(interfaces=[interface])
+
+interfaces = InterfaceServiceClient(
+    "localhost").InitializeInterfaces(interfaces)
 
 interface = InterfaceServiceClient("localhost").ProduceInterfaces(interfaces)
 

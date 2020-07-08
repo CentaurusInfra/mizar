@@ -14,6 +14,11 @@ class InterfaceServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
+        self.InitializeInterfaces = channel.unary_unary(
+                '/mizar.InterfaceService/InitializeInterfaces',
+                request_serializer=mizar_dot_proto_dot_interface__pb2.InterfacesList.SerializeToString,
+                response_deserializer=mizar_dot_proto_dot_interface__pb2.InterfacesList.FromString,
+                )
         self.ProduceInterfaces = channel.unary_unary(
                 '/mizar.InterfaceService/ProduceInterfaces',
                 request_serializer=mizar_dot_proto_dot_interface__pb2.InterfacesList.SerializeToString,
@@ -21,7 +26,7 @@ class InterfaceServiceStub(object):
                 )
         self.ConsumeInterfaces = channel.unary_unary(
                 '/mizar.InterfaceService/ConsumeInterfaces',
-                request_serializer=mizar_dot_proto_dot_interface__pb2.PodId.SerializeToString,
+                request_serializer=mizar_dot_proto_dot_interface__pb2.CniParameters.SerializeToString,
                 response_deserializer=mizar_dot_proto_dot_interface__pb2.InterfacesList.FromString,
                 )
         self.DeleteInterface = channel.unary_unary(
@@ -33,6 +38,12 @@ class InterfaceServiceStub(object):
 
 class InterfaceServiceServicer(object):
     """Missing associated documentation comment in .proto file"""
+
+    def InitializeInterfaces(self, request, context):
+        """Missing associated documentation comment in .proto file"""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
 
     def ProduceInterfaces(self, request, context):
         """Missing associated documentation comment in .proto file"""
@@ -55,6 +66,11 @@ class InterfaceServiceServicer(object):
 
 def add_InterfaceServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
+            'InitializeInterfaces': grpc.unary_unary_rpc_method_handler(
+                    servicer.InitializeInterfaces,
+                    request_deserializer=mizar_dot_proto_dot_interface__pb2.InterfacesList.FromString,
+                    response_serializer=mizar_dot_proto_dot_interface__pb2.InterfacesList.SerializeToString,
+            ),
             'ProduceInterfaces': grpc.unary_unary_rpc_method_handler(
                     servicer.ProduceInterfaces,
                     request_deserializer=mizar_dot_proto_dot_interface__pb2.InterfacesList.FromString,
@@ -62,7 +78,7 @@ def add_InterfaceServiceServicer_to_server(servicer, server):
             ),
             'ConsumeInterfaces': grpc.unary_unary_rpc_method_handler(
                     servicer.ConsumeInterfaces,
-                    request_deserializer=mizar_dot_proto_dot_interface__pb2.PodId.FromString,
+                    request_deserializer=mizar_dot_proto_dot_interface__pb2.CniParameters.FromString,
                     response_serializer=mizar_dot_proto_dot_interface__pb2.InterfacesList.SerializeToString,
             ),
             'DeleteInterface': grpc.unary_unary_rpc_method_handler(
@@ -79,6 +95,22 @@ def add_InterfaceServiceServicer_to_server(servicer, server):
  # This class is part of an EXPERIMENTAL API.
 class InterfaceService(object):
     """Missing associated documentation comment in .proto file"""
+
+    @staticmethod
+    def InitializeInterfaces(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/mizar.InterfaceService/InitializeInterfaces',
+            mizar_dot_proto_dot_interface__pb2.InterfacesList.SerializeToString,
+            mizar_dot_proto_dot_interface__pb2.InterfacesList.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def ProduceInterfaces(request,
@@ -107,7 +139,7 @@ class InterfaceService(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/mizar.InterfaceService/ConsumeInterfaces',
-            mizar_dot_proto_dot_interface__pb2.PodId.SerializeToString,
+            mizar_dot_proto_dot_interface__pb2.CniParameters.SerializeToString,
             mizar_dot_proto_dot_interface__pb2.InterfacesList.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)

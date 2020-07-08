@@ -28,7 +28,8 @@ import os
 import fs
 from mizar.common.common import *
 from mizar.daemon.interface_service import InterfaceServiceClient
-from mizar.proto.interface_pb2 import InterfaceId, PodId
+from mizar.proto.interface_pb2 import *
+from pyroute2 import IPRoute, NetNS
 
 logger = logging.getLogger('mizarcni')
 logger.setLevel(logging.INFO)
@@ -38,7 +39,7 @@ logger = logging.getLogger()
 
 
 class Cni:
-    def __init__(self, stdin):
+    def __init__(self):
         stdin = ''.join(sys.stdin.readlines())
         self.command = os.environ.get("CNI_COMMAND")  # ADD | DEL | VERSION
         self.container_id = os.environ.get("CNI_CONTAINERID")
@@ -46,7 +47,6 @@ class Cni:
         self.interface = os.environ.get("CNI_IFNAME")
         self.cni_path = os.environ.get("CNI_PATH")
         self.cni_args = os.environ.get("CNI_ARGS")
-
         self.cni_args_dict = dict(i.split("=")
                                   for i in self.cni_args.split(";"))
         self.k8s_namespace = self.cni_args_dict.get('K8S_POD_NAMESPACE', '')
@@ -68,6 +68,15 @@ class Cni:
             k8s_pod_tenant=self.k8s_pod_tenant
         )
 
+        self.interface_id = InterfaceId(
+            pod_id=self.pod_id, interface=self.interface)
+
+        self.iproute = IPRoute()
+
+    def __del__(self):
+        logger.info("Closing IPRoute")
+        self.iproute.close()
+
     def run(self):
         logging.info("CNI ARGS {}".format(self.cni_args_dict))
         val = "Unsuported cni command!"
@@ -85,17 +94,72 @@ class Cni:
         exit(1)
 
     def do_add(self):
-        val, status = conn.root.add(params)
-        logger.info("server's add is {} {}".format(val, status))
-        print(val)
-        exit(status)
+        param = CniParameters(pod_id=self.pod_id,
+                              netns=self.netns,
+                              interface=self.interface)
+
+        interfaces = InterfaceServiceClient(
+            "localhost").ConsumeInterfaces(param).interfaces
+
+        if len(interfaces) == 0:
+            logger.error("No interfaces found for {}".format(self.pod_id))
+            exit(1)
+
+        result = {
+            "cniVersion": self.cni_version,
+            "interfaces": [],
+            "ips": []
+        }
+
+        idx = 0
+        for interface in interfaces:
+            self.activate_interface(interface)
+            itf = {
+                "name": interface.interface_id.interface,
+                "mac": interface.address.mac,
+                "sandbox": self.netns
+            }
+            ip = {
+                "version": interface.address.version,
+                "address": "{}/{}".format(interface.address.ip_address, interface.address.ip_prefix),
+                "gateway": interface.address.gateway_ip,
+                "interface": idx
+            }
+            result['interfaces'].append(itf)
+            result['ips'].append(ip)
+            idx += 1
+
+        logger.error("Returned results {}".format(result))
+        print(json.dumps(result))
+        exit(0)
+
+    def activate_interface(self, interface):
+        # move the interface to the CNI netns and rename it to interface
+
+        head, netns = os.path.split(self.netns)
+        iproute_ns = NetNS(netns)
+        veth_index = get_iface_index(interface.veth.name, self.iproute)
+        logger.error("Move interface {}/{} to netns {}".format(
+            interface.veth.name, veth_index, netns))
+        self.iproute.link('set', index=veth_index, net_ns_fd=netns)
+
+        # configure and activate interfaces inside the netns
+        iproute_ns.link('set', index=veth_index, ifname=self.interface)
+        lo_idx = iproute_ns.link_lookup(ifname="lo")[0]
+        iproute_ns.link('set', index=lo_idx, state='up')
+
+        iproute_ns.link('set', index=veth_index, state='up')
+
+        iproute_ns.addr('add', index=veth_index, address=interface.address.ip_address,
+                        prefixlen=int(interface.address.ip_prefix))
+        # iproute_ns.route('add', gateway=interface.address.gateway_ip)
 
     def do_delete(self):
-        logger.info("Delete called")
+        logger.info("CNI Delete is not implemented")
         exit(1)
 
     def do_get(self):
-        logger.info("server's get is {}".format(val))
+        logger.info("CNI get is not implemented")
         print("")
         exit(0)
 
@@ -105,44 +169,6 @@ class Cni:
         logger.info("server's version is {}".format(val))
         print(val)
         exit(status)
-
-
-params = CniParameters(
-    pod_id=PodId(
-        k8s_pod_name=cniparams.k8s_pod_name,
-        k8s_namespace=cniparams.k8s_namespace,
-        k8s_pod_tenant=cniparams.k8s_pod_tenant
-    ),
-    command=cniparams.command,
-    container_id=cniparams.container_id,
-    netns=cniparams.netns,
-    interface=cniparams.interface,
-    cni_version=cniparams.cni_version
-)
-
-mem_fs = fs.open_fs('mem://')
-
-logger.info("Invoke CNI with params: {}".format(params))
-results = CniClient("localhost").Cni(params)
-logger.info("CNI results: {}".format(results))
-
-# The result is given in the result_string
-if results.value != CniResultsValue.file_pending:
-    print(results.result_string)
-    results.value == CniResultsValue.string_success and exit(0)
-    exit(1)
-
-# Wait for file in results.result_file_path
-while not mem_fs.exists(results.result_file_path):
-    pass
-
-with mem_fs.open(results.result_file_path) as f:
-    results_file = json.load(f)
-
-print(results_file['result'])
-if results_file['status'] == 'success':
-    exit(0)
-exit(1)
 
 
 cni = Cni()

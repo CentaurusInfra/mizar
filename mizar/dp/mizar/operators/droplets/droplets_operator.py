@@ -68,6 +68,9 @@ class DropletOperator(object):
     def get_droplet_stored_obj(self, name, spec):
         return Droplet(name, self.obj_api, self.store, spec)
 
+    def store_get_by_ip(self, ip):
+        return self.store.get_droplet_by_ip(ip)
+
     def set_droplet_provisioned(self, droplet):
         droplet.set_status(OBJ_STATUS.droplet_status_provisioned)
         droplet.update_obj()

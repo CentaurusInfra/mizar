@@ -27,6 +27,9 @@ from mizar.obj.bouncer import Bouncer
 from mizar.common.constants import *
 from mizar.common.common import *
 from mizar.store.operator_store import OprStore
+from mizar.proto.interface_pb2 import *
+from mizar.daemon.interface_service import InterfaceServiceClient
+import uuid
 
 logger = logging.getLogger()
 
@@ -71,6 +74,9 @@ class EndpointOperator(object):
 
     def store_delete(self, ep):
         self.store.delete_ep(ep.name)
+
+    def store_get(self, name):
+        return self.store.get_ep(name)
 
     def on_endpoint_delete(self, body, spec, **kwargs):
         logger.info("on_endpoint_delete {}".format(spec))
@@ -158,28 +164,94 @@ class EndpointOperator(object):
         for ep in eps:
             ep.update_bouncers(set([bouncer]), False)
 
-    def create_simple_endpoint(self, name, spec):
-        logger.info("Create simple endpoint {} spec {}".format(name, spec))
-        ep = Endpoint(name, self.obj_api, self.store)
+    def produce_simple_endpoint_interface(self, ep):
+        interface_address = InterfaceAddress(version="4",
+                                             ip_address=ep.get_ip(),
+                                             ip_prefix=ep.get_prefix(),
+                                             gateway_ip=ep.get_nip(),
+                                             mac=ep.get_mac(),
+                                             tunnel_id=ep.get_tunnel_id())
+        interface = self.store_get(ep.name).interface
 
-        ep.set_type(OBJ_DEFAULTS.ep_type_simple)
-        ep.set_status(OBJ_STATUS.ep_status_init)
+        # from the droplet operator
+        droplet = SubstrateAddress(
+            version="4",
+            ip_address=ep.get_droplet_ip(), mac=ep.get_droplet_mac())
 
-        # If not provided in Pod, use defaults
-        # TODO: have it pod :)
-        ep.set_vni(params.default_vni)  # VPC Operator lookup VPC
-        ep.set_vpc(params.default_vpc)  # Annotations
-        ep.set_net(params.default_net)  # Annotations
+        # list of bouncers
+        bouncers = []
+        for bouncer in ep.bouncers.values():
+            bouncers.append(SubstrateAddress(
+                version="4", ip_address=bouncer.ip, mac=bouncer.mac))
 
-        ep.set_veth_name(params.interface)  # ? (CNI Param)
-        ep.set_droplet(CniService.droplet.name)  # hostIP
-        ep.set_container_id(params.container_id)  # (CNI Param)
-        self.allocate_local_id(ep)
+        interfaces_list = [Interface(
+            interface_id=interface.interface_id,
+            interface_type=interface.interface_type,
+            pod_provider=interface.pod_provider,
+            veth=interface.veth,
+            address=interface_address,
+            droplet=droplet,
+            bouncers=bouncers,
+            status=interface.status
+        )]
 
-        ep.set_veth_name("eth-" + ep.local_id)  # ?
-        ep.set_veth_peer("veth-" + ep.local_id)  # ?
-        ep.set_netns("mizar-" + ep.local_id)  # ?
-        ep.set_droplet_ip(CniService.droplet.ip)  # hostIP
-        ep.set_droplet_mac(CniService.droplet.mac)  # hostIP
-        ep.set_droplet_obj(CniService.droplet)  # hostIP
-        ep.create_obj()
+        logger.info("Producing {}".format(interfaces_list))
+
+        interfaces = InterfaceServiceClient(
+            "localhost").ProduceInterfaces(InterfacesList(interfaces=interfaces_list))
+
+        logger.info("Produced {}".format(interfaces))
+
+    def create_simple_endpoints(self, interfaces, spec):
+        for interface in interfaces.interfaces:
+            logger.info("Create simple endpoint {}".format(interface))
+            name = get_itf_name(interface.interface_id)
+            ep = Endpoint(name, self.obj_api, self.store)
+
+            ep.set_type(OBJ_DEFAULTS.ep_type_simple)
+            ep.set_status(OBJ_STATUS.ep_status_init)
+
+            ep.set_vni(spec['vni'])
+            ep.set_vpc(spec['vpc'])
+            ep.set_net(spec['net'])
+
+            ep.set_mac(interface.address.mac)
+            ep.set_veth_name(interface.veth.name)
+            ep.set_veth_peer(interface.veth.peer)
+            ep.set_droplet(spec['droplet'].name)
+
+            ep.set_droplet_ip(spec['droplet'].ip)
+            ep.set_droplet_mac(spec['droplet'].mac)
+            ep.set_interface(interface)
+            ep.create_obj()
+            self.store_update(ep)
+
+    def init_simple_endpoint_interfaces(self, worker_ip, spec):
+        logger.info("init_simple_endpoint_interface {}".format(worker_ip))
+        pod_id = PodId(k8s_pod_name=spec['name'],
+                       k8s_namespace=spec['namespace'],
+                       k8s_pod_tenant=spec['tenant'])
+
+        interfaces_list = []
+
+        for itf in spec['interfaces']:
+            interface_id = InterfaceId(
+                pod_id=pod_id, interface=itf['name'])
+
+            itf_name = get_pod_name(pod_id) + '-' + itf['name']
+            local_id = str(uuid.uuid3(uuid.NAMESPACE_URL, itf_name))[0:8]
+            veth_name = "eth-" + local_id
+            veth_peer = "veth-" + local_id
+            veth = VethInterface(name=veth_name, peer=veth_peer)
+
+            interfaces_list.append(Interface(
+                interface_id=interface_id,
+                interface_type=InterfaceType.veth,
+                pod_provider=PodProvider.K8S,
+                veth=veth,
+                status=InterfaceStatus.init
+            ))
+
+        interfaces = InterfacesList(interfaces=interfaces_list)
+
+        return InterfaceServiceClient(worker_ip).InitializeInterfaces(interfaces)
