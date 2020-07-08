@@ -136,6 +136,10 @@ class Cni:
     def activate_interface(self, interface):
         # move the interface to the CNI netns and rename it to interface
 
+        # TODO (cathy): skip the interface activation if an interface with same
+        # interface.interface_id.interface already UP and configured in the
+        # namespace
+
         head, netns = os.path.split(self.netns)
         iproute_ns = NetNS(netns)
         veth_index = get_iface_index(interface.veth.name, self.iproute)

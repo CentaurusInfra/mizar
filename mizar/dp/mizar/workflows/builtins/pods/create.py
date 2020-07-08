@@ -63,9 +63,13 @@ class k8sPodCreate(WorkflowTask):
             'name': self.param.body['metadata']['name'],
             'namespace': self.param.body['metadata']['namespace'],
             'tenant': '',
-            'vpc': OBJ_DEFAULTS.default_ep_vpc,  # TODO get from annotation
-            'net': OBJ_DEFAULTS.default_ep_net,  # TODO get from annotation
+            # TODO (Cathy) in case of arktos
+            # get VPC and net information from annotation
+            'vpc': OBJ_DEFAULTS.default_ep_vpc,
+            'net': OBJ_DEFAULTS.default_ep_net,
             'phase': self.param.body['status']['phase'],
+            # TODO (Cathy) in case of arktos get list of interfaces to create on
+            # the host (names)
             'interfaces': [{'name': 'eth0'}]
         }
 
