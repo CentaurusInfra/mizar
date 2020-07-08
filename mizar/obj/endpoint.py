@@ -63,6 +63,7 @@ class Endpoint:
         if spec is not None:
             self.set_obj_spec(spec)
         self.deleted = False
+        self.interface = None
 
     @property
     def rpc(self):
@@ -78,6 +79,9 @@ class Endpoint:
     def get_bouncers_ips(self):
         bouncers = [b.ip for b in self.bouncers.values()]
         return bouncers
+
+    def get_interface(self):
+        return self.interface
 
     def get_obj_spec(self):
         self.obj = {
@@ -120,6 +124,9 @@ class Endpoint:
         self.droplet_mac = get_spec_val('hostmac', spec)
         self.cnidelay = get_spec_val('cnidelay', spec)
         self.provisiondelay = get_spec_val('provisiondelay', spec)
+
+    def set_interface(self, interface):
+        self.interface = interface
 
     def set_cnidelay(self, delay):
         self.cnidelay = delay
@@ -237,6 +244,13 @@ class Endpoint:
         self.rpc.update_agent_metadata(self)
         self.droplet_obj.update_ep(self.name, self)
 
+    def update_bouncers_list(self, bouncers, add=True):
+        for bouncer in bouncers.values():
+            if add:
+                self.bouncers[bouncer.name] = bouncer
+            else:
+                self.bouncers.pop(bouncer.name)
+
     def set_backends(self, backends):
         self.backends = backends
 
@@ -274,6 +288,9 @@ class Endpoint:
 
     def get_droplet_ip(self):
         return self.droplet_ip
+
+    def get_droplet_mac(self):
+        return self.droplet_mac
 
     def load_transit_agent(self):
         self.rpc.load_transit_agent_xdp(self.veth_peer)

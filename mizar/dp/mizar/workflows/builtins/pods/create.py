@@ -22,10 +22,15 @@
 import logging
 from mizar.common.workflow import *
 from mizar.dp.mizar.operators.droplets.droplets_operator import *
+from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
+from mizar.dp.mizar.operators.vpcs.vpcs_operator import *
+from mizar.common.constants import *
 
 logger = logging.getLogger()
 
 droplet_opr = DropletOperator()
+endpoint_opr = EndpointOperator()
+vpc_opr = VpcOperator()
 
 
 class k8sPodCreate(WorkflowTask):
@@ -41,18 +46,41 @@ class k8sPodCreate(WorkflowTask):
         # label in self.param.body['metadata']['label']
         # annotations in self.param.body['metadata']['annotations']
 
-        logger.info("name: {}".format(self.param.body['metadata']['name']))
-        logger.info("namespace: {}".format(
-            self.param.body['metadata']['namespace']))
-        logger.info("label: {}".format(self.param.body['metadata']['labels']))
-        logger.info("annotations: {}".format(
-            self.param.body['metadata']['annotations']))
-        logger.info("hostNetwork: {}".format(
-            self.param.spec.get('hostNetwork', 'False')))
-        logger.info("hostIP: {}".format(self.param.body['status']['hostIP']))
-        logger.info("phase: {}".format(self.param.body['status']['phase']))
-        logger.info("podIPs: {}".format(self.param.body['status']['podIPs']))
+        # logger.info("name: {}".format(self.param.body['metadata']['name']))
+        # logger.info("namespace: {}".format(
+        #     self.param.body['metadata']['namespace']))
+        # logger.info("label: {}".format(self.param.body['metadata']['labels']))
+        # logger.info("annotations: {}".format(
+        #     self.param.body['metadata']['annotations']))
+        # logger.info("hostNetwork: {}".format(
+        #     self.param.spec.get('hostNetwork', 'False')))
+        # logger.info("hostIP: {}".format(self.param.body['status']['hostIP']))
+        # logger.info("phase: {}".format(self.param.body['status']['phase']))
+        # logger.info("podIPs: {}".format(self.param.body['status']['podIPs']))
 
-        # Get the droplet object given the hostIP
+        spec = {
+            'hostIP': self.param.body['status']['hostIP'],
+            'name': self.param.body['metadata']['name'],
+            'namespace': self.param.body['metadata']['namespace'],
+            'tenant': '',
+            'vpc': OBJ_DEFAULTS.default_ep_vpc,  # TODO get from annotation
+            'net': OBJ_DEFAULTS.default_ep_net,  # TODO get from annotation
+            'phase': self.param.body['status']['phase'],
+            'interfaces': [{'name': 'eth0'}]
+        }
+
+        logger.info("Pod spec {}".format(spec))
+        spec['vni'] = vpc_opr.store_get(spec['vpc']).vni
+        spec['droplet'] = droplet_opr.store_get_by_ip(spec['hostIP'])
+        if spec['phase'] != 'Pending':
+            self.finalize()
+            return
+
+        # Init all interfaces on the host
+        interfaces = endpoint_opr.init_simple_endpoint_interfaces(
+            spec['hostIP'], spec)
+
+        # Create the corresponding simple endpoint objects
+        endpoint_opr.create_simple_endpoints(interfaces, spec)
 
         self.finalize()

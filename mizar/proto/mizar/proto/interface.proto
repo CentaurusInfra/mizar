@@ -4,8 +4,9 @@ package mizar;
 import "google/protobuf/empty.proto";
 
 service InterfaceService {
+  rpc InitializeInterfaces(InterfacesList) returns (InterfacesList) {}
   rpc ProduceInterfaces(InterfacesList) returns (InterfacesList) {}
-  rpc ConsumeInterfaces(PodId) returns (InterfacesList) {}
+  rpc ConsumeInterfaces(CniParameters) returns (InterfacesList) {}
   rpc DeleteInterface(InterfaceId) returns (google.protobuf.Empty) {}
 }
 
@@ -28,6 +29,7 @@ message InterfaceId {
 enum InterfaceType {
   veth = 0;
   macvlan = 1;
+  ovsport = 2;
 }
 
 enum InterfaceStatus {
@@ -54,6 +56,12 @@ message SubstrateAddress {
   string version = 1;
   string ip_address = 2;
   string mac = 3;
+}
+
+message CniParameters {
+  PodId pod_id = 1;
+  string netns = 2;
+  string interface = 3;
 }
 
 message Interface {

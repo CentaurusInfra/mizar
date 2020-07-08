@@ -43,7 +43,10 @@ def run_cmd(cmd):
 
 
 def get_iface_index(name, iproute):
-    return iproute.link_lookup(ifname=name)[0]
+    intfs = iproute.link_lookup(ifname=name)
+    if len(intfs) == 0:
+        return -1
+    return intfs[0]
 
 
 def get_iface_mac(idx, iproute):
@@ -217,3 +220,7 @@ def run_workflow(task):
 
 def get_pod_name(pod_id):
     return pod_id.k8s_pod_name + '-' + pod_id.k8s_namespace + '-' + pod_id.k8s_pod_tenant
+
+
+def get_itf_name(itf):
+    return get_pod_name(itf.pod_id) + '-' + itf.interface

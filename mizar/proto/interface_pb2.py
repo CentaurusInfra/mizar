@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='mizar',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=b'\n\x1bmizar/proto/interface.proto\x12\x05mizar\x1a\x1bgoogle/protobuf/empty.proto\"L\n\x05PodId\x12\x14\n\x0ck8s_pod_name\x18\x01 \x01(\t\x12\x15\n\rk8s_namespace\x18\x02 \x01(\t\x12\x16\n\x0ek8s_pod_tenant\x18\x03 \x01(\t\">\n\x0bInterfaceId\x12\x1c\n\x06pod_id\x18\x01 \x01(\x0b\x32\x0c.mizar.PodId\x12\x11\n\tinterface\x18\x02 \x01(\t\"~\n\x10InterfaceAddress\x12\x0f\n\x07version\x18\x01 \x01(\t\x12\x12\n\nip_address\x18\x02 \x01(\t\x12\x11\n\tip_prefix\x18\x03 \x01(\t\x12\x12\n\ngateway_ip\x18\x04 \x01(\t\x12\x0b\n\x03mac\x18\x05 \x01(\t\x12\x11\n\ttunnel_id\x18\x06 \x01(\t\"+\n\rVethInterface\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04peer\x18\x02 \x01(\t\"D\n\x10SubstrateAddress\x12\x0f\n\x07version\x18\x01 \x01(\t\x12\x12\n\nip_address\x18\x02 \x01(\t\x12\x0b\n\x03mac\x18\x03 \x01(\t\"\xd8\x02\n\tInterface\x12(\n\x0cinterface_id\x18\x01 \x01(\x0b\x32\x12.mizar.InterfaceId\x12,\n\x0einterface_type\x18\x02 \x01(\x0e\x32\x14.mizar.InterfaceType\x12(\n\x0cpod_provider\x18\x03 \x01(\x0e\x32\x12.mizar.PodProvider\x12\"\n\x04veth\x18\x04 \x01(\x0b\x32\x14.mizar.VethInterface\x12(\n\x07\x61\x64\x64ress\x18\x05 \x01(\x0b\x32\x17.mizar.InterfaceAddress\x12(\n\x07\x64roplet\x18\x06 \x01(\x0b\x32\x17.mizar.SubstrateAddress\x12)\n\x08\x62ouncers\x18\x07 \x03(\x0b\x32\x17.mizar.SubstrateAddress\x12&\n\x06status\x18\x08 \x01(\x0e\x32\x16.mizar.InterfaceStatus\"6\n\x0eInterfacesList\x12$\n\ninterfaces\x18\x01 \x03(\x0b\x32\x10.mizar.Interface*\"\n\x0bPodProvider\x12\x07\n\x03K8S\x10\x00\x12\n\n\x06\x41RKTOS\x10\x01*&\n\rInterfaceType\x12\x08\n\x04veth\x10\x00\x12\x0b\n\x07macvlan\x10\x01*5\n\x0fInterfaceStatus\x12\x08\n\x04init\x10\x00\x12\n\n\x06queued\x10\x01\x12\x0c\n\x08\x63onsumed\x10\x02\x32\xd4\x01\n\x10InterfaceService\x12\x43\n\x11ProduceInterfaces\x12\x15.mizar.InterfacesList\x1a\x15.mizar.InterfacesList\"\x00\x12:\n\x11\x43onsumeInterfaces\x12\x0c.mizar.PodId\x1a\x15.mizar.InterfacesList\"\x00\x12?\n\x0f\x44\x65leteInterface\x12\x12.mizar.InterfaceId\x1a\x16.google.protobuf.Empty\"\x00\x62\x06proto3'
+  serialized_pb=b'\n\x1bmizar/proto/interface.proto\x12\x05mizar\x1a\x1bgoogle/protobuf/empty.proto\"L\n\x05PodId\x12\x14\n\x0ck8s_pod_name\x18\x01 \x01(\t\x12\x15\n\rk8s_namespace\x18\x02 \x01(\t\x12\x16\n\x0ek8s_pod_tenant\x18\x03 \x01(\t\">\n\x0bInterfaceId\x12\x1c\n\x06pod_id\x18\x01 \x01(\x0b\x32\x0c.mizar.PodId\x12\x11\n\tinterface\x18\x02 \x01(\t\"~\n\x10InterfaceAddress\x12\x0f\n\x07version\x18\x01 \x01(\t\x12\x12\n\nip_address\x18\x02 \x01(\t\x12\x11\n\tip_prefix\x18\x03 \x01(\t\x12\x12\n\ngateway_ip\x18\x04 \x01(\t\x12\x0b\n\x03mac\x18\x05 \x01(\t\x12\x11\n\ttunnel_id\x18\x06 \x01(\t\"+\n\rVethInterface\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04peer\x18\x02 \x01(\t\"D\n\x10SubstrateAddress\x12\x0f\n\x07version\x18\x01 \x01(\t\x12\x12\n\nip_address\x18\x02 \x01(\t\x12\x0b\n\x03mac\x18\x03 \x01(\t\"O\n\rCniParameters\x12\x1c\n\x06pod_id\x18\x01 \x01(\x0b\x32\x0c.mizar.PodId\x12\r\n\x05netns\x18\x02 \x01(\t\x12\x11\n\tinterface\x18\x03 \x01(\t\"\xd8\x02\n\tInterface\x12(\n\x0cinterface_id\x18\x01 \x01(\x0b\x32\x12.mizar.InterfaceId\x12,\n\x0einterface_type\x18\x02 \x01(\x0e\x32\x14.mizar.InterfaceType\x12(\n\x0cpod_provider\x18\x03 \x01(\x0e\x32\x12.mizar.PodProvider\x12\"\n\x04veth\x18\x04 \x01(\x0b\x32\x14.mizar.VethInterface\x12(\n\x07\x61\x64\x64ress\x18\x05 \x01(\x0b\x32\x17.mizar.InterfaceAddress\x12(\n\x07\x64roplet\x18\x06 \x01(\x0b\x32\x17.mizar.SubstrateAddress\x12)\n\x08\x62ouncers\x18\x07 \x03(\x0b\x32\x17.mizar.SubstrateAddress\x12&\n\x06status\x18\x08 \x01(\x0e\x32\x16.mizar.InterfaceStatus\"6\n\x0eInterfacesList\x12$\n\ninterfaces\x18\x01 \x03(\x0b\x32\x10.mizar.Interface*\"\n\x0bPodProvider\x12\x07\n\x03K8S\x10\x00\x12\n\n\x06\x41RKTOS\x10\x01*3\n\rInterfaceType\x12\x08\n\x04veth\x10\x00\x12\x0b\n\x07macvlan\x10\x01\x12\x0b\n\x07ovsport\x10\x02*5\n\x0fInterfaceStatus\x12\x08\n\x04init\x10\x00\x12\n\n\x06queued\x10\x01\x12\x0c\n\x08\x63onsumed\x10\x02\x32\xa4\x02\n\x10InterfaceService\x12\x46\n\x14InitializeInterfaces\x12\x15.mizar.InterfacesList\x1a\x15.mizar.InterfacesList\"\x00\x12\x43\n\x11ProduceInterfaces\x12\x15.mizar.InterfacesList\x1a\x15.mizar.InterfacesList\"\x00\x12\x42\n\x11\x43onsumeInterfaces\x12\x14.mizar.CniParameters\x1a\x15.mizar.InterfacesList\"\x00\x12?\n\x0f\x44\x65leteInterface\x12\x12.mizar.InterfaceId\x1a\x16.google.protobuf.Empty\"\x00\x62\x06proto3'
   ,
   dependencies=[google_dot_protobuf_dot_empty__pb2.DESCRIPTOR,])
 
@@ -41,8 +41,8 @@ _PODPROVIDER = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=855,
-  serialized_end=889,
+  serialized_start=936,
+  serialized_end=970,
 )
 _sym_db.RegisterEnumDescriptor(_PODPROVIDER)
 
@@ -61,11 +61,15 @@ _INTERFACETYPE = _descriptor.EnumDescriptor(
       name='macvlan', index=1, number=1,
       serialized_options=None,
       type=None),
+    _descriptor.EnumValueDescriptor(
+      name='ovsport', index=2, number=2,
+      serialized_options=None,
+      type=None),
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=891,
-  serialized_end=929,
+  serialized_start=972,
+  serialized_end=1023,
 )
 _sym_db.RegisterEnumDescriptor(_INTERFACETYPE)
 
@@ -91,8 +95,8 @@ _INTERFACESTATUS = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=931,
-  serialized_end=984,
+  serialized_start=1025,
+  serialized_end=1078,
 )
 _sym_db.RegisterEnumDescriptor(_INTERFACESTATUS)
 
@@ -101,6 +105,7 @@ K8S = 0
 ARKTOS = 1
 veth = 0
 macvlan = 1
+ovsport = 2
 init = 0
 queued = 1
 consumed = 2
@@ -339,6 +344,51 @@ _SUBSTRATEADDRESS = _descriptor.Descriptor(
 )
 
 
+_CNIPARAMETERS = _descriptor.Descriptor(
+  name='CniParameters',
+  full_name='mizar.CniParameters',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='pod_id', full_name='mizar.CniParameters.pod_id', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='netns', full_name='mizar.CniParameters.netns', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='interface', full_name='mizar.CniParameters.interface', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=452,
+  serialized_end=531,
+)
+
+
 _INTERFACE = _descriptor.Descriptor(
   name='Interface',
   full_name='mizar.Interface',
@@ -414,8 +464,8 @@ _INTERFACE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=453,
-  serialized_end=797,
+  serialized_start=534,
+  serialized_end=878,
 )
 
 
@@ -445,11 +495,12 @@ _INTERFACESLIST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=799,
-  serialized_end=853,
+  serialized_start=880,
+  serialized_end=934,
 )
 
 _INTERFACEID.fields_by_name['pod_id'].message_type = _PODID
+_CNIPARAMETERS.fields_by_name['pod_id'].message_type = _PODID
 _INTERFACE.fields_by_name['interface_id'].message_type = _INTERFACEID
 _INTERFACE.fields_by_name['interface_type'].enum_type = _INTERFACETYPE
 _INTERFACE.fields_by_name['pod_provider'].enum_type = _PODPROVIDER
@@ -464,6 +515,7 @@ DESCRIPTOR.message_types_by_name['InterfaceId'] = _INTERFACEID
 DESCRIPTOR.message_types_by_name['InterfaceAddress'] = _INTERFACEADDRESS
 DESCRIPTOR.message_types_by_name['VethInterface'] = _VETHINTERFACE
 DESCRIPTOR.message_types_by_name['SubstrateAddress'] = _SUBSTRATEADDRESS
+DESCRIPTOR.message_types_by_name['CniParameters'] = _CNIPARAMETERS
 DESCRIPTOR.message_types_by_name['Interface'] = _INTERFACE
 DESCRIPTOR.message_types_by_name['InterfacesList'] = _INTERFACESLIST
 DESCRIPTOR.enum_types_by_name['PodProvider'] = _PODPROVIDER
@@ -506,6 +558,13 @@ SubstrateAddress = _reflection.GeneratedProtocolMessageType('SubstrateAddress', 
   })
 _sym_db.RegisterMessage(SubstrateAddress)
 
+CniParameters = _reflection.GeneratedProtocolMessageType('CniParameters', (_message.Message,), {
+  'DESCRIPTOR' : _CNIPARAMETERS,
+  '__module__' : 'mizar.proto.interface_pb2'
+  # @@protoc_insertion_point(class_scope:mizar.CniParameters)
+  })
+_sym_db.RegisterMessage(CniParameters)
+
 Interface = _reflection.GeneratedProtocolMessageType('Interface', (_message.Message,), {
   'DESCRIPTOR' : _INTERFACE,
   '__module__' : 'mizar.proto.interface_pb2'
@@ -528,13 +587,22 @@ _INTERFACESERVICE = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=987,
-  serialized_end=1199,
+  serialized_start=1081,
+  serialized_end=1373,
   methods=[
+  _descriptor.MethodDescriptor(
+    name='InitializeInterfaces',
+    full_name='mizar.InterfaceService.InitializeInterfaces',
+    index=0,
+    containing_service=None,
+    input_type=_INTERFACESLIST,
+    output_type=_INTERFACESLIST,
+    serialized_options=None,
+  ),
   _descriptor.MethodDescriptor(
     name='ProduceInterfaces',
     full_name='mizar.InterfaceService.ProduceInterfaces',
-    index=0,
+    index=1,
     containing_service=None,
     input_type=_INTERFACESLIST,
     output_type=_INTERFACESLIST,
@@ -543,16 +611,16 @@ _INTERFACESERVICE = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='ConsumeInterfaces',
     full_name='mizar.InterfaceService.ConsumeInterfaces',
-    index=1,
+    index=2,
     containing_service=None,
-    input_type=_PODID,
+    input_type=_CNIPARAMETERS,
     output_type=_INTERFACESLIST,
     serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
     name='DeleteInterface',
     full_name='mizar.InterfaceService.DeleteInterface',
-    index=2,
+    index=3,
     containing_service=None,
     input_type=_INTERFACEID,
     output_type=google_dot_protobuf_dot_empty__pb2._EMPTY,

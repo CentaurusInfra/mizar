@@ -161,6 +161,12 @@ class OprStore(object):
             return self.droplets_store[name]
         return None
 
+    def get_droplet_by_ip(self, ip):
+        for d in self.droplets_store:
+            if self.droplets_store[d].ip == ip:
+                return self.droplets_store[d]
+        return None
+
     def get_all_droplets(self):
         return self.droplets_store.values()
 
