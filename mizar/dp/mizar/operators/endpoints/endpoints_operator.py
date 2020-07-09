@@ -200,7 +200,7 @@ class EndpointOperator(object):
         )]
 
         interfaces = InterfaceServiceClient(
-            "localhost").ProduceInterfaces(InterfacesList(interfaces=interfaces_list))
+            ep.get_droplet_ip()).ProduceInterfaces(InterfacesList(interfaces=interfaces_list))
 
         # At this point Mizar has provisioned the network
         # TODO (cathy): mark the pod network as ready! Shall it be here or in

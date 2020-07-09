@@ -13,7 +13,6 @@ import mizar.proto.droplet_pb2 as droplet_pb2
 import os
 import logging
 import sys
-sys.path.append("/home/sherif/cloudfabric/dev/mizar")
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
