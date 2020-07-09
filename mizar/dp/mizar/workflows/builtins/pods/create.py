@@ -76,6 +76,9 @@ class k8sPodCreate(WorkflowTask):
         logger.info("Pod spec {}".format(spec))
         spec['vni'] = vpc_opr.store_get(spec['vpc']).vni
         spec['droplet'] = droplet_opr.store_get_by_ip(spec['hostIP'])
+
+        # TODO (cathy): make sure not to trigger init or create simple endpoint
+        # if Arktos network is already marked ready
         if spec['phase'] != 'Pending':
             self.finalize()
             return
@@ -87,4 +90,5 @@ class k8sPodCreate(WorkflowTask):
         # Create the corresponding simple endpoint objects
         endpoint_opr.create_simple_endpoints(interfaces, spec)
 
+        # TODO (cathy): in Arktos shall we mark the pod network ready here?
         self.finalize()

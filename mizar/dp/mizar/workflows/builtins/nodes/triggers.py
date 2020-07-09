@@ -34,7 +34,6 @@ logger = logging.getLogger()
 @kopf.on.update('', 'v1', 'nodes')
 @kopf.on.create('', 'v1', 'nodes')
 async def droplet_opr_on_node(body, spec, **kwargs):
-    logger.info("!! NODES NODES {}".format(spec))
     param = HandlerParam()
     param.name = kwargs['name']
     param.body = body
