@@ -266,6 +266,9 @@ class Endpoint:
     def get_ip(self):
         return str(self.ip)
 
+    def get_gw(self):
+        return str(self.gw)
+
     def get_eptype(self):
         if self.type == OBJ_DEFAULTS.ep_type_simple:
             return str(CONSTANTS.TRAN_SIMPLE_EP)
