@@ -30,10 +30,10 @@ CONSUME_INTERFACE_TIMEOUT = 5
 class InterfaceServer(InterfaceServiceServicer):
 
     def __init__(self):
-        self.interfaces_q = queue.Queue()
+        self.interfaces_q = queue.Queue()  # Used for Produce/Consume sync
         self.iproute = IPRoute()
-        self.interfaces = {}
-        self.queued_pods = set()
+        self.interfaces = {}  # In-memory tracking for Pod interfaces
+        self.queued_pods = set()  # A set of pods, with queued interfaces (to be consumed)
         self.interfaces_lock = threading.Lock()
 
         cmd = 'ip addr show eth0 | grep "inet\\b" | awk \'{print $2}\' | cut -d/ -f1'
@@ -55,6 +55,10 @@ class InterfaceServer(InterfaceServiceServicer):
         self.iproute.close()
 
     def InitializeInterfaces(self, request, context):
+        """
+        Called by the endpoints operator to initilaize the interface and
+        allocate its mac address
+        """
         interfaces = request
         for interface in interfaces.interfaces:
             self._CreateInterface(interface)
@@ -62,10 +66,16 @@ class InterfaceServer(InterfaceServiceServicer):
         return interfaces
 
     def _CreateInterface(self, interface):
+        """
+        Type specific interface creation
+        """
         if interface.interface_type == InterfaceType.veth:
             return self._CreateVethInterface(interface)
 
     def _CreateVethInterface(self, interface):
+        """
+        Creates a veth interface
+        """
         veth_name = interface.veth.name
         veth_peer = interface.veth.peer
 
@@ -76,6 +86,7 @@ class InterfaceServer(InterfaceServiceServicer):
                               peer=veth_peer, kind='veth')
             veth_index = get_iface_index(veth_name, self.iproute)
 
+        # Update the mac address with the interface address
         address = InterfaceAddress(
             version=interface.address.version,
             ip_address=interface.address.ip_address,
@@ -87,6 +98,10 @@ class InterfaceServer(InterfaceServiceServicer):
         interface.address.CopyFrom(address)
 
     def ProduceInterfaces(self, request, context):
+        """
+        Called by the endpoints operator to program the transit Agent and
+        prepare the interface for consumption.
+        """
         interfaces = request
         for interface in interfaces.interfaces:
             self._QueueInterface(interface)
@@ -96,17 +111,26 @@ class InterfaceServer(InterfaceServiceServicer):
         pod_name = get_pod_name(interface.interface_id.pod_id)
         logger.info("Producing interface {}".format(interface))
         with self.interfaces_lock:
+            # Append the interface to the pod's interfaces (important in
+            # multi-interfaces case)
             if pod_name not in self.interfaces:
                 self.interfaces[pod_name] = []
             self.interfaces[pod_name].append(interface)
 
+            # Move the pod_name into interfaces_q. This tells the consume
+            # function that the pod has queued interfaces that can be consumed
             if pod_name not in self.queued_pods:
                 self.interfaces_q.put(pod_name)
                 self.queued_pods.add(pod_name)
 
+        # Change interface status from init to queued.
         interface.status = InterfaceStatus.queued
 
     def _ConsumeInterfaces(self, pod_name, cni_params):
+        """
+        Remove the pod from the interfaces_q and provision the interface
+        (program the transit agent)
+        """
         with self.interfaces_lock:
             if pod_name in self.queued_pods:
                 self.queued_pods.remove(pod_name)
@@ -121,10 +145,16 @@ class InterfaceServer(InterfaceServiceServicer):
         return interfaces
 
     def _ProvisionInterface(self, interface, cni_params):
+        """
+        Provision the interface according to its type
+        """
         if interface.interface_type == InterfaceType.veth:
             self._ProvisionVethInterface(interface, cni_params)
 
     def _ProvisionVethInterface(self, interface, cni_params):
+        """
+        Provision a veth interface.
+        """
         # Finalize all interface configuration. All main interface configuration
         # will be in the CNI. All the peer interface configuration, will be here
         # Network namespace operations (Move these to the CNI)
@@ -133,9 +163,13 @@ class InterfaceServer(InterfaceServiceServicer):
         self.iproute.link('set', index=veth_peer_index, state='up', mtu=9000)
 
         # Configure the Transit Agent
-        self._ConfigureTrasitAgent(interface)
+        self._ConfigureTransitAgent(interface)
 
-    def _ConfigureTrasitAgent(self, interface):
+    def _ConfigureTransitAgent(self, interface):
+        """
+        Load the Transit Agent XDP program, program all the bouncer substrate,
+        update the agent metadata and endpoint.
+        """
         self.rpc.load_transit_agent_xdp(interface)
 
         for bouncer in interface.bouncers:
@@ -146,6 +180,9 @@ class InterfaceServer(InterfaceServiceServicer):
         self.rpc.update_ep(interface)
 
     def ConsumeInterfaces(self, request, context):
+        """
+        Called by the CNI to consume queued interfaces for a specific POD
+        """
         cni_params = request
         requested_pod_id = cni_params.pod_id
         requested_pod_name = get_pod_name(requested_pod_id)
@@ -167,18 +204,23 @@ class InterfaceServer(InterfaceServiceServicer):
                 break
 
             if queued_pod_name == requested_pod_name:
+                # Interfaces for the Pod has been produced
                 return self._ConsumeInterfaces(queued_pod_name, cni_params)
 
+            # Update the wait time and break the wait if necessary
             self.interfaces_q.put(queued_pod_name)
             now = time.time()
 
             if now - start >= CONSUME_INTERFACE_TIMEOUT:
                 break
 
+        # If we are here, the endpoint operator has not produced any interfaces
+        # for the Pod. Typically the CNI will retry to consume the interface.
+        logger.error("Timeout, no new interface to consume!")
         return self._ConsumeInterfaces(requested_pod_name, cni_params)
 
     def DeleteInterface(self, request, context):
-        # NOOP for now
+        # TODO (Cathy): implement the reverse logic
         return empty_pb2.Empty()
 
 

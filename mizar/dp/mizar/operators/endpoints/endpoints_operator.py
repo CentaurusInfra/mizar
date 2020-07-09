@@ -165,6 +165,10 @@ class EndpointOperator(object):
             ep.update_bouncers(set([bouncer]), False)
 
     def produce_simple_endpoint_interface(self, ep):
+        """
+        Constructs the final interface message and call the ProduceInterface rpc
+        on the endpoint's droplet
+        """
         interface_address = InterfaceAddress(version="4",
                                              ip_address=ep.get_ip(),
                                              ip_prefix=ep.get_prefix(),
@@ -195,14 +199,18 @@ class EndpointOperator(object):
             status=interface.status
         )]
 
-        logger.info("Producing {}".format(interfaces_list))
-
         interfaces = InterfaceServiceClient(
             "localhost").ProduceInterfaces(InterfacesList(interfaces=interfaces_list))
 
+        # At this point Mizar has provisioned the network
+        # TODO (cathy): mark the pod network as ready! Shall it be here or in
+        # the pod builtin wf.
         logger.info("Produced {}".format(interfaces))
 
     def create_simple_endpoints(self, interfaces, spec):
+        """
+        Create a simple endpoint object (calling the API operator)
+        """
         for interface in interfaces.interfaces:
             logger.info("Create simple endpoint {}".format(interface))
             name = get_itf_name(interface.interface_id)
@@ -227,6 +235,10 @@ class EndpointOperator(object):
             self.store_update(ep)
 
     def init_simple_endpoint_interfaces(self, worker_ip, spec):
+        """
+        Constuct the interface message and call the InitializeInterfaces gRPC on
+        the hostIP
+        """
         logger.info("init_simple_endpoint_interface {}".format(worker_ip))
         pod_id = PodId(k8s_pod_name=spec['name'],
                        k8s_namespace=spec['namespace'],
@@ -254,4 +266,6 @@ class EndpointOperator(object):
 
         interfaces = InterfacesList(interfaces=interfaces_list)
 
+        # The Interface service will create the veth peers for the interface and
+        # allocate the mac addresses for us.
         return InterfaceServiceClient(worker_ip).InitializeInterfaces(interfaces)

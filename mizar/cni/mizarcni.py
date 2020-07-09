@@ -94,10 +94,13 @@ class Cni:
         exit(1)
 
     def do_add(self):
+
+        # Construct a CniParameters grpc message
         param = CniParameters(pod_id=self.pod_id,
                               netns=self.netns,
                               interface=self.interface)
 
+        # Consume new (and existing) interfaces for this Pod
         interfaces = InterfaceServiceClient(
             "localhost").ConsumeInterfaces(param).interfaces
 
@@ -111,6 +114,7 @@ class Cni:
             "ips": []
         }
 
+        # Construct the result string
         idx = 0
         for interface in interfaces:
             self.activate_interface(interface)
@@ -129,12 +133,14 @@ class Cni:
             result['ips'].append(ip)
             idx += 1
 
-        logger.error("Returned results {}".format(result))
         print(json.dumps(result))
         exit(0)
 
     def activate_interface(self, interface):
-        # move the interface to the CNI netns and rename it to interface
+        """
+        moves the interface to the CNI netnt, rename it, set the IP address, and
+        the GW.
+        """
 
         # TODO (cathy): skip the interface activation if an interface with same
         # interface.interface_id.interface already UP and configured in the
@@ -156,7 +162,7 @@ class Cni:
 
         iproute_ns.addr('add', index=veth_index, address=interface.address.ip_address,
                         prefixlen=int(interface.address.ip_prefix))
-        # iproute_ns.route('add', gateway=interface.address.gateway_ip)
+        iproute_ns.route('add', gateway=interface.address.gateway_ip)
 
     def do_delete(self):
         logger.info("CNI Delete is not implemented")
