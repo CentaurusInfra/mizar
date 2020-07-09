@@ -42,5 +42,7 @@ class k8sDropletCreate(WorkflowTask):
                 continue
             ip = addr['address']
             droplet_opr.create_droplet(ip)
+            # TODO (Phu): provision the host simple endpoint in the default
+            # VPC/default network
 
         self.finalize()

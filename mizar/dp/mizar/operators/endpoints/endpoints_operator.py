@@ -172,7 +172,7 @@ class EndpointOperator(object):
         interface_address = InterfaceAddress(version="4",
                                              ip_address=ep.get_ip(),
                                              ip_prefix=ep.get_prefix(),
-                                             gateway_ip=ep.get_nip(),
+                                             gateway_ip=ep.get_gw(),
                                              mac=ep.get_mac(),
                                              tunnel_id=ep.get_tunnel_id())
         interface = self.store_get(ep.name).interface
