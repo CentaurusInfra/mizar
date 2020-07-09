@@ -64,6 +64,13 @@ NODES=${2:-3}
 timeout=120
 
 kind delete cluster
+docker network rm kind 2> /dev/null
+docker network create -d bridge \
+  --subnet=172.18.0.0/16 \
+  --gateway=172.18.0.1
+  --opt com.docker.network.driver.mtu=9000 \
+  --ipv6 \
+  kind
 
 if [[ "$USER" == "dev" ]]; then
     DOCKER_ACC="localhost:5000"
