@@ -36,4 +36,5 @@ class EndpointOperatorStart(WorkflowTask):
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
         endpoints_opr.query_existing_endpoints()
+        endpoints_opr.create_default_service()
         self.finalize()

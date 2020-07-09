@@ -38,7 +38,8 @@ class k8sServiceCreate(WorkflowTask):
 
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
-        endpoints_opr.create_scaled_endpoint(self.param.name, self.param.spec)
+        endpoints_opr.create_scaled_endpoint(
+            self.param.name, self.param.spec, self.param.body['metadata']['namespace'])
         self.finalize()
 
 

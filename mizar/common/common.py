@@ -210,6 +210,17 @@ def kube_list_obj(obj_api, plurals, list_callback):
         list_callback(name, spec, plurals)
 
 
+def kube_get_service_spec(core_api, service_name, service_namespace, get_callback):
+    response = core_api.read_namespaced_service(
+        name=service_name,
+        namespace=service_namespace
+    )
+    logger.info(response)
+    logger.info(response.spec)
+    logger.info(response.spec.cluster_ip)
+    get_callback(response.spec)
+
+
 def get_spec_val(key, spec, default=""):
     return default if key not in spec else spec[key]
 

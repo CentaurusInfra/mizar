@@ -94,9 +94,10 @@ class EndpointOperator(object):
     def update_endpoints_with_bouncers(self, bouncer):
         eps = self.store.get_eps_in_net(bouncer.net).values()
         for ep in eps:
-            ep.update_bouncers(set([bouncer]))
+            if ep.type == OBJ_DEFAULTS.ep_type_simple:
+                ep.update_bouncers({"bouncer.name": bouncer})
 
-    def create_scaled_endpoint(self, name, spec):
+    def create_scaled_endpoint(self, name, spec, namespace="default"):
         logger.info("Create scaled endpoint {} spec {}".format(name, spec))
         ep = Endpoint(name, self.obj_api, self.store)
         ip = spec['clusterIP']
@@ -110,7 +111,35 @@ class EndpointOperator(object):
         ep.set_type(OBJ_DEFAULTS.ep_type_scaled)
         ep.set_status(OBJ_STATUS.ep_status_init)
         ep.create_obj()
-        self.annotate_builtin_endpoints(name)
+        self.annotate_builtin_endpoints(name, namespace)
+
+    def create_default_service(self, name="kubernetes", namespace="default"):
+        def create_default_sep(spec):
+            logger.info("Create default scaled endpoint")
+            ep = Endpoint(name, self.obj_api, self.store)
+            ep.set_vni(OBJ_DEFAULTS.default_vpc_vni)
+            ep.set_vpc(OBJ_DEFAULTS.default_ep_vpc)
+            ep.set_net(OBJ_DEFAULTS.default_ep_net)
+            ep.set_ip(spec.cluster_ip)
+            ep.set_mac(self.rand_mac())
+            ep.set_type(OBJ_DEFAULTS.ep_type_scaled)
+            ep.set_status(OBJ_STATUS.ep_status_init)
+            response = self.core_api.read_namespaced_endpoints(
+                name=name,
+                namespace=namespace)
+            logger.info(response.subsets)
+            logger.info(response.subsets[0].addresses[0].ip)
+            logger.info("Setting backend for default service")
+            backends = set()
+            backends.add(response.subsets[0].addresses[0].ip)
+            ep.set_backends(backends)
+            logger.info(
+                "Update scaled endpoint {} with backends: {}".format(name, backends))
+            logger.info("Create default scaled endpoint object")
+            ep.create_obj()
+
+        kube_get_service_spec(self.core_api, name,
+                              namespace, create_default_sep)
 
     def annotate_builtin_endpoints(self, name, namespace='default'):
         get_body = True

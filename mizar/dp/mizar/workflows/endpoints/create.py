@@ -21,6 +21,7 @@
 
 import logging
 from mizar.common.workflow import *
+from mizar.common.constants import *
 from mizar.dp.mizar.operators.bouncers.bouncers_operator import *
 from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
 from mizar.dp.mizar.operators.nets.nets_operator import *
@@ -42,6 +43,7 @@ class EndpointCreate(WorkflowTask):
 
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
+        logger.info("EP Name: {}".format(self.param.name))
         ep = endpoints_opr.get_endpoint_stored_obj(
             self.param.name, self.param.spec)
         ep.droplet_obj = droplets_opr.store.get_droplet(ep.droplet)
