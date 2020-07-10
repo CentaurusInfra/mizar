@@ -141,14 +141,17 @@ class Cni:
         moves the interface to the CNI netnt, rename it, set the IP address, and
         the GW.
         """
-
-        # TODO (cathy): skip the interface activation if an interface with same
-        # interface.interface_id.interface already UP and configured in the
-        # namespace
-
         head, netns = os.path.split(self.netns)
         iproute_ns = NetNS(netns)
         veth_index = get_iface_index(interface.veth.name, self.iproute)
+
+        # skip the interface activation if an interface with same
+        # interface.interface_id.interface already UP and configured in the
+        # namespace
+        actived_idxs = iproute_ns.link_lookup(operstate="UP")
+        if (veth_index in actived_idxs)
+            exit(0)
+
         logger.error("Move interface {}/{} to netns {}".format(
             interface.veth.name, veth_index, netns))
         self.iproute.link('set', index=veth_index, net_ns_fd=netns)
@@ -165,12 +168,31 @@ class Cni:
         iproute_ns.route('add', gateway=interface.address.gateway_ip)
 
     def do_delete(self):
-        logger.info("CNI Delete is not implemented")
-        exit(1)
+        param = CniParameters(pod_id=self.pod_id,
+                              netns=self.netns,
+                              interface=self.interface)
+
+        interfaces = InterfaceServiceClient(
+            "localhost").DeleteInterfaces(param).interfaces
+
+        for interface in interfaces:
+            veth_index = get_iface_index(interface.veth.name, self.iproute)
+            self.iproute.link('del', index=veth_index)
+            lo_idx = get_iface_index("lo", self.iproute)
+            self.iproute.link('del', index=lo_idx)
+            head, netns = os.path.split(self.netns)
+            iproute_ns = NetNS(netns)
+            iproute_ns.close()
+            iproute_ns.remove()
+        exit(0)
 
     def do_get(self):
         logger.info("CNI get is not implemented")
         print("")
+        val = "!!get service!!"
+        status = 1
+        logger.info("cni service get {}".format(params))
+        return val, status
         exit(0)
 
     def do_version(self):
