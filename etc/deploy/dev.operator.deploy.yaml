@@ -42,13 +42,3 @@ spec:
           name: mizar-operator
           securityContext:
             privileged: true
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: node-role.kubernetes.io/master
-                    operator: Exists
-      tolerations:
-        - operator: Exists
-          effect: NoSchedule

@@ -119,3 +119,4 @@ class DropletOperator(object):
         }
         droplet = Droplet(info.name, self.obj_api, self.store, spec)
         droplet.create_obj()
+        return info

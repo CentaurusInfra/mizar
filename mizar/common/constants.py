@@ -85,6 +85,7 @@ class OBJ_DEFAULTS:
 
     ep_type_simple = 'simple'
     ep_type_scaled = 'scaled'
+    ep_type_host = 'host'
 
     mizar_service_annotation_key = "service.beta.kubernetes.io/mizar-scaled-endpoint-type"
     mizar_service_annotation_val = "scaled-endpoint"

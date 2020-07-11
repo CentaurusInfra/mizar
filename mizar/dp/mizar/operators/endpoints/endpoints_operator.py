@@ -94,7 +94,7 @@ class EndpointOperator(object):
     def update_endpoints_with_bouncers(self, bouncer):
         eps = self.store.get_eps_in_net(bouncer.net).values()
         for ep in eps:
-            if ep.type == OBJ_DEFAULTS.ep_type_simple:
+            if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
                 ep.update_bouncers({"bouncer.name": bouncer})
 
     def create_scaled_endpoint(self, name, spec, namespace="default"):
@@ -236,6 +236,11 @@ class EndpointOperator(object):
         # the pod builtin wf.
         logger.info("Produced {}".format(interfaces))
 
+        if ep.type == OBJ_DEFAULTS.ep_type_host:
+            interfaces_list[0].status = InterfaceStatus.consumed
+            interfaces = InterfaceServiceClient(
+                ep.get_droplet_ip()).ActivateHostInterface(InterfacesList(interfaces=interfaces_list))
+
     def create_simple_endpoints(self, interfaces, spec):
         """
         Create a simple endpoint object (calling the API operator)
@@ -263,9 +268,35 @@ class EndpointOperator(object):
             ep.create_obj()
             self.store_update(ep)
 
+    def create_host_endpoint(self, ip, droplet, interfaces):
+        for interface in interfaces.interfaces:
+            logger.info("Create host endpoint {}".format(interface))
+            name = get_itf_name(interface.interface_id)
+            ep = Endpoint(name, self.obj_api, self.store)
+
+            ep.set_type(OBJ_DEFAULTS.ep_type_host)
+            ep.set_status(OBJ_STATUS.ep_status_init)
+
+            ep.set_vni(OBJ_DEFAULTS.default_vpc_vni)
+            ep.set_vpc(OBJ_DEFAULTS.default_ep_vpc)
+            ep.set_net(OBJ_DEFAULTS.default_ep_net)
+
+            ep.set_mac(interface.address.mac)
+            ep.set_veth_name(interface.veth.name)
+            ep.set_veth_peer(interface.veth.peer)
+            ep.set_droplet(droplet.name)
+            ep.droplet_obj = droplet
+            ep.set_ip(ip)
+
+            ep.set_droplet_ip(droplet.ip)
+            ep.set_droplet_mac(droplet.mac)
+            ep.set_interface(interface)
+            ep.create_obj()
+            self.store_update(ep)
+
     def init_simple_endpoint_interfaces(self, worker_ip, spec):
         """
-        Constuct the interface message and call the InitializeInterfaces gRPC on
+        Construct the interface message and call the InitializeInterfaces gRPC on
         the hostIP
         """
         logger.info("init_simple_endpoint_interface {}".format(worker_ip))
@@ -298,3 +329,24 @@ class EndpointOperator(object):
         # The Interface service will create the veth peers for the interface and
         # allocate the mac addresses for us.
         return InterfaceServiceClient(worker_ip).InitializeInterfaces(interfaces)
+
+    def init_host_endpoint_interfaces(self, droplet):
+        interfaces_list = []
+        pod_id = PodId(k8s_pod_name=droplet.name,
+                       k8s_namespace="default",
+                       k8s_pod_tenant="")
+        interface_id = InterfaceId(
+            pod_id=pod_id, interface="hostep")
+        veth_name = "eth-hostep"
+        veth_peer = "veth-hostep"
+        veth = VethInterface(name=veth_name, peer=veth_peer)
+
+        interfaces_list.append(Interface(
+            interface_id=interface_id,
+            interface_type=InterfaceType.veth,
+            pod_provider=PodProvider.K8S,
+            veth=veth,
+            status=InterfaceStatus.init
+        ))
+        interfaces = InterfacesList(interfaces=interfaces_list)
+        return InterfaceServiceClient(droplet.ip).InitializeInterfaces(interfaces)

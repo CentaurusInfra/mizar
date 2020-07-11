@@ -70,7 +70,8 @@ class Endpoint:
         return TrnRpc(self.droplet_ip, self.droplet_mac)
 
     def get_nip(self):
-        ip = ipaddress.ip_interface(self.ip + '/' + self.prefix)
+        #ip = ipaddress.ip_interface(self.ip + '/' + self.prefix)
+        ip = ipaddress.ip_interface("10.0.0.0")
         return str(ip.network.network_address)
 
     def get_prefix(self):
@@ -270,7 +271,7 @@ class Endpoint:
         return str(self.gw)
 
     def get_eptype(self):
-        if self.type == OBJ_DEFAULTS.ep_type_simple:
+        if self.type == OBJ_DEFAULTS.ep_type_simple or self.type == OBJ_DEFAULTS.ep_type_host:
             return str(CONSTANTS.TRAN_SIMPLE_EP)
         if self.type == OBJ_DEFAULTS.ep_type_scaled:
             return str(CONSTANTS.TRAN_SCALED_EP)
@@ -279,7 +280,7 @@ class Endpoint:
         return str(self.mac)
 
     def get_remote_ips(self):
-        if self.type == OBJ_DEFAULTS.ep_type_simple:
+        if self.type == OBJ_DEFAULTS.ep_type_simple or self.type == OBJ_DEFAULTS.ep_type_host:
             remote_ips = [self.droplet_ip]
         if self.type == OBJ_DEFAULTS.ep_type_scaled:
             remote_ips = list(self.backends)

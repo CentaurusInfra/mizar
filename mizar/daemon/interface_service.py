@@ -78,7 +78,7 @@ class InterfaceServer(InterfaceServiceServicer):
         """
         veth_name = interface.veth.name
         veth_peer = interface.veth.peer
-
+        logger.info("veth_name: {} veth_peer: {}".format(veth_name, veth_peer))
         veth_index = get_iface_index(veth_name, self.iproute)
 
         if veth_index == -1:
@@ -103,6 +103,7 @@ class InterfaceServer(InterfaceServiceServicer):
         prepare the interface for consumption.
         """
         interfaces = request
+        logger.info("Produce request {}".format(interfaces))
         for interface in interfaces.interfaces:
             self._QueueInterface(interface)
         return interfaces
@@ -144,14 +145,14 @@ class InterfaceServer(InterfaceServiceServicer):
         logger.info("Consumed {}".format(interfaces))
         return interfaces
 
-    def _ProvisionInterface(self, interface, cni_params):
+    def _ProvisionInterface(self, interface, cni_params, update=True):
         """
         Provision the interface according to its type
         """
         if interface.interface_type == InterfaceType.veth:
-            self._ProvisionVethInterface(interface, cni_params)
+            self._ProvisionVethInterface(interface, cni_params, update)
 
-    def _ProvisionVethInterface(self, interface, cni_params):
+    def _ProvisionVethInterface(self, interface, cni_params, update):
         """
         Provision a veth interface.
         """
@@ -163,21 +164,22 @@ class InterfaceServer(InterfaceServiceServicer):
         self.iproute.link('set', index=veth_peer_index, state='up', mtu=9000)
 
         # Configure the Transit Agent
-        self._ConfigureTransitAgent(interface)
+        self._ConfigureTransitAgent(interface, update)
 
-    def _ConfigureTransitAgent(self, interface):
+    def _ConfigureTransitAgent(self, interface, update):
         """
         Load the Transit Agent XDP program, program all the bouncer substrate,
         update the agent metadata and endpoint.
         """
         self.rpc.load_transit_agent_xdp(interface)
 
-        for bouncer in interface.bouncers:
-            self.rpc.update_agent_substrate_ep(
-                interface.veth.peer, bouncer.ip_address, bouncer.mac)
+        if update:
+            for bouncer in interface.bouncers:
+                self.rpc.update_agent_substrate_ep(
+                    interface.veth.peer, bouncer.ip_address, bouncer.mac)
 
-        self.rpc.update_agent_metadata(interface)
-        self.rpc.update_ep(interface)
+            self.rpc.update_agent_metadata(interface)
+            self.rpc.update_ep(interface)
 
     def ConsumeInterfaces(self, request, context):
         """
@@ -223,6 +225,27 @@ class InterfaceServer(InterfaceServiceServicer):
         # TODO (Cathy): implement the reverse logic
         return empty_pb2.Empty()
 
+    def ActivateHostInterface(self, request, context):
+        """
+         moves the interface to the CNI netnt, rename it, set the IP address, and
+         the GW.
+         """
+        interfaces = request
+        for interface in interfaces.interfaces:
+            self._ProvisionInterface(interface, "", False)
+            veth_index = get_iface_index(interface.veth.name, self.iproute)
+            # configure and activate interfaces
+            self.iproute.link('set', index=veth_index,
+                              ifname=interface.veth.name)
+
+            self.iproute.link('set', index=veth_index, state='up')
+
+            self.iproute.addr('add', index=veth_index, address=interface.address.ip_address,
+                              prefixlen=int(interface.address.ip_prefix))
+            self.iproute.route('add', dst=OBJ_DEFAULTS.default_net_ip,
+                               mask=int(OBJ_DEFAULTS.default_net_prefix), oif=veth_index)
+        return interfaces
+
 
 class InterfaceServiceClient():
     def __init__(self, ip):
@@ -243,6 +266,10 @@ class InterfaceServiceClient():
 
     def DeleteInterface(self, interface_id):
         resp = self.stub.DeleteInterface(interface_id)
+        return resp
+
+    def ActivateHostInterface(self, interfaces_list):
+        resp = self.stub.ActivateHostInterface(interfaces_list)
         return resp
 
 
