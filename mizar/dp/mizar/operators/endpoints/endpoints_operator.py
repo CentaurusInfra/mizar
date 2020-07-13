@@ -130,6 +130,24 @@ class EndpointOperator(object):
                     "Retry updating annotating endpoints {}".format(name))
                 get_body = True
 
+    def annotate_builtin_pods(self, name, namespace='default'):
+        get_body = True
+        while get_body:
+            pod = self.core_api.read_namespaced_pod(
+                name=name,
+                namespace=namespace)
+            pod.metadata.annotations[OBJ_DEFAULTS.arktos_network_readiness_key] = "true"
+            try:
+                self.core_api.patch_namespaced_pod(
+                    name=name,
+                    namespace=namespace,
+                    body=pod)
+                get_body = False
+            except:
+                logger.debug(
+                    "Retry updating annotating pods {}".format(name))
+                get_body = True
+
     def delete_scaled_endpoint(self, ep):
         logger.info("Delete scaled endpoint {}".format(ep.name))
         ep.delete_obj()
@@ -202,9 +220,6 @@ class EndpointOperator(object):
         interfaces = InterfaceServiceClient(
             ep.get_droplet_ip()).ProduceInterfaces(InterfacesList(interfaces=interfaces_list))
 
-        # At this point Mizar has provisioned the network
-        # TODO (cathy): mark the pod network as ready! Shall it be here or in
-        # the pod builtin wf.
         logger.info("Produced {}".format(interfaces))
 
     def create_simple_endpoints(self, interfaces, spec):

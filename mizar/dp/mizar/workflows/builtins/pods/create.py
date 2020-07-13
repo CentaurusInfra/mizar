@@ -61,25 +61,28 @@ class k8sPodCreate(WorkflowTask):
         spec = {
             'hostIP': self.param.body['status']['hostIP'],
             'name': self.param.body['metadata']['name'],
-            'namespace': self.param.body['metadata']['namespace'],
-            'tenant': '',
-            # TODO (Cathy) in case of arktos
-            # get VPC and net information from annotation
-            'vpc': OBJ_DEFAULTS.default_ep_vpc,
-            'net': OBJ_DEFAULTS.default_ep_net,
+            'namespace': self.param.body['metadata'].get('namespace', 'default'),
+            'tenant': self.param.body['metadata'].get('tenant', ''),
+            'vpc': self.param.body['metadata'].get('labels', {}).get(
+                    'arktos.futurewei.com/network', OBJ_DEFAULTS.default_ep_vpc),
+            'net': self.param.body['metadata'].get('annotations', {}).get(
+                    'arktos.futurewei.com/nic', {}).get('subnet', OBJ_DEFAULTS.default_ep_net),
+            'ip': self.param.body['metadata'].get('annotations', {}).get(
+                    'arktos.futurewei.com/nic', {}).get('ip', ''),
             'phase': self.param.body['status']['phase'],
-            # TODO (Cathy) in case of arktos get list of interfaces to create on
-            # the host (names)
-            'interfaces': [{'name': 'eth0'}]
+            'readiness': self.param.body['metadata'].get('annotations', {}).get(
+                    'arktos.futurewei.com/network-readiness', ''),
+            'interfaces': [{'name': self.param.body['metadata'].get('annotations', {}).get(
+                     'arktos.futurewei.com/nic', {}).get('name', 'eth0')}]
         }
 
         logger.info("Pod spec {}".format(spec))
         spec['vni'] = vpc_opr.store_get(spec['vpc']).vni
         spec['droplet'] = droplet_opr.store_get_by_ip(spec['hostIP'])
 
-        # TODO (cathy): make sure not to trigger init or create simple endpoint
+        # make sure not to trigger init or create simple endpoint
         # if Arktos network is already marked ready
-        if spec['phase'] != 'Pending':
+        if spec['phase'] != 'Pending' and spec['readiness'] == 'true':
             self.finalize()
             return
 
@@ -90,5 +93,6 @@ class k8sPodCreate(WorkflowTask):
         # Create the corresponding simple endpoint objects
         endpoint_opr.create_simple_endpoints(interfaces, spec)
 
-        # TODO (cathy): in Arktos shall we mark the pod network ready here?
+        if 'arktos.futurewei.com/network' in self.param.body['metadata'].get('labels', {}):
+            endpoint_opr.annotate_builtin_pods(spec['name'], spec['namespace'])
         self.finalize()
