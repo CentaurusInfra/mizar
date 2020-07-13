@@ -149,50 +149,34 @@ class Cni:
         # interface.interface_id.interface already UP and configured in the
         # namespace
         actived_idxs = iproute_ns.link_lookup(operstate="UP")
-        if (veth_index in actived_idxs)
-            exit(0)
+        if (veth_index not in actived_idxs):
+            logger.error("Move interface {}/{} to netns {}".format(
+                interface.veth.name, veth_index, netns))
+            self.iproute.link('set', index=veth_index, net_ns_fd=netns)
 
-        logger.error("Move interface {}/{} to netns {}".format(
-            interface.veth.name, veth_index, netns))
-        self.iproute.link('set', index=veth_index, net_ns_fd=netns)
+            # configure and activate interfaces inside the netns
+            iproute_ns.link('set', index=veth_index, ifname=self.interface)
+            lo_idx = iproute_ns.link_lookup(ifname="lo")[0]
+            iproute_ns.link('set', index=lo_idx, state='up')
 
-        # configure and activate interfaces inside the netns
-        iproute_ns.link('set', index=veth_index, ifname=self.interface)
-        lo_idx = iproute_ns.link_lookup(ifname="lo")[0]
-        iproute_ns.link('set', index=lo_idx, state='up')
+            iproute_ns.link('set', index=veth_index, state='up')
 
-        iproute_ns.link('set', index=veth_index, state='up')
-
-        iproute_ns.addr('add', index=veth_index, address=interface.address.ip_address,
-                        prefixlen=int(interface.address.ip_prefix))
-        iproute_ns.route('add', gateway=interface.address.gateway_ip)
+            iproute_ns.addr('add', index=veth_index, address=interface.address.ip_address,
+                            prefixlen=int(interface.address.ip_prefix))
+            iproute_ns.route('add', gateway=interface.address.gateway_ip)
 
     def do_delete(self):
         param = CniParameters(pod_id=self.pod_id,
                               netns=self.netns,
                               interface=self.interface)
 
-        interfaces = InterfaceServiceClient(
-            "localhost").DeleteInterfaces(param).interfaces
-
-        for interface in interfaces:
-            veth_index = get_iface_index(interface.veth.name, self.iproute)
-            self.iproute.link('del', index=veth_index)
-            lo_idx = get_iface_index("lo", self.iproute)
-            self.iproute.link('del', index=lo_idx)
-            head, netns = os.path.split(self.netns)
-            iproute_ns = NetNS(netns)
-            iproute_ns.close()
-            iproute_ns.remove()
+        InterfaceServiceClient(
+            "localhost").DeleteInterfaces(param)
         exit(0)
 
     def do_get(self):
         logger.info("CNI get is not implemented")
         print("")
-        val = "!!get service!!"
-        status = 1
-        logger.info("cni service get {}".format(params))
-        return val, status
         exit(0)
 
     def do_version(self):

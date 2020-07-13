@@ -1,12 +1,13 @@
 syntax = "proto3";
 package mizar;
 
+import "google/protobuf/empty.proto";
+
 service InterfaceService {
   rpc InitializeInterfaces(InterfacesList) returns (InterfacesList) {}
   rpc ProduceInterfaces(InterfacesList) returns (InterfacesList) {}
   rpc ConsumeInterfaces(CniParameters) returns (InterfacesList) {}
-  rpc RemoveInterfaces(InterfacesList) returns (InterfacesList) {}
-  rpc DeleteInterfaces(CniParameters) returns (InterfacesList) {}
+  rpc DeleteInterfaces(CniParameters) returns (google.protobuf.Empty) {}
 }
 
 message PodId {
@@ -35,8 +36,6 @@ enum InterfaceStatus {
   init = 0;
   queued = 1;
   consumed = 2;
-  dequeued = 3; 
-  deleted = 4;
 }
 
 message InterfaceAddress {

@@ -34,7 +34,6 @@ class InterfaceServer(InterfaceServiceServicer):
         self.iproute = IPRoute()
         self.interfaces = {}  # In-memory tracking for Pod interfaces
         self.queued_pods = set()  # A set of pods, with queued interfaces (to be consumed)
-        self.dequeued_pods = set()  # A set of pods, with queued interfaces (to be deleted)
         self.interfaces_lock = threading.Lock()
 
         cmd = 'ip addr show eth0 | grep "inet\\b" | awk \'{print $2}\' | cut -d/ -f1'
@@ -108,14 +107,6 @@ class InterfaceServer(InterfaceServiceServicer):
             self._QueueInterface(interface)
         return interfaces
 
-    def RemoveInterfaces(self, request, context):
-        """
-        """
-        interfaces = request
-        for interface in interfaces.interfaces:
-            self._DequeueInterface(interface)
-        return interfaces
-
     def _QueueInterface(self, interface):
         pod_name = get_pod_name(interface.interface_id.pod_id)
         logger.info("Producing interface {}".format(interface))
@@ -125,30 +116,6 @@ class InterfaceServer(InterfaceServiceServicer):
             if pod_name not in self.interfaces:
                 self.interfaces[pod_name] = []
             self.interfaces[pod_name].append(interface)
-
-            # Move the pod_name into interfaces_q. This tells the consume
-            # function that the pod has queued interfaces that can be consumed
-            if pod_name not in self.queued_pods:
-                self.interfaces_q.put(pod_name)
-                self.queued_pods.add(pod_name)
-
-        # Change interface status from init to queued.
-        interface.status = InterfaceStatus.queued
-
-    def _DequeueInterface(self, interface):
-        pod_name = get_pod_name(interface.interface_id.pod_id)
-        logger.info("Removing interface {}".format(interface))
-        with self.interfaces_lock:
-            # Append the interface to the pod's interfaces (important in
-            # multi-interfaces case)
-            if pod_name in self.interfaces:
-                self.interfaces[pod_name].remove(interface)
-
-            if pod_name not in self.dequeued_pods:
-                self.dequeued_pods.add(pod_name)
-
-        # Change interface status from comsumed to dequeued.
-        interface.status = InterfaceStatus.dequeued
 
     def _ConsumeInterfaces(self, pod_name, cni_params):
         """
@@ -170,18 +137,11 @@ class InterfaceServer(InterfaceServiceServicer):
 
     def _DeleteInterfaces(self, pod_name, cni_params):
         with self.interfaces_lock:
-            if pod_name in self.dequeued_pods:
-                self.dequeued_pods.remove(pod_name)
             interfaces = self.interfaces.get(pod_name, [])
             for interface in interfaces:
-                if interface.status == InterfaceStatus.dequeued:
-                    if interface.interface_type == InterfaceType.veth:
-                        self._DeleteVethInterface(interface, cni_params)
-                        interface.status = InterfaceStatus.deleted
-
-        interfaces = InterfacesList(interfaces=interfaces)
-        logger.info("Removed {}".format(interfaces))
-        return interfaces
+                if interface.interface_type == InterfaceType.veth:
+                    self._DeleteVethInterface(interface, cni_params)
+                    logger.info("Removed {}".format(interface))
 
     def _ProvisionInterface(self, interface, cni_params):
         """
@@ -210,10 +170,9 @@ class InterfaceServer(InterfaceServiceServicer):
         """
         veth_peer_index = get_iface_index(interface.veth.peer, self.iproute)
         self.iproute.link('del', index=veth_peer_index)
-
-        # Update the Transit Agent
-        self._DeleteTransitAgent(interface)
-
+        lo_idx = get_iface_index("lo", self.iproute)
+        self.iproute.link('del', index=lo_idx)
+        
     def _ConfigureTransitAgent(self, interface):
         """
         Load the Transit Agent XDP program, program all the bouncer substrate,
@@ -224,16 +183,6 @@ class InterfaceServer(InterfaceServiceServicer):
         for bouncer in interface.bouncers:
             self.rpc.update_agent_substrate_ep(
                 interface.veth.peer, bouncer.ip_address, bouncer.mac)
-
-        self.rpc.update_agent_metadata(interface)
-        self.rpc.update_ep(interface)
-
-    def _DeleteTransitAgent(self, interface):
-        self.rpc.load_transit_agent_xdp(interface)
-
-        for bouncer in interface.bouncers:
-            self.rpc.delete_agent_substrate_ep(
-                interface.veth.peer, bouncer.ip_address)
 
         self.rpc.update_agent_metadata(interface)
         self.rpc.update_ep(interface)
@@ -280,15 +229,21 @@ class InterfaceServer(InterfaceServiceServicer):
 
     def DeleteInterfaces(self, request, context):
         """
+        Delete network interfaces for a pod
         """
-        cni_params = request
-        requested_pod_id = cni_params.pod_id
-        requested_pod_name = get_pod_name(requested_pod_id)
-        logger.info("Delete Interfaces {}".format(request))
-        logger.debug(
-            "Deleting interfaces for pod {}".format(requested_pod_name))
+        # input is pod_id 
 
-        return self._DeleteInterfaces(requested_pod_name, cni_params)
+        cni_params = request
+        pod_name = get_pod_name(cni_params.pod_id)
+        interfaces = self.interfaces.get(pod_name, [])
+        logger.debug("Deleting interfaces for pod {}".format(pod_name))
+        print(interfaces)
+        for interface in interfaces:
+            if pod_name in self.interfaces:
+                self.interfaces[pod_name].remove(interface)
+            self._DeleteInterfaces(pod_name, interface.interface_id)
+
+        return empty_pb2.Empty()
 
 class InterfaceServiceClient():
     def __init__(self, ip):
@@ -306,13 +261,9 @@ class InterfaceServiceClient():
     def ConsumeInterfaces(self, pod_id):
         resp = self.stub.ConsumeInterfaces(pod_id)
         return resp
-    
-    def RemoveInterfaces(self, interfaces_list):
-        resp = self.stub.RemoveInterfaces(interfaces_list)
-        return resp
 
-    def DeleteInterfaces(self, pod_id):
-        resp = self.stub.DeleteInterfaces(pod_id)
+    def DeleteInterfaces(self, interfaces_list):
+        resp = self.stub.DeleteInterfaces(interfaces_list)
         return resp
 
 

@@ -75,23 +75,8 @@ interfaces = InterfacesList(interfaces=[inputInterface])
 
 interface = InterfaceServiceClient("localhost").ProduceInterfaces(interfaces)
 
-print("RemoveInterfaces Input: {}".format(interface))
+print("ProduceInterfaces Input: {}".format(interface))
 
-removeList = InterfaceServiceClient("localhost").RemoveInterfaces(interface)
+print("DeleteInterfaces input: {}".format(interfaces))
 
-print("removeList {}".format(removeList))
-
-interface_id = InterfaceId(pod_id=pod_id, interface="eth0")
-
-pod_name = get_pod_name(interface_id.pod_id)
-
-consumedList = InterfaceServiceClient("localhost").ConsumeInterfaces(interface.interfaces[0].interface_id)
-
-print("Consumed {}".format(consumedList))
-
-deleteInput = interface.interfaces[0].interface_id
-print("DeleteInterfaces input: {}".format(deleteInput))
-
-deletedList = InterfaceServiceClient("localhost").DeleteInterfaces(interface.interfaces[0].interface_id)
-
-print("Deleted {}".format(deletedList))
+InterfaceServiceClient("localhost").DeleteInterfaces(interfaces.interfaces[0].interface_id)
