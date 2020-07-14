@@ -46,7 +46,7 @@ func NewController() *Controller {
 	informerFactory := vpcinformers.NewSharedInformerFactory(testClient, time.Minute*1)
 	informer := informerFactory.Insujang().V1beta1().vpcs()
 
-	utilruntime.Must(vpcv1beta1.AddToScheme(vpcscheme.Scheme))
+	utilruntime.Must(vpcv1.AddToScheme(vpcscheme.Scheme))
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(klog.Infof)
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
