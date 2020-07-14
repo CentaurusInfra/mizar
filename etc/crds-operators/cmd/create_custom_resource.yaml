@@ -1,0 +1,7 @@
+apiVersion: mizar.futurewei.com/v1
+kind: Vpc
+metadata:
+        name: vpc-test
+spec:
+        command: "echo vpc!"
+        customProperty: "vpc_1"
