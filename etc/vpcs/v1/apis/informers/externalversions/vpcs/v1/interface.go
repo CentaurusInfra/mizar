@@ -24,8 +24,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
-	// Vpcs returns a VpcInformer.
-	Vpcs() VpcInformer
+	// TestResources returns a TestResourceInformer.
+	TestResources() TestResourceInformer
 }
 
 type version struct {
@@ -39,7 +39,7 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
-// Vpcs returns a VpcInformer.
-func (v *version) Vpcs() VpcInformer {
-	return &vpcInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+// TestResources returns a TestResourceInformer.
+func (v *version) TestResources() TestResourceInformer {
+	return &testResourceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

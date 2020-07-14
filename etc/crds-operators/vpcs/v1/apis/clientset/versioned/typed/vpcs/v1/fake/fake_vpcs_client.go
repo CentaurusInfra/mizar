@@ -28,8 +28,8 @@ type FakeMizarV1 struct {
 	*testing.Fake
 }
 
-func (c *FakeMizarV1) TestResources(namespace string) v1.TestResourceInterface {
-	return &FakeTestResources{c, namespace}
+func (c *FakeMizarV1) Vpcs(namespace string) v1.VpcInterface {
+	return &FakeVpcs{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

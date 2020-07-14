@@ -13,8 +13,8 @@ const (
 	Name      string = Plural + "." + GroupName
 )
 
-// VpcSpec specifies the 'spec' of Vpc CRD.
-type VpcSpec struct {
+// TestResourceSpec specifies the 'spec' of TestResource CRD.
+type TestResourceSpec struct {
 	Command        string `json:"command"`
 	CustomProperty string `json:"customProperty"`
 }
@@ -22,21 +22,21 @@ type VpcSpec struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Vpc describes a Vpc custom resource.
-type Vpc struct {
+// TestResource describes a TestResource custom resource.
+type TestResource struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   VpcSpec 	`json:"spec"`
-	Status string   `json:"status"`
+	Spec   TestResourceSpec `json:"spec"`
+	Status string           `json:"status"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// VpcList is a list of Vpc resources.
-type VpcList struct {
+// TestResourceList is a list of TestResource resources.
+type TestResourceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
-	Items []Vpc `json:"items"`
+	Items []TestResource `json:"items"`
 }

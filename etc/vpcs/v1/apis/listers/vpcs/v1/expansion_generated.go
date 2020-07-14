@@ -18,10 +18,10 @@ limitations under the License.
 
 package v1
 
-// VpcListerExpansion allows custom methods to be added to
-// VpcLister.
-type VpcListerExpansion interface{}
+// TestResourceListerExpansion allows custom methods to be added to
+// TestResourceLister.
+type TestResourceListerExpansion interface{}
 
-// VpcNamespaceListerExpansion allows custom methods to be added to
-// VpcNamespaceLister.
-type VpcNamespaceListerExpansion interface{}
+// TestResourceNamespaceListerExpansion allows custom methods to be added to
+// TestResourceNamespaceLister.
+type TestResourceNamespaceListerExpansion interface{}

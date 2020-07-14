@@ -26,7 +26,7 @@ import (
 
 type MizarV1Interface interface {
 	RESTClient() rest.Interface
-	VpcsGetter
+	TestResourcesGetter
 }
 
 // MizarV1Client is used to interact with features provided by the mizar.futurewei.com group.
@@ -34,8 +34,8 @@ type MizarV1Client struct {
 	restClient rest.Interface
 }
 
-func (c *MizarV1Client) Vpcs(namespace string) VpcInterface {
-	return newVpcs(c, namespace)
+func (c *MizarV1Client) TestResources(namespace string) TestResourceInterface {
+	return newTestResources(c, namespace)
 }
 
 // NewForConfig creates a new MizarV1Client for the given config.
