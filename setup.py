@@ -9,17 +9,5 @@ setup(
             'mizard=mizar.daemon.app:main'
         ]
     },
-    install_requires=[
-        'PyYAML',
-        'kopf',
-        'netaddr',
-        'ipaddress',
-        'pyroute2',
-        'rpyc',
-        'kubernetes==11.0.0',
-        'luigi==2.8.12',
-        'grpcio',
-        'protobuf',
-        'fs'
-    ]
+    install_requires=[]
 )

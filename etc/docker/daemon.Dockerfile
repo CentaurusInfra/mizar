@@ -19,7 +19,7 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-FROM python:3.7
+FROM fwnetworking/python_base:latest
 COPY . /var/mizar/
 RUN pip3 install /var/mizar/
 CMD mizard

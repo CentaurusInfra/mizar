@@ -202,7 +202,8 @@ def kube_list_obj(obj_api, plurals, list_callback):
         version="v1",
         namespace="default",
         plural=plurals,
-        watch=False)
+        watch=False,
+        timeout_seconds=10)
     items = response['items']
     for v in items:
         name = v['metadata']['name']

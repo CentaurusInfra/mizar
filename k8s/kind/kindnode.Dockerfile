@@ -19,12 +19,34 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-FROM python:3.7
+FROM kindest/node:v1.18.2
 RUN apt-get update -y
-RUN apt-get install iputils-ping
-RUN apt-get install -y netcat
-RUN apt-get install -y iperf3
-RUN apt install -y net-tools
-COPY teste2e/ /var/mizar/test
-EXPOSE 8000 9001 5001
-CMD /var/mizar/test/scripts/run_servers.sh
+RUN apt-get install -y apt-utils
+RUN apt-get install -y sudo
+RUN apt-get install -y vim
+RUN apt-get install -y rpcbind
+RUN apt-get install -y rsyslog
+RUN apt-get install -y libelf-dev
+RUN apt-get install -y iproute2
+RUN apt-get install -y net-tools
+RUN apt-get install -y iputils-ping
+RUN apt-get install -y ethtool
+RUN apt-get install -y curl
+RUN apt-get install -y python3
+RUN apt-get install -y python3-pip
+RUN apt-get install -y tcpdump
+RUN pip3 install PyYAML
+RUN pip3 install kopf
+RUN pip3 install netaddr
+RUN pip3 install ipaddress
+RUN pip3 install pyroute2
+RUN pip3 install rpyc
+RUN pip3 install kubernetes==11.0.0
+RUN pip3 install luigi==2.8.12
+RUN pip3 install grpcio
+RUN pip3 install protobuf
+RUN pip3 install fs
+RUN mkdir -p /var/mizar/
+RUN mkdir -p /opt/cni/bin
+RUN mkdir -p /etc/cni/net.d
+RUN ln -snf /sys/fs/bpf /bpffs
