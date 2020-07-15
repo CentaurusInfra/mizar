@@ -26,8 +26,8 @@ This doc is to discuss targets and approaches to deploy Mizar to kubernetes (k8s
 
 - Mizar deployment for both k8s and Arktos.
 - Mizar deployment in different environment including local dev environment (one VM), GCP environment (multiple VMs), AWS environment (multiple VMs).
-- Mizar deployment should support factors such as multi-apiserver, multi-etcd, multi-tenant
-- Support deploy two version of Mizar: for developer and for end user
+- Mizar deployment should support factors such as multi-apiserver, multi-etcd, multi-tenant.
+- Support deploy two version of Mizar: for developer and for end user.
 - Mizar setup script should support update Mizar to new version.
 
 ### Requirements
