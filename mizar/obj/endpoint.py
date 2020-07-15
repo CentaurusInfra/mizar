@@ -71,7 +71,7 @@ class Endpoint:
 
     def get_nip(self):
         #ip = ipaddress.ip_interface(self.ip + '/' + self.prefix)
-        ip = ipaddress.ip_interface("10.0.0.0")
+        ip = ipaddress.ip_interface("10.0.0.0")  # PHU change this
         return str(ip.network.network_address)
 
     def get_prefix(self):
@@ -235,6 +235,10 @@ class Endpoint:
         self.veth_peer_mac = veth_peer_mac
 
     def update_bouncers(self, bouncers, add=True):
+        logger.info("EP Name: {} EP Droplet_Name: {} EP: Droplet_Obj {}".format(
+            self.name, self.droplet, self.droplet_obj))
+        if self.name == "pgw":
+            return
         for bouncer in bouncers.values():
             if add:
                 self.bouncers[bouncer.name] = bouncer
@@ -280,6 +284,8 @@ class Endpoint:
         return str(self.mac)
 
     def get_remote_ips(self):
+        if self.name == "pgw":
+            return None
         if self.type == OBJ_DEFAULTS.ep_type_simple or self.type == OBJ_DEFAULTS.ep_type_host:
             remote_ips = [self.droplet_ip]
         if self.type == OBJ_DEFAULTS.ep_type_scaled:

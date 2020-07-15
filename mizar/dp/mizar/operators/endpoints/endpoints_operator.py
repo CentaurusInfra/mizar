@@ -94,7 +94,7 @@ class EndpointOperator(object):
     def update_endpoints_with_bouncers(self, bouncer):
         eps = self.store.get_eps_in_net(bouncer.net).values()
         for ep in eps:
-            if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
+            if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host and ep.droplet != "":
                 ep.update_bouncers({"bouncer.name": bouncer})
 
     def create_scaled_endpoint(self, name, spec, namespace="default"):
@@ -112,6 +112,18 @@ class EndpointOperator(object):
         ep.set_status(OBJ_STATUS.ep_status_init)
         ep.create_obj()
         self.annotate_builtin_endpoints(name, namespace)
+
+    def create_gw_endpoint(self, name, ip):
+        logger.info("Create gw endpoint")
+        ep = Endpoint(name, self.obj_api, self.store)
+        ep.set_vni(OBJ_DEFAULTS.default_vpc_vni)
+        ep.set_vpc(OBJ_DEFAULTS.default_ep_vpc)
+        ep.set_net(OBJ_DEFAULTS.default_ep_net)
+        ep.set_mac(self.rand_mac())
+        ep.set_ip(ip)
+        ep.set_type(OBJ_DEFAULTS.ep_type_simple)
+        ep.set_status(OBJ_STATUS.ep_status_init)
+        return ep
 
     def create_default_service(self, name="kubernetes", namespace="default"):
         def create_default_sep(spec):
@@ -136,6 +148,7 @@ class EndpointOperator(object):
             logger.info(
                 "Update scaled endpoint {} with backends: {}".format(name, backends))
             logger.info("Create default scaled endpoint object")
+            self.store_update(ep)
             ep.create_obj()
 
         kube_get_service_spec(self.core_api, name,
@@ -228,18 +241,20 @@ class EndpointOperator(object):
             status=interface.status
         )]
 
-        interfaces = InterfaceServiceClient(
-            ep.get_droplet_ip()).ProduceInterfaces(InterfacesList(interfaces=interfaces_list))
+        if ep.type == OBJ_DEFAULTS.ep_type_host:
+            interfaces_list[0].status = InterfaceStatus.consumed
+            interfaces = InterfaceServiceClient(
+                ep.get_droplet_ip()).ActivateHostInterface(interfaces_list[0])
+        else:
+            if ep.type == OBJ_DEFAULTS.ep_type_host:
+                logger.error("THIS SHOULD NOT HAPPEN")
+            interfaces = InterfaceServiceClient(
+                ep.get_droplet_ip()).ProduceInterfaces(InterfacesList(interfaces=interfaces_list))
 
         # At this point Mizar has provisioned the network
         # TODO (cathy): mark the pod network as ready! Shall it be here or in
         # the pod builtin wf.
         logger.info("Produced {}".format(interfaces))
-
-        if ep.type == OBJ_DEFAULTS.ep_type_host:
-            interfaces_list[0].status = InterfaceStatus.consumed
-            interfaces = InterfaceServiceClient(
-                ep.get_droplet_ip()).ActivateHostInterface(InterfacesList(interfaces=interfaces_list))
 
     def create_simple_endpoints(self, interfaces, spec):
         """

@@ -111,6 +111,9 @@ class InterfaceServer(InterfaceServiceServicer):
     def _QueueInterface(self, interface):
         pod_name = get_pod_name(interface.interface_id.pod_id)
         logger.info("Producing interface {}".format(interface))
+        logger.info("interface_q {}".format(self.interfaces_q))
+        logger.info("self_interfaces {}".format(self.interfaces))
+        logger.info("queued pods {}".format(self.queued_pods))
         with self.interfaces_lock:
             # Append the interface to the pod's interfaces (important in
             # multi-interfaces case)
@@ -226,25 +229,20 @@ class InterfaceServer(InterfaceServiceServicer):
         return empty_pb2.Empty()
 
     def ActivateHostInterface(self, request, context):
-        """
-         moves the interface to the CNI netnt, rename it, set the IP address, and
-         the GW.
-         """
-        interfaces = request
-        for interface in interfaces.interfaces:
-            self._ProvisionInterface(interface, "", False)
-            veth_index = get_iface_index(interface.veth.name, self.iproute)
-            # configure and activate interfaces
-            self.iproute.link('set', index=veth_index,
-                              ifname=interface.veth.name)
+        interface = request
+        self._ProvisionInterface(interface, "", False)
+        veth_index = get_iface_index(interface.veth.name, self.iproute)
+        # configure and activate interfaces
+        self.iproute.link('set', index=veth_index,
+                          ifname=interface.veth.name)
 
-            self.iproute.link('set', index=veth_index, state='up')
+        self.iproute.link('set', index=veth_index, state='up')
 
-            self.iproute.addr('add', index=veth_index, address=interface.address.ip_address,
-                              prefixlen=int(interface.address.ip_prefix))
-            self.iproute.route('add', dst=OBJ_DEFAULTS.default_net_ip,
-                               mask=int(OBJ_DEFAULTS.default_net_prefix), oif=veth_index)
-        return interfaces
+        self.iproute.addr('add', index=veth_index, address=interface.address.ip_address,
+                          prefixlen=32)
+        self.iproute.route('add', dst=OBJ_DEFAULTS.default_net_ip,
+                           mask=int(OBJ_DEFAULTS.default_net_prefix), oif=veth_index)
+        return interface
 
 
 class InterfaceServiceClient():
@@ -268,8 +266,8 @@ class InterfaceServiceClient():
         resp = self.stub.DeleteInterface(interface_id)
         return resp
 
-    def ActivateHostInterface(self, interfaces_list):
-        resp = self.stub.ActivateHostInterface(interfaces_list)
+    def ActivateHostInterface(self, interface):
+        resp = self.stub.ActivateHostInterface(interface)
         return resp
 
 
@@ -382,7 +380,7 @@ class LocalTransitRpc:
             },
             "net": {
                 "tunnel_id": interface.address.tunnel_id,
-                "nip":  interface.address.gateway_ip,
+                "nip":  "10.0.0.0",  # PHU Change this
                 "prefixlen":  interface.address.ip_prefix,
                 "switches_ips": bouncers
             },

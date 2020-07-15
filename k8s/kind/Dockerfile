@@ -34,6 +34,7 @@ RUN apt-get install -y ethtool
 RUN apt-get install -y curl
 RUN apt-get install -y python3
 RUN apt-get install -y python3-pip
+RUN apt-get install -y tcpdump
 RUN mkdir -p /var/mizar/
 RUN mkdir -p /opt/cni/bin
 RUN mkdir -p /etc/cni/net.d

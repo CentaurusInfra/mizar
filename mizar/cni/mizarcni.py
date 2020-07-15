@@ -149,7 +149,7 @@ class Cni:
         head, netns = os.path.split(self.netns)
         iproute_ns = NetNS(netns)
         veth_index = get_iface_index(interface.veth.name, self.iproute)
-        logger.error("Move interface {}/{} to netns {}".format(
+        logger.info("Move interface {}/{} to netns {}".format(
             interface.veth.name, veth_index, netns))
         self.iproute.link('set', index=veth_index, net_ns_fd=netns)
 

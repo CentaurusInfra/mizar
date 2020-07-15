@@ -24,12 +24,14 @@ from mizar.common.workflow import *
 from mizar.dp.mizar.operators.nets.nets_operator import *
 from mizar.dp.mizar.operators.dividers.dividers_operator import *
 from mizar.dp.mizar.operators.bouncers.bouncers_operator import *
+from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
 
 logger = logging.getLogger()
 
 nets_opr = NetOperator()
 dividers_opr = DividerOperator()
 bouncers_opr = BouncerOperator()
+endpoints_opr = EndpointOperator()
 
 
 class NetCreate(WorkflowTask):
@@ -44,8 +46,9 @@ class NetCreate(WorkflowTask):
 
         while len(dividers_opr.store.get_dividers_of_vpc(n.vpc)) < 1:
             pass
-
         nets_opr.create_net_bouncers(n, n.n_bouncers)
         nets_opr.set_net_provisioned(n)
         nets_opr.store_update(n)
+        ep = endpoints_opr.create_gw_endpoint("pgw", n.get_gw_ip())
+        endpoints_opr.store_update(ep)
         self.finalize()
