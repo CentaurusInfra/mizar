@@ -22,7 +22,7 @@ THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 This doc is to discuss targets and approaches to deploy Mizar to kubernetes (k8s) and Arktos.
 
-### Target
+### Targets
 
 - Mizar deployment for both k8s and Arktos.
 - Mizar deployment in different environment including local dev environment (one VM), GC  P environment (multiple VMs), AWS environment (multiple VMs).
