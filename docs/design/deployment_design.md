@@ -25,14 +25,14 @@ This doc is to discuss targets and approaches to deploy Mizar to kubernetes (k8s
 ### Targets
 
 - Mizar deployment for both k8s and Arktos.
-- Mizar deployment in different environment including local dev environment (one VM), GC  P environment (multiple VMs), AWS environment (multiple VMs).
+- Mizar deployment in different environment including local dev environment (one VM), GCP environment (multiple VMs), AWS environment (multiple VMs).
 - Mizar deployment should support factors such as multi-apiserver, multi-etcd, multi-tenant
 - Support deploy two version of Mizar: for developer and for end user
-Mizar setup script should support update Mizar to new version.
+- Mizar setup script should support update Mizar to new version.
 
 ### Requirements
 
-- Mizar deployment should be easy for user. Only need one operation or one YAML file.
+- Mizar deployment should minimize the steps needed to deploy Mizar and unify the steps for different deployment environments (GCP, AWS and .etc).
 - After deployment, user should be able to easily sanity check deployment result.
 
 ### Definitions
@@ -41,7 +41,7 @@ Mizar setup script should support update Mizar to new version.
 
   ![Simple Endpoint](png/mizar-phase-1.png)
 
-- **Mizar Phase 2**: Mizar is targeting to 2-cluster model. In the model, Mizar is running at a k8s or Arktos cluster, and it provides network functions to another k8s or Arktos cluster through Mizar proxy.
+- **Mizar Phase 2**: Mizar is targeting to 2-cluster model. In this 2-cluster model, Mizar's management plane is running in a separate k8s cluster than Arkos compute cluster. An Arktos cluster will deploy the transit daemon and a Mizar proxy to communicate with the Mizar management plane.
 
   Mizar cluster should be able to run either k8s or Arktos.
 
@@ -57,7 +57,7 @@ There are different environments that Mizar should be supporting.
 
   Typically k8s cluster can be launched by Kind. It's k8s in one VM, but with multiple nodes.
 
-  Mizar phase 2 requires two clusters. If Kind doesn't support deploy two clusters to one VM, we can use other means such as arktos-up to deploy one cluster other than cluster deployed by Kind.
+  Mizar phase 2 requires two clusters. For the two clusters, we shall test both clusters are k8s clusters, or one cluster is k8s and another cluster comes from arktos up. 
 
 - k8s GCP environment
 
@@ -91,15 +91,17 @@ There are different environments that Mizar should be supporting.
 
 All the time these should be two version of Mizar to be deployed. One is dev version and one is prod version.
 
+- **Prod Version**, it's for end users to use Mizar in their test or prod environment. Its purpose is not to test Mizar. Instead it's to test their environment with Mizar, or check how Mizar fit their requirements, or using Mizar in their production environment. It's to deploy Mizar stable versions. We shall provide public docker images for prod version deployment. 
+
 - **Dev Version**, it always reflects latest code of Mizar. The code can be from any branch such as master, dev-next or any private branch. In this way, while developing Mizar, developers can easily test Mizar by latest code. It's for Mizar developers with dev or test purpose. 
 
-- **Prod Version**, it's for end users to use Mizar in their test or prod environment. Its purpose is not to test Mizar. Instead it's to test their environment with Mizar, or check how Mizar fit their requirements, or using Mizar in their production environment. It's to deploy Mizar stable versions. 
-
-	We shall provide public docker images for prod version deployment. 
+We plan to add continuous deployment into a test cluster. We will use Jenkins for Mizar CI/CD scenario which will make Mizar more robust.
 
 ### New Install vs Update
 
 The deploy script should support both new install and update of Mizar. In prod environment, when there is Mizar installed, user may want to update Mizar to new version while cluster networking won't break. We need to support "Mizar update" scenario. While Mizar updating, there should be no impact or minimal/acceptable impact to the cluster.
+
+We planned Mizar CI/CD pipeline, and it will be for both prod and dev versions of Mizar. The CI/CD pipeline will test Mizar update scenario continuously.
 
 ### Deploy Steps
 
