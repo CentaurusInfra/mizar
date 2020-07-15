@@ -18,6 +18,7 @@ from mizar.common.rpc import TrnRpc
 from mizar.common.constants import *
 from pyroute2 import IPRoute, NetNS
 import queue
+import ipaddress
 
 logger = logging.getLogger('mizar_interface_service')
 handler = SysLogHandler(address='/dev/log')
@@ -78,7 +79,6 @@ class InterfaceServer(InterfaceServiceServicer):
         """
         veth_name = interface.veth.name
         veth_peer = interface.veth.peer
-        logger.info("veth_name: {} veth_peer: {}".format(veth_name, veth_peer))
         veth_index = get_iface_index(veth_name, self.iproute)
 
         if veth_index == -1:
@@ -103,7 +103,6 @@ class InterfaceServer(InterfaceServiceServicer):
         prepare the interface for consumption.
         """
         interfaces = request
-        logger.info("Produce request {}".format(interfaces))
         for interface in interfaces.interfaces:
             self._QueueInterface(interface)
         return interfaces
@@ -111,9 +110,6 @@ class InterfaceServer(InterfaceServiceServicer):
     def _QueueInterface(self, interface):
         pod_name = get_pod_name(interface.interface_id.pod_id)
         logger.info("Producing interface {}".format(interface))
-        logger.info("interface_q {}".format(self.interfaces_q))
-        logger.info("self_interfaces {}".format(self.interfaces))
-        logger.info("queued pods {}".format(self.queued_pods))
         with self.interfaces_lock:
             # Append the interface to the pod's interfaces (important in
             # multi-interfaces case)
@@ -235,11 +231,15 @@ class InterfaceServer(InterfaceServiceServicer):
         # configure and activate interfaces
         self.iproute.link('set', index=veth_index,
                           ifname=interface.veth.name)
-
         self.iproute.link('set', index=veth_index, state='up')
 
+        # Setting the prefix length of the veth device to a large range adds a route to
+        # the host. Since this device has the same IP address as the host's main
+        # interface, this will affect the host network causing host traffic to be routed
+        # to the wrong interface. Here we set the prefix length to 32.
         self.iproute.addr('add', index=veth_index, address=interface.address.ip_address,
-                          prefixlen=32)
+                          prefixlen=int(interface.address.ip_prefix))
+
         self.iproute.route('add', dst=OBJ_DEFAULTS.default_net_ip,
                            mask=int(OBJ_DEFAULTS.default_net_prefix), oif=veth_index)
         return interface
@@ -365,6 +365,8 @@ class LocalTransitRpc:
 
     def update_agent_metadata(self, interface):
         itf = interface.veth.peer
+        netip = str(ipaddress.ip_interface(
+            interface.address.ip_address + '/' + interface.address.ip_prefix).network.network_address)
         bouncers = []
         for bouncer in interface.bouncers:
             bouncers.append(bouncer.ip_address)
@@ -380,7 +382,7 @@ class LocalTransitRpc:
             },
             "net": {
                 "tunnel_id": interface.address.tunnel_id,
-                "nip":  "10.0.0.0",  # PHU Change this
+                "nip":  netip,
                 "prefixlen":  interface.address.ip_prefix,
                 "switches_ips": bouncers
             },

@@ -37,6 +37,14 @@ spec:
     shortNames:
       - ep
       - eps
+  validation:
+    openAPIV3Schema:
+      properties:
+        backends:
+          type: array
+          items:
+            type: string
+          minItems: 0
   additionalPrinterColumns:
     - name: Type
       type: string
@@ -128,4 +136,3 @@ spec:
       priority: 0
       JSONPath: .spec.cnidelay
       description: Time to setup endpoint on droplet
-

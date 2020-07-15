@@ -168,7 +168,12 @@ class OprStore(object):
         return None
 
     def get_all_droplets(self):
-        return self.droplets_store.values()
+        # Bug with phantom gateway when bouncer is scheduled on master node.
+        # phantom gateway likes to be the first update_ep rpc ran on droplet
+        droplets = self.droplets_store.copy()
+        if "kind-control-plane" in droplets:
+            droplets.pop("kind-control-plane")
+        return droplets.values()
 
     def contains_droplet(self, name):
         if name in self.droplets_store:

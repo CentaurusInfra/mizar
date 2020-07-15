@@ -147,9 +147,9 @@ class NetOperator(object):
                 ip = n.allocate_ip()
             ep.set_ip(ip)
         gw = n.get_gw_ip()
-        prefix = n.get_prefixlen()
+        if ep.get_prefix() == "":
+            ep.set_prefix(n.get_prefixlen())
         ep.set_gw(gw)
-        ep.set_prefix(prefix)
 
         # TODO: Most of the time is spent in loading the transit agent
         # if ep.type == OBJ_DEFAULTS.ep_type_simple:

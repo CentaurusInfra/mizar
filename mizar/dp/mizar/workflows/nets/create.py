@@ -49,6 +49,7 @@ class NetCreate(WorkflowTask):
         nets_opr.create_net_bouncers(n, n.n_bouncers)
         nets_opr.set_net_provisioned(n)
         nets_opr.store_update(n)
-        ep = endpoints_opr.create_gw_endpoint("pgw", n.get_gw_ip())
+        ep = endpoints_opr.create_gw_endpoint(
+            self.param.name + "_pgw", n.get_gw_ip())
         endpoints_opr.store_update(ep)
         self.finalize()

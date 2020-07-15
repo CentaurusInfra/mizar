@@ -59,7 +59,7 @@ class Endpoint:
         self.cnidelay = ""
         self.provisiondelay = ""
         self.bouncers = {}
-        self.backends = {}
+        self.backends = []
         if spec is not None:
             self.set_obj_spec(spec)
         self.deleted = False
@@ -70,8 +70,7 @@ class Endpoint:
         return TrnRpc(self.droplet_ip, self.droplet_mac)
 
     def get_nip(self):
-        #ip = ipaddress.ip_interface(self.ip + '/' + self.prefix)
-        ip = ipaddress.ip_interface("10.0.0.0")  # PHU change this
+        ip = ipaddress.ip_interface(self.ip + '/' + self.prefix)
         return str(ip.network.network_address)
 
     def get_prefix(self):
@@ -102,7 +101,8 @@ class Endpoint:
             "hostip": self.droplet_ip,
             "hostmac": self.droplet_mac,
             "cnidelay": self.cnidelay,
-            "provisiondelay": self.provisiondelay
+            "provisiondelay": self.provisiondelay,
+            "backends": self.backends
         }
 
         return self.obj
@@ -125,6 +125,7 @@ class Endpoint:
         self.droplet_mac = get_spec_val('hostmac', spec)
         self.cnidelay = get_spec_val('cnidelay', spec)
         self.provisiondelay = get_spec_val('provisiondelay', spec)
+        self.backends = get_spec_val('backends', spec)
 
     def set_interface(self, interface):
         self.interface = interface
@@ -235,10 +236,6 @@ class Endpoint:
         self.veth_peer_mac = veth_peer_mac
 
     def update_bouncers(self, bouncers, add=True):
-        logger.info("EP Name: {} EP Droplet_Name: {} EP: Droplet_Obj {}".format(
-            self.name, self.droplet, self.droplet_obj))
-        if self.name == "pgw":
-            return
         for bouncer in bouncers.values():
             if add:
                 self.bouncers[bouncer.name] = bouncer
@@ -284,7 +281,7 @@ class Endpoint:
         return str(self.mac)
 
     def get_remote_ips(self):
-        if self.name == "pgw":
+        if "pgw" in self.name:  # Bug, phantom gateway does not work if given an empty list
             return None
         if self.type == OBJ_DEFAULTS.ep_type_simple or self.type == OBJ_DEFAULTS.ep_type_host:
             remote_ips = [self.droplet_ip]

@@ -94,7 +94,7 @@ class EndpointOperator(object):
     def update_endpoints_with_bouncers(self, bouncer):
         eps = self.store.get_eps_in_net(bouncer.net).values()
         for ep in eps:
-            if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host and ep.droplet != "":
+            if ep.droplet_obj:
                 ep.update_bouncers({"bouncer.name": bouncer})
 
     def create_scaled_endpoint(self, name, spec, namespace="default"):
@@ -139,15 +139,11 @@ class EndpointOperator(object):
             response = self.core_api.read_namespaced_endpoints(
                 name=name,
                 namespace=namespace)
-            logger.info(response.subsets)
-            logger.info(response.subsets[0].addresses[0].ip)
-            logger.info("Setting backend for default service")
             backends = set()
             backends.add(response.subsets[0].addresses[0].ip)
-            ep.set_backends(backends)
+            ep.set_backends(list(backends))
             logger.info(
                 "Update scaled endpoint {} with backends: {}".format(name, backends))
-            logger.info("Create default scaled endpoint object")
             self.store_update(ep)
             ep.create_obj()
 
@@ -191,7 +187,7 @@ class EndpointOperator(object):
         for s in spec:
             for a in s['addresses']:
                 backends.add(a['ip'])
-        ep.set_backends(backends)
+        ep.set_backends(list(backends))
         self.store_update(ep)
         logger.info(
             "Update scaled endpoint {} with backends: {}".format(name, backends))
@@ -302,6 +298,7 @@ class EndpointOperator(object):
             ep.set_droplet(droplet.name)
             ep.droplet_obj = droplet
             ep.set_ip(ip)
+            ep.set_prefix("32")
 
             ep.set_droplet_ip(droplet.ip)
             ep.set_droplet_mac(droplet.mac)
