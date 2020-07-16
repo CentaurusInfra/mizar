@@ -276,16 +276,16 @@ class Endpoint:
             return str(CONSTANTS.TRAN_SIMPLE_EP)
         if self.type == OBJ_DEFAULTS.ep_type_scaled:
             return str(CONSTANTS.TRAN_SCALED_EP)
+        if self.type == OBJ_DEFAULTS.ep_type_gateway:
+            return str(CONSTANTS.TRAN_GATEWAY_EP)
 
     def get_mac(self):
         return str(self.mac)
 
     def get_remote_ips(self):
-        if "pgw" in self.name:  # Bug, phantom gateway does not work if given an empty list
-            return None
         if self.type == OBJ_DEFAULTS.ep_type_simple or self.type == OBJ_DEFAULTS.ep_type_host:
             remote_ips = [self.droplet_ip]
-        if self.type == OBJ_DEFAULTS.ep_type_scaled:
+        if self.type == OBJ_DEFAULTS.ep_type_scaled or self.type == OBJ_DEFAULTS.ep_type_gateway:
             remote_ips = list(self.backends)
         return remote_ips
 

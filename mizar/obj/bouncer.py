@@ -139,9 +139,12 @@ class Bouncer(object):
                 self._update_simple_ep(ep)
             if ep.type == OBJ_DEFAULTS.ep_type_scaled:
                 self._update_scaled_ep(ep)
+            if ep.type == OBJ_DEFAULTS.ep_type_gateway:
+                self.update_gw_ep(ep)
 
     def update_gw_ep(self, ep):
         logger.info("Update gateway endpoint")
+        ep.set_backends([self.ip])
         self.droplet_obj.update_ep(self.name, ep)
 
     def _update_simple_ep(self, ep):

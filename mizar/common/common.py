@@ -216,9 +216,6 @@ def kube_get_service_spec(core_api, service_name, service_namespace, get_callbac
         name=service_name,
         namespace=service_namespace
     )
-    logger.info(response)
-    logger.info(response.spec)
-    logger.info(response.spec.cluster_ip)
     get_callback(response.spec)
 
 

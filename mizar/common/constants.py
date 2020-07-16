@@ -28,6 +28,7 @@ class CONSTANTS:
     TRAN_SUBSTRT_EP = 0
     TRAN_SIMPLE_EP = 1
     TRAN_SCALED_EP = 2
+    TRAN_GATEWAY_EP = 3
     ON_XDP_TX = "ON_XDP_TX"
     ON_XDP_PASS = "ON_XDP_PASS"
     ON_XDP_REDIRECT = "ON_XDP_REDIRECT"
@@ -86,6 +87,7 @@ class OBJ_DEFAULTS:
     ep_type_simple = 'simple'
     ep_type_scaled = 'scaled'
     ep_type_host = 'host'
+    ep_type_gateway = 'gateway'
 
     mizar_service_annotation_key = "service.beta.kubernetes.io/mizar-scaled-endpoint-type"
     mizar_service_annotation_val = "scaled-endpoint"

@@ -40,6 +40,7 @@
 #define TRAN_SUBSTRT_EP 0
 #define TRAN_SIMPLE_EP 1
 #define TRAN_SCALED_EP 2
+#define TRAN_GATEWAY_EP 3
 
 #define TRAN_MAX_PROG 100
 /* XDP programs keys in transit agent */

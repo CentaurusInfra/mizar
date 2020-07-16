@@ -121,7 +121,7 @@ class EndpointOperator(object):
         ep.set_net(OBJ_DEFAULTS.default_ep_net)
         ep.set_mac(self.rand_mac())
         ep.set_ip(ip)
-        ep.set_type(OBJ_DEFAULTS.ep_type_simple)
+        ep.set_type(OBJ_DEFAULTS.ep_type_gateway)
         ep.set_status(OBJ_STATUS.ep_status_init)
         return ep
 
@@ -242,8 +242,6 @@ class EndpointOperator(object):
             interfaces = InterfaceServiceClient(
                 ep.get_droplet_ip()).ActivateHostInterface(interfaces_list[0])
         else:
-            if ep.type == OBJ_DEFAULTS.ep_type_host:
-                logger.error("THIS SHOULD NOT HAPPEN")
             interfaces = InterfaceServiceClient(
                 ep.get_droplet_ip()).ProduceInterfaces(InterfacesList(interfaces=interfaces_list))
 

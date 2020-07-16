@@ -59,7 +59,6 @@ class BouncerCreate(WorkflowTask):
         # Needs a list of all dividers
         bouncer.set_vni(vpcs_opr.store.get_vpc(bouncer.vpc).vni)
         dividers_opr.update_vpc(bouncer)
-        bouncer.update_gw_ep(endpoints_opr.store_get(bouncer.net + "_pgw"))
 
         endpoints_opr.update_bouncer_with_endpoints(bouncer)
         endpoints_opr.update_endpoints_with_bouncers(bouncer)
