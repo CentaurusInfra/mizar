@@ -52,13 +52,10 @@ class k8sPodCreate(WorkflowTask):
             'vpc': self.param.body['metadata'].get('labels', {}).get(
                     'arktos.futurewei.com/network', OBJ_DEFAULTS.default_ep_vpc),
             'net': OBJ_DEFAULTS.default_ep_net,
-            'ip': '',
-            'veth': '',
             'phase': self.param.body['status']['phase'],
             'readiness': self.param.body['metadata'].get('annotations', {}).get(
                     'arktos.futurewei.com/network-readiness', ''),
-            'interfaces': [{'name': self.param.body['metadata'].get('annotations', {}).get(
-                     'arktos.futurewei.com/nic', {}).get('name', 'eth0')}]
+            'interfaces': [{'name': 'eth0'}]
         }
 
         logger.info("Pod spec {}".format(spec))
@@ -69,12 +66,11 @@ class k8sPodCreate(WorkflowTask):
             spec['type'] = 'arktos'
 
         if 'arktos.futurewei.com/nic' in self.param.body['metadata'].get('annotations', {}):
-            net_config = self.param.body['metadata']['annotations']
+            net_config = self.param.body['metadata']['annotations']['arktos.futurewei.com/nic']
             configs = json.loads(net_config)
+            spec['interfaces'] = configs
             for config in configs:
-                spec['net'] = config['subnet']
-                spec['ip'] = config['ip']
-                spec['veth'] = config['name']
+                spec['net'] = config.get('subnet', OBJ_DEFAULTS.default_ep_net)
 
         # make sure not to trigger init or create simple endpoint
         # if Arktos network is already marked ready

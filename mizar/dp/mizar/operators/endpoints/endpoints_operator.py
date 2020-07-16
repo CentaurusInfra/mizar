@@ -226,6 +226,7 @@ class EndpointOperator(object):
         """
         Create a simple endpoint object (calling the API operator)
         """
+        count = 0
         for interface in interfaces.interfaces:
             logger.info("Create simple endpoint {}".format(interface))
             name = get_itf_name(interface.interface_id)
@@ -237,7 +238,8 @@ class EndpointOperator(object):
             ep.set_vni(spec['vni'])
             ep.set_vpc(spec['vpc'])
             ep.set_net(spec['net'])
-            ep.set_ip(spec['ip'])
+            ep.set_ip(spec['interfaces'][count].get('ip', ''))
+            count += 1
 
             ep.set_mac(interface.address.mac)
             ep.set_veth_name(interface.veth.name)
@@ -269,8 +271,6 @@ class EndpointOperator(object):
             itf_name = get_pod_name(pod_id) + '-' + itf['name']
             local_id = str(uuid.uuid3(uuid.NAMESPACE_URL, itf_name))[0:8]
             veth_name = "eth-" + local_id
-            if spec['veth'] != '':
-                veth_name = spec['veth']
             veth_peer = "veth-" + local_id
             veth = VethInterface(name=veth_name, peer=veth_peer)
 
