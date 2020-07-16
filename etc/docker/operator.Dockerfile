@@ -23,4 +23,5 @@ FROM fwnetworking/python_base:latest
 COPY . /var/mizar/
 RUN pip3 install /var/mizar/
 RUN ln -snf /var/mizar/build/bin /trn_bin
+COPY etc/luigi.cfg /etc/luigi/luigi.cfg
 CMD kopf run --standalone /var/mizar/mizar/operator.py

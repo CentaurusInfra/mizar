@@ -37,4 +37,3 @@ RUN mkdir -p /var/run/luigi
 RUN mkdir -p /var/log/luigi
 RUN mkdir -p /var/lib/luigi
 RUN mkdir -p /etc/luigi
-COPY etc/luigi.cfg /etc/luigi/luigi.cfg
