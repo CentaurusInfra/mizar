@@ -211,12 +211,18 @@ def kube_list_obj(obj_api, plurals, list_callback):
         list_callback(name, spec, plurals)
 
 
-def kube_get_service_spec(core_api, service_name, service_namespace, get_callback):
-    response = core_api.read_namespaced_service(
-        name=service_name,
-        namespace=service_namespace
-    )
-    get_callback(response.spec)
+def kube_get_endpoints(core_api, service_name, service_namespace):
+    response = None
+    try:
+        response = core_api.read_namespaced_endpoints(
+            name=service_name,
+            namespace=service_namespace)
+        return response
+    except:
+        logger.debug("Failed to get endpoints for service {} in namespace {}".format(
+            service_name, service_namespace))
+    finally:
+        return response
 
 
 def get_spec_val(key, spec, default=""):

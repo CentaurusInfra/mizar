@@ -97,7 +97,7 @@ class EndpointOperator(object):
             if ep.droplet_obj:
                 ep.update_bouncers({"bouncer.name": bouncer})
 
-    def create_scaled_endpoint(self, name, spec, namespace="default"):
+    def create_scaled_endpoint(self, name, spec, backends, namespace="default"):
         logger.info("Create scaled endpoint {} spec {}".format(name, spec))
         ep = Endpoint(name, self.obj_api, self.store)
         ip = spec['clusterIP']
@@ -110,6 +110,13 @@ class EndpointOperator(object):
         ep.set_mac(self.rand_mac())
         ep.set_type(OBJ_DEFAULTS.ep_type_scaled)
         ep.set_status(OBJ_STATUS.ep_status_init)
+        backends = set()
+        response = kube_get_endpoints(self.core_api, name, namespace)
+        if response and response.subsets:
+            backends.add(response.subsets[0].addresses[0].ip)
+            ep.set_backends(list(backends))
+        logger.info(
+            "Added backends: {} to scaled endpoint {} ".format(backends, name))
         ep.create_obj()
         self.annotate_builtin_endpoints(name, namespace)
 
@@ -125,37 +132,12 @@ class EndpointOperator(object):
         ep.set_status(OBJ_STATUS.ep_status_init)
         return ep
 
-    def create_default_service(self, name="kubernetes", namespace="default"):
-        def create_default_sep(spec):
-            logger.info("Create default scaled endpoint")
-            ep = Endpoint(name, self.obj_api, self.store)
-            ep.set_vni(OBJ_DEFAULTS.default_vpc_vni)
-            ep.set_vpc(OBJ_DEFAULTS.default_ep_vpc)
-            ep.set_net(OBJ_DEFAULTS.default_ep_net)
-            ep.set_ip(spec.cluster_ip)
-            ep.set_mac(self.rand_mac())
-            ep.set_type(OBJ_DEFAULTS.ep_type_scaled)
-            ep.set_status(OBJ_STATUS.ep_status_init)
-            response = self.core_api.read_namespaced_endpoints(
-                name=name,
-                namespace=namespace)
-            backends = set()
-            backends.add(response.subsets[0].addresses[0].ip)
-            ep.set_backends(list(backends))
-            logger.info(
-                "Update scaled endpoint {} with backends: {}".format(name, backends))
-            self.store_update(ep)
-            ep.create_obj()
-
-        kube_get_service_spec(self.core_api, name,
-                              namespace, create_default_sep)
-
     def annotate_builtin_endpoints(self, name, namespace='default'):
         get_body = True
         while get_body:
-            endpoint = self.core_api.read_namespaced_endpoints(
-                name=name,
-                namespace=namespace)
+            endpoint = kube_get_endpoints(self.core_api, name, namespace)
+            if not endpoint or not endpoint.metadata or not endpoint.metadata.annotations:
+                return
             endpoint.metadata.annotations[OBJ_DEFAULTS.mizar_service_annotation_key] = OBJ_DEFAULTS.mizar_service_annotation_val
             try:
                 self.core_api.patch_namespaced_endpoints(
@@ -185,8 +167,9 @@ class EndpointOperator(object):
             return None
         backends = set()
         for s in spec:
-            for a in s['addresses']:
-                backends.add(a['ip'])
+            if "addresses" in s:
+                for a in s['addresses']:
+                    backends.add(a['ip'])
         ep.set_backends(list(backends))
         self.store_update(ep)
         logger.info(
@@ -296,7 +279,7 @@ class EndpointOperator(object):
             ep.set_droplet(droplet.name)
             ep.droplet_obj = droplet
             ep.set_ip(ip)
-            ep.set_prefix("32")
+            ep.set_prefix(OBJ_DEFAULTS.default_host_ep_prefix)
 
             ep.set_droplet_ip(droplet.ip)
             ep.set_droplet_mac(droplet.mac)

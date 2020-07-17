@@ -83,7 +83,7 @@ class OBJ_DEFAULTS:
     default_net_prefix = '8'
     default_n_bouncers = 1
     default_n_dividers = 1
-
+    default_host_ep_prefix = "32"
     ep_type_simple = 'simple'
     ep_type_scaled = 'scaled'
     ep_type_host = 'host'
