@@ -101,7 +101,19 @@ We plan to add continuous deployment into a test cluster. We will use Jenkins fo
 
 The deploy script should support both new install and update of Mizar. In prod environment, when there is Mizar installed, user may want to update Mizar to new version while cluster networking won't break. We need to support "Mizar update" scenario. While Mizar updating, there should be no impact or minimal/acceptable impact to the cluster.
 
+### CI/CD
+
 We planned Mizar CI/CD pipeline, and it will be for both prod and dev versions of Mizar. The CI/CD pipeline will test Mizar update scenario continuously.
+
+Jenkins is a good candidate tool for CI/CD. What we planned are:
+
+- After send pull request, unit/integration/e2e test will be launched to verify there is no regression for new code. After verification succeed, code could be merged. (CI)
+
+- We will implement perf test and add it to CI. This is long term target which won't be in iteration 1. Depends on perf test cost, later we may decide it's not in CI which will be triggered in each pull request. Instead we may put it triggered by merge, which will reduce frequence of occur times. (CI)
+
+- After code merged to dev-next branch, a job will be triggered to build binaries, docker images. A test cluster should be deployed and e2e test will be executed. (CD)
+
+- After code merged to master branch, a job will be triggered to build prod binaries, prod docker images. Then end user can use the latest prod build to deploy. (CD)
 
 ### Deploy Steps
 
@@ -196,6 +208,11 @@ This is a check list. The deployment work is done after all items checked.
 -
 - [ ] script can deploy Mizar to environment that old Mizar exists
 - [ ] verify k8s network won't break during updating Mizar
+-
+- [ ] Jenkins is configured to run CI/CD
+- [ ] Setup pr test for unit test and integration test
+- [ ] For dev-next branch, setup job to build binaries and docker image, and run test deploy
+- [ ] For master branch, setup job to build prod binaries and prod docker image
 -
 - [ ] "how to deploy" doc is ready
 - [ ] Verify someone can follow doc and deploy successful
