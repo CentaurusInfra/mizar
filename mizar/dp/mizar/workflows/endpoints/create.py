@@ -43,6 +43,7 @@ class EndpointCreate(WorkflowTask):
 
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
+        logger.info("Endpoint name {}".format(self.param.name))
         ep = endpoints_opr.get_endpoint_stored_obj(
             self.param.name, self.param.spec)
         ep.droplet_obj = droplets_opr.store.get_droplet(ep.droplet)

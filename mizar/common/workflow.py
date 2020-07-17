@@ -31,6 +31,31 @@ class WorkflowTask(luigi.Task):
 
     def finalize(self):
         self.is_complete = True
+        self.temporary_error_status = False
+        self.permanent_error_status = False
+        self.error_message = ""
+
+    def raise_temporary_error(self, error_message):
+        self.temporary_error_status = True
+        self.error_message = error_message
+        raise Exception(self.error_message)
+
+    def raise_permanent_error(self, error_message):
+        self.permanent_error_status = True
+        self.error_message = error_message
+        raise Exception(self.error_message)
+
+    @property
+    def temporary_error(self):
+        return self.temporary_error_status
+
+    @property
+    def permanent_error(self):
+        return self.permanent_error_status
+
+    @property
+    def error(self):
+        return self.error_message
 
     def complete(self):
         return self.is_complete

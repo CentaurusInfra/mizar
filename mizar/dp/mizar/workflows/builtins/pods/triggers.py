@@ -38,5 +38,11 @@ async def builtins_on_pod(body, spec, **kwargs):
     param.name = kwargs['name']
     param.body = body
     param.spec = spec
-
-    run_workflow(wffactory().k8sPodCreate(param=param))
+    wf = wffactory().k8sPodCreate(param=param)
+    run_workflow(wf)
+    if wf.temporary_error:
+        raise kopf.TemporaryError(
+            "Temporary Error: {}".format(wf.error), delay=1)
+    if wf.permanent_error:
+        raise kopf.PermanentError(
+            "Permanent Error: {}".format(wf.error), delay=1)
