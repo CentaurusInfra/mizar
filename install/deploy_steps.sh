@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020 The Authors.
 
-# Authors: Sherif Abdelwahab <@zasherif>
-#          Phu Tran          <@phudtran>
+# Authors: Hong Chang        <@Hong-Chang>
+#          Sherif Abdelwahab <@zasherif>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,24 +20,27 @@
 # FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+source install/common.sh
 
-DIR=${1:-.}
-USER=${2:-dev}
-DOCKER_ACC=${3:-"localhost:5000"}
-YAML_FILE="dev.operator.deploy.yaml"
-. install/common.sh
+function deploy_steps:binaries_ready {
+    local is_mizar_production=${1:-0}
+    environment_adaptor:prepare_binary $is_mizar_production
+}
 
-if [[ "$USER" == "user" || "$USER" == "final" ]]; then
-    DOCKER_ACC="fwnetworking"
-    YAML_FILE="operator.deploy.yaml"
-fi
+function deploy_steps:environment_ready {
+    common:check_cluster_ready; local is_cluster_ready=$?
 
-# Build the operator image
-if [[ "$USER" == "dev" || "$USER" == "final" ]]; then
-    docker image build -t $DOCKER_ACC/endpointopr:latest -f $DIR/etc/docker/operator.Dockerfile $DIR
-    docker image push $DOCKER_ACC/endpointopr:latest
-fi
+    if [[ $is_cluster_ready == 0 ]]; then
+        echo "[deploy_steps] Error: Cluster is not ready. Cannot deploy Mizar when cluster is not ready. Please make cluster up and running." 1>&2
+        exit 1
+    fi
+}
 
-# Delete existing deployment and deploy
-delete_pods mizar-operator deployment
-kubectl apply -f $DIR/etc/deploy/$YAML_FILE
+function deploy_steps:deploy_mizar {
+    local is_mizar_production=${1:-0}
+    environment_adaptor:deploy_mizar $is_mizar_production
+}
+
+function deploy_steps:sanity_check {
+    :
+}
