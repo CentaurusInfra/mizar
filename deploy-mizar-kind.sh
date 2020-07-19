@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020 The Authors.
 
-# Authors: Sherif Abdelwahab <@zasherif>
-#          Phu Tran          <@phudtran>
+# Authors: Hong Chang        <@Hong-Chang>
+#          Sherif Abdelwahab <@zasherif>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,23 +21,37 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-DIR=${1:-.}
-USER=${2:-dev}
-DOCKER_ACC=${3:-"localhost:5000"}
-YAML_FILE="dev.operator.deploy.yaml"
-. install/common.sh
+# Parameters
+MIZAR_HOME=${MIZAR_HOME:-"${HOME}/mizar"}
+if [[ ! -d $MIZAR_HOME ]]; then
+    echo "Error: Directory $MIZAR_HOME doesn't exist. Variable MIZAR_HOME need to be set as Mizar repository directory location." 1>&2
+    exit 1
+fi
+source $MIZAR_HOME/install/common.sh
 
-if [[ "$USER" == "user" || "$USER" == "final" ]]; then
-    DOCKER_ACC="fwnetworking"
-    YAML_FILE="operator.deploy.yaml"
+IS_MIZAR_PRODUCTION=${IS_MIZAR_PRODUCTION:-0}
+MIZAR_ENVIRONMENT=${MIZAR_ENVIRONMENT:-"K8S_KIND"}
+
+
+# Binaries ready
+
+
+
+
+# Environment ready
+common:check_cluster_ready; is_cluster_ready=$?
+
+if [[ $is_cluster_ready == 0 ]]; then
+    echo "Error: Cluster is not ready. Cannot deploy Mizar when cluster is not ready. Please make cluster up and running." 1>&2
+    exit 1
 fi
 
-# Build the operator image
-if [[ "$USER" == "dev" || "$USER" == "final" ]]; then
-    docker image build -t $DOCKER_ACC/endpointopr:latest -f $DIR/etc/docker/operator.Dockerfile $DIR
-    docker image push $DOCKER_ACC/endpointopr:latest
-fi
 
-# Delete existing deployment and deploy
-delete_pods mizar-operator deployment
-kubectl apply -f $DIR/etc/deploy/$YAML_FILE
+
+
+# Deploy Mizar
+
+
+
+
+# Sanity Check

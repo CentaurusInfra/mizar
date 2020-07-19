@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020 The Authors.
 
-# Authors: Sherif Abdelwahab <@zasherif>
-#          Phu Tran          <@phudtran>
+# Authors: Hong Chang        <@Hong-Chang>
+#          Sherif Abdelwahab <@zasherif>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,23 +21,6 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-DIR=${1:-.}
-USER=${2:-dev}
-DOCKER_ACC=${3:-"localhost:5000"}
-YAML_FILE="dev.operator.deploy.yaml"
-. install/common.sh
-
-if [[ "$USER" == "user" || "$USER" == "final" ]]; then
-    DOCKER_ACC="fwnetworking"
-    YAML_FILE="operator.deploy.yaml"
-fi
-
-# Build the operator image
-if [[ "$USER" == "dev" || "$USER" == "final" ]]; then
-    docker image build -t $DOCKER_ACC/endpointopr:latest -f $DIR/etc/docker/operator.Dockerfile $DIR
-    docker image push $DOCKER_ACC/endpointopr:latest
-fi
-
-# Delete existing deployment and deploy
-delete_pods mizar-operator deployment
-kubectl apply -f $DIR/etc/deploy/$YAML_FILE
+MIZAR_HOME="${HOME}/mizar"
+IS_MIZAR_PRODUCTION=1
+MIZAR_ENVIRONMENT="k8s_kind"

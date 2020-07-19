@@ -34,3 +34,114 @@ function delete_pods {
     done
     echo
 }
+
+function common:check_cluster_ready {
+    local show_cluster_status=${1:-1}
+
+    local function_name="common:check_cluster_ready"
+    echo "[$function_name] Checking cluster readyness by getting node status."
+    if [[ $show_cluster_status == 1 ]]; then
+        kubectl get nodes
+    fi
+    local nodes_status=`kubectl get nodes | awk '{print $2}' | tail -n +2`
+    if [[ -z "$nodes_status" ]]; then
+        return 0
+    fi
+    for line in $nodes_status; 
+    do
+        if [[ $line != "Ready" ]]; then
+            return 0
+        fi
+    done
+    echo "[$function_name] Cluster is up and running."
+    return 1
+}
+
+# Checks for status: Provisioned for given object
+function common:get_object_status {
+    local OBJECT=$1
+
+    kubectl get $OBJECT 2> /tmp/kubetctl.err | awk '
+    NR==1 {
+        for (i=1; i<=NF; i++) {
+            f[$i] = i
+        }
+    }
+    { print $f["STATUS"] }
+    ' | grep Provisioned > /dev/null
+
+    return $?
+}
+
+# Checks for mizar status by provisioned objects array
+function common:check_mizar_ready {
+    objects=("droplets" "vpcs" "nets" "dividers" "bouncers")
+    sum=0
+    for i in "${objects[@]}"
+    do
+        common:get_object_status $i
+        let sum+=$((sum + $?))
+    done
+    if [[ $sum == 0 ]]; then
+        echo "[common:check_mizar_ready] Mizar is up and running."
+        return 1
+    else
+        return 0
+    fi
+}
+
+
+
+# Polymorphism implementation: There are multiple environment adaptors. Each one is implementation differently based on environment, but share same function.
+function common:source_environment_adaptor {    
+    local mizar_environment=${1:-"k8s_kind"}
+    adaptor_file_name="install/environment_adaptors/${mizar_environment}_adaptor.sh"
+    if [[ -f $adaptor_file_name ]]; then
+        source $adaptor_file_name
+    else
+        source "install/environment_adaptors/default_adaptor.sh"
+    fi
+}
+
+# Keey retry function execution until succeed or timeout
+# param1: function execution script. For example, "func_one param_one". Function needs to have return value
+# param2: expected returned function result
+# param3: succeed message
+# param4: failed message
+# param5: timeout in seconds
+# param5: flag indicating whether exit program when failed
+# return: 1 as succeed, 0 as failing then timeout
+function common:execute_and_retry {
+    local function_script=$1
+    local expected_result=$2
+    local succeed_message=${3:-""}
+    local failed_message=${4:-""}
+    local timeout_in_seconds=${5:-60}
+    local exit_when_timeout=${6:-1}
+
+    local start_time=$(date +%s)
+    while true; do
+        ($function_script) > /dev/null
+        local actual_result=$?
+        if [[ $actual_result == $expected_result ]]; then
+            break;
+        fi
+        sleep 2
+        echo -n "."
+        local elapsed=$(($(date +%s) - ${start_time}))
+        if [[ ${elapsed} -gt $timeout_in_seconds ]]; then
+            if [[ ! -z $failed_message ]]; then
+                echo $failed_message
+            fi
+            if [[ $exit_when_timeout == 1 ]]; then
+                exit 1
+            else
+                return 0
+            fi
+        fi
+    done
+    if [[ ! -z $succeed_message ]]; then
+        echo $succeed_message
+    fi
+    return 1
+}
