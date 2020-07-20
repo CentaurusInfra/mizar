@@ -7,7 +7,7 @@ service InterfaceService {
   rpc InitializeInterfaces(InterfacesList) returns (InterfacesList) {}
   rpc ProduceInterfaces(InterfacesList) returns (InterfacesList) {}
   rpc ConsumeInterfaces(CniParameters) returns (InterfacesList) {}
-  rpc DeleteInterfaces(CniParameters) returns (google.protobuf.Empty) {}
+  rpc DeleteInterface(CniParameters) returns (google.protobuf.Empty) {}
 }
 
 message PodId {

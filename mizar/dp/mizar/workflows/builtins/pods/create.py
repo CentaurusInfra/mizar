@@ -20,6 +20,7 @@
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import logging
+import json
 from mizar.common.workflow import *
 from mizar.dp.mizar.operators.droplets.droplets_operator import *
 from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
@@ -41,35 +42,19 @@ class k8sPodCreate(WorkflowTask):
 
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
-        # name in self.param.body['metadata']['name']
-        # namespace in self.param.body['metadata']['namespace']
-        # label in self.param.body['metadata']['label']
-        # annotations in self.param.body['metadata']['annotations']
-
-        # logger.info("name: {}".format(self.param.body['metadata']['name']))
-        # logger.info("namespace: {}".format(
-        #     self.param.body['metadata']['namespace']))
-        # logger.info("label: {}".format(self.param.body['metadata']['labels']))
-        # logger.info("annotations: {}".format(
-        #     self.param.body['metadata']['annotations']))
-        # logger.info("hostNetwork: {}".format(
-        #     self.param.spec.get('hostNetwork', 'False')))
-        # logger.info("hostIP: {}".format(self.param.body['status']['hostIP']))
-        # logger.info("phase: {}".format(self.param.body['status']['phase']))
-        # logger.info("podIPs: {}".format(self.param.body['status']['podIPs']))
 
         spec = {
             'hostIP': self.param.body['status']['hostIP'],
             'name': self.param.body['metadata']['name'],
-            'namespace': self.param.body['metadata']['namespace'],
-            'tenant': '',
-            # TODO (Cathy) in case of arktos
-            # get VPC and net information from annotation
-            'vpc': OBJ_DEFAULTS.default_ep_vpc,
+            'type': COMPUTE_PROVIDER.k8s,
+            'namespace': self.param.body['metadata'].get('namespace', 'default'),
+            'tenant': self.param.body['metadata'].get('tenant', ''),
+            'vpc': self.param.body['metadata'].get('labels', {}).get(
+                    'arktos.futurewei.com/network', OBJ_DEFAULTS.default_ep_vpc),
             'net': OBJ_DEFAULTS.default_ep_net,
             'phase': self.param.body['status']['phase'],
-            # TODO (Cathy) in case of arktos get list of interfaces to create on
-            # the host (names)
+            'readiness': self.param.body['metadata'].get('annotations', {}).get(
+                    'arktos.futurewei.com/network-readiness', ''),
             'interfaces': [{'name': 'eth0'}]
         }
 
@@ -77,8 +62,20 @@ class k8sPodCreate(WorkflowTask):
         spec['vni'] = vpc_opr.store_get(spec['vpc']).vni
         spec['droplet'] = droplet_opr.store_get_by_ip(spec['hostIP'])
 
-        # TODO (cathy): make sure not to trigger init or create simple endpoint
+        if 'arktos.futurewei.com/network' in self.param.body['metadata'].get('labels', {}):
+            spec['type'] =  COMPUTE_PROVIDER.arktos
+
+        if 'arktos.futurewei.com/nic' in self.param.body['metadata'].get('annotations', {}):
+            net_config = self.param.body['metadata']['annotations']['arktos.futurewei.com/nic']
+            configs = json.loads(net_config)
+            spec['interfaces'] = configs
+
+        # make sure not to trigger init or create simple endpoint
         # if Arktos network is already marked ready
+        if spec['type'] ==  COMPUTE_PROVIDER.arktos and spec['readiness'] == 'true':
+            self.finalize()
+            return
+
         if spec['phase'] != 'Pending':
             self.finalize()
             return
@@ -90,5 +87,7 @@ class k8sPodCreate(WorkflowTask):
         # Create the corresponding simple endpoint objects
         endpoint_opr.create_simple_endpoints(interfaces, spec)
 
-        # TODO (cathy): in Arktos shall we mark the pod network ready here?
+        ## CNI interface has builtin synchronization, do not need trigger
+        if 'arktos.futurewei.com/network' in self.param.body['metadata'].get('labels', {}):
+            endpoint_opr.annotate_builtin_pods(spec['name'], spec['namespace'])
         self.finalize()

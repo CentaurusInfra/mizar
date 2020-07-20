@@ -130,6 +130,24 @@ class EndpointOperator(object):
                     "Retry updating annotating endpoints {}".format(name))
                 get_body = True
 
+    def annotate_builtin_pods(self, name, namespace='default'):
+        get_body = True
+        while get_body:
+            pod = self.core_api.read_namespaced_pod(
+                name=name,
+                namespace=namespace)
+            pod.metadata.annotations[OBJ_DEFAULTS.arktos_network_readiness_key] = "true"
+            try:
+                self.core_api.patch_namespaced_pod(
+                    name=name,
+                    namespace=namespace,
+                    body=pod)
+                get_body = False
+            except:
+                logger.debug(
+                    "Retry updating annotating pods {}".format(name))
+                get_body = True
+
     def delete_scaled_endpoint(self, ep):
         logger.info("Delete scaled endpoint {}".format(ep.name))
         ep.delete_obj()
@@ -202,15 +220,13 @@ class EndpointOperator(object):
         interfaces = InterfaceServiceClient(
             ep.get_droplet_ip()).ProduceInterfaces(InterfacesList(interfaces=interfaces_list))
 
-        # At this point Mizar has provisioned the network
-        # TODO (cathy): mark the pod network as ready! Shall it be here or in
-        # the pod builtin wf.
         logger.info("Produced {}".format(interfaces))
 
     def create_simple_endpoints(self, interfaces, spec):
         """
         Create a simple endpoint object (calling the API operator)
         """
+        count = 0
         for interface in interfaces.interfaces:
             logger.info("Create simple endpoint {}".format(interface))
             name = get_itf_name(interface.interface_id)
@@ -221,12 +237,15 @@ class EndpointOperator(object):
 
             ep.set_vni(spec['vni'])
             ep.set_vpc(spec['vpc'])
-            ep.set_net(spec['net'])
+            ep.set_net(spec['interfaces'][count].get('subnet', spec['net']))
+            ep.set_ip(spec['interfaces'][count].get('ip', ''))
+            count += 1
 
             ep.set_mac(interface.address.mac)
             ep.set_veth_name(interface.veth.name)
             ep.set_veth_peer(interface.veth.peer)
             ep.set_droplet(spec['droplet'].name)
+            ep.set_k8s_pod_name(spec['name'])
 
             ep.set_droplet_ip(spec['droplet'].ip)
             ep.set_droplet_mac(spec['droplet'].mac)
@@ -256,10 +275,14 @@ class EndpointOperator(object):
             veth_peer = "veth-" + local_id
             veth = VethInterface(name=veth_name, peer=veth_peer)
 
+            pod_provider = PodProvider.K8S
+            if spec['type'] == 'arktos':
+                pod_provider = PodProvider.ARKTOS
+
             interfaces_list.append(Interface(
                 interface_id=interface_id,
                 interface_type=InterfaceType.veth,
-                pod_provider=PodProvider.K8S,
+                pod_provider=pod_provider,
                 veth=veth,
                 status=InterfaceStatus.init
             ))
@@ -269,3 +292,7 @@ class EndpointOperator(object):
         # The Interface service will create the veth peers for the interface and
         # allocate the mac addresses for us.
         return InterfaceServiceClient(worker_ip).InitializeInterfaces(interfaces)
+    
+    def delete_simple_endpoint(self, ep):
+        logger.info("Delete endpoint object assicated with interface {}".format(ep.name))
+        ep.delete_obj()

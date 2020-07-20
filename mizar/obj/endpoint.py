@@ -36,6 +36,7 @@ class Endpoint:
         # Initial values all none
         self.vpc = ""
         self.net = ""
+        self.k8s_pod_name = ""
         self.vni = ""
         self.status = ""
         self.gw = ""
@@ -89,6 +90,7 @@ class Endpoint:
             "status": self.status,
             "vpc": self.vpc,
             "net": self.net,
+            "k8s_pod_name": self.k8s_pod_name,
             "ip": self.ip,
             "gw": self.gw,
             "mac": self.mac,
@@ -111,6 +113,7 @@ class Endpoint:
         self.status = get_spec_val('status', spec)
         self.vpc = get_spec_val('vpc', spec)
         self.net = get_spec_val('net', spec)
+        self.k8s_pod_name = get_spec_val('k8s_pod_name', spec)
         self.ip = get_spec_val('ip', spec)
         self.gw = get_spec_val('gw', spec)
         self.mac = get_spec_val('mac', spec)
@@ -175,6 +178,9 @@ class Endpoint:
 
     def set_net(self, net):
         self.net = net
+
+    def set_k8s_pod_name(self, k8s_pod_name): 
+        self.k8s_pod_name = k8s_pod_name
 
     def set_vni(self, vni):
         self.vni = vni

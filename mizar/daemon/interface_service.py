@@ -33,6 +33,7 @@ class InterfaceServer(InterfaceServiceServicer):
         self.interfaces_q = queue.Queue()  # Used for Produce/Consume sync
         self.iproute = IPRoute()
         self.interfaces = {}  # In-memory tracking for Pod interfaces
+        self.known_substrates = {}
         self.queued_pods = set()  # A set of pods, with queued interfaces (to be consumed)
         self.interfaces_lock = threading.Lock()
 
@@ -117,6 +118,15 @@ class InterfaceServer(InterfaceServiceServicer):
                 self.interfaces[pod_name] = []
             self.interfaces[pod_name].append(interface)
 
+            # Move the pod_name into interfaces_q. This tells the consume
+            # function that the pod has queued interfaces that can be consumed
+            if pod_name not in self.queued_pods:
+                self.interfaces_q.put(pod_name)
+                self.queued_pods.add(pod_name)
+
+        # Change interface status from init to queued.
+        interface.status = InterfaceStatus.queued
+
     def _ConsumeInterfaces(self, pod_name, cni_params):
         """
         Remove the pod from the interfaces_q and provision the interface
@@ -134,14 +144,6 @@ class InterfaceServer(InterfaceServiceServicer):
         interfaces = InterfacesList(interfaces=interfaces)
         logger.info("Consumed {}".format(interfaces))
         return interfaces
-
-    def _DeleteInterfaces(self, pod_name, cni_params):
-        with self.interfaces_lock:
-            interfaces = self.interfaces.get(pod_name, [])
-            for interface in interfaces:
-                if interface.interface_type == InterfaceType.veth:
-                    self._DeleteVethInterface(interface, cni_params)
-                    logger.info("Removed {}".format(interface))
 
     def _ProvisionInterface(self, interface, cni_params):
         """
@@ -164,15 +166,8 @@ class InterfaceServer(InterfaceServiceServicer):
         # Configure the Transit Agent
         self._ConfigureTransitAgent(interface)
 
-    def _DeleteVethInterface(self, interface, cni_params):
-        """
-        Delete a veth interface
-        """
-        veth_peer_index = get_iface_index(interface.veth.peer, self.iproute)
-        self.iproute.link('del', index=veth_peer_index)
-        lo_idx = get_iface_index("lo", self.iproute)
-        self.iproute.link('del', index=lo_idx)
-        
+        self._UpdateSubstrateInterface(interface)
+
     def _ConfigureTransitAgent(self, interface):
         """
         Load the Transit Agent XDP program, program all the bouncer substrate,
@@ -182,8 +177,7 @@ class InterfaceServer(InterfaceServiceServicer):
 
         for bouncer in interface.bouncers:
             self.rpc.update_agent_substrate_ep(
-                interface.veth.peer, bouncer.ip_address, bouncer.mac)
-
+                    interface.veth.peer, bouncer.ip_address, bouncer.mac)
         self.rpc.update_agent_metadata(interface)
         self.rpc.update_ep(interface)
 
@@ -227,23 +221,53 @@ class InterfaceServer(InterfaceServiceServicer):
         logger.error("Timeout, no new interface to consume!")
         return self._ConsumeInterfaces(requested_pod_name, cni_params)
 
-    def DeleteInterfaces(self, request, context):
+    def _UpdateSubstrateInterface(self, interface, add=True):
+        pod_name = get_pod_name(interface.interface_id.pod_id)
+        droplet_ip = interface.droplet.ip_address
+        droplet_mac = interface.droplet.mac
+        if add:
+            self._UpdateSubstrate(pod_name, droplet_ip, droplet_mac)
+        else:
+            self._DeleteSubstrate(pod_name, droplet_ip, droplet_mac)
+
+    def _UpdateSubstrate(self, obj_name, droplet_ip, droplet_mac):
+        if obj_name not in self.known_substrates.keys():
+            self.known_substrates[obj_name] = droplet_ip
+        self.rpc.update_substrate_ep(droplet_ip, droplet_mac)
+
+    def _DeleteSubstrate(self, obj_name, droplet_ip, droplet_mac):
+        if obj_name in self.known_substrates.keys():
+            self.known_substrates.pop(obj_name)
+        self.rpc.update_substrate_ep(droplet_ip, droplet_mac)
+
+    def _DeleteVethInterface(self, interface):         
+        """
+        Delete a veth interface
+        """
+        veth_peer_index = get_iface_index(interface.veth.peer, self.iproute)
+        
+        self.iproute.link('del', index=veth_peer_index)
+
+        self._UpdateSubstrateInterface(interface, False)
+        
+    def DeleteInterface(self, request, context):
         """
         Delete network interfaces for a pod
         """
-        # input is pod_id 
-
         cni_params = request
         pod_name = get_pod_name(cni_params.pod_id)
-        interfaces = self.interfaces.get(pod_name, [])
-        logger.debug("Deleting interfaces for pod {}".format(pod_name))
-        print(interfaces)
-        for interface in interfaces:
-            if pod_name in self.interfaces:
-                self.interfaces[pod_name].remove(interface)
-            self._DeleteInterfaces(pod_name, interface.interface_id)
-
+        pod_interfaces = self.interfaces.get(pod_name, [])
+        iface = cni_params.interface
+        logger.info("Deleting interfaces for pod {} with interfaces {}".format(pod_name, pod_interfaces))
+        
+        for interface in pod_interfaces:
+            self.interfaces[pod_name].remove(interface)
+            if iface == interface and interface.interface_type == InterfaceType.veth:
+                logger.info("Deleting interface: {}".format(iface))
+                self._DeleteVethInterface(interface)
+                logger.info("Removed {}".format(interface))
         return empty_pb2.Empty()
+
 
 class InterfaceServiceClient():
     def __init__(self, ip):
@@ -262,8 +286,8 @@ class InterfaceServiceClient():
         resp = self.stub.ConsumeInterfaces(pod_id)
         return resp
 
-    def DeleteInterfaces(self, interfaces_list):
-        resp = self.stub.DeleteInterfaces(interfaces_list)
+    def DeleteInterface(self, interfaces_list):
+        resp = self.stub.DeleteInterface(interfaces_list)
         return resp
 
 
@@ -392,3 +416,10 @@ class LocalTransitRpc:
         returncode, text = run_cmd(cmd)
         logger.info(
             "update_agent_metadata returns {} {}".format(returncode, text))
+
+    def update_substrate_ep(self, ip, mac):
+        jsonconf = self.get_substrate_ep_json(ip, mac)
+        cmd = f'''{self.trn_cli_update_ep} \'{jsonconf}\''''
+        logger.info("update_substrate_ep: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("returns {} {}".format(returncode, text))

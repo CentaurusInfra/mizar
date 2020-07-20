@@ -141,37 +141,36 @@ class Cni:
         moves the interface to the CNI netnt, rename it, set the IP address, and
         the GW.
         """
+
         head, netns = os.path.split(self.netns)
         iproute_ns = NetNS(netns)
         veth_index = get_iface_index(interface.veth.name, self.iproute)
 
-        # skip the interface activation if an interface with same
-        # interface.interface_id.interface already UP and configured in the
-        # namespace
         actived_idxs = iproute_ns.link_lookup(operstate="UP")
-        if (veth_index not in actived_idxs):
-            logger.error("Move interface {}/{} to netns {}".format(
-                interface.veth.name, veth_index, netns))
-            self.iproute.link('set', index=veth_index, net_ns_fd=netns)
+        if (veth_index in actived_idxs):
+            return
 
-            # configure and activate interfaces inside the netns
-            iproute_ns.link('set', index=veth_index, ifname=self.interface)
-            lo_idx = iproute_ns.link_lookup(ifname="lo")[0]
-            iproute_ns.link('set', index=lo_idx, state='up')
+        logger.error("Move interface {}/{} to netns {}".format(
+            interface.veth.name, veth_index, netns))
+        self.iproute.link('set', index=veth_index, net_ns_fd=netns)
 
-            iproute_ns.link('set', index=veth_index, state='up')
+        # configure and activate interfaces inside the netns
+        iproute_ns.link('set', index=veth_index, ifname=self.interface)
+        lo_idx = iproute_ns.link_lookup(ifname="lo")[0]
+        iproute_ns.link('set', index=lo_idx, state='up')
 
-            iproute_ns.addr('add', index=veth_index, address=interface.address.ip_address,
-                            prefixlen=int(interface.address.ip_prefix))
-            iproute_ns.route('add', gateway=interface.address.gateway_ip)
+        iproute_ns.link('set', index=veth_index, state='up')
+
+        iproute_ns.addr('add', index=veth_index, address=interface.address.ip_address,
+                        prefixlen=int(interface.address.ip_prefix))
+        iproute_ns.route('add', gateway=interface.address.gateway_ip)
 
     def do_delete(self):
-        param = CniParameters(pod_id=self.pod_id,
-                              netns=self.netns,
-                              interface=self.interface)
-
+        param = CniParameters(pod_id=self.pod_id, 
+                                netns=self.netns,
+                                interface=self.interface)
         InterfaceServiceClient(
-            "localhost").DeleteInterfaces(param)
+                "localhost").DeleteInterface(param)
         exit(0)
 
     def do_get(self):

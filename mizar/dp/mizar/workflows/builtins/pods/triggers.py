@@ -33,10 +33,19 @@ logger = logging.getLogger()
 @kopf.on.resume('', 'v1', 'pods')
 @kopf.on.update('', 'v1', 'pods')
 @kopf.on.create('', 'v1', 'pods')
-async def builtins_on_pod(body, spec, **kwargs):
+async def builtins_on_pod_create(body, spec, **kwargs):
     param = HandlerParam()
     param.name = kwargs['name']
     param.body = body
     param.spec = spec
 
     run_workflow(wffactory().k8sPodCreate(param=param))
+
+@kopf.on.delete('', 'v1', 'pods')
+async def builtins_on_pod_delete(body, spec, **kwargs):
+    param = HandlerParam()
+    param.name = kwargs['name']
+    param.body = body
+    param.spec = spec
+    
+    run_workflow(wffactory().k8sPodDelete(param=param))

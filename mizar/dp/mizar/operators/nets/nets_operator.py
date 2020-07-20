@@ -140,7 +140,7 @@ class NetOperator(object):
 
     def allocate_endpoint(self, ep):
         n = self.store.get_net(ep.net)
-        if ep.ip == "":
+        if ep.ip == '':
             ip = n.allocate_ip()
             ep.set_ip(ip)
         gw = n.get_gw_ip()

@@ -89,6 +89,7 @@ class OBJ_DEFAULTS:
     mizar_service_annotation_key = "service.beta.kubernetes.io/mizar-scaled-endpoint-type"
     mizar_service_annotation_val = "scaled-endpoint"
 
+    arktos_network_readiness_key = "arktos.futurewei.com/network-readiness"
 
 class RESOURCES:
     endpoints = "endpoints"
@@ -98,6 +99,9 @@ class RESOURCES:
     bouncers = "bouncers"
     dividers = "dividers"
 
+class COMPUTE_PROVIDER:
+    k8s = "k8s"
+    arktos = "arktos"
 
 class LAMBDAS:
     ep_status_init = lambda body, **_: body.get('spec', {}).get(
