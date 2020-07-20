@@ -57,24 +57,6 @@ function environment_adaptor:prepare_binary {
     echo "Waiting for cluster to be up and running."
     local timeout=60
     common:execute_and_retry "common:check_cluster_ready 0" 1 "Cluster is up and running." "ERROR: cluster setup timed out after $timeout seconds!" $timeout 1
-
-    # local start_time=$(date +%s)
-    # local timeout=60
-    # echo -n "Waiting for cluster to be ready."
-    # while true; do
-    #     common:check_cluster_ready 0; local is_cluster_ready=$?
-    #     if [[ $is_cluster_ready == 1 ]]; then
-    #         break
-    #     fi
-    #     sleep 2
-    #     echo -n "."
-    #     local elapsed=$(($(date +%s) - ${start_time}))
-    #     if [[ ${elapsed} -gt $timeout ]]; then
-    #         echo
-    #         echo "ERROR: cluster setup timed out after $timeout seconds!"
-    #         exit 1
-    #     fi
-    # done
 }
 
 function environment_adaptor:deploy_mizar {
@@ -97,23 +79,4 @@ function environment_adaptor:deploy_mizar {
     echo "Waiting for Mizar to be up and running."
     local timeout=120
     common:execute_and_retry "common:check_mizar_ready" 1 "Mizar is now ready!" "ERROR: Mizar setup timed out after $timeout seconds!" $timeout 1
-
-
-    # local start_time=$(date +%s)
-    # local timeout=120    
-    # while true; do
-    #     common:check_mizar_ready; local is_mizar_ready=$?
-    #     if [[ $is_mizar_ready == 1 ]]; then
-    #         break;
-    #     fi
-    #     sleep 2
-    #     echo -n "."
-    #     local elapsed=$(($(date +%s) - ${start_time}))
-    #     if [[ ${elapsed} -gt $timeout ]]; then
-    #         echo
-    #         echo "ERROR: Mizar setup timed out after $timeout seconds!"
-    #         exit 1
-    #     fi
-    # done
-    # echo "Mizar is now ready!"
 }
