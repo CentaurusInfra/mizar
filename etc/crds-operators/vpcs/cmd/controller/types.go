@@ -19,8 +19,11 @@ import (
 	vpcclienteset "mizar.futurewei.com/crds-operators/vpcs/apis/generated/clientset/versioned"
 	vpcscheme "mizar.futurewei.com/crds-operators/vpcs/apis/generated/clientset/versioned/scheme"
 	vpcinformers "mizar.futurewei.com/crds-operators/vpcs/apis/generated/informers/externalversions"
+<<<<<<< HEAD:etc/crds-operators/vpcs/cmd/controller/types.go
 	vpclisters "mizar.futurewei.com/crds-operators/vpcs/apis/generated/listers/apis/v1"
 	vpcv1 "mizar.futurewei.com/crds-operators/vpcs/apis/v1"
+=======
+>>>>>>> 48d82d38d7904d8ea01adb9f18180081d5ccead6:etc/crds-operators/vpcs/cmd/controller/types.go
 )
 
 type Controller struct {
@@ -46,7 +49,11 @@ func NewController() *Controller {
 	testClient := vpcclienteset.NewForConfigOrDie(config)
 
 	informerFactory := vpcinformers.NewSharedInformerFactory(testClient, time.Minute*1)
+<<<<<<< HEAD:etc/crds-operators/vpcs/cmd/controller/types.go
 	informer := informerFactory.Mizar().V1().Vpcs()
+=======
+	informer := informerFactory.Mizar().V1beta1().vpcs()
+>>>>>>> 48d82d38d7904d8ea01adb9f18180081d5ccead6:etc/crds-operators/vpcs/cmd/controller/types.go
 
 	utilruntime.Must(vpcv1.AddToScheme(vpcscheme.Scheme))
 	eventBroadcaster := record.NewBroadcaster()
