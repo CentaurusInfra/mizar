@@ -89,7 +89,7 @@ There are different environments that Mizar should be supporting.
 
 ### Dev vs Prod of Mizar
 
-All the time these should be two version of Mizar to be deployed. One is dev version and one is prod version.
+At all times, there should be two versions of Mizar ready to be deployed. One is dev version and one is prod version.
 
 - **Prod Version**, it's for end users to use Mizar in their test or prod environment. Its purpose is not to test Mizar. Instead it's to test their environment with Mizar, or check how Mizar fit their requirements, or using Mizar in their production environment. It's to deploy Mizar stable versions. We shall provide public docker images for prod version deployment. 
 
@@ -127,7 +127,7 @@ Jenkins is a good candidate tool for CI/CD. What we planned are:
 
 	Either it's Arktos environment, or k8s environment, it should have already be ready. Kubectl is in the path and can function well. Script needs to verify environment readness.
 
-	For dev environment, script may or may not launch cluster. I prefer not launch cluster because cluster is not target of Mizar deployment. Mizar just lives in a ready cluster.
+	For dev environment, script may or may not launch cluster. I prefer not launch cluster because cluster is not target of Mizar deployment. Mizar just lives in a ready cluster. Kind environment is excepted. We shall setup Kind and Mizar together.
 
 	For phase 2 Mizar, there should be two clusters ready. One is for k8s and one is for Mizar. We need two clusters ready.
 	
@@ -184,7 +184,7 @@ Script may be different for Mizar phase 1 and phase 2, but script parts (deploy 
 
 This is a check list. The deployment work is done after all items checked.
 
-- [ ] Mizar deployed to k8s Kind environmen
+- [ ] Mizar deployed to k8s Kind environment
 - [ ] Mizar deployed to k8s GCP environment
 - [ ] Mizar deployed to k8s AWS environment
 - [ ] Mizar deployed to arktos-up environment
@@ -195,7 +195,7 @@ This is a check list. The deployment work is done after all items checked.
 -
 - [ ] script is ready for "Binary Ready"
 - [ ] script is ready for "Environment Ready"
-- [ ] mscript is ready for "Deploy Mizar"
+- [ ] script is ready for "Deploy Mizar"
 - [ ] script is ready for "Sanity Check"
 -
 - [ ] deploy Mizar daemon component 
