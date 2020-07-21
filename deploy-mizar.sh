@@ -20,7 +20,11 @@
 # FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 is_mizar_production=${1:-0}
+# Environments: k8s_kind, k8s_gcp, k8s_aws, 
+#               arktos_up, arktos_gcp, arktos_aws, 
+#               arktos_multi_master, arktos_with_kubemark, 
 mizar_environment=${2:-"k8s_kind"}
 
 # Make sure script files are present and execute location is correct.
