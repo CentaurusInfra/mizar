@@ -30,19 +30,12 @@ from mizar.common.wf_param import *
 logger = logging.getLogger()
 
 
-@kopf.on.resume('', 'v1', 'pods')
-@kopf.on.update('', 'v1', 'pods')
-@kopf.on.create('', 'v1', 'pods')
+@kopf.on.resume('', 'v1', 'pods', retries=OBJ_DEFAULTS.kopf_max_retries)
+@kopf.on.update('', 'v1', 'pods', retries=OBJ_DEFAULTS.kopf_max_retries)
+@kopf.on.create('', 'v1', 'pods', retries=OBJ_DEFAULTS.kopf_max_retries)
 async def builtins_on_pod(body, spec, **kwargs):
     param = HandlerParam()
     param.name = kwargs['name']
     param.body = body
     param.spec = spec
-    wf = wffactory().k8sPodCreate(param=param)
-    run_workflow(wf)
-    if wf.temporary_error:
-        raise kopf.TemporaryError(
-            "Temporary Error: {}".format(wf.error), delay=1)
-    if wf.permanent_error:
-        raise kopf.PermanentError(
-            "Permanent Error: {}".format(wf.error), delay=1)
+    run_workflow(wffactory().k8sPodCreate(param=param))

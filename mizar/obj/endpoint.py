@@ -101,8 +101,7 @@ class Endpoint:
             "hostip": self.droplet_ip,
             "hostmac": self.droplet_mac,
             "cnidelay": self.cnidelay,
-            "provisiondelay": self.provisiondelay,
-            "backends": self.backends
+            "provisiondelay": self.provisiondelay
         }
 
         return self.obj
@@ -125,7 +124,6 @@ class Endpoint:
         self.droplet_mac = get_spec_val('hostmac', spec)
         self.cnidelay = get_spec_val('cnidelay', spec)
         self.provisiondelay = get_spec_val('provisiondelay', spec)
-        self.backends = get_spec_val('backends', spec)
 
     def set_interface(self, interface):
         self.interface = interface

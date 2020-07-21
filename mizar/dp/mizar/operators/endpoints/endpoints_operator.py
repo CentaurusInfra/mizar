@@ -92,12 +92,12 @@ class EndpointOperator(object):
         bouncer.update_eps(eps)
 
     def update_endpoints_with_bouncers(self, bouncer):
-        eps = self.store.get_eps_in_net(bouncer.net).values()
+        eps = list(self.store.get_eps_in_net(bouncer.net).values())
         for ep in eps:
-            if ep.droplet_obj:
-                ep.update_bouncers({"bouncer.name": bouncer})
+            if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
+                ep.update_bouncers({bouncer.name: bouncer})
 
-    def create_scaled_endpoint(self, name, spec, backends, namespace="default"):
+    def create_scaled_endpoint(self, name, spec, namespace="default"):
         logger.info("Create scaled endpoint {} spec {}".format(name, spec))
         ep = Endpoint(name, self.obj_api, self.store)
         ip = spec['clusterIP']
@@ -110,13 +110,6 @@ class EndpointOperator(object):
         ep.set_mac(self.rand_mac())
         ep.set_type(OBJ_DEFAULTS.ep_type_scaled)
         ep.set_status(OBJ_STATUS.ep_status_init)
-        backends = set()
-        response = kube_get_endpoints(self.core_api, name, namespace)
-        if response and response.subsets:
-            backends.add(response.subsets[0].addresses[0].ip)
-            ep.set_backends(list(backends))
-        logger.info(
-            "Added backends: {} to scaled endpoint {} ".format(backends, name))
         ep.create_obj()
         self.annotate_builtin_endpoints(name, namespace)
 

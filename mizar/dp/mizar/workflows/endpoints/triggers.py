@@ -30,9 +30,9 @@ from mizar.common.wf_param import *
 logger = logging.getLogger()
 
 
-@kopf.on.resume(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_init)
-@kopf.on.update(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_init)
-@kopf.on.create(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_init)
+@kopf.on.resume(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_init, retries=OBJ_DEFAULTS.kopf_max_retries)
+@kopf.on.update(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_init, retries=OBJ_DEFAULTS.kopf_max_retries)
+@kopf.on.create(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_init, retries=OBJ_DEFAULTS.kopf_max_retries)
 def endpoint_opr_on_endpoint_init(body, spec, **kwargs):
     param = HandlerParam()
     param.name = kwargs['name']
@@ -41,9 +41,9 @@ def endpoint_opr_on_endpoint_init(body, spec, **kwargs):
     run_workflow(wffactory().EndpointCreate(param=param))
 
 
-@kopf.on.resume(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_provisioned)
-@kopf.on.update(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_provisioned)
-@kopf.on.create(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_provisioned)
+@kopf.on.resume(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_provisioned, retries=OBJ_DEFAULTS.kopf_max_retries)
+@kopf.on.update(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_provisioned, retries=OBJ_DEFAULTS.kopf_max_retries)
+@kopf.on.create(group, version, RESOURCES.endpoints, when=LAMBDAS.ep_status_provisioned, retries=OBJ_DEFAULTS.kopf_max_retries)
 def endpoint_opr_on_endpoint_provisioned(body, spec, **kwargs):
     param = HandlerParam()
     param.name = kwargs['name']
@@ -52,7 +52,7 @@ def endpoint_opr_on_endpoint_provisioned(body, spec, **kwargs):
     run_workflow(wffactory().EndpointProvisioned(param=param))
 
 
-@kopf.on.delete(group, version, RESOURCES.endpoints)
+@kopf.on.delete(group, version, RESOURCES.endpoints, retries=OBJ_DEFAULTS.kopf_max_retries)
 def endpoint_opr_on_endpoint_delete(body, spec, **kwargs):
     param = HandlerParam()
     param.name = kwargs['name']

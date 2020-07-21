@@ -27,6 +27,10 @@ from mizar.common.wf_param import *
 
 class WorkflowTask(luigi.Task):
     is_complete = False
+    temporary_error_status = False
+    permanent_error_status = False
+    error_message = ""
+    delay = 5
     param = HandlerParam()
 
     def finalize(self):
@@ -45,6 +49,9 @@ class WorkflowTask(luigi.Task):
         self.error_message = error_message
         raise Exception(self.error_message)
 
+    def set_retry_delay(self, delay):
+        self.delay = delay
+
     @property
     def temporary_error(self):
         return self.temporary_error_status
@@ -56,6 +63,10 @@ class WorkflowTask(luigi.Task):
     @property
     def error(self):
         return self.error_message
+
+    @property
+    def retry_delay(self):
+        return self.delay
 
     def complete(self):
         return self.is_complete

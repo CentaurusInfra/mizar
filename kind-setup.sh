@@ -65,6 +65,10 @@ timeout=120
 
 kind delete cluster
 docker network rm kind 2> /dev/null
+# All interfaces in the network have an MTU of 9000 to
+# simulate a real datacenter. Since all container traffic
+# goes through the docker bridge, we must ensure the bridge
+# interfaces also has the same MTU to prevent ip fragmentation.
 docker network create -d bridge \
   --subnet=172.18.0.0/16 \
   --gateway=172.18.0.1 \

@@ -87,7 +87,7 @@ class BouncerOperator(object):
         for key in bouncers:
             bouncers[key].update_eps(eps)
 
-        if ep.droplet_obj:
+        if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
             ep.update_bouncers_list(bouncers)
 
     def delete_endpoint_from_bouncers(self, ep):

@@ -144,14 +144,14 @@ class InterfaceServer(InterfaceServiceServicer):
         logger.info("Consumed {}".format(interfaces))
         return interfaces
 
-    def _ProvisionInterface(self, interface, cni_params, update=True):
+    def _ProvisionInterface(self, interface, cni_params):
         """
         Provision the interface according to its type
         """
         if interface.interface_type == InterfaceType.veth:
-            self._ProvisionVethInterface(interface, cni_params, update)
+            self._ProvisionVethInterface(interface, cni_params)
 
-    def _ProvisionVethInterface(self, interface, cni_params, update):
+    def _ProvisionVethInterface(self, interface, cni_params):
         """
         Provision a veth interface.
         """
@@ -163,22 +163,21 @@ class InterfaceServer(InterfaceServiceServicer):
         self.iproute.link('set', index=veth_peer_index, state='up', mtu=9000)
 
         # Configure the Transit Agent
-        self._ConfigureTransitAgent(interface, update)
+        self._ConfigureTransitAgent(interface)
 
-    def _ConfigureTransitAgent(self, interface, update):
+    def _ConfigureTransitAgent(self, interface):
         """
         Load the Transit Agent XDP program, program all the bouncer substrate,
         update the agent metadata and endpoint.
         """
         self.rpc.load_transit_agent_xdp(interface)
 
-        if update:
-            for bouncer in interface.bouncers:
-                self.rpc.update_agent_substrate_ep(
-                    interface.veth.peer, bouncer.ip_address, bouncer.mac)
+        for bouncer in interface.bouncers:
+            self.rpc.update_agent_substrate_ep(
+                interface.veth.peer, bouncer.ip_address, bouncer.mac)
 
-            self.rpc.update_agent_metadata(interface)
-            self.rpc.update_ep(interface)
+        self.rpc.update_agent_metadata(interface)
+        self.rpc.update_ep(interface)
 
     def ConsumeInterfaces(self, request, context):
         """
@@ -226,7 +225,12 @@ class InterfaceServer(InterfaceServiceServicer):
 
     def ActivateHostInterface(self, request, context):
         interface = request
-        self._ProvisionInterface(interface, "", False)
+
+        # Provision host veth interface and load transit xdp agent.
+        veth_peer_index = get_iface_index(interface.veth.peer, self.iproute)
+        self.iproute.link('set', index=veth_peer_index, state='up', mtu=9000)
+        self.rpc.load_transit_agent_xdp(interface)
+
         veth_index = get_iface_index(interface.veth.name, self.iproute)
         # configure and activate interfaces
         self.iproute.link('set', index=veth_index,

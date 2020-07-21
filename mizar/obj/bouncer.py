@@ -135,7 +135,7 @@ class Bouncer(object):
     def update_eps(self, eps):
         for ep in eps:
             self.eps[ep.name] = ep
-            if ep.droplet_obj:
+            if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
                 self._update_simple_ep(ep)
             if ep.type == OBJ_DEFAULTS.ep_type_scaled:
                 self._update_scaled_ep(ep)

@@ -23,12 +23,14 @@ import subprocess
 import ctypes
 import logging
 import luigi
+import kopf
 import datetime
 import dateutil.parser
 from kubernetes import watch, client
 from ctypes.util import find_library
 from mizar.common.constants import *
 from pathlib import Path
+from luigi.execution_summary import LuigiStatusCode
 _libc = ctypes.CDLL(find_library('c'), use_errno=True)
 
 logger = logging.getLogger()
@@ -202,8 +204,7 @@ def kube_list_obj(obj_api, plurals, list_callback):
         version="v1",
         namespace="default",
         plural=plurals,
-        watch=False,
-        timeout_seconds=10)
+        watch=False)
     items = response['items']
     for v in items:
         name = v['metadata']['name']
@@ -230,7 +231,16 @@ def get_spec_val(key, spec, default=""):
 
 
 def run_workflow(task):
-    luigi.build([task], detailed_summary=False)
+    results = luigi.build([task], detailed_summary=True)
+    if task.temporary_error:
+        raise kopf.TemporaryError(
+            "Temporary Error: {}".format(task.error), delay=task.retry_delay)
+    if task.permanent_error:
+        raise kopf.PermanentError(
+            "Permanent Error: {}".format(task.error))
+    if results.status == LuigiStatusCode.FAILED:
+        raise kopf.PermanentError(
+            "Unknown Error: {}".format(results.summary_text))
 
 
 def get_pod_name(pod_id):
