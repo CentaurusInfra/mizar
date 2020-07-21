@@ -28,8 +28,10 @@ function environment_adaptor:prepare_binary {
 
     if [[ $is_mizar_production == 0 ]]; then
         local user="dev"
+        local docker_account="localhost:5000"
     else
         local user="prod"
+        local docker_account="fwnetworking"
     fi
 
     local cwd=$(pwd)
@@ -38,16 +40,9 @@ function environment_adaptor:prepare_binary {
     local kube_config="${HOME}/.kube/config"
     local nodes=${2:-3}
 
-    kind delete cluster
-    make proto
-
-    if [[ $user == "dev" ]]; then
-        local docker_account="localhost:5000"
-    else
-        local docker_account="fwnetworking"
-    fi
     docker image build -t $docker_account/kindnode:latest -f k8s/kind/Dockerfile .
-
+    
+    kind delete cluster
     source k8s/kind/create_cluster.sh $kind_config $user $nodes
 
     local api_ip=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' kind-control-plane`

@@ -75,7 +75,8 @@ function common:get_object_status {
 
 # Checks for mizar status by provisioned objects array
 function common:check_mizar_ready {
-    objects=("droplets" "vpcs" "nets" "dividers" "bouncers")
+    # objects=("droplets" "vpcs" "nets" "dividers" "bouncers")
+    objects=("vpcs" "nets" "dividers") # Seems now by default there is no droplets and bouncers
     sum=0
     for i in "${objects[@]}"
     do
@@ -144,4 +145,16 @@ function common:execute_and_retry {
         echo $succeed_message
     fi
     return 1
+}
+
+function common:build_docker_images {
+    local docker_account="localhost:5000"
+
+    docker image build -t $docker_account/mizar:latest -f etc/docker/mizar.Dockerfile .
+    docker image build -t $docker_account/dropletd:latest -f etc/docker/daemon.Dockerfile .
+    docker image build -t $docker_account/endpointopr:latest -f etc/docker/operator.Dockerfile .
+    #docker image push $docker_account/endpointopr:latest
+
+    # 在新程序中去掉调用/home/ubuntu/mizar/install/create_testimage.sh
+    docker image build -t $docker_account/testpod:latest -f etc/docker/test.Dockerfile .
 }

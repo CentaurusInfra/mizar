@@ -21,6 +21,21 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+source install/common.sh
+
 function environment_adaptor:prepare_binary {
-    :
+    common:build_docker_images
+}
+
+function environment_adaptor:deploy_mizar {
+    local is_mizar_production=${1:-0}
+
+    local cwd=$(pwd)
+    source install/create_crds.sh $cwd $user
+
+    kubectl apply -f etc/deploy/mizar.deploy.yaml
+
+    echo "Waiting for Mizar to be up and running."
+    local timeout=120
+    common:execute_and_retry "common:check_mizar_ready" 1 "Mizar is now ready!" "ERROR: Mizar setup timed out after $timeout seconds!" $timeout 1
 }
