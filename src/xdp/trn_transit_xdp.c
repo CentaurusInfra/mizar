@@ -778,23 +778,6 @@ int _transit(struct xdp_md *ctx)
 
 	struct tunnel_iface_t *itf;
 
-	 
-	//  * Define the metrics collector
-	 
-	// struct datarec *rec;
-	
-	/* 
-	 * Init. the metrics collector
-	 */
-	__u32 key = 0;
-	rec = bpf_map_lookup_elem(&metrics_table, &key);
-	if (!rec) {
-		bpf_debug("[Transit:%d:] ABORTED: No metrics table found\n",
-			  __LINE__);
-		return XDP_ABORTED;
-	}	
-
-
 	int k = 0;
 	itf = bpf_map_lookup_elem(&interface_config_map, &k);
 
@@ -807,47 +790,31 @@ int _transit(struct xdp_md *ctx)
 	pkt.itf_ipv4 = itf->ip;
 	pkt.itf_idx = itf->iface_index;
 
-	/* # of packets received */
-	rec->n_pkts++;
-	/* Total Bytes Received */
-	// rec->total_bytes_rx += sizeof(struct transit_packet);
-	rec->total_bytes_rx += （pkt.data_end - pkt.data）* sizeof(long) / sizeof(void);
-
 	int action = trn_process_eth(&pkt);
 
-	// evaluate the metrics here
-
+	/* collect the metrics */
+	ret = trace_metrics_per_packet(&action, &pkt);
+	if (ret == XDP_ABORTED)
+		return xdpcap_exit(ctx, &xdpcap_hook, XDP_ABORTED);
+	
 	/* The agent may tail-call this program, override XDP_TX to
 	 * redirect to egress instead */
-	if (action == XDP_TX) {
-		/* TX PPS for the Bouncer (which is symmetric) == RX PPS for the bouncer */
-		rec->n_tx++;
-		/* Total Bytes to be transmitted */
-		rec->total_bytes_tx += （pkt.data_end - pkt.data）* sizeof(long) / sizeof(void);
+	if (action == XDP_TX)
 		action = bpf_redirect_map(&interfaces_map, pkt.itf_idx, 0);
-	}
 
 	if (action == XDP_PASS) {
-		/* # of PASS actions */
-		rec->n_pass++;
 		__u32 key = XDP_PASS_PROC;
 		bpf_tail_call(pkt.xdp, &jmp_table, key);
 		return xdpcap_exit(ctx, &xdpcap_hook, XDP_PASS);
 	}
 
 	if (action == XDP_DROP) {
-		/* # of dropped pkts*/
-		rec->n_drop++;
 		__u32 key = XDP_DROP_PROC;
 		bpf_tail_call(pkt.xdp, &jmp_table, key);
 		return xdpcap_exit(ctx, &xdpcap_hook, XDP_DROP);
 	}
 
 	if (action == XDP_TX) {
-		/* # of TX actions */
-		rec->n_tx++;
-		/* Total Bytes to be transmitted */
-		rec->total_bytes_tx += （pkt.data_end - pkt.data）* sizeof(long) / sizeof(void);
 		__u32 key = XDP_TX_PROC;
 		bpf_tail_call(pkt.xdp, &jmp_table, key);
 		return xdpcap_exit(ctx, &xdpcap_hook, XDP_TX);
@@ -857,8 +824,6 @@ int _transit(struct xdp_md *ctx)
 		return xdpcap_exit(ctx, &xdpcap_hook, XDP_ABORTED);
 
 	if (action == XDP_REDIRECT) {
-		/* # of REDIRECT actions */
-		rec->n_redirect++;
 		__u32 key = XDP_REDIRECT_PROC;
 		bpf_tail_call(pkt.xdp, &jmp_table, key);
 		return xdpcap_exit(ctx, &xdpcap_hook, XDP_REDIRECT);
