@@ -66,6 +66,7 @@ struct rpc_trn_endpoint_t {
        uint32_t ip;
        uint32_t eptype;
        uint32_t remote_ips<RPC_TRN_MAX_REMOTE_IPS>;
+       uint16_t remote_ports<RPC_TRN_MAX_REMOTE_IPS>;
        unsigned char mac[6];
        string hosted_interface<20>;
        string veth<20>;

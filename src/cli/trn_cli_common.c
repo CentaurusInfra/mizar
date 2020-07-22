@@ -220,6 +220,8 @@ int trn_cli_parse_ep(const cJSON *jsonobj, struct rpc_trn_endpoint_t *ep)
 	cJSON *veth = cJSON_GetObjectItem(jsonobj, "veth");
 	cJSON *remote_ips = cJSON_GetObjectItem(jsonobj, "remote_ips");
 	cJSON *remote_ip = NULL;
+	cJSON *remote_ports = cJSON_GetObjectItem(jsonobj, "remote_ports");
+	cJSON *remote_port = NULL;
 	cJSON *hosted_iface = cJSON_GetObjectItem(jsonobj, "hosted_iface");
 
 	if (veth == NULL) {
@@ -304,6 +306,30 @@ int trn_cli_parse_ep(const cJSON *jsonobj, struct rpc_trn_endpoint_t *ep)
 			break;
 		}
 	}
+
+	i = 0;
+	int port = 0;
+	ep->remote_ports.remote_ports_len = 0;
+	cJSON_ArrayForEach(remote_port, remote_ports)
+	{
+		if (cJSON_IsString(remote_port)) {
+			port = atoi(remote_port->valuestring);
+			if (port > 0 || port < 65535) {
+				ep->remote_ports.remote_ports_val[i] = port;
+				ep->remote_ports.remote_ports_len++;
+			}
+		} else {
+			print_err("Error: Remote Port is non-string.\n");
+			return -EINVAL;
+		}
+		i++;
+		if (i == RPC_TRN_MAX_REMOTE_IPS) {
+			print_err(
+				"Warning: Remote Ports reached max limited.\n");
+			break;
+		}
+	}
+
 	return 0;
 }
 

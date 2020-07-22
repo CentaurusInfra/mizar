@@ -66,6 +66,8 @@ struct endpoint_t {
 	__u32 eptype;
 	__u32 nremote_ips;
 	__u32 remote_ips[TRAN_MAX_REMOTES];
+	__u32 nremote_ports;
+	__u16 remote_ports[TRAN_MAX_REMOTES];
 	int hosted_iface;
 	unsigned char mac[6];
 } __attribute__((packed, aligned(4)));
