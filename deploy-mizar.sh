@@ -47,6 +47,6 @@ common:source_environment_adaptor $mizar_environment
 
 # Execute deploy step by step
 deploy_steps:binaries_ready $is_mizar_production
-deploy_steps:environment_ready
-deploy_steps:deploy_mizar
-deploy_steps:sanity_check
+deploy_steps:environment_ready $is_mizar_production
+deploy_steps:deploy_mizar $is_mizar_production
+deploy_steps:sanity_check $is_mizar_production
