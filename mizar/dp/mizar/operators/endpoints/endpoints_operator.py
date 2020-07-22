@@ -94,7 +94,7 @@ class EndpointOperator(object):
     def update_endpoints_with_bouncers(self, bouncer):
         eps = self.store.get_eps_in_net(bouncer.net).values()
         for ep in eps:
-            ep.update_bouncers(set([bouncer]))
+            ep.update_bouncers({bouncer.name: bouncer})
 
     def create_scaled_endpoint(self, name, spec):
         logger.info("Create scaled endpoint {} spec {}".format(name, spec))
