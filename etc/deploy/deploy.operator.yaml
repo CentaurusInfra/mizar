@@ -39,47 +39,6 @@ metadata:
   name: mizar-operator
 ---
 apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  name: mizar-daemon
-  namespace: default
-spec:
-  selector:
-    matchLabels:
-      job: mizar-daemon
-  template:
-    metadata:
-      labels:
-        job: mizar-daemon
-    spec:
-      hostPID: true
-      restartPolicy: Always
-      serviceAccountName: mizar-operator
-      hostNetwork: true
-      tolerations:
-        - operator: Exists
-          effect: NoSchedule
-      volumes:
-        - name: mizar
-          hostPath:
-            path: /var
-            type: Directory
-      initContainers:
-        - image: localhost:5000/mizar:latest
-          name: node-init
-          command: [./node-init.sh]
-          securityContext:
-            privileged: true
-          volumeMounts:
-            - name: mizar
-              mountPath: /home
-      containers:
-        - image: localhost:5000/dropletd:latest
-          name: mizar-daemon
-          securityContext:
-            privileged: true
----
-apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mizar-operator

@@ -59,9 +59,9 @@ function common:check_cluster_ready {
 
 # Checks for status: Provisioned for given object
 function common:get_object_status {
-    local OBJECT=$1
+    local object=$1
 
-    kubectl get $OBJECT 2> /tmp/kubetctl.err | awk '
+    kubectl get $object 2> /tmp/kubetctl.err | awk '
     NR==1 {
         for (i=1; i<=NF; i++) {
             f[$i] = i
@@ -75,9 +75,8 @@ function common:get_object_status {
 
 # Checks for mizar status by provisioned objects array
 function common:check_mizar_ready {
-    # objects=("droplets" "vpcs" "nets" "dividers" "bouncers")
-    objects=("vpcs" "nets" "dividers") # Seems now by default there is no droplets and bouncers
-    sum=0
+    local objects=("droplets" "vpcs" "nets" "dividers" "bouncers")
+    local sum=0
     for i in "${objects[@]}"
     do
         common:get_object_status $i
@@ -151,10 +150,11 @@ function common:build_docker_images {
     local docker_account="localhost:5000"
 
     docker image build -t $docker_account/mizar:latest -f etc/docker/mizar.Dockerfile .
+    docker image push $docker_account/mizar:latest
     docker image build -t $docker_account/dropletd:latest -f etc/docker/daemon.Dockerfile .
+    docker image push $docker_account/dropletd:latest
     docker image build -t $docker_account/endpointopr:latest -f etc/docker/operator.Dockerfile .
-    #docker image push $docker_account/endpointopr:latest
-
-    # 在新程序中去掉调用/home/ubuntu/mizar/install/create_testimage.sh
+    docker image push $docker_account/endpointopr:latest
     docker image build -t $docker_account/testpod:latest -f etc/docker/test.Dockerfile .
+    docker image push $docker_account/testpod:latest
 }
