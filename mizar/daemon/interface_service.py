@@ -321,6 +321,7 @@ class LocalTransitRpc:
             "mac": mac,
             "veth": "",
             "remote_ips": [""],
+            "remote_ports": None,
             "hosted_iface": ""
         }
         jsonconf = json.dumps(jsonconf)
@@ -350,6 +351,7 @@ class LocalTransitRpc:
             "mac": interface.address.mac,
             "veth": interface.veth.name,
             "remote_ips": [droplet_ip],
+            "remote_ports": None,
             "hosted_iface": peer
         }
         jsonconf = json.dumps(jsonconf)
@@ -382,6 +384,7 @@ class LocalTransitRpc:
                 "mac": interface.address.mac,
                 "veth": interface.veth.name,
                 "remote_ips": [interface.droplet.ip_address],
+                "remote_ports": None,
                 "hosted_iface": 'eth0'
             },
             "net": {

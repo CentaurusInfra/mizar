@@ -159,11 +159,16 @@ class EndpointOperator(object):
         if ep is None:
             return None
         backends = set()
+        backend_ports = set()
         for s in spec:
             if "addresses" in s:
                 for a in s['addresses']:
                     backends.add(a['ip'])
+            if "ports" in s:
+                for p in s['ports']:
+                    backend_ports.add(p['port'])
         ep.set_backends(list(backends))
+        ep.set_backend_ports(list(backend_ports))
         self.store_update(ep)
         logger.info(
             "Update scaled endpoint {} with backends: {}".format(name, backends))

@@ -72,6 +72,7 @@ class TrnRpc:
             "mac": mac,
             "veth": "",
             "remote_ips": [""],
+            "remote_ports": None,
             "hosted_iface": ""
         }
         jsonconf = json.dumps(jsonconf)
@@ -119,6 +120,7 @@ class TrnRpc:
             "mac": ep.get_mac(),
             "veth": ep.get_veth_name(),
             "remote_ips": ep.get_remote_ips(),
+            "remote_ports": ep.get_remote_ports(),
             "hosted_iface": peer
         }
 
@@ -138,6 +140,7 @@ class TrnRpc:
                 "mac": ep.get_mac(),
                 "veth": ep.get_veth_name(),
                 "remote_ips": ep.get_remote_ips(),
+                "remote_ports": ep.get_remote_ports(),
                 "hosted_iface": ep.droplet_eth
             },
             "net": {
