@@ -123,7 +123,8 @@ struct vlan_hdr {
 };
 
 struct transit_packet {
-	/* add the ptr to the metrics */
+	/* add the ptr to the metrics recorder */
+	struct metrics_record *rec;
 
 	void *data;
 	void *data_end;
