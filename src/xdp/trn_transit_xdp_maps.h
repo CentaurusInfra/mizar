@@ -34,6 +34,34 @@
 #define MAX_EP 65537
 #define MAX_VPC 8192
 
+/* 
+ * Common stats data record shared with user program
+ */
+struct datarec {
+	__u64 n_pkts; /* # of pkts received */
+	__u64 total_bytes_rx; /* to calcualte rx bandwidth */
+	__u64 total_bytes_tx; /* to calcualte tx bandwidth */
+	__u64 n_tx; /* TX PPS for the Bouncer (which is symmetric) == RX PPS for the bouncer */
+	__u64 n_pass; /* forwarded to kernel */
+	__u64 n_drop; /* packets to be dropped*/
+	__u64 n_redirect; /* packets to be redirected*/
+
+};
+#define MAX_METRIC_ENTRIES 64
+
+/* 
+ * eBPF map for metrics collector
+ */
+struct bpf_map_def SEC("maps") metrics_table = {
+	.type = BPF_MAP_TYPE_PROG_ARRAY, /* Which types? PERCPU? PROG? */
+	.key_size = sizeof(__u32),
+	.value_size = sizeof(struct datarec),
+	.max_entries = MAX_METRIC_ENTRIES,
+};
+BPF_ANNOTATE_KV_PAIR(metrics_table, __u32, struct datarec);
+
+
+
 struct bpf_map_def SEC("maps") jmp_table = {
 	.type = BPF_MAP_TYPE_PROG_ARRAY,
 	.key_size = sizeof(__u32),
