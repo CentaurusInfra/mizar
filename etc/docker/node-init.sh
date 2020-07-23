@@ -38,7 +38,8 @@ nsenter -t 1 -m -u -n -i apt-get update -y && nsenter -t 1 -m -u -n -i apt-get i
     python3-pip && \
 nsenter -t 1 -m -u -n -i mkdir -p /opt/cni/bin && \
 nsenter -t 1 -m -u -n -i mkdir -p /etc/cni/net.d && \
-nsenter -t 1 -m -u -n -i pip3 install /var/mizar/ && \
+nsenter -t 1 -m -u -n -i pip3 install --upgrade protobuf && \
+nsenter -t 1 -m -u -n -i pip3 install --ignore-installed /var/mizar/ && \
 nsenter -t 1 -m -u -n -i ln -snf /sys/fs/bpf /bpffs && \
 nsenter -t 1 -m -u -n -i ln -snf /var/mizar/build/bin /trn_bin && \
 nsenter -t 1 -m -u -n -i ln -snf /var/mizar/build/xdp /trn_xdp && \
