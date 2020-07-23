@@ -33,10 +33,12 @@ function environment_adaptor:deploy_mizar {
     local cwd=$(pwd)
     source install/create_crds.sh $cwd $user
 
-    # First deploy daemon. Wait for daemon ready then deploy operator. Mizar won't work correctly if directly deploying operator without waiting for daemon. 
+    # Deploy daemon first, then deploy operator after daemon pod is running. We hold operator, wait until daemon is running. Mizar won't work correctly if directly deploying operator without waiting for daemon. 
     kubectl apply -f etc/deploy/deploy.daemon.yaml
-    sleep 2 # Wait 2 seconds when daemon pod is being creating
-    kubectl wait --for=condition=Ready pod -l job=mizar-daemon --timeout=30s
+    sleep 2 # Wait 2 seconds when daemon pod is being created
+    # Daemon pod has an init phase which is to setup Mizar cni in the host of pod.
+    # It may cost up to 40 minutes because it needs to setup pip3 modules such as grpcio which needs quite some time when first time setup.
+    kubectl wait --for=condition=Ready pod -l job=mizar-daemon --timeout=40m
     kubectl apply -f etc/deploy/deploy.operator.yaml
 
     echo "Waiting for Mizar to be up and running."

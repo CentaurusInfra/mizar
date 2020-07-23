@@ -24,7 +24,6 @@ source install/common.sh
 
 function deploy_steps:binaries_ready {
     local is_mizar_production=${1:-0}
-    make proto
     environment_adaptor:prepare_binary $is_mizar_production
 }
 
