@@ -341,89 +341,108 @@ static bool map_collect_record_u64(int fd, __u32 key, struct record_u64 *rec)
 	return true;
 }
 
-static double calc_period(struct record *r, struct record *p)
-{
-	double period_ = 0;
-	__u64 period = 0;
+// static double calc_period(struct record *r, struct record *p)
+// {
+// 	double period_ = 0;
+// 	__u64 period = 0;
 
-	period = r->timestamp - p->timestamp;
-	if (period > 0)
-		period_ = ((double) period / NANOSEC_PER_SEC);
+// 	period = r->timestamp - p->timestamp;
+// 	if (period > 0)
+// 		period_ = ((double) period / NANOSEC_PER_SEC);
 
-	return period_;
-}
+// 	return period_;
+// }
 
-static double calc_period_u64(struct record_u64 *r, struct record_u64 *p)
-{
-	double period_ = 0;
-	__u64 period = 0;
+// static double calc_period_u64(struct record_u64 *r, struct record_u64 *p)
+// {
+// 	double period_ = 0;
+// 	__u64 period = 0;
 
-	period = r->timestamp - p->timestamp;
-	if (period > 0)
-		period_ = ((double) period / NANOSEC_PER_SEC);
+// 	period = r->timestamp - p->timestamp;
+// 	if (period > 0)
+// 		period_ = ((double) period / NANOSEC_PER_SEC);
 
-	return period_;
-}
+// 	return period_;
+// }
 
-static double calc_pps(struct metrics_record *r, struct metrics_record *p, double period)
-{
-	__u64 packets = 0;
-	double pps = 0;
+// static double calc_pps(struct metrics_record *r, struct metrics_record *p, double period)
+// {
+// 	__u64 packets = 0;
+// 	double pps = 0;
 
-	if (period > 0) {
-		packets = r->processed - p->processed;
-		pps = packets / period;
-	}
-	return pps;
-}
+// 	if (period > 0) {
+// 		packets = r->processed - p->processed;
+// 		pps = packets / period;
+// 	}
+// 	return pps;
+// }
 
-static double calc_pps_u64(struct u64rec *r, struct u64rec *p, double period)
-{
-	__u64 packets = 0;
-	double pps = 0;
+// static double calc_pps_u64(struct u64rec *r, struct u64rec *p, double period)
+// {
+// 	__u64 packets = 0;
+// 	double pps = 0;
 
-	if (period > 0) {
-		packets = r->processed - p->processed;
-		pps = packets / period;
-	}
-	return pps;
-}
+// 	if (period > 0) {
+// 		packets = r->processed - p->processed;
+// 		pps = packets / period;
+// 	}
+// 	return pps;
+// }
 
-static double calc_drop(struct metrics_record *r, struct metrics_record *p, double period)
-{
-	__u64 packets = 0;
-	double pps = 0;
+// static double calc_drop(struct metrics_record *r, struct metrics_record *p, double period)
+// {
+// 	__u64 packets = 0;
+// 	double pps = 0;
 
-	if (period > 0) {
-		packets = r->dropped - p->dropped;
-		pps = packets / period;
-	}
-	return pps;
-}
+// 	if (period > 0) {
+// 		packets = r->dropped - p->dropped;
+// 		pps = packets / period;
+// 	}
+// 	return pps;
+// }
 
-static double calc_info(struct metrics_record *r, struct metrics_record *p, double period)
-{
-	__u64 packets = 0;
-	double pps = 0;
+// static double calc_info(struct metrics_record *r, struct metrics_record *p, double period)
+// {
+// 	__u64 packets = 0;
+// 	double pps = 0;
 
-	if (period > 0) {
-		packets = r->info - p->info;
-		pps = packets / period;
-	}
-	return pps;
-}
+// 	if (period > 0) {
+// 		packets = r->info - p->info;
+// 		pps = packets / period;
+// 	}
+// 	return pps;
+// }
 
-static double calc_err(struct metrics_record *r, struct metrics_record *p, double period)
-{
-	__u64 packets = 0;
-	double pps = 0;
+// static double calc_err(struct metrics_record *r, struct metrics_record *p, double period)
+// {
+// 	__u64 packets = 0;
+// 	double pps = 0;
 
-	if (period > 0) {
-		packets = r->err - p->err;
-		pps = packets / period;
-	}
-	return pps;
-}
+// 	if (period > 0) {
+// 		packets = r->err - p->err;
+// 		pps = packets / period;
+// 	}
+// 	return pps;
+// }
+
+//TODO: the calc_ functions for the metrics we collect from kernel
+static int calc_n_pkts(struct metrics_record *r, struct metrics_record *p, double period);
+
+static int calc_total_bytes_rx(struct metrics_record *r, struct metrics_record *p, double period);
+
+static int calc_total_bytes_tx(struct metrics_record *r, struct metrics_record *p, double period);
+
+static int calc_n_tx(struct metrics_record *r, struct metrics_record *p, double period);
+
+static int calc_n_pass(struct metrics_record *r, struct metrics_record *p, double period);
+
+static int calc_n_drop(struct metrics_record *r, struct metrics_record *p, double period);
+
+static int calc_n_redirect(struct metrics_record *r, struct metrics_record *p, double period);
+
+static int calc_pps(struct metrics_record *r, struct metrics_record *p, double period);
+
+
 
 static void stats_print(struct stats_record *stats_rec,
 			struct stats_record *stats_prev,
@@ -619,13 +638,12 @@ static int map_fd(struct bpf_object *obj, const char *name)
 	return -1;
 }
 
-/* TODO: bpf_object -> bpf_map */
 static bool stats_collect(struct bpf_map *map, struct stats_record *rec)
 {
 	int fd;
 	int i;
 
-	// Get the fd of map. Replace bpf_object to bpf_map
+	// Get the fd of bpf map
 	fd = bpf_map__fd(map);
 	for (i = 0; i < MAX_CPUS; i++)
 		map_collect_record(fd, i, &rec->xdp_cpumap_net_stats[i]);
@@ -715,7 +733,6 @@ static inline void swap(struct stats_record **a, struct stats_record **b)
 	*b = tmp;
 }
 
-/* TODO: bpf_object -> bpf_map */
 static void stats_poll(struct bpf_map *map, int interval, bool err_only)
 {
 	struct stats_record *rec, *prev;
