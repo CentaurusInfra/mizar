@@ -45,6 +45,7 @@
 #include "trn_datamodel.h"
 #include "trn_transit_xdp_maps.h"
 #include "trn_kern.h"
+#include "trn_trace_prog_kern.h"
 
 int _version SEC("version") = 1;
 
@@ -784,7 +785,7 @@ int _transit(struct xdp_md *ctx)
 	if (!itf) {
 		bpf_debug("[Transit:%d:] ABORTED: Bad configuration\n",
 			  __LINE__);
-		return XDP_ABORTED;
+		return XDP_ABORTED; // DO we need to count n_aborted here?
 	}
 
 	pkt.itf_ipv4 = itf->ip;
@@ -792,10 +793,18 @@ int _transit(struct xdp_md *ctx)
 
 	int action = trn_process_eth(&pkt);
 
-	/* collect the metrics */
-	ret = trace_metrics_per_packet(&action, &pkt);
-	if (ret == XDP_ABORTED)
-		return xdpcap_exit(ctx, &xdpcap_hook, XDP_ABORTED);
+	/* Look up the entry in the metrics table */
+	__u32 metrics_key = 0;	
+	pkt->rec = bpf_map_lookup_elem(&metrics_table, &metrics_key);
+
+	if (!pkt->rec) {
+		bpf_debug("[Transit:%d:] ABORTED: No metrics table found\n",
+			  __LINE__);
+		return XDP_ABORTED; // DO we need to count n_aborted here?
+	}
+
+	/* record the metrics */
+	trace_metrics_per_packet(&action, &pkt);
 	
 	/* The agent may tail-call this program, override XDP_TX to
 	 * redirect to egress instead */
