@@ -148,6 +148,12 @@ function common:execute_and_retry {
 
 function common:build_docker_images {
     local docker_account="localhost:5000"
+    local reg_name='local-registry'
+
+    local registry_running="$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)"
+    if [ "${registry_running}" != "true" ]; then
+        docker run -d --restart=always -p "5000:5000" --name "${reg_name}" registry:2
+    fi
 
     docker image build -t $docker_account/mizar:latest -f etc/docker/mizar.Dockerfile .
     docker image push $docker_account/mizar:latest
