@@ -239,65 +239,41 @@ static bool map_collect_record(int fd, __u32 key, struct record *rec)
 	return true;
 }
 
-// static double calc_period(struct record *r, struct record *p)
-// {
-// 	double period_ = 0;
-// 	__u64 period = 0;
+static double calc_period(struct record *r, struct record *p)
+{
+	double period_ = 0;
+	__u64 period = 0;
 
-// 	period = r->timestamp - p->timestamp;
-// 	if (period > 0)
-// 		period_ = ((double) period / NANOSEC_PER_SEC);
+	period = r->timestamp - p->timestamp;
+	if (period > 0)
+		period_ = ((double) period / NANOSEC_PER_SEC);
 
-// 	return period_;
-// }
+	return period_;
+}
 
-// static double calc_pps(struct metrics_record *r, struct metrics_record *p, double period)
-// {
-// 	__u64 packets = 0;
-// 	double pps = 0;
+static double calc_rx_pps(struct metrics_record *r, struct metrics_record *p, double period)
+{
+	__u64 packets = 0;
+	double pps = 0;
 
-// 	if (period > 0) {
-// 		packets = r->processed - p->processed;
-// 		pps = packets / period;
-// 	}
-// 	return pps;
-// }
+	if (period > 0) {
+		packets = r->n_pkts - p->n_pkts;
+		pps = packets / period;
+	}
+	return pps;
+}
 
-// static double calc_drop(struct metrics_record *r, struct metrics_record *p, double period)
-// {
-// 	__u64 packets = 0;
-// 	double pps = 0;
+static double calc_tx_pps(struct metrics_record *r, struct metrics_record *p, double period)
+{
+	__u64 packets = 0;
+	double pps = 0;
 
-// 	if (period > 0) {
-// 		packets = r->dropped - p->dropped;
-// 		pps = packets / period;
-// 	}
-// 	return pps;
-// }
-
-// static double calc_info(struct metrics_record *r, struct metrics_record *p, double period)
-// {
-// 	__u64 packets = 0;
-// 	double pps = 0;
-
-// 	if (period > 0) {
-// 		packets = r->info - p->info;
-// 		pps = packets / period;
-// 	}
-// 	return pps;
-// }
-
-// static double calc_err(struct metrics_record *r, struct metrics_record *p, double period)
-// {
-// 	__u64 packets = 0;
-// 	double pps = 0;
-
-// 	if (period > 0) {
-// 		packets = r->err - p->err;
-// 		pps = packets / period;
-// 	}
-// 	return pps;
-// }
+	if (period > 0) {
+		packets = r->n_tx - p->n_tx;
+		pps = packets / period;
+	}
+	return pps;
+}
 
 //TODO: the calc_ functions for the metrics we collect from kernel
 static int calc_n_pkts(struct metrics_record *r, struct metrics_record *p, double period);
@@ -314,63 +290,61 @@ static int calc_n_drop(struct metrics_record *r, struct metrics_record *p, doubl
 
 static int calc_n_redirect(struct metrics_record *r, struct metrics_record *p, double period);
 
-static double calc_pps(struct metrics_record *r, struct metrics_record *p, double period);
-
 //TODO: build stats_prints
-static void stats_print(struct stats_record *stats_rec,
-			struct stats_record *stats_prev,
-			bool err_only)
-{
-	unsigned int nr_cpus = bpf_num_possible_cpus();
-	int rec_i = 0, i;
-	double t = 0, pps = 0;
+// static void stats_print(struct stats_record *stats_rec,
+// 			struct stats_record *stats_prev,
+// 			bool err_only)
+// {
+// 	unsigned int nr_cpus = bpf_num_possible_cpus();
+// 	int rec_i = 0, i;
+// 	double t = 0, pps = 0;
 
-	/* Header */
-	printf("%-15s %-7s %-12s %-12s %-9s\n",
-	       "XDP-event", "CPU:to", "pps", "drop-pps", "extra-info");
+// 	/* Header */
+// 	printf("%-15s %-7s %-12s %-12s %-9s\n",
+// 	       "XDP-event", "CPU:to", "pps", "drop-pps", "extra-info");
 
 
-	/* network stats on Transit XDP program (Or we call it bouncer / divider ?) */
-	// for (to_cpu = 0; to_cpu < MAX_CPUS; to_cpu++) {
-	char *fmt1 = "%-15s %3d:%-3d %'-12.0f %'-12.0f %'-10.2f %s\n";
-	char *fmt2 = "%-15s %3s:%-3d %'-12.0f %'-12.0f %'-10.2f %s\n";
-	struct record *rec, *prev;
-	char *info_str = "";
-	double drop, info;
+// 	/* network stats on Transit XDP program (Or we call it bouncer / divider ?) */
+// 	// for (to_cpu = 0; to_cpu < MAX_CPUS; to_cpu++) {
+// 	char *fmt1 = "%-15s %3d:%-3d %'-12.0f %'-12.0f %'-10.2f %s\n";
+// 	char *fmt2 = "%-15s %3s:%-3d %'-12.0f %'-12.0f %'-10.2f %s\n";
+// 	struct record *rec, *prev;
+// 	char *info_str = "";
+// 	double drop, info;
 
-	rec  =  &stats_rec->xdp_cpumap_net_stats;
-	prev = &stats_prev->xdp_cpumap_net_stats;
-	t = calc_period(rec, prev);
-	for (i = 0; i < nr_cpus; i++) {
-		struct metrics_record *r = &rec->cpu[i];
-		struct metrics_record *p = &prev->cpu[i];
+// 	rec  =  &stats_rec->xdp_cpumap_net_stats;
+// 	prev = &stats_prev->xdp_cpumap_net_stats;
+// 	t = calc_period(rec, prev);
+// 	for (i = 0; i < nr_cpus; i++) {
+// 		struct metrics_record *r = &rec->cpu[i];
+// 		struct metrics_record *p = &prev->cpu[i];
 
-		pps  = calc_pps(r, p, t);
-		drop = calc_drop(r, p, t);
-		info = calc_info(r, p, t);
-		if (info > 0) {
-			info_str = "bulk-average";
-			info = pps / info; /* calc average bulk size */
-		}
-		if (pps > 0)
-			printf(fmt1, "cpumap-enqueue",
-			       i, to_cpu, pps, drop, info, info_str);
-	}
-	pps = calc_pps(&rec->total, &prev->total, t);
-	if (pps > 0) {
-		drop = calc_drop(&rec->total, &prev->total, t);
-		info = calc_info(&rec->total, &prev->total, t);
-		if (info > 0) {
-			info_str = "bulk-average";
-			info = pps / info; /* calc average bulk size */
-		}
-		printf(fmt2, "cpumap-enqueue",
-		       "sum", to_cpu, pps, drop, info, info_str);
-	}
-	// }
+// 		pps  = calc_pps(r, p, t);
+// 		drop = calc_drop(r, p, t);
+// 		info = calc_info(r, p, t);
+// 		if (info > 0) {
+// 			info_str = "bulk-average";
+// 			info = pps / info; /* calc average bulk size */
+// 		}
+// 		if (pps > 0)
+// 			printf(fmt1, "cpumap-enqueue",
+// 			       i, to_cpu, pps, drop, info, info_str);
+// 	}
+// 	pps = calc_pps(&rec->total, &prev->total, t);
+// 	if (pps > 0) {
+// 		drop = calc_drop(&rec->total, &prev->total, t);
+// 		info = calc_info(&rec->total, &prev->total, t);
+// 		if (info > 0) {
+// 			info_str = "bulk-average";
+// 			info = pps / info; /* calc average bulk size */
+// 		}
+// 		printf(fmt2, "cpumap-enqueue",
+// 		       "sum", to_cpu, pps, drop, info, info_str);
+// 	}
+// 	// }
 
-	printf("\n");
-}
+// 	printf("\n");
+// }
 
 static bool stats_collect(struct bpf_map *map, struct stats_record *rec)
 {
@@ -379,8 +353,7 @@ static bool stats_collect(struct bpf_map *map, struct stats_record *rec)
 
 	// Get the fd of bpf map
 	fd = bpf_map__fd(map);
-	for (i = 0; i < MAX_CPUS; i++)
-		map_collect_record(fd, i, &rec->xdp_cpumap_net_stats[i]);
+	map_collect_record(fd, i, &rec->xdp_cpumap_net_stats);
 
 	return true;
 }
@@ -405,7 +378,6 @@ static struct stats_record *alloc_stats_record(void)
 {
 	struct stats_record *rec;
 	int rec_sz;
-	int i;
 
 	/* Alloc main stats_record structure */
 	rec = malloc(sizeof(*rec));
@@ -416,39 +388,15 @@ static struct stats_record *alloc_stats_record(void)
 	}
 
 	/* Alloc stats stored per CPU for each record */
-	rec_sz = sizeof(struct u64rec);
-	for (i = 0; i < REDIR_RES_MAX; i++)
-		rec->xdp_redirect[i].cpu = alloc_rec_per_cpu(rec_sz);
-
-	for (i = 0; i < XDP_ACTION_MAX; i++)
-		rec->xdp_exception[i].cpu = alloc_rec_per_cpu(rec_sz);
-
 	rec_sz = sizeof(struct metrics_record);
-	rec->xdp_cpumap_kthread.cpu = alloc_rec_per_cpu(rec_sz);
-	rec->xdp_devmap_xmit.cpu    = alloc_rec_per_cpu(rec_sz);
-
-	for (i = 0; i < MAX_CPUS; i++)
-		rec->xdp_cpumap_enqueue[i].cpu = alloc_rec_per_cpu(rec_sz);
+	rec->xdp_cpumap_net_stats.cpu = alloc_rec_per_cpu(rec_sz);
 
 	return rec;
 }
 
 static void free_stats_record(struct stats_record *r)
 {
-	int i;
-
-	for (i = 0; i < REDIR_RES_MAX; i++)
-		free(r->xdp_redirect[i].cpu);
-
-	for (i = 0; i < XDP_ACTION_MAX; i++)
-		free(r->xdp_exception[i].cpu);
-
-	free(r->xdp_cpumap_kthread.cpu);
-	free(r->xdp_devmap_xmit.cpu);
-
-	for (i = 0; i < MAX_CPUS; i++)
-		free(r->xdp_cpumap_enqueue[i].cpu);
-
+	free(r->xdp_cpumap_net_stats.cpu);
 	free(r);
 }
 
