@@ -149,4 +149,5 @@ struct metrics_record {
 	__u64 n_pass; /* forwarded to kernel */
 	__u64 n_drop; /* packets to be dropped*/
 	__u64 n_redirect; /* packets to be redirected*/
+	__u64 n_aborted;
 } __attribute__((packed));

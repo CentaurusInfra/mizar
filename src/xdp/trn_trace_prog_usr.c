@@ -156,9 +156,7 @@ static int check_map(const char *name, const struct bpf_map_def *def, int fd)
 
 static int check_maps(struct bpf_map *map)
 {
-	// struct bpf_map *map;
 
-	// bpf_object__for_each_map(map, obj) {
 	const struct bpf_map_def *def;
 	const char *name;
 	int fd;
@@ -169,7 +167,7 @@ static int check_maps(struct bpf_map *map)
 
 	if (check_map(name, def, fd)) /* if map exists, return 0 */
 		return -1;
-	// }
+
 	/* return 0 on successful maps check */
 	return 0;
 }
@@ -188,6 +186,7 @@ static __u64 gettime(void)
 	return (__u64) t.tv_sec * NANOSEC_PER_SEC + t.tv_nsec;
 }
 
+//TODO: Add n_aborted
 static bool map_collect_record(int fd, __u32 key, struct record *rec)
 {
 	/* For percpu maps, userspace gets a value per possible CPU */
@@ -200,6 +199,7 @@ static bool map_collect_record(int fd, __u32 key, struct record *rec)
 	__u64 sum_n_pass = 0;
 	__u64 sum_n_drop = 0;
 	__u64 sum_n_redirect = 0;
+	__u64 sum_n_aborted = 0;
 	int i;
 
 	if ((bpf_map_lookup_elem(fd, &key, values)) != 0) {
@@ -226,6 +226,8 @@ static bool map_collect_record(int fd, __u32 key, struct record *rec)
 		sum_n_drop                 += values[i].n_drop;
 		rec->cpu[i].n_redirect     =  values[i].n_redirect;
 		sum_n_redirect             += values[i].n_redirect;
+		rec->cpu[i].n_aborted      =  values[i].n_aborted;
+		sum_n_aborted              += values[i].n_aborted;		
 
 	}
 	rec->total.n_pkts         = sum_n_pkts;
@@ -235,6 +237,7 @@ static bool map_collect_record(int fd, __u32 key, struct record *rec)
 	rec->total.n_pass         = sum_n_pass;
 	rec->total.n_drop         = sum_n_drop;
 	rec->total.n_redirect     = sum_n_redirect;
+	rec->total.n_aborted      = sum_n_aborted;
 
 	return true;
 }
@@ -251,46 +254,45 @@ static double calc_period(struct record *r, struct record *p)
 	return period_;
 }
 
-static double calc_rx_pps(struct metrics_record *r, struct metrics_record *p, double period)
+/*
+static double calc_pkts_per_second(struct metrics_record *r, struct metrics_record *p, double period)
+static double calc_tx_per_second(struct metrics_record *r, struct metrics_record *p, double period)
+static double calc_pass_per_second(struct metrics_record *r, struct metrics_record *p, double period)
+static double calc_drop_per_second(struct metrics_record *r, struct metrics_record *p, double period)
+static double calc_redirect_per_second(struct metrics_record *r, struct metrics_record *p, double period);
+static double calc_abort_per_second(struct metrics_record *r, struct metrics_record *p, double period);
+*/
+
+/* 
+ * So I aggregate all the above calc functions into a single function,
+ * these functions take the same operation actually... 
+ *
+ * An example to call calc_op_per_second() and calculate TX per second:
+ *
+ * t = calc_period(curr_rec, prev_rec); // calculate the time between two records
+ * struct metrics_record *r = &curr_rec->total;
+ * struct metrics_record *p = &prev_rec->total;
+ *
+ * double tx_per_sec = calc_op_per_second(r->n_tx, p->tx, t);
+ */
+static double calc_op_per_second(int *curr, int *prev, double period)
 {
 	__u64 packets = 0;
 	double pps = 0;
 
 	if (period > 0) {
-		packets = r->n_pkts - p->n_pkts;
+		packets = *curr - *prev;
 		pps = packets / period;
 	}
 	return pps;
 }
 
-static double calc_tx_pps(struct metrics_record *r, struct metrics_record *p, double period)
-{
-	__u64 packets = 0;
-	double pps = 0;
-
-	if (period > 0) {
-		packets = r->n_tx - p->n_tx;
-		pps = packets / period;
-	}
-	return pps;
-}
-
-//TODO: the calc_ functions for the metrics we collect from kernel
-static int calc_n_pkts(struct metrics_record *r, struct metrics_record *p, double period);
-
+// TODO: any other calc_ functions we need?
 static int calc_total_bytes_rx(struct metrics_record *r, struct metrics_record *p, double period);
 
 static int calc_total_bytes_tx(struct metrics_record *r, struct metrics_record *p, double period);
 
-static int calc_n_tx(struct metrics_record *r, struct metrics_record *p, double period);
-
-static int calc_n_pass(struct metrics_record *r, struct metrics_record *p, double period);
-
-static int calc_n_drop(struct metrics_record *r, struct metrics_record *p, double period);
-
-static int calc_n_redirect(struct metrics_record *r, struct metrics_record *p, double period);
-
-//TODO: build stats_prints
+// TODO: build stats_prints
 // static void stats_print(struct stats_record *stats_rec,
 // 			struct stats_record *stats_prev,
 // 			bool err_only)
