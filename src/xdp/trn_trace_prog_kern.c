@@ -37,7 +37,6 @@ int _version SEC("version") = 1;
 SEC("trace_metrics_per_packet")
 int trace_metrics_per_packet(int *act, struct transit_packet *pkt)
 {
-	// struct metrics_record *rec;
 	__u32 key = 0;
 
 	/* Look up the entry in the metrics table */	
@@ -67,8 +66,7 @@ int trace_metrics_per_packet(int *act, struct transit_packet *pkt)
 	if (*act == XDP_REDIRECT)
 		pkt->rec->n_redirect++;
 
-// #define DEBUG_XDP_MONITORING
-#ifdef DEBUG_XDP_MONITORING
+#ifdef DEBUG
 	if (pkt->rec->n_pkts != (pkt->rec->n_tx + pkt->rec->n_pass + pkt->rec->n_drop + pkt->rec->redirect))
 		return XDP_ABORTED;
 #endif
