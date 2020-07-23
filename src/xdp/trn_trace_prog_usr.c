@@ -1,4 +1,28 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+// SPDX-License-Identifier: GPL-2.0-or-later
+/**
+ * @file trn_trace_prog_usr.c
+ * @author Sherif Abdelwahab (@zasherif)
+ *         Phu Tran          (@phudtran)
+ *
+ * @brief Implements the XDP monitoring program (metrics collector)
+ *
+ * @copyright Copyright (c) 2020 The Authors.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ */
+
 static const char *__doc__ = "XDP loader and stats program\n"
 	" - Allows selecting BPF section --progsec name to XDP-attach to --dev\n";
 
@@ -35,6 +59,8 @@ static const char *__doc__ = "XDP loader and stats program\n"
 #include <sys/syscall.h>   /* For SYS_xxx definitions */
 #include <sys/ioctl.h>
 
+#include "trn_datamodel.h"
+
 enum {
 	REDIR_SUCCESS = 0,
 	REDIR_ERROR = 1,
@@ -59,35 +85,30 @@ static const char *err2str(int err)
 }
 
 /* Common stats data record shared with _kern.c */
-struct datarec {
-	__u64 processed;
-	__u64 dropped;
-	__u64 info;
-	__u64 err;
-};
+// struct datarec {
+// 	__u64 processed;
+// 	__u64 dropped;
+// 	__u64 info;
+// 	__u64 err;
+// };
 
-/* 
- * Common stats data record shared with kernel program
- */
-
-//define in the common header file: both usr and kernel var 
-struct datarec {
-	__u64 n_pkts; /* # of pkts received */
-	__u64 total_bytes_rx; /* to calcualte rx bandwidth */
-	__u64 total_bytes_tx; /* to calcualte tx bandwidth */
-	__u64 n_tx; /* TX PPS for the Bouncer (which is symmetric) == RX PPS for the bouncer */
-	__u64 n_pass; /* forwarded to kernel */
-	__u64 n_drop; /* packets to be dropped*/
-	__u64 n_redirect; /* packets to be redirected*/
-
-};
-#define MAX_METRIC_ENTRIES 64
+/* "struct metrics_record" is defined in trn_datamodel.h 
+	below is just for reference*/
+// struct metrics_record {
+// 	__u64 n_pkts; /* # of pkts received */
+// 	__u64 total_bytes_rx; /* to calcualte rx bandwidth */
+// 	__u64 total_bytes_tx; /* to calcualte tx bandwidth */
+// 	__u64 n_tx;  // TX PPS for the Bouncer (which is symmetric) == RX PPS for the bouncer 
+// 	__u64 n_pass; /* forwarded to kernel */
+// 	__u64 n_drop; /* packets to be dropped*/
+// 	__u64 n_redirect; /* packets to be redirected*/
+// } __attribute__((packed));
 
 /* Userspace structs for collection of stats from maps */
 struct record {
 	__u64 timestamp;
-	struct datarec total;
-	struct datarec *cpu;
+	struct metrics_record total;
+	struct metrics_record *cpu;
 };
 
 struct u64rec {
@@ -102,44 +123,13 @@ struct record_u64 {
 };
 
 struct stats_record {
-	struct record_u64 xdp_redirect[REDIR_RES_MAX];
-	struct record_u64 xdp_exception[XDP_ACTION_MAX];
-	struct record xdp_cpumap_kthread;
-	struct record xdp_cpumap_enqueue[MAX_CPUS];
-	struct record xdp_devmap_xmit;
+	struct _type_ xdp_cpumap_net_stats;
+	// struct record_u64 xdp_redirect[REDIR_RES_MAX];
+	// struct record_u64 xdp_exception[XDP_ACTION_MAX];
+	// struct record xdp_cpumap_kthread;
+	// struct record xdp_cpumap_enqueue[MAX_CPUS];
+	// struct record xdp_devmap_xmit;
 };
-
-static const char *default_filename = "trace_prog_kern.o";
-
-static const struct option_wrapper long_options[] = {
-	{{"help",        no_argument,		NULL, 'h' },
-	 "Show help", false},
-
-	{{"quiet",       no_argument,		NULL, 'q' },
-	 "Quiet mode (no output)"},
-
-	{{"filename",    required_argument,	NULL,  1  },
-	 "Load program from <file>", "<file>"},
-
-	{{0, 0, NULL,  0 }}
-};
-
-int find_map_fd(struct bpf_object *bpf_obj, const char *mapname)
-{
-	struct bpf_map *map;
-	int map_fd = -1;
-
-	/* Lesson#3: bpf_object to bpf_map */
-	map = bpf_object__find_map_by_name(bpf_obj, mapname);
-        if (!map) {
-		fprintf(stderr, "ERR: cannot find map by name: %s\n", mapname);
-		goto out;
-	}
-
-	map_fd = bpf_map__fd(map);
- out:
-	return map_fd;
-}
 
 static int __check_map_fd_info(int map_fd, struct bpf_map_info *info,
 			       struct bpf_map_info *exp)
@@ -202,57 +192,12 @@ static int check_map(const char *name, const struct bpf_map_def *def, int fd)
 		{
 			.name = "metrics_table",
 			.info = {
-				.type = BPF_MAP_TYPE_PROG_ARRAY,
-				.key_size = sizeof(__u32),
-				.value_size = sizeof(struct datarec),
-				.max_entries = MAX_METRIC_ENTRIES,
-			}
-		},
-/*		{
-			.name = "redirect_err_cnt",
-			.info = {
 				.type = BPF_MAP_TYPE_PERCPU_ARRAY,
 				.key_size = sizeof(__u32),
-				.value_size = sizeof(__u64),
-				.max_entries = 2,
-			}
-		},
-		{
-			.name = "exception_cnt",
-			.info = {
-				.type = BPF_MAP_TYPE_PERCPU_ARRAY,
-				.key_size = sizeof(__u32),
-				.value_size = sizeof(__u64),
-				.max_entries = XDP_UNKNOWN + 1,
-			}
-		},
-		{
-			.name = "cpumap_enqueue_cnt",
-			.info = {
-				.type = BPF_MAP_TYPE_PERCPU_ARRAY,
-				.key_size = sizeof(__u32),
-				.value_size = sizeof(struct datarec),
-				.max_entries = MAX_CPUS,
-			}
-		},
-		{
-			.name = "cpumap_kthread_cnt",
-			.info = {
-				.type = BPF_MAP_TYPE_PERCPU_ARRAY,
-				.key_size = sizeof(__u32),
-				.value_size = sizeof(struct datarec),
+				.value_size = sizeof(struct metrics_record),
 				.max_entries = 1,
 			}
 		},
-		{
-			.name = "devmap_xmit_cnt",
-			.info = {
-				.type = BPF_MAP_TYPE_PERCPU_ARRAY,
-				.key_size = sizeof(__u32),
-				.value_size = sizeof(struct datarec),
-				.max_entries = 1,
-			}
-		},*/
 		{ }
 	};
 	int i = 0;
@@ -269,23 +214,23 @@ static int check_map(const char *name, const struct bpf_map_def *def, int fd)
 	return -1;
 }
 
-static int check_maps(struct bpf_object *obj)
+static int check_maps(struct bpf_map *map)
 {
-	struct bpf_map *map;
+	// struct bpf_map *map;
 
-	bpf_object__for_each_map(map, obj) {
-		const struct bpf_map_def *def;
-		const char *name;
-		int fd;
+	// bpf_object__for_each_map(map, obj) {
+	const struct bpf_map_def *def;
+	const char *name;
+	int fd;
 
-		name = bpf_map__name(map);
-		def  = bpf_map__def(map);
-		fd   = bpf_map__fd(map);
+	name = bpf_map__name(map);
+	def  = bpf_map__def(map);
+	fd   = bpf_map__fd(map);
 
-		if (check_map(name, def, fd))
-			return -1;
-	}
-
+	if (check_map(name, def, fd)) /* if map exists, return 0 */
+		return -1;
+	// }
+	/* return 0 on successful maps check */
 	return 0;
 }
 
@@ -307,11 +252,18 @@ static bool map_collect_record(int fd, __u32 key, struct record *rec)
 {
 	/* For percpu maps, userspace gets a value per possible CPU */
 	unsigned int nr_cpus = bpf_num_possible_cpus();
-	struct datarec values[nr_cpus];
-	__u64 sum_processed = 0;
-	__u64 sum_dropped = 0;
-	__u64 sum_info = 0;
-	__u64 sum_err = 0;
+	struct metrics_record values[nr_cpus];
+	// __u64 sum_processed = 0;
+	// __u64 sum_dropped = 0;
+	// __u64 sum_info = 0;
+	// __u64 sum_err = 0;
+	__u64 sum_n_pkts = 0; /* # of pkts received */
+	__u64 sum_total_bytes_rx = 0; /* to calcualte rx bandwidth */
+	__u64 sum_total_bytes_tx = 0; /* to calcualte tx bandwidth */
+	__u64 sum_n_tx = 0;  /* TX PPS for the Bouncer (which is symmetric) == RX PPS for the bouncer */
+	__u64 sum_n_pass = 0; /* forwarded to kernel */
+	__u64 sum_n_drop = 0; /* packets to be dropped*/
+	__u64 sum_n_redirect = 0; /* packets to be redirected*/
 	int i;
 
 	if ((bpf_map_lookup_elem(fd, &key, values)) != 0) {
@@ -324,19 +276,43 @@ static bool map_collect_record(int fd, __u32 key, struct record *rec)
 
 	/* Record and sum values from each CPU */
 	for (i = 0; i < nr_cpus; i++) {
-		rec->cpu[i].processed = values[i].processed;
-		sum_processed        += values[i].processed;
-		rec->cpu[i].dropped = values[i].dropped;
-		sum_dropped        += values[i].dropped;
-		rec->cpu[i].info = values[i].info;
-		sum_info        += values[i].info;
-		rec->cpu[i].err = values[i].err;
-		sum_err        += values[i].err;
+		// rec->cpu[i].processed = values[i].processed;
+		// sum_processed        += values[i].processed;
+		// rec->cpu[i].dropped = values[i].dropped;
+		// sum_dropped        += values[i].dropped;
+		// rec->cpu[i].info = values[i].info;
+		// sum_info        += values[i].info;
+		// rec->cpu[i].err = values[i].err;
+		// sum_err        += values[i].err;
+
+		rec->cpu[i].n_pkts         =  values[i].n_pkts;
+		sum_n_pkts                 += values[i].n_pkts;
+		rec->cpu[i].total_bytes_rx =  values[i].total_bytes_rx;
+		sum_total_bytes_rx         += values[i].total_bytes_rx;
+		rec->cpu[i].total_bytes_tx =  values[i].total_bytes_tx;
+		sum_total_bytes_tx         += values[i].total_bytes_tx;
+		rec->cpu[i].n_tx           =  values[i].n_tx;
+		sum_n_tx                   += values[i].n_tx;
+		rec->cpu[i].n_pass         =  values[i].n_pass;
+		sum_n_pass                 += values[i].n_pass;
+		rec->cpu[i].n_drop         =  values[i].n_drop;
+		sum_n_drop                 += values[i].n_drop;
+		rec->cpu[i].n_redirect     =  values[i].n_redirect;
+		sum_n_redirect             += values[i].n_redirect;
+
 	}
-	rec->total.processed = sum_processed;
-	rec->total.dropped   = sum_dropped;
-	rec->total.info      = sum_info;
-	rec->total.err       = sum_err;
+	// rec->total.processed = sum_processed;
+	// rec->total.dropped   = sum_dropped;
+	// rec->total.info      = sum_info;
+	// rec->total.err       = sum_err;
+	rec->total.n_pkts         = sum_n_pkts;
+	rec->total.total_bytes_rx = sum_total_bytes_rx;
+	rec->total.total_bytes_tx = sum_total_bytes_tx;
+	rec->total.n_tx           = sum_n_tx;
+	rec->total.n_pass         = sum_n_pass;
+	rec->total.n_drop         = sum_n_drop;
+	rec->total.n_redirect     = sum_n_redirect;
+
 	return true;
 }
 
@@ -389,7 +365,7 @@ static double calc_period_u64(struct record_u64 *r, struct record_u64 *p)
 	return period_;
 }
 
-static double calc_pps(struct datarec *r, struct datarec *p, double period)
+static double calc_pps(struct metrics_record *r, struct metrics_record *p, double period)
 {
 	__u64 packets = 0;
 	double pps = 0;
@@ -413,7 +389,7 @@ static double calc_pps_u64(struct u64rec *r, struct u64rec *p, double period)
 	return pps;
 }
 
-static double calc_drop(struct datarec *r, struct datarec *p, double period)
+static double calc_drop(struct metrics_record *r, struct metrics_record *p, double period)
 {
 	__u64 packets = 0;
 	double pps = 0;
@@ -425,7 +401,7 @@ static double calc_drop(struct datarec *r, struct datarec *p, double period)
 	return pps;
 }
 
-static double calc_info(struct datarec *r, struct datarec *p, double period)
+static double calc_info(struct metrics_record *r, struct metrics_record *p, double period)
 {
 	__u64 packets = 0;
 	double pps = 0;
@@ -437,7 +413,7 @@ static double calc_info(struct datarec *r, struct datarec *p, double period)
 	return pps;
 }
 
-static double calc_err(struct datarec *r, struct datarec *p, double period)
+static double calc_err(struct metrics_record *r, struct metrics_record *p, double period)
 {
 	__u64 packets = 0;
 	double pps = 0;
@@ -526,8 +502,8 @@ static void stats_print(struct stats_record *stats_rec,
 		prev = &stats_prev->xdp_cpumap_enqueue[to_cpu];
 		t = calc_period(rec, prev);
 		for (i = 0; i < nr_cpus; i++) {
-			struct datarec *r = &rec->cpu[i];
-			struct datarec *p = &prev->cpu[i];
+			struct metrics_record *r = &rec->cpu[i];
+			struct metrics_record *p = &prev->cpu[i];
 
 			pps  = calc_pps(r, p, t);
 			drop = calc_drop(r, p, t);
@@ -565,8 +541,8 @@ static void stats_print(struct stats_record *stats_rec,
 		prev = &stats_prev->xdp_cpumap_kthread;
 		t = calc_period(rec, prev);
 		for (i = 0; i < nr_cpus; i++) {
-			struct datarec *r = &rec->cpu[i];
-			struct datarec *p = &prev->cpu[i];
+			struct metrics_record *r = &rec->cpu[i];
+			struct metrics_record *p = &prev->cpu[i];
 
 			pps  = calc_pps(r, p, t);
 			drop = calc_drop(r, p, t);
@@ -598,8 +574,8 @@ static void stats_print(struct stats_record *stats_rec,
 		prev = &stats_prev->xdp_devmap_xmit;
 		t = calc_period(rec, prev);
 		for (i = 0; i < nr_cpus; i++) {
-			struct datarec *r = &rec->cpu[i];
-			struct datarec *p = &prev->cpu[i];
+			struct metrics_record *r = &rec->cpu[i];
+			struct metrics_record *p = &prev->cpu[i];
 
 			pps  = calc_pps(r, p, t);
 			drop = calc_drop(r, p, t);
@@ -643,38 +619,21 @@ static int map_fd(struct bpf_object *obj, const char *name)
 	return -1;
 }
 
-static bool stats_collect(struct bpf_object *obj, struct stats_record *rec)
+/* TODO: bpf_object -> bpf_map */
+static bool stats_collect(struct bpf_map *map, struct stats_record *rec)
 {
 	int fd;
 	int i;
 
-	/* TODO: Detect if someone unloaded the perf event_fd's, as
-	 * this can happen by someone running perf-record -e
-	 */
-
-	fd = map_fd(obj, "redirect_err_cnt");
-
-	for (i = 0; i < REDIR_RES_MAX; i++)
-		map_collect_record_u64(fd, i, &rec->xdp_redirect[i]);
-
-	fd = map_fd(obj, "exception_cnt");
-
-	for (i = 0; i < XDP_ACTION_MAX; i++) {
-		map_collect_record_u64(fd, i, &rec->xdp_exception[i]);
-	}
-
-	fd = map_fd(obj, "cpumap_enqueue_cnt");
-
+	// Get the fd of map. Replace bpf_object to bpf_map
+	fd = bpf_map__fd(map);
 	for (i = 0; i < MAX_CPUS; i++)
-		map_collect_record(fd, i, &rec->xdp_cpumap_enqueue[i]);
+		map_collect_record(fd, i, &rec->xdp_cpumap_net_stats[i]);
 
-	fd = map_fd(obj, "cpumap_kthread_cnt");
+	// fd = map_fd(obj, "redirect_err_cnt");
 
-	map_collect_record(fd, 0, &rec->xdp_cpumap_kthread);
-
-	fd = map_fd(obj, "devmap_xmit_cnt");
-
-	map_collect_record(fd, 0, &rec->xdp_devmap_xmit);
+	// for (i = 0; i < REDIR_RES_MAX; i++)
+	// 	map_collect_record_u64(fd, i, &rec->xdp_redirect[i]);
 
 	return true;
 }
@@ -717,7 +676,7 @@ static struct stats_record *alloc_stats_record(void)
 	for (i = 0; i < XDP_ACTION_MAX; i++)
 		rec->xdp_exception[i].cpu = alloc_rec_per_cpu(rec_sz);
 
-	rec_sz = sizeof(struct datarec);
+	rec_sz = sizeof(struct metrics_record);
 	rec->xdp_cpumap_kthread.cpu = alloc_rec_per_cpu(rec_sz);
 	rec->xdp_devmap_xmit.cpu    = alloc_rec_per_cpu(rec_sz);
 
@@ -756,13 +715,14 @@ static inline void swap(struct stats_record **a, struct stats_record **b)
 	*b = tmp;
 }
 
-static void stats_poll(struct bpf_object *obj, int interval, bool err_only)
+/* TODO: bpf_object -> bpf_map */
+static void stats_poll(struct bpf_map *map, int interval, bool err_only)
 {
 	struct stats_record *rec, *prev;
 
 	rec  = alloc_stats_record();
 	prev = alloc_stats_record();
-	stats_collect(obj, rec);
+	stats_collect(map, rec);
 
 	if (err_only)
 		printf("\n%s\n", "???");
@@ -772,7 +732,7 @@ static void stats_poll(struct bpf_object *obj, int interval, bool err_only)
 
 	while (1) {
 		swap(&prev, &rec);
-		stats_collect(obj, rec);
+		stats_collect(map, rec);
 		stats_print(rec, prev, err_only);
 		fflush(stdout);
 		sleep(interval);
@@ -782,99 +742,26 @@ static void stats_poll(struct bpf_object *obj, int interval, bool err_only)
 	free_stats_record(prev);
 }
 
-
-int filename__read_int(const char *filename, int *value)
-{
-	char line[64];
-	int fd = open(filename, O_RDONLY), err = -1;
-
-	if (fd < 0)
-		return -1;
-
-	if (read(fd, line, sizeof(line)) > 0) {
-		*value = atoi(line);
-		err = 0;
-	}
-
-	close(fd);
-	return err;
-}
-
-static inline int
-sys_perf_event_open(struct perf_event_attr *attr,
-		    pid_t pid, int cpu, int group_fd,
-		    unsigned long flags)
-{
-	return syscall(__NR_perf_event_open, attr, pid, cpu, group_fd, flags);
-}
-
-static struct bpf_object* load_bpf_and_trace_attach(struct config *cfg)
-{
-	struct bpf_object *obj;
-	struct bpf_program *prog;
-	int bpf_fd, err;
-
-	if (bpf_prog_load(cfg->filename, BPF_PROG_TYPE_RAW_TRACEPOINT, &obj, &bpf_fd)) {
-		fprintf(stderr, "ERR: failed to load program\n");
-		return NULL;
-	}
-
-	bpf_object__for_each_program(prog, obj) {
-		const char *sec = bpf_program__title(prog, true);
-		char *tp;
-
-		if (!sec) {
-			fprintf(stderr, "ERR: failed to get program title\n");
-			goto err;
-		}
-
-		tp = strrchr(sec, '/');
-		if (!tp) {
-			fprintf(stderr, "ERR: wrong program title %s\n", sec);
-			goto err;
-		}
-
-		tp++;
-		bpf_fd = bpf_program__fd(prog);
-
-		err = bpf_raw_tracepoint_open(tp, bpf_fd);
-		if (err < 0) {
-			fprintf(stderr, "ERR: failed to open raw tracepoint for %s, (%d %s)\n",
-				tp, -errno, strerror(errno));
-			goto err;
-		}
-	}
-
-	return obj;
-
-err:
-	bpf_object__close(obj);
-	return NULL;
-}
-
 int main(int argc, char **argv)
 {
-	struct bpf_object *bpf_obj;
-	struct config cfg;
-	int interval = 2;
+	struct bpf_map *map;
+	int interval = 2; /* sampling interval */
+	const char *bpf_map_name = "metrics_table";
 
-	/* Set default BPF-ELF object file and BPF program name */
-	strncpy(cfg.filename, default_filename, sizeof(cfg.filename));
+	map = (struct bpf_map*)malloc(sizeof(struct bpf_map));
+	map->name = bpf_map_name;
+	// where to find the file descriptor. It should belong to the bpf program running in transit xdp
+	// TODO: Find a way to get the fd, it is also needed in the stats_poll().
+	map->fd = 1;
+	map->def = NULL;
 
-	/* Cmdline options can change progsec */
-	parse_cmdline_args(argc, argv, long_options, &cfg, __doc__);
-
-	bpf_obj = load_bpf_and_trace_attach(&cfg);
-	if (!bpf_obj)
+	if (check_maps(map))
 		return EXIT_FAIL_BPF;
 
-	if (verbose) {
-		printf("Success: Loaded BPF-object(%s)\n", cfg.filename);
-	}
-
-	if (check_maps(bpf_obj))
-		return EXIT_FAIL_BPF;
-
-	stats_poll(bpf_obj, interval, false);
+	// TODO: replace bpf_obj with struct bpf_map *map
+	// but we need to get the fd of the map in advance,
+	// all the following metrics collecting operations
+	// are based on the fd of map.
+	stats_poll(map, interval, false);
 	return EXIT_OK;
 }
