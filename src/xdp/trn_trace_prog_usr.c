@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /**
  * @file trn_trace_prog_usr.c
- * @author Sherif Abdelwahab (@zasherif)
- *         Phu Tran          (@phudtran)
+ * @author ShixiongQi (@ShixiongQi)
+ *		   Sherif Abdelwahab (@zasherif)
  *
  * @brief Implements the XDP monitoring program (metrics collector)
  *
@@ -57,6 +57,7 @@
 #include <sys/ioctl.h>
 
 #include "trn_datamodel.h"
+#include "usr_prog_utility.h"
 
 /* struct metrics_record defined in trn_datamodel.h */
 
@@ -186,7 +187,6 @@ static __u64 gettime(void)
 	return (__u64) t.tv_sec * NANOSEC_PER_SEC + t.tv_nsec;
 }
 
-//TODO: Add n_aborted
 static bool map_collect_record(int fd, __u32 key, struct record *rec)
 {
 	/* For percpu maps, userspace gets a value per possible CPU */
@@ -289,64 +289,42 @@ static double calc_op_per_second(int *curr, int *prev, double period)
 
 // TODO: any other calc_ functions we need?
 static int calc_total_bytes_rx(struct metrics_record *r, struct metrics_record *p, double period);
-
 static int calc_total_bytes_tx(struct metrics_record *r, struct metrics_record *p, double period);
 
-// TODO: build stats_prints
-// static void stats_print(struct stats_record *stats_rec,
-// 			struct stats_record *stats_prev,
-// 			bool err_only)
-// {
-// 	unsigned int nr_cpus = bpf_num_possible_cpus();
-// 	int rec_i = 0, i;
-// 	double t = 0, pps = 0;
+static void stats_print(struct stats_record *stats_rec,
+			struct stats_record *stats_prev,
+			bool err_only)
+{
+	unsigned int nr_cpus = bpf_num_possible_cpus();
+	double t = 0;
+	struct record *rec, *prev;
+	/* Define the metrics to be printed */
+	double pkts_per_second, tx_per_second, pass_per_second,
+		   drop_per_second, redirect_per_second, abort_per_second;
 
-// 	/* Header */
-// 	printf("%-15s %-7s %-12s %-12s %-9s\n",
-// 	       "XDP-event", "CPU:to", "pps", "drop-pps", "extra-info");
+	rec  =  &stats_rec->xdp_cpumap_net_stats;
+	prev = &stats_prev->xdp_cpumap_net_stats;
+	t = calc_period(rec, prev);
 
+	struct metrics_record *r = &curr_rec->total;
+	struct metrics_record *p = &prev_rec->total;
+	pkts_per_second     = calc_op_per_second(r->n_pkts,     p->n_pkts,     t);
+	tx_per_second       = calc_op_per_second(r->n_tx,       p->n_tx,       t);
+	pass_per_second     = calc_op_per_second(r->n_pass,     p->n_pass,     t);
+	drop_per_second     = calc_op_per_second(r->n_drop,     p->n_drop,     t);
+	redirect_per_second = calc_op_per_second(r->n_redirect, p->n_redirect, t);
+	abort_per_second    = calc_op_per_second(r->n_aborted,  p->n_aborted,  t);
 
-// 	/* network stats on Transit XDP program (Or we call it bouncer / divider ?) */
-// 	// for (to_cpu = 0; to_cpu < MAX_CPUS; to_cpu++) {
-// 	char *fmt1 = "%-15s %3d:%-3d %'-12.0f %'-12.0f %'-10.2f %s\n";
-// 	char *fmt2 = "%-15s %3s:%-3d %'-12.0f %'-12.0f %'-10.2f %s\n";
-// 	struct record *rec, *prev;
-// 	char *info_str = "";
-// 	double drop, info;
+	printf("[Stats] Packets Per Second: %'-10.2f\n
+					TX Per Second: %'-10.2f\n
+					Pass Per Second: %'-10.2f\n
+					Drop Per Second: %'-10.2f\n
+					Redirect Per Second: %'-10.2f\n
+					Abort Per Second: %'-10.2f\n\n\n",
+					pkts_per_second, tx_per_second, pass_per_second,
+					drop_per_second, redirect_per_second, abort_per_second);
 
-// 	rec  =  &stats_rec->xdp_cpumap_net_stats;
-// 	prev = &stats_prev->xdp_cpumap_net_stats;
-// 	t = calc_period(rec, prev);
-// 	for (i = 0; i < nr_cpus; i++) {
-// 		struct metrics_record *r = &rec->cpu[i];
-// 		struct metrics_record *p = &prev->cpu[i];
-
-// 		pps  = calc_pps(r, p, t);
-// 		drop = calc_drop(r, p, t);
-// 		info = calc_info(r, p, t);
-// 		if (info > 0) {
-// 			info_str = "bulk-average";
-// 			info = pps / info; /* calc average bulk size */
-// 		}
-// 		if (pps > 0)
-// 			printf(fmt1, "cpumap-enqueue",
-// 			       i, to_cpu, pps, drop, info, info_str);
-// 	}
-// 	pps = calc_pps(&rec->total, &prev->total, t);
-// 	if (pps > 0) {
-// 		drop = calc_drop(&rec->total, &prev->total, t);
-// 		info = calc_info(&rec->total, &prev->total, t);
-// 		if (info > 0) {
-// 			info_str = "bulk-average";
-// 			info = pps / info; /* calc average bulk size */
-// 		}
-// 		printf(fmt2, "cpumap-enqueue",
-// 		       "sum", to_cpu, pps, drop, info, info_str);
-// 	}
-// 	// }
-
-// 	printf("\n");
-// }
+}
 
 static bool stats_collect(struct bpf_map *map, struct stats_record *rec)
 {
@@ -442,22 +420,19 @@ int main(int argc, char **argv)
 {
 	struct bpf_map *map;
 	int interval = 2; /* sampling interval */
+	int err;
 	const char *bpf_map_name = "metrics_table";
 
 	map = (struct bpf_map*)malloc(sizeof(struct bpf_map));
 	map->name = bpf_map_name;
-	// where to find the file descriptor. It should belong to the bpf program running in transit xdp
-	// TODO: Find a way to get the fd, it is also needed in the stats_poll().
-	map->fd = 1;
 	map->def = NULL;
+	err = do_bpf_map_lookup_fd(bpf_map_name, map); /* Lookup the fd of map based on bpf map name */
+	if (err == -1)
+		return EXIT_FAIL_BPF;
 
 	if (check_maps(map))
 		return EXIT_FAIL_BPF;
 
-	// TODO: replace bpf_obj with struct bpf_map *map
-	// but we need to get the fd of the map in advance,
-	// all the following metrics collecting operations
-	// are based on the fd of map.
 	stats_poll(map, interval, false);
 	return EXIT_OK;
 }

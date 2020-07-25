@@ -785,7 +785,7 @@ int _transit(struct xdp_md *ctx)
 	if (!itf) {
 		bpf_debug("[Transit:%d:] ABORTED: Bad configuration\n",
 			  __LINE__);
-		return XDP_ABORTED; // DO we need to count n_aborted here?
+		return XDP_ABORTED;
 	}
 
 	pkt.itf_ipv4 = itf->ip;
@@ -800,7 +800,7 @@ int _transit(struct xdp_md *ctx)
 	if (!pkt->rec) {
 		bpf_debug("[Transit:%d:] ABORTED: No metrics table found\n",
 			  __LINE__);
-		return XDP_ABORTED; // DO we need to count n_aborted here?
+		return XDP_ABORTED;
 	}
 
 	/* record the metrics */

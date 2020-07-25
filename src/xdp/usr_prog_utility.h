@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /**
- * @file trn_trace_prog_kern.c
+ * @file trn_trace_prog_usr.c
  * @author ShixiongQi (@ShixiongQi)
  *		   Sherif Abdelwahab (@zasherif)
  *
@@ -23,36 +23,26 @@
  *
  */
 
-#include <linux/bpf.h>
-#include <bpf/bpf_helpers.h>
+#include <assert.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <linux/err.h>
+#include <linux/kernel.h>
+#include <net/if.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
-// #include "bpf_legacy.h"
+#include <bpf/bpf.h>
+#include <bpf/btf.h>
 
-#include "trn_datamodel.h"
-#include "trn_transit_xdp_maps.h"
-#include "trn_kern.h"
+#define EXIT_OK 		    0
+#define EXIT_FAIL		    1
+#define EXIT_FAIL_BPF		40
 
-int _version SEC("version") = 1;
-
-static __inline void trace_metrics_per_packet(int *act, struct transit_packet *pkt)
-{
-
-	pkt->rec->n_pkts++;
-	pkt->rec->total_bytes_rx += （pkt->data_end - pkt->data）* sizeof(long) / sizeof(void);
-
-	if (*act == XDP_PASS)
-		pkt->rec->n_pass++;
-	if (*act == XDP_DROP)
-		pkt->rec->n_drop++;
-	if (*act == XDP_TX) {
-		pkt->rec->n_tx++;
-		pkt->rec->total_bytes_tx += （pkt->data_end - pkt->data）* sizeof(long) / sizeof(void);
-	}
-	if (*act == XDP_ABORTED)
-		pkt->rec->n_aborted++;
-	if (*act == XDP_REDIRECT)
-		pkt->rec->n_redirect++;
-
-}
-
-char _license[] SEC("license") = "GPL";
+/* Look up the file descriptor of the eBPF map based on map name */
+static int do_bpf_map_lookup_fd(char *name, struct bpf_map *map);

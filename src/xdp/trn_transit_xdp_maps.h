@@ -34,16 +34,6 @@
 #define MAX_EP 65537
 #define MAX_VPC 8192
 
-/* 
- * eBPF map for metrics collector
- */
-struct bpf_map_def SEC("maps") metrics_table = {
-	.type = BPF_MAP_TYPE_PERCPU_ARRAY, /* Which types? PERCPU? PROG? */
-	.key_size = sizeof(__u32),
-	.value_size = sizeof(struct metrics_record),
-	.max_entries = 1,
-};
-BPF_ANNOTATE_KV_PAIR(metrics_table, __u32, struct metrics_record);
 
 struct bpf_map_def SEC("maps") jmp_table = {
 	.type = BPF_MAP_TYPE_PROG_ARRAY,
@@ -143,3 +133,14 @@ BPF_ANNOTATE_KV_PAIR(ep_host_cache, struct endpoint_key_t,
 		     struct remote_endpoint_t);
 
 struct bpf_map_def SEC("maps") xdpcap_hook = XDPCAP_HOOK();
+
+/* 
+ * eBPF map for metrics collector
+ */
+struct bpf_map_def SEC("maps") metrics_table = {
+	.type = BPF_MAP_TYPE_PERCPU_ARRAY, /* Which types? PERCPU? PROG? */
+	.key_size = sizeof(__u32),
+	.value_size = sizeof(struct metrics_record),
+	.max_entries = 1,
+};
+BPF_ANNOTATE_KV_PAIR(metrics_table, __u32, struct metrics_record);
