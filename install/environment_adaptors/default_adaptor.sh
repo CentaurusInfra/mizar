@@ -36,11 +36,25 @@ function environment_adaptor:deploy_mizar {
     # Deploy daemon first, then deploy operator after daemon pod is running. We hold operator, wait until daemon is running. Mizar won't work correctly if directly deploying operator without waiting for daemon. 
     kubectl apply -f etc/deploy/deploy.daemon.yaml
     sleep 2 # Wait 2 seconds when daemon pod is being created
-    echo "Waiting for daemon pod running. It may cost up to 40 minutes because it needs to setup pip3 modules such as grpcio which needs quite some time for the first time."
-    kubectl wait --for=condition=Ready pod -l job=mizar-daemon --timeout=40m
+    echo "Waiting for daemon pod running. It may cost up to 30 minutes because it needs to setup pip3 modules such as grpcio which needs quite some time for the first time."
+    kubectl wait --for=condition=Ready pod -l job=mizar-daemon --timeout=30m
+    
     kubectl apply -f etc/deploy/deploy.operator.yaml
 
     echo "Waiting for Mizar to be up and running."
-    local timeout=180
+    local timeout=60
+    common:execute_and_retry "common:check_mizar_ready" 1 "" "ERROR: Mizar setup timed out after $timeout seconds!" $timeout 1
+
+    # This is walk around to make sure newly creating pods will be running under mizarcni instead of bridge.
+    # The walk around is to redeploy mizar daemon and operator.
+    kubectl delete -f etc/deploy/deploy.operator.yaml
+    kubectl delete -f etc/deploy/deploy.daemon.yaml
+
+    kubectl apply -f etc/deploy/deploy.daemon.yaml
+    sleep 2 # Wait 2 seconds when daemon pod is being created
+    for pod_name in $(kubectl get pods -l job=mizar-daemon | grep -v 'Terminating\|STATUS' | awk '{print $1}'); do kubectl wait --for=condition=Ready pod/$pod_name --timeout=2m;done
+
+    kubectl apply -f etc/deploy/deploy.operator.yaml
+
     common:execute_and_retry "common:check_mizar_ready" 1 "Mizar is now ready!" "ERROR: Mizar setup timed out after $timeout seconds!" $timeout 1
 }
