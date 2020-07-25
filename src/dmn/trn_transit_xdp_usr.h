@@ -100,6 +100,7 @@ struct user_metadata_t {
 	int rev_flow_mod_cache_fd;
 	int ep_flow_host_cache_fd;
 	int ep_host_cache_fd;
+	int metrics_table_fd;
 
 	struct bpf_map *jmp_table_map;
 	struct bpf_map *networks_map;
@@ -113,6 +114,7 @@ struct user_metadata_t {
 	struct bpf_map *ep_flow_host_cache;
 	struct bpf_map *ep_host_cache;
 	struct bpf_map *xdpcap_hook_map;
+	struct bpf_map *metrics_table_map;
 
 	struct bpf_prog_info info;
 	struct bpf_object *obj;
