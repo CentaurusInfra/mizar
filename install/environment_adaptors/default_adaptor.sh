@@ -47,7 +47,11 @@ function environment_adaptor:deploy_mizar {
 
     # This is walk around to make sure newly creating pods will be running under mizarcni instead of bridge.
     # The walk around is to redeploy mizar daemon and operator.
-    sleep 60 # Necessary cool down time before re-deploy daemon and operator.
+    common:execute_and_retry "environment_adaptor:redeploy_mizar" 1 "Newly created pods will be running under mizar cni." "ERROR: Newly created pods will NOT be running under mizar cni!" 600 1
+}
+
+function environment_adaptor:redeploy_mizar {    
+    sleep 30 # Necessary cool down time before re-deploy daemon and operator.
     kubectl delete -f etc/deploy/deploy.operator.yaml
     sleep 5 # Wait to make sure execution order
     kubectl delete -f etc/deploy/deploy.daemon.yaml
@@ -59,4 +63,9 @@ function environment_adaptor:deploy_mizar {
     kubectl apply -f etc/deploy/deploy.operator.yaml
 
     common:execute_and_retry "common:check_mizar_ready" 1 "Mizar is now ready!" "ERROR: Mizar setup timed out after $timeout seconds!" $timeout 1
+
+    common:check_pod_running_in_mizar; local is_pod_running_in_mizar=$?
+    echo is_pod_running_in_mizar
+    echo $is_pod_running_in_mizar
+    return $is_pod_running_in_mizar
 }
