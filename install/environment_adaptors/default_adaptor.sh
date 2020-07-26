@@ -47,7 +47,7 @@ function environment_adaptor:deploy_mizar {
 
     # This is walk around to make sure newly creating pods will be running under mizarcni instead of bridge.
     # The walk around is to redeploy mizar daemon and operator.
-    sleep 30 # Necessary wait time before re-deploy daemon and operator.
+    sleep 60 # Necessary cool down time before re-deploy daemon and operator.
     kubectl delete -f etc/deploy/deploy.operator.yaml
     sleep 5 # Wait to make sure execution order
     kubectl delete -f etc/deploy/deploy.daemon.yaml
