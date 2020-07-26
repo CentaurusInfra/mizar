@@ -33,7 +33,7 @@ function environment_adaptor:deploy_mizar {
     local cwd=$(pwd)
     source install/create_crds.sh $cwd $user
 
-    kubectl apply -f etc/deploy/deploy.Account.yaml
+    kubectl apply -f etc/deploy/deploy.account.yaml
     sleep 2 # Sleep to make sure execution order
     
     # Deploy daemon first, then deploy operator after daemon pod is running. We hold operator, wait until daemon is running. Mizar won't work correctly if directly deploying operator without waiting for daemon. 
