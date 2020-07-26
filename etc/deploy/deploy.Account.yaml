@@ -20,28 +20,20 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
   name: mizar-operator
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: mizar-operator
-  template:
-    metadata:
-      labels:
-        app: mizar-operator
-        mizar: operator
-    spec:
-      serviceAccountName: mizar-operator
-      hostNetwork: true
-      tolerations:
-        - operator: Exists
-          effect: NoSchedule
-      containers:
-        - image: localhost:5000/endpointopr:latest
-          name: mizar-operator
-          securityContext:
-            privileged: true
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: mizar-operator
+    namespace: default
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mizar-operator

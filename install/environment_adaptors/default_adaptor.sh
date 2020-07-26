@@ -33,6 +33,9 @@ function environment_adaptor:deploy_mizar {
     local cwd=$(pwd)
     source install/create_crds.sh $cwd $user
 
+    kubectl apply -f etc/deploy/deploy.Account.yaml
+    sleep 2 # Sleep to make sure execution order
+    
     # Deploy daemon first, then deploy operator after daemon pod is running. We hold operator, wait until daemon is running. Mizar won't work correctly if directly deploying operator without waiting for daemon. 
     kubectl apply -f etc/deploy/deploy.daemon.yaml
     sleep 2 # Wait 2 seconds when daemon pod is being created
@@ -47,9 +50,11 @@ function environment_adaptor:deploy_mizar {
 
     # This is walk around to make sure newly creating pods will be running under mizarcni instead of bridge.
     # The walk around is to redeploy mizar daemon and operator.
+    sleep 10 # Necessary wait time before re-deploy daemon and operator.
     kubectl delete -f etc/deploy/deploy.operator.yaml
+    sleep 2 # Sleep to make sure execution order
     kubectl delete -f etc/deploy/deploy.daemon.yaml
-
+    sleep 2 # Sleep to make sure execution order
     kubectl apply -f etc/deploy/deploy.daemon.yaml
     sleep 2 # Wait 2 seconds when daemon pod is being created
     for pod_name in $(kubectl get pods -l job=mizar-daemon | grep -v 'Terminating\|STATUS' | awk '{print $1}'); do kubectl wait --for=condition=Ready pod/$pod_name --timeout=2m;done
