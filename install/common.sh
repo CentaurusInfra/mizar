@@ -164,3 +164,30 @@ function common:build_docker_images {
     docker image build -t $docker_account/testpod:latest -f etc/docker/test.Dockerfile .
     docker image push $docker_account/testpod:latest
 }
+
+function common:check_pod_by_image {
+    local image_name=$1
+    local pod_name=$(kubectl get pods -l run=$image_name | grep "$image_name" | awk '{print $1}')
+    if [[ -z $pod_name ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+function common:check_pod_running_in_mizar {
+    local image_name="pod-test"
+    
+    kubectl run $image_name --image=localhost:5000/testpod
+    sleep 2
+    kubectl wait --for=condition=Ready pod -l run=$image_name --timeout=30s
+
+    local pod_name=$(kubectl get pods -l run=$image_name -o wide | grep " 10.0." | awk '{print $1}')
+    kubectl delete deploy $image_name
+    common:execute_and_retry "common:check_pod_by_image $image_name" 0 "" "" 60 0
+    if [[ -z $pod_name ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
