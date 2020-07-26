@@ -65,7 +65,5 @@ function environment_adaptor:redeploy_mizar {
     common:execute_and_retry "common:check_mizar_ready" 1 "Mizar is now ready!" "ERROR: Mizar setup timed out after $timeout seconds!" $timeout 1
 
     common:check_pod_running_in_mizar; local is_pod_running_in_mizar=$?
-    echo is_pod_running_in_mizar
-    echo $is_pod_running_in_mizar
     return $is_pod_running_in_mizar
 }
