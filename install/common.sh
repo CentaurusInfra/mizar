@@ -180,7 +180,7 @@ function common:check_pod_running_in_mizar {
     
     kubectl run $image_name --image=localhost:5000/testpod
     sleep 2
-    kubectl wait --for=condition=Ready pod -l run=$image_name --timeout=30s
+    kubectl wait --for=condition=Ready pod -l run=$image_name --timeout=60s
 
     local pod_name=$(kubectl get pods -l run=$image_name -o wide | grep " 10.0." | awk '{print $1}')
     kubectl delete deploy $image_name
