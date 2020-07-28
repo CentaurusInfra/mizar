@@ -344,6 +344,7 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 
 	if (out_tuple) {
 		/* Modify the inner packet accordingly */
+		trn_set_src_dst_port(pkt, out_tuple->sport, out_tuple->dport);
 		trn_set_src_dst_inner_ip_csum(pkt, out_tuple->saddr,
 					      out_tuple->daddr);
 		trn_set_dst_mac(pkt->inner_eth, out_tuple->h_dest);

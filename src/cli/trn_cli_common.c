@@ -314,7 +314,7 @@ int trn_cli_parse_ep(const cJSON *jsonobj, struct rpc_trn_endpoint_t *ep)
 	{
 		if (cJSON_IsString(remote_port)) {
 			port = atoi(remote_port->valuestring);
-			if (port > 0 || port < 65535) {
+			if (port > 0 && port < 65536) {
 				ep->remote_ports.remote_ports_val[i] = port;
 				ep->remote_ports.remote_ports_len++;
 			}

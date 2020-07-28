@@ -166,7 +166,7 @@ class EndpointOperator(object):
                     backends.add(a['ip'])
             if "ports" in s:
                 for p in s['ports']:
-                    backend_ports.add(p['port'])
+                    backend_ports.add(str(p['port']))
         ep.set_backends(list(backends))
         ep.set_backend_ports(list(backend_ports))
         self.store_update(ep)

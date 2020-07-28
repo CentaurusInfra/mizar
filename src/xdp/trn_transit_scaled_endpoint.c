@@ -393,7 +393,7 @@ static __inline int trn_scaled_ep_decide(struct transit_packet *pkt)
 		pkt->inner_ipv4_tuple.sport;
 
 	pkt->scaled_ep_opt->scaled_ep_data.target.dport =
-		pkt->inner_ipv4_tuple.dport;
+		bpf_htons(ep->remote_ports[remote_idx]);
 
 	__builtin_memcpy(&pkt->scaled_ep_opt->scaled_ep_data.target.h_source,
 			 pkt->inner_eth->h_source,

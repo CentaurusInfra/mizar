@@ -354,7 +354,7 @@ static __inline int trn_handle_scaled_ep_modify(struct transit_packet *pkt)
 	//trn_update_ep_host_cache(pkt, tunnel_id, out_tuple.daddr);
 
 	/* Prepare the inner packet for forwarding*/
-	//TODO: for now only change the IP addresses (no ports)
+	trn_set_src_dst_port(pkt, out_tuple.sport, out_tuple.dport);
 	trn_set_src_dst_inner_ip_csum(pkt, out_tuple.saddr, out_tuple.daddr);
 
 	/* Prepare the outer packet for forwarding*/
@@ -470,6 +470,7 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 	inner_mod = bpf_map_lookup_elem(&rev_flow_mod_cache, &inner);
 	if (inner_mod) {
 		/* Modify the inner packet accordingly */
+		trn_set_src_dst_port(pkt, inner_mod->sport, inner_mod->dport);
 		trn_set_src_dst_inner_ip_csum(pkt, inner_mod->saddr,
 					      inner_mod->daddr);
 		trn_set_src_mac(pkt->inner_eth, inner_mod->h_source);

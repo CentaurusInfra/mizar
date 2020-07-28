@@ -72,7 +72,7 @@ class TrnRpc:
             "mac": mac,
             "veth": "",
             "remote_ips": [""],
-            "remote_ports": None,
+            "remote_ports": [""],
             "hosted_iface": ""
         }
         jsonconf = json.dumps(jsonconf)

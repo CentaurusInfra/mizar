@@ -292,11 +292,7 @@ class Endpoint:
         return remote_ips
 
     def get_remote_ports(self):
-        if self.type == OBJ_DEFAULTS.ep_type_simple or self.type == OBJ_DEFAULTS.ep_type_host:
-            remote_ips = None
-        if self.type == OBJ_DEFAULTS.ep_type_scaled or self.type == OBJ_DEFAULTS.ep_type_gateway:
-            remote_ips = list(self.backend_ports)
-        return remote_ips
+        return list(self.backend_ports)
 
     def get_remote_macs(self):
         remote_macs = [self.droplet_mac]
