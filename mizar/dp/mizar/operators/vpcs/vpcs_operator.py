@@ -121,7 +121,7 @@ class VpcOperator(object):
         # TODO: There is a tiny chance of collision here, not to worry about now
         if vpc.name == OBJ_DEFAULTS.default_ep_vpc:
             return OBJ_DEFAULTS.default_vpc_vni
-        vpc.set_vni(uuid.uuid4().int & (1 << 24)-1)
+        vpc.set_vni(str(uuid.uuid4().int & (1 << 24)-1))
 
     def deallocate_vni(self, vpc):
         # TODO: Keep track of VNI allocation
