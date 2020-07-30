@@ -110,7 +110,7 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	    !md->interfaces_map || !md->fwd_flow_mod_cache ||
 	    !md->rev_flow_mod_cache || !md->ep_flow_host_cache ||
 	    !md->ep_host_cache || !md->xdpcap_hook_map || !md->jmp_table_map ||
-	    !md->metrics_table) {
+	    !md->metrics_table_map) {
 		TRN_LOG_ERROR("Failure finding maps objects.");
 		return 1;
 	}
@@ -127,7 +127,7 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	md->rev_flow_mod_cache_fd = bpf_map__fd(md->rev_flow_mod_cache);
 	md->ep_flow_host_cache_fd = bpf_map__fd(md->ep_flow_host_cache);
 	md->ep_host_cache_fd = bpf_map__fd(md->ep_host_cache);
-	md->metrics_table_fd = bpf_map__fd(md->metrics_table_map);
+	md->metrics_table_map_fd = bpf_map__fd(md->metrics_table_map);
 
 	if (bpf_map__unpin(md->xdpcap_hook_map, md->pcapfile) == 0) {
 		TRN_LOG_INFO("unpin exiting pcap map file: %s", md->pcapfile);

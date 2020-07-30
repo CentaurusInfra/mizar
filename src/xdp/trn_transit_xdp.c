@@ -793,8 +793,11 @@ int _transit(struct xdp_md *ctx)
 
 	int action = trn_process_eth(&pkt);
 
-	/* Look up the entry in the metrics table */
-	__u32 metrics_key = 0;	
+	/* 
+	 * Look up the entry in the metrics table, the key used is "0" 
+	 * This key need to keep constant with the key used in user prog.
+	 */
+	__u32 metrics_key = 0; 	
 	pkt->rec = bpf_map_lookup_elem(&metrics_table, &metrics_key);
 
 	if (!pkt->rec) {

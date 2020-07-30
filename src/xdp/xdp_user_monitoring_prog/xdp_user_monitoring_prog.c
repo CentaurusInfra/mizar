@@ -1,26 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /**
- * @file trn_trace_prog_usr.c
+ * @file xdp_user_monitoring_prog.c
  * @author ShixiongQi (@ShixiongQi)
- *		   Sherif Abdelwahab (@zasherif)
  *
  * @brief Implements the XDP monitoring program (metrics collector)
  *
- * @copyright Copyright (c) 2020 The Authors.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- *
+ * NOTE: Some of the codes are copied from $(LINUX)/tools/bpf/bpftool/map.c and
+ * https://github.com/xdp-project/xdp-tutorial/blob/master/tracing02-xdp-monitor/trace_load_and_stats.c
  */
 
 #include <stdio.h>
@@ -32,6 +18,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <net/if.h>
+#include <inttypes.h>
 
 #include <locale.h>
 #include <unistd.h>
@@ -39,25 +26,21 @@
 
 #include <bpf/bpf.h>
 #include <bpf/libbpf.h>
-
 #include <net/if.h>
 #include <linux/if_link.h> /* depend on kernel-headers installed */
-
 #include <linux/err.h>
-
-#include "../common/common_params.h"
-#include "../common/common_user_bpf_xdp.h"
-#include "../common/common_libbpf.h"
-#include "bpf_util.h" /* bpf_num_possible_cpus */
-
 #include <linux/perf_event.h>
 #define _GNU_SOURCE         /* See feature_test_macros(7) */
 #include <unistd.h>
 #include <sys/syscall.h>   /* For SYS_xxx definitions */
 #include <sys/ioctl.h>
 
+#include "bpf_util.h" /* bpf_num_possible_cpus */
 #include "trn_datamodel.h"
-#include "usr_prog_utility.h"
+
+#define EXIT_OK 		    0
+#define EXIT_FAIL		    1
+#define EXIT_FAIL_BPF		40
 
 /* struct metrics_record defined in trn_datamodel.h */
 
@@ -68,14 +51,21 @@ struct record {
 	struct metrics_record *cpu;
 };
 
-struct stats_record {
-	struct record xdp_cpumap_net_stats;
+struct bpf_map {
+	char *name;
+	int fd;
 };
 
 static int __check_map_fd_info(int map_fd, struct bpf_map_info *info,
 			       struct bpf_map_info *exp)
 {
-	__u32 info_len = sizeof(*info);
+	/* Please be careful to "info_len". There will a possible error when
+	 * executing "bpf_obj_get_info_by_fd()":
+	 * 				Arguments list too long 
+	 */
+	struct bpf_map_info info = {};
+	__u32 info_len = sizeof(info);
+	// __u32 info_len = 40; //sizeof(*info);
 	int err;
 
 	if (map_fd < 0)
@@ -83,6 +73,7 @@ static int __check_map_fd_info(int map_fd, struct bpf_map_info *info,
 
         /* BPF-info via bpf-syscall */
 	err = bpf_obj_get_info_by_fd(map_fd, info, &info_len);
+
 	if (err) {
 		fprintf(stderr, "ERR: %s() can't get info - %s\n",
 			__func__,  strerror(errno));
@@ -95,18 +86,21 @@ static int __check_map_fd_info(int map_fd, struct bpf_map_info *info,
 			__func__, info->key_size, exp->key_size);
 		return EXIT_FAIL;
 	}
+
 	if (exp->value_size && exp->value_size != info->value_size) {
 		fprintf(stderr, "ERR: %s() "
 			"Map value size(%d) mismatch expected size(%d)\n",
 			__func__, info->value_size, exp->value_size);
 		return EXIT_FAIL;
 	}
+
 	if (exp->max_entries && exp->max_entries != info->max_entries) {
 		fprintf(stderr, "ERR: %s() "
 			"Map max_entries(%d) mismatch expected size(%d)\n",
 			__func__, info->max_entries, exp->max_entries);
 		return EXIT_FAIL;
 	}
+
 	if (exp->type && exp->type  != info->type) {
 		fprintf(stderr, "ERR: %s() "
 			"Map type(%d) mismatch expected type(%d)\n",
@@ -124,7 +118,7 @@ static int __check_map(int map_fd, struct bpf_map_info *exp)
 	return __check_map_fd_info(map_fd, &info, exp);
 }
 
-static int check_map(const char *name, const struct bpf_map_def *def, int fd)
+static int check_map(const char *name, int fd)
 {
 	struct {
 		const char          *name;
@@ -157,16 +151,15 @@ static int check_map(const char *name, const struct bpf_map_def *def, int fd)
 
 static int check_maps(struct bpf_map *map)
 {
-
-	const struct bpf_map_def *def;
 	const char *name;
 	int fd;
 
-	name = bpf_map__name(map);
-	def  = bpf_map__def(map);
-	fd   = bpf_map__fd(map);
+	// name = bpf_map__name(map);
+	name = map ? map->name : NULL;
+	// fd   = bpf_map__fd(map);
+	fd = map ? map->fd : -EINVAL;
 
-	if (check_map(name, def, fd)) /* if map exists, return 0 */
+	if (check_map(name, fd)) /* if map exists, return 0 */
 		return -1;
 
 	/* return 0 on successful maps check */
@@ -275,39 +268,35 @@ static double calc_abort_per_second(struct metrics_record *r, struct metrics_rec
  *
  * double tx_per_sec = calc_op_per_second(r->n_tx, p->tx, t);
  */
-static double calc_op_per_second(int *curr, int *prev, double period)
+static double calc_op_per_second(__u64 curr, __u64 prev, double period)
 {
 	__u64 packets = 0;
 	double pps = 0;
 
 	if (period > 0) {
-		packets = *curr - *prev;
-		pps = packets / period;
+		packets = curr - prev;
+		pps = ((double)packets / period);
 	}
 	return pps;
 }
 
 // TODO: any other calc_ functions we need?
-static int calc_total_bytes_rx(struct metrics_record *r, struct metrics_record *p, double period);
-static int calc_total_bytes_tx(struct metrics_record *r, struct metrics_record *p, double period);
+// static int calc_total_bytes_rx(struct metrics_record *r, struct metrics_record *p, double period);
+// static int calc_total_bytes_tx(struct metrics_record *r, struct metrics_record *p, double period);
 
-static void stats_print(struct stats_record *stats_rec,
-			struct stats_record *stats_prev,
-			bool err_only)
+static void stats_print(struct record *stats_rec,
+			struct record *stats_prev)
 {
 	unsigned int nr_cpus = bpf_num_possible_cpus();
 	double t = 0;
-	struct record *rec, *prev;
 	/* Define the metrics to be printed */
 	double pkts_per_second, tx_per_second, pass_per_second,
 		   drop_per_second, redirect_per_second, abort_per_second;
 
-	rec  =  &stats_rec->xdp_cpumap_net_stats;
-	prev = &stats_prev->xdp_cpumap_net_stats;
-	t = calc_period(rec, prev);
+	t = calc_period(stats_rec, stats_prev);
 
-	struct metrics_record *r = &curr_rec->total;
-	struct metrics_record *p = &prev_rec->total;
+	struct metrics_record *r = &stats_rec->total;
+	struct metrics_record *p = &stats_prev->total;
 	pkts_per_second     = calc_op_per_second(r->n_pkts,     p->n_pkts,     t);
 	tx_per_second       = calc_op_per_second(r->n_tx,       p->n_tx,       t);
 	pass_per_second     = calc_op_per_second(r->n_pass,     p->n_pass,     t);
@@ -326,14 +315,16 @@ static void stats_print(struct stats_record *stats_rec,
 
 }
 
-static bool stats_collect(struct bpf_map *map, struct stats_record *rec)
+static bool stats_collect(struct bpf_map *map, struct record *rec)
 {
 	int fd;
-	int i;
-
-	// Get the fd of bpf map
-	fd = bpf_map__fd(map);
-	map_collect_record(fd, i, &rec->xdp_cpumap_net_stats);
+	/* 
+	 * "key" is used as the key to lookup the bpf map, need to keep 
+	 * consistent in the kernel prog (0 in our design).
+	 */
+	__u32 key = 0;
+	fd = map ? map->fd : -EINVAL; //bpf_map__fd(map);
+	map_collect_record(fd, key, rec);
 
 	return true;
 }
@@ -354,12 +345,12 @@ static void *alloc_rec_per_cpu(int record_size)
 	return array;
 }
 
-static struct stats_record *alloc_stats_record(void)
+static struct record *alloc_stats_record(void)
 {
-	struct stats_record *rec;
+	struct record *rec;
 	int rec_sz;
 
-	/* Alloc main stats_record structure */
+	/* Alloc main record structure */
 	rec = malloc(sizeof(*rec));
 	memset(rec, 0, sizeof(*rec));
 	if (!rec) {
@@ -369,45 +360,43 @@ static struct stats_record *alloc_stats_record(void)
 
 	/* Alloc stats stored per CPU for each record */
 	rec_sz = sizeof(struct metrics_record);
-	rec->xdp_cpumap_net_stats.cpu = alloc_rec_per_cpu(rec_sz);
+	rec->cpu = alloc_rec_per_cpu(rec_sz);
 
 	return rec;
 }
 
-static void free_stats_record(struct stats_record *r)
+static void free_stats_record(struct record *r)
 {
-	free(r->xdp_cpumap_net_stats.cpu);
+	free(r->cpu);
 	free(r);
 }
 
 /* Pointer swap trick */
-static inline void swap(struct stats_record **a, struct stats_record **b)
+static inline void swap(struct record **a, struct record **b)
 {
-	struct stats_record *tmp;
+	struct record *tmp;
 
 	tmp = *a;
 	*a = *b;
 	*b = tmp;
 }
 
-static void stats_poll(struct bpf_map *map, int interval, bool err_only)
+static void stats_poll(struct bpf_map *map, int interval)
 {
-	struct stats_record *rec, *prev;
+	struct record *rec, *prev;
 
 	rec  = alloc_stats_record();
 	prev = alloc_stats_record();
 	stats_collect(map, rec);
 
-	if (err_only)
-		printf("\n%s\n", "???");
-
 	/* Trick to pretty printf with thousands separators use %' */
 	setlocale(LC_NUMERIC, "en_US");
 
 	while (1) {
+		printf("map->fd: %d\n", map->fd);
 		swap(&prev, &rec);
 		stats_collect(map, rec);
-		stats_print(rec, prev, err_only);
+		stats_print(rec, prev);
 		fflush(stdout);
 		sleep(interval);
 	}
@@ -416,23 +405,154 @@ static void stats_poll(struct bpf_map *map, int interval, bool err_only)
 	free_stats_record(prev);
 }
 
+static int map_fd_by_name(char *name, int **fds)
+{
+	unsigned int id = 0;
+	int fd, nb_fds = 0;
+	void *tmp;
+	int err;
+
+	while (true) {
+		struct bpf_map_info info = {};
+		__u32 len = sizeof(info);
+
+		err = bpf_map_get_next_id(id, &id);
+		if (err) {
+			if (errno != ENOENT) {
+				fprintf(stderr, "%s", strerror(errno));
+				goto err_close_fds;
+			}
+			return nb_fds;
+		}
+
+		fd = bpf_map_get_fd_by_id(id);
+		if (fd < 0) {
+			fprintf(stderr, "can't get map by id (%u): %s", id, strerror(errno));
+			goto err_close_fds;
+		}
+
+		err = bpf_obj_get_info_by_fd(fd, &info, &len);
+		if (err) {
+			fprintf(stderr, "can't get map info (%u): %s", id, strerror(errno));
+			goto err_close_fd;
+		}
+
+		if (strncmp(name, info.name, BPF_OBJ_NAME_LEN)) {
+			close(fd);
+			continue;
+		}
+
+		if (nb_fds > 0) {
+			tmp = realloc(*fds, (nb_fds + 1) * sizeof(int));
+			if (!tmp) {
+				printf("failed to realloc\n");
+				goto err_close_fd;
+			}
+			*fds = tmp;
+		}
+		(*fds)[nb_fds++] = fd;
+	}
+
+err_close_fd:
+	close(fd);
+err_close_fds:
+	while (--nb_fds >= 0)
+		close((*fds)[nb_fds]);
+	return -1;
+}
+
+static int map_parse_fds(char *name, int **fds)
+{
+	if (strlen(name) > BPF_OBJ_NAME_LEN - 1) {
+		printf("can't parse name\n");
+		return -1;
+	}
+
+	return map_fd_by_name(name, fds);
+}
+
+int map_parse_fd(char *name)
+{
+	int *fds = NULL;
+	int nb_fds, fd;
+
+	fds = malloc(sizeof(int));
+	if (!fds) {
+		printf("mem alloc failed\n");
+		return -1;
+	}
+	nb_fds = map_parse_fds(name, &fds);
+	if (nb_fds != 1) {
+		if (nb_fds > 1) {
+			printf("several maps match this handle\n");
+			while (nb_fds--)
+				close(fds[nb_fds]);
+		}
+		fd = -1;
+		goto exit_free;
+	}
+
+	fd = fds[0];
+exit_free:
+	free(fds);
+	return fd;
+}
+
+int map_parse_fd_and_info(char *name, void *info, __u32 *info_len)
+{
+	int err;
+	int fd;
+
+	fd = map_parse_fd(name);
+	if (fd < 0)
+		return -1;
+
+	err = bpf_obj_get_info_by_fd(fd, info, info_len);
+	if (err) {
+		fprintf(stderr, "can't get map info: %s", strerror(errno));
+		close(fd);
+		return err;
+	}
+
+	return fd;
+}
+
+static int do_bpf_map_lookup_fd(char *name)
+{
+	struct bpf_map_info info = {};
+	__u32 len = sizeof(info);
+
+	int fd = map_parse_fd_and_info(name, &info, &len);
+	if (fd < 0)
+		return -1;
+
+	return fd;
+}
+
 int main(int argc, char **argv)
 {
-	struct bpf_map *map;
-	int interval = 2; /* sampling interval */
-	int err;
-	const char *bpf_map_name = "metrics_table";
-
-	map = (struct bpf_map*)malloc(sizeof(struct bpf_map));
-	map->name = bpf_map_name;
-	map->def = NULL;
-	err = do_bpf_map_lookup_fd(bpf_map_name, map); /* Lookup the fd of map based on bpf map name */
-	if (err == -1)
+	struct bpf_map map;
+	/* sampling interval */
+	int interval = 1;
+	/* name of BPF map in kernel */
+	map.name = "metrics_table";
+	
+	/* Lookup the fd of map based on bpf map name */	
+	map.fd = do_bpf_map_lookup_fd(map.name);
+	if (map.fd == -1) {
+		printf("NO MAP FD FOUND\n");
 		return EXIT_FAIL_BPF;
+	}
 
-	if (check_maps(map))
-		return EXIT_FAIL_BPF;
+	/* Varify the maps */
+	if (check_maps(&map)){
+		printf("Map check not passed!\n");
+	 	return EXIT_FAIL_BPF;
+	}
+	
+	stats_poll(&map, interval);
 
-	stats_poll(map, interval, false);
 	return EXIT_OK;
 }
+
+

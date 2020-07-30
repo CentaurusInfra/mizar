@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /**
- * @file trn_trace_prog_kern.c
+ * @file trn_trace_prog_kern.h
  * @author ShixiongQi (@ShixiongQi)
- *		   Sherif Abdelwahab (@zasherif)
  *
  * @brief Implements the XDP monitoring program (metrics collector)
  *
