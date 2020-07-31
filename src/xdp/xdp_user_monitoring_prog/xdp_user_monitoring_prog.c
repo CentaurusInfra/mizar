@@ -63,8 +63,8 @@ static int __check_map_fd_info(int map_fd, struct bpf_map_info *info,
 	 * executing "bpf_obj_get_info_by_fd()":
 	 * 				Arguments list too long 
 	 */
-	struct bpf_map_info info = {};
-	__u32 info_len = sizeof(info);
+	struct bpf_map_info temp = {};
+	__u32 info_len = sizeof(temp);
 	// __u32 info_len = 40; //sizeof(*info);
 	int err;
 
@@ -287,7 +287,7 @@ static double calc_op_per_second(__u64 curr, __u64 prev, double period)
 static void stats_print(struct record *stats_rec,
 			struct record *stats_prev)
 {
-	unsigned int nr_cpus = bpf_num_possible_cpus();
+	//unsigned int nr_cpus = bpf_num_possible_cpus();
 	double t = 0;
 	/* Define the metrics to be printed */
 	double pkts_per_second, tx_per_second, pass_per_second,
@@ -304,11 +304,11 @@ static void stats_print(struct record *stats_rec,
 	redirect_per_second = calc_op_per_second(r->n_redirect, p->n_redirect, t);
 	abort_per_second    = calc_op_per_second(r->n_aborted,  p->n_aborted,  t);
 
-	printf("[Stats] Packets Per Second: %'-10.2f\n
-					TX Per Second: %'-10.2f\n
-					Pass Per Second: %'-10.2f\n
-					Drop Per Second: %'-10.2f\n
-					Redirect Per Second: %'-10.2f\n
+	printf("[Stats] Packets Per Second: %'-10.2f\n \
+					TX Per Second: %'-10.2f\n \
+					Pass Per Second: %'-10.2f\n \
+					Drop Per Second: %'-10.2f\n \
+					Redirect Per Second: %'-10.2f\n \
 					Abort Per Second: %'-10.2f\n\n\n",
 					pkts_per_second, tx_per_second, pass_per_second,
 					drop_per_second, redirect_per_second, abort_per_second);
@@ -451,6 +451,8 @@ static int map_fd_by_name(char *name, int **fds)
 			*fds = tmp;
 		}
 		(*fds)[nb_fds++] = fd;
+		if (nb_fds == 1) // for debugging, need to delete later
+			return nb_fds;
 	}
 
 err_close_fd:

@@ -798,9 +798,9 @@ int _transit(struct xdp_md *ctx)
 	 * This key need to keep constant with the key used in user prog.
 	 */
 	__u32 metrics_key = 0; 	
-	pkt->rec = bpf_map_lookup_elem(&metrics_table, &metrics_key);
+	pkt.rec = bpf_map_lookup_elem(&metrics_table, &metrics_key);
 
-	if (!pkt->rec) {
+	if (!pkt.rec) {
 		bpf_debug("[Transit:%d:] ABORTED: No metrics table found\n",
 			  __LINE__);
 		return XDP_ABORTED;

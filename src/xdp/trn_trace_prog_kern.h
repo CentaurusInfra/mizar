@@ -23,7 +23,7 @@
  */
 
 #include <linux/bpf.h>
-#include <bpf/bpf_helpers.h>
+//#include <bpf/bpf_helpers.h>
 
 // #include "bpf_legacy.h"
 
@@ -31,13 +31,13 @@
 #include "trn_transit_xdp_maps.h"
 #include "trn_kern.h"
 
-int _version SEC("version") = 1;
+//int _version SEC("version") = 1;
 
 static __inline void trace_metrics_per_packet(int *act, struct transit_packet *pkt)
 {
 
 	pkt->rec->n_pkts++;
-	pkt->rec->total_bytes_rx += （pkt->data_end - pkt->data）* sizeof(long) / sizeof(void);
+	pkt->rec->total_bytes_rx += (pkt->data_end - pkt->data)* sizeof(long) / sizeof(void);
 
 	if (*act == XDP_PASS)
 		pkt->rec->n_pass++;
@@ -45,7 +45,7 @@ static __inline void trace_metrics_per_packet(int *act, struct transit_packet *p
 		pkt->rec->n_drop++;
 	if (*act == XDP_TX) {
 		pkt->rec->n_tx++;
-		pkt->rec->total_bytes_tx += （pkt->data_end - pkt->data）* sizeof(long) / sizeof(void);
+		pkt->rec->total_bytes_tx += (pkt->data_end - pkt->data) * sizeof(long) / sizeof(void);
 	}
 	if (*act == XDP_ABORTED)
 		pkt->rec->n_aborted++;
@@ -54,4 +54,4 @@ static __inline void trace_metrics_per_packet(int *act, struct transit_packet *p
 
 }
 
-char _license[] SEC("license") = "GPL";
+//char _license[] SEC("license") = "GPL";
