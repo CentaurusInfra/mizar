@@ -94,6 +94,7 @@ class OBJ_DEFAULTS:
 
     kopf_max_retries = 5
 
+    arktos_network_readiness_key = "arktos.futurewei.com/network-readiness"
 
 class RESOURCES:
     endpoints = "endpoints"
@@ -103,6 +104,9 @@ class RESOURCES:
     bouncers = "bouncers"
     dividers = "dividers"
 
+class COMPUTE_PROVIDER:
+    k8s = "k8s"
+    arktos = "arktos"
 
 class LAMBDAS:
     ep_status_init = lambda body, **_: body.get('spec', {}).get(

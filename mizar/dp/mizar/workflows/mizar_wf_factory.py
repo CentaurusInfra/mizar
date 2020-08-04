@@ -152,3 +152,6 @@ class MizarWorkflowFactory():
 
     def k8sPodCreate(self, param):
         return k8sPodCreate(param=param)
+
+    def k8sPodDelete(self, param):
+        return k8sPodDelete(param=param)
