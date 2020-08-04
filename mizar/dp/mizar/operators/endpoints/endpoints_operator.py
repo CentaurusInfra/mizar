@@ -113,12 +113,12 @@ class EndpointOperator(object):
         ep.create_obj()
         self.annotate_builtin_endpoints(name, namespace)
 
-    def create_gw_endpoint(self, name, ip):
+    def create_gw_endpoint(self, name, ip, vni, vpc, net):
         logger.info("Create gw endpoint")
         ep = Endpoint(name, self.obj_api, self.store)
-        ep.set_vni(OBJ_DEFAULTS.default_vpc_vni)
-        ep.set_vpc(OBJ_DEFAULTS.default_ep_vpc)
-        ep.set_net(OBJ_DEFAULTS.default_ep_net)
+        ep.set_vni(vni)
+        ep.set_vpc(vpc)
+        ep.set_net(net)
         ep.set_mac(self.rand_mac())
         ep.set_ip(ip)
         ep.set_type(OBJ_DEFAULTS.ep_type_gateway)
