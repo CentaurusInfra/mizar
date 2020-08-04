@@ -50,6 +50,6 @@ class NetCreate(WorkflowTask):
         nets_opr.set_net_provisioned(n)
         nets_opr.store_update(n)
         ep = endpoints_opr.create_gw_endpoint(
-            self.param.name + "_gw", n.get_gw_ip())
+            self.param.name + "_gw", n.get_gw_ip(), n.vni, n.vpc, n.name)
         endpoints_opr.store_update(ep)
         self.finalize()
