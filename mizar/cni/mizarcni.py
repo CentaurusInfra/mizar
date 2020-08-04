@@ -142,14 +142,15 @@ class Cni:
         the GW.
         """
 
-        # TODO (cathy): skip the interface activation if an interface with same
-        # interface.interface_id.interface already UP and configured in the
-        # namespace
-
         head, netns = os.path.split(self.netns)
         iproute_ns = NetNS(netns)
         veth_index = get_iface_index(interface.veth.name, self.iproute)
-        logger.info("Move interface {}/{} to netns {}".format(
+
+        actived_idxs = iproute_ns.link_lookup(operstate="UP")
+        if (veth_index in actived_idxs):
+            return
+
+        logger.error("Move interface {}/{} to netns {}".format(
             interface.veth.name, veth_index, netns))
         self.iproute.link('set', index=veth_index, net_ns_fd=netns)
 
@@ -165,8 +166,12 @@ class Cni:
         iproute_ns.route('add', gateway=interface.address.gateway_ip)
 
     def do_delete(self):
-        logger.info("CNI Delete is not implemented")
-        exit(1)
+        param = CniParameters(pod_id=self.pod_id,
+                                netns=self.netns,
+                                interface=self.interface)
+        InterfaceServiceClient(
+                "localhost").DeleteInterface(param)
+        exit(0)
 
     def do_get(self):
         logger.info("CNI get is not implemented")

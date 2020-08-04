@@ -179,3 +179,7 @@ class WorkflowFactory(ABC):
     @abstractmethod
     def k8sPodCreate(self, param):
         pass
+
+    @abstractmethod
+    def k8sPodDelete(self, param):
+        pass

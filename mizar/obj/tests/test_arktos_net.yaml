@@ -1,0 +1,9 @@
+apiVersion: "arktos.futurewei.com/v1"
+kind: Network
+metadata:
+  name: my-net-mizar-1
+spec:
+  type: mizar
+  vpcID: 12345-mizar
+  service:
+    ipam: Arktos
