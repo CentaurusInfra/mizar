@@ -27,25 +27,25 @@ function environment_adaptor:prepare_binary {
 }
 
 function environment_adaptor:deploy_mizar {
-    # local is_mizar_production=${1:-0}
+    local is_mizar_production=${1:-0}
 
-    # local cwd=$(pwd)
-    # source install/create_crds.sh $cwd
+    local cwd=$(pwd)
+    source install/create_crds.sh $cwd
 
-    # kubectl apply -f etc/deploy/deploy.initialize.yaml
-    # sleep 5 # Wait when initialize pod is being created
-    # kubectl wait --for=condition=Ready pod -l job=mizar-initialize --timeout=30s
+    kubectl apply -f etc/deploy/deploy.initialize.yaml
+    sleep 5 # Wait when initialize pod is being created
+    kubectl wait --for=condition=Ready pod -l job=mizar-initialize --timeout=30s
 
-    # local process_ids=""
-    # for pod_name in $(kubectl get pods -l job=mizar-initialize | grep 'Running' | awk '{print $1}'); 
-    # do 
-    #     deploy_for_pod_initialize $pod_name &
-    #     local process_ids="$process_ids $!"
-    # done
-    # for process_id in $process_ids; do
-    #     echo "waiting for $process_id"
-    #     wait $process_id
-    # done
+    local process_ids=""
+    for pod_name in $(kubectl get pods -l job=mizar-initialize | grep 'Running' | awk '{print $1}'); 
+    do 
+        deploy_for_pod_initialize $pod_name &
+        local process_ids="$process_ids $!"
+    done
+    for process_id in $process_ids; do
+        echo "waiting for $process_id"
+        wait $process_id
+    done
     
     kubectl apply -f /home/ubuntu/mizar/etc/deploy/deploy.daemon.dev.yaml
     sleep 5 # Wait when initialize pod is being created
