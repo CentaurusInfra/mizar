@@ -226,6 +226,20 @@ def kube_get_endpoints(core_api, service_name, service_namespace):
         return response
 
 
+def kube_get_service(core_api, service_name, service_namespace):
+    response = None
+    try:
+        response = core_api.read_namespaced_service(
+            name=service_name,
+            namespace=service_namespace)
+        return response
+    except:
+        logger.debug("Failed to get service {} in namespace {}".format(
+            service_name, service_namespace))
+    finally:
+        return response
+
+
 def get_spec_val(key, spec, default=""):
     return default if key not in spec else spec[key]
 

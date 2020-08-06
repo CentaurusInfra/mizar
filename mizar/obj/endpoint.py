@@ -60,7 +60,7 @@ class Endpoint:
         self.provisiondelay = ""
         self.bouncers = {}
         self.backends = []
-        self.backend_ports = []
+        self.ports = []
         if spec is not None:
             self.set_obj_spec(spec)
         self.deleted = False
@@ -255,8 +255,8 @@ class Endpoint:
     def set_backends(self, backends):
         self.backends = backends
 
-    def set_backend_ports(self, ports):
-        self.backend_ports = ports
+    def set_ports(self, ports):
+        self.ports = ports
 
     def get_veth_peer(self):
         return self.veth_peer
@@ -292,7 +292,13 @@ class Endpoint:
         return remote_ips
 
     def get_remote_ports(self):
-        return list(self.backend_ports)
+        return [port[1][0] for port in self.ports]
+
+    def get_frontend_ports(self):
+        return [port[0] for port in self.ports]
+
+    def get_port_protocols(self):
+        return [port[1][1] for port in self.ports]
 
     def get_remote_macs(self):
         remote_macs = [self.droplet_mac]

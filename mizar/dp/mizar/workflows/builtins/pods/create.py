@@ -58,6 +58,8 @@ class k8sPodCreate(WorkflowTask):
         # logger.info("phase: {}".format(self.param.body['status']['phase']))
         # logger.info("podIPs: {}".format(self.param.body['status']['podIPs']))
 
+        if "hostIP" not in self.param.body['status']:
+            self.raise_temporary_error("Pod spec not ready.")
         spec = {
             'hostIP': self.param.body['status']['hostIP'],
             'name': self.param.body['metadata']['name'],
@@ -83,7 +85,7 @@ class k8sPodCreate(WorkflowTask):
             return
         # Preexisting pods triggered when droplet objects are not yet created.
         if not spec['droplet']:
-            self.raise_temporary_error("Droplet not yet created")
+            self.raise_temporary_error("Droplet not yet created.")
 
         # Init all interfaces on the host
         interfaces = endpoint_opr.init_simple_endpoint_interfaces(

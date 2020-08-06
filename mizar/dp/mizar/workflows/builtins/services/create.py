@@ -53,8 +53,9 @@ class k8sEndpointsUpdate(WorkflowTask):
         logger.info("Run {task}".format(task=self.__class__.__name__))
         if 'subsets' not in self.param.body:
             return
+        namespace = self.param.body["metadata"]["namespace"]
         ep = endpoints_opr.update_scaled_endpoint_backend(
-            self.param.name, self.param.body['subsets'])
+            self.param.name, namespace, self.param.body['subsets'])
         if ep:
             if not bouncers_opr.store.get_bouncers_of_net(ep.net):
                 self.raise_temporary_error(

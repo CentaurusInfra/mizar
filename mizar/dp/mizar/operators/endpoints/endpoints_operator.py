@@ -21,6 +21,7 @@
 
 import logging
 import random
+import json
 from kubernetes import client, config
 from mizar.obj.endpoint import Endpoint
 from mizar.obj.bouncer import Bouncer
@@ -110,6 +111,12 @@ class EndpointOperator(object):
         ep.set_mac(self.rand_mac())
         ep.set_type(OBJ_DEFAULTS.ep_type_scaled)
         ep.set_status(OBJ_STATUS.ep_status_init)
+        # logger.info("==SPEC")
+        # if "ports" in spec:
+        #     for port in spec["ports"]:
+        #         logger.info(port["protocol"])
+        #         logger.info(port["port"])
+        #         logger.info(port["targetPort"])
         ep.create_obj()
         self.annotate_builtin_endpoints(name, namespace)
 
@@ -154,21 +161,33 @@ class EndpointOperator(object):
             random.randint(0, 255),
         )
 
-    def update_scaled_endpoint_backend(self, name, spec):
+    def update_scaled_endpoint_backend(self, name, namespace, spec):
         ep = self.store.get_ep(name)
         if ep is None:
             return None
         backends = set()
-        backend_ports = set()
         for s in spec:
             if "addresses" in s:
                 for a in s['addresses']:
                     backends.add(a['ip'])
-            if "ports" in s:
-                for p in s['ports']:
-                    backend_ports.add(str(p['port']))
         ep.set_backends(list(backends))
-        ep.set_backend_ports(list(backend_ports))
+        ports = {}
+        service = kube_get_service(self.core_api, name, namespace)
+        if not service or not service.metadata or not service.metadata.annotations:
+            return
+        service_spec = list(service.metadata.annotations.values())
+        json_spec = json.loads(service_spec[0])
+        # port = {frontend_port: [backend_port, protocol]}
+        if isinstance(json_spec, dict):
+            for port in json_spec["spec"]["ports"]:
+                ports[port["port"]] = []
+                ports[port["port"]].append(port["targetPort"])
+                proto = port["protocol"]
+                if proto == "TCP":
+                    ports[port["port"]].append(CONSTANTS.IPPROTO_TCP)
+                if proto == "UDP":
+                    ports[port["port"]].append(CONSTANTS.IPROTO_UDP)
+        ep.set_ports(sorted(ports.items()))  # Sorted by frontend ports
         self.store_update(ep)
         logger.info(
             "Update scaled endpoint {} with backends: {}".format(name, backends))

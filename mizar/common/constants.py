@@ -34,6 +34,8 @@ class CONSTANTS:
     ON_XDP_REDIRECT = "ON_XDP_REDIRECT"
     ON_XDP_DROP = "ON_XDP_DROP"
     ON_XDP_SCALED_EP = "ON_XDP_SCALED_EP"
+    IPPROTO_TCP = "6"
+    IPROTO_UDP = "17"
 
 
 class OBJ_STATUS:
@@ -91,6 +93,7 @@ class OBJ_DEFAULTS:
 
     mizar_service_annotation_key = "service.beta.kubernetes.io/mizar-scaled-endpoint-type"
     mizar_service_annotation_val = "scaled-endpoint"
+    kopf_annotation_key = "kopf.zalando.org/last-handled-configuration"
 
     kopf_max_retries = 5
 
