@@ -1,9 +1,0 @@
-apiVersion: arktos.futurewei.com/v1
-kind: Network
-metadata:
-  name: vpc-1
-spec:
-  type: mizar
-  vpcID: vpc-1a2b3c4d
-
-                   
