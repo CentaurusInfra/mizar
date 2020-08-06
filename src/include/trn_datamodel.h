@@ -29,7 +29,6 @@
 #define __ALWAYS_INLINE__ __attribute__((__always_inline__))
 
 #define TRAN_MAX_NEP 65537
-#define TRAN_MAX_NPORT 256
 #define TRAN_MAX_NSWITCH 32768
 #define TRAN_MAX_NROUTER 16384
 #define TRAN_MAX_REMOTES 256

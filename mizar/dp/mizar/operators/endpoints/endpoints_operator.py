@@ -111,12 +111,6 @@ class EndpointOperator(object):
         ep.set_mac(self.rand_mac())
         ep.set_type(OBJ_DEFAULTS.ep_type_scaled)
         ep.set_status(OBJ_STATUS.ep_status_init)
-        # logger.info("==SPEC")
-        # if "ports" in spec:
-        #     for port in spec["ports"]:
-        #         logger.info(port["protocol"])
-        #         logger.info(port["port"])
-        #         logger.info(port["targetPort"])
         ep.create_obj()
         self.annotate_builtin_endpoints(name, namespace)
 

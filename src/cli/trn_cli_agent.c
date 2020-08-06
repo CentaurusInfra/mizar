@@ -48,7 +48,6 @@ int trn_cli_update_agent_ep_subcmd(CLIENT *clnt, int argc, char *argv[])
 	char veth[20];
 	char hosted_itf[20];
 	uint32_t remote_ips[RPC_TRN_MAX_REMOTE_IPS];
-	uint16_t remote_ports[RPC_TRN_MAX_REMOTE_IPS];
 	ep.remote_ips.remote_ips_val = remote_ips;
 	ep.remote_ips.remote_ips_len = 0;
 	ep.veth = veth;
@@ -202,7 +201,6 @@ int trn_cli_update_agent_md_subcmd(CLIENT *clnt, int argc, char *argv[])
 	char veth[20];
 	char hosted_itf[20];
 	uint32_t remote_ips[RPC_TRN_MAX_REMOTE_IPS];
-	uint16_t remote_ports[RPC_TRN_MAX_REMOTE_IPS];
 	agent_md.ep.remote_ips.remote_ips_val = remote_ips;
 	agent_md.ep.remote_ips.remote_ips_len = 0;
 	agent_md.ep.veth = veth;
