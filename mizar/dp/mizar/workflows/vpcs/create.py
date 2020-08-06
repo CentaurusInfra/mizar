@@ -20,6 +20,7 @@
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import logging
+import epdb
 from mizar.common.workflow import *
 from mizar.dp.mizar.operators.vpcs.vpcs_operator import *
 logger = logging.getLogger()
@@ -33,11 +34,26 @@ class VpcCreate(WorkflowTask):
         logger.info("Requires {task}".format(task=self.__class__.__name__))
         return []
 
-    def run(self):
+    def run(self):        
         logger.info("Run {task}".format(task=self.__class__.__name__))
-        v = vpcs_opr.get_vpc_stored_obj(self.param.name, self.param.spec)
-        vpcs_opr.allocate_vni(v)
-        vpcs_opr.create_vpc_dividers(v, v.n_dividers)
-        vpcs_opr.set_vpc_provisioned(v)
-        vpcs_opr.store_update(v)
+        if self.param.body["kind"] == "Network":
+            vpcId = self.param.body['spec']['vpcID']            
+            vpc = vpcs_opr.store_get(vpcId)
+            network = vpcs_opr.get_network_stored_obj(vpcId, self.param.body)
+            if vpc != None:
+                error_message = "No VPC found with id {}".format(vpcId)
+                logger.error(error_message)
+                network.set_message(error_message)
+                breakpoint()
+                network.update_obj()
+
+            pass
+            # operator_store add entry to arktos_vpc_store
+        else:
+            v = vpcs_opr.get_vpc_stored_obj(self.param.name, self.param.spec)
+            vpcs_opr.allocate_vni(v)
+            vpcs_opr.create_vpc_dividers(v, v.n_dividers)
+            vpcs_opr.set_vpc_provisioned(v)
+            vpcs_opr.store_update(v)
+
         self.finalize()

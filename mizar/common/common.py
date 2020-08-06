@@ -159,6 +159,13 @@ def kube_update_obj(obj):
                 obj.get_kind(), obj.get_name()))
             get_body = True
 
+def kube_update_cluster_obj(obj):
+    body = obj.obj_api.get_cluster_custom_object(
+        group=obj.get_group(),
+        version=obj.get_version(),
+        plural=obj.get_plural(),
+        name=obj.get_name())
+    pass
 
 def kube_delete_obj(obj):
     try:

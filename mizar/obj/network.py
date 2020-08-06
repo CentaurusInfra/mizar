@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020 The Authors.
 
-# Authors: Sherif Abdelwahab <@zasherif>
-#          Phu Tran          <@phudtran>
+# Authors: Hong Chang        <@Hong-Chang>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -19,10 +18,33 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-FROM fwnetworking/python_base:latest
-COPY . /var/mizar/
-RUN pip3 install /var/mizar/
-RUN pip3 install epdb
-RUN ln -snf /var/mizar/build/bin /trn_bin
-COPY etc/luigi.cfg /etc/luigi/luigi.cfg
-CMD kopf run --standalone /var/mizar/mizar/operator.py
+import logging
+from mizar.common.common import *
+
+class Network(object):
+    def __init__(self, name, obj_api, body):
+        self.name = name
+        self.obj_api = obj_api
+        self.body = body
+        self.message = ""
+
+    def get_name(self):
+        return self.name
+
+    def get_plural(self):
+        return "networks"
+
+    def get_kind(self):
+        return "Network"
+
+    def get_group(self):
+        return "arktos.futurewei.com"
+
+    def get_version(self):
+        return "v1"
+
+    def set_message(self, message):
+        self.message = message
+
+    def update_obj(self):
+        return kube_update_cluster_obj(self)

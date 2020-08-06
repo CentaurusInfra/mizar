@@ -28,6 +28,7 @@ from mizar.common.common import *
 from mizar.common.cidr import Cidr
 from mizar.obj.vpc import Vpc
 from mizar.obj.net import Net
+from mizar.obj.network import Network
 from mizar.obj.divider import Divider
 from mizar.store.operator_store import OprStore
 logger = logging.getLogger()
@@ -73,8 +74,8 @@ class VpcOperator(object):
     def store_update(self, vpc):
         self.store.update_vpc(vpc)
 
-    def store_get(self, vpc):
-        return self.store.get_vpc(vpc)
+    def store_get(self, name):
+        return self.store.get_vpc(name)
 
     def create_vpc_dividers(self, vpc, n):
         logger.info("Create {} dividers for vpc: {}".format(n, vpc.name))
@@ -126,3 +127,6 @@ class VpcOperator(object):
     def deallocate_vni(self, vpc):
         # TODO: Keep track of VNI allocation
         pass
+
+    def get_network_stored_obj(self, name, body):
+        return Network(name, self.obj_api, body)

@@ -22,6 +22,7 @@
 import kopf
 import logging
 import luigi
+import epdb
 from mizar.common.common import *
 from mizar.common.constants import *
 from mizar.common.wf_factory import *
@@ -34,6 +35,9 @@ logger = logging.getLogger()
 @kopf.on.update('', 'v1', 'pods', retries=OBJ_DEFAULTS.kopf_max_retries)
 @kopf.on.create('', 'v1', 'pods', retries=OBJ_DEFAULTS.kopf_max_retries)
 async def builtins_on_pod(body, spec, **kwargs):
+    print("hochan builtins_on_pod")
+    print(body)
+    # epdb.serve(port=8888)
     param = HandlerParam()
     param.name = kwargs['name']
     param.body = body

@@ -51,6 +51,8 @@ class OprStore(object):
         self.bouncers_net_store = {}
         self.bouncers_vpc_store = {}
 
+        self.arktos_vpc_store = {} # then add entry to it
+
     def update_vpc(self, vpc):
         self.vpcs_store[vpc.name] = vpc
 
