@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020 The Authors.
 
-# Authors: Catherine Lu      <@clu2xlu>
-#          Hong Chang        <@Hong-Chang>
+# Authors: Hong Chang        <@Hong-Chang>
+#          Sherif Abdelwahab <@zasherif>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -40,21 +40,20 @@ metadata:
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: mizar-daemon
+  name: mizar-initialize
   namespace: default
 spec:
   selector:
     matchLabels:
-      job: mizar-daemon
+      job: mizar-initialize
   template:
     metadata:
       labels:
-        job: mizar-daemon
+        job: mizar-initialize
     spec:
       hostPID: true
       restartPolicy: Always
       serviceAccountName: mizar-operator
-      hostNetwork: true
       tolerations:
         - operator: Exists
           effect: NoSchedule
@@ -63,17 +62,12 @@ spec:
           hostPath:
             path: /var
             type: Directory
-      initContainers:
-        - image: localhost:5000/mizar:latest
-          name: node-init
-          command: [./node-init.sh]
+      containers:
+        - image: debian:latest
+          name: mizar-initialize
+          command: [ "/bin/bash", "-c", "--", "while true; do chmod 755/tmp/script-to-run.sh; /tmp/script-to-run.sh; rm -rf /tmp/script-to-run.sh; sleep 3; done;" ]
           securityContext:
             privileged: true
           volumeMounts:
             - name: mizar
               mountPath: /home
-      containers:
-        - image: localhost:5000/dropletd:latest
-          name: mizar-daemon
-          securityContext:
-            privileged: true

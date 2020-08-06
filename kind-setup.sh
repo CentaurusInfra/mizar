@@ -88,7 +88,7 @@ api_ip=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{en
 sed "s/server: https:\/\/127.0.0.1:[[:digit:]]\+/server: https:\/\/$api_ip:6443/" $KINDCONF > $MIZARCONF
 ln -snf $KINDCONF $KINDHOME
 
-source install/create_crds.sh $CWD $USER
+source install/create_crds.sh $CWD
 source install/create_service_account.sh $CWD $USER
 
 source install/deploy_daemon.sh $CWD $USER $DOCKER_ACC

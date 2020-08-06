@@ -63,7 +63,7 @@ function environment_adaptor:deploy_mizar {
     fi
 
     local cwd=$(pwd)
-    source install/create_crds.sh $cwd $user
+    source install/create_crds.sh $cwd
     source install/create_service_account.sh $cwd $user
 
     source install/deploy_daemon.sh $cwd $user $docker_account
