@@ -51,8 +51,6 @@ int trn_cli_update_agent_ep_subcmd(CLIENT *clnt, int argc, char *argv[])
 	uint16_t remote_ports[RPC_TRN_MAX_REMOTE_IPS];
 	ep.remote_ips.remote_ips_val = remote_ips;
 	ep.remote_ips.remote_ips_len = 0;
-	ep.remote_ports.remote_ports_val = remote_ports;
-	ep.remote_ports.remote_ports_len = 0;
 	ep.veth = veth;
 	ep.hosted_interface = hosted_itf;
 	ep.interface = conf.intf;
@@ -207,8 +205,6 @@ int trn_cli_update_agent_md_subcmd(CLIENT *clnt, int argc, char *argv[])
 	uint16_t remote_ports[RPC_TRN_MAX_REMOTE_IPS];
 	agent_md.ep.remote_ips.remote_ips_val = remote_ips;
 	agent_md.ep.remote_ips.remote_ips_len = 0;
-	agent_md.ep.remote_ports.remote_ports_val = remote_ports;
-	agent_md.ep.remote_ports.remote_ports_len = 0;
 	agent_md.ep.veth = veth;
 	agent_md.ep.hosted_interface = hosted_itf;
 	agent_md.ep.interface = conf.intf; // Unused
@@ -326,14 +322,6 @@ void dump_agent_md(struct rpc_trn_agent_metadata_t *agent_md)
 		print_msg("0x%x",
 			  ntohl(agent_md->ep.remote_ips.remote_ips_val[i]));
 		if (i < agent_md->ep.remote_ips.remote_ips_len - 1)
-			print_msg(", ");
-	}
-	print_msg("]\n");
-
-	print_msg("Remote Ports: [");
-	for (i = 0; i < agent_md->ep.remote_ports.remote_ports_len; i++) {
-		print_msg("%d", agent_md->ep.remote_ports.remote_ports_val[i]);
-		if (i < agent_md->ep.remote_ports.remote_ports_len - 1)
 			print_msg(", ");
 	}
 	print_msg("]\n");

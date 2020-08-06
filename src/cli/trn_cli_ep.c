@@ -50,9 +50,6 @@ int trn_cli_update_ep_subcmd(CLIENT *clnt, int argc, char *argv[])
 	uint32_t remote_ips[RPC_TRN_MAX_REMOTE_IPS];
 	uint16_t remote_ports[RPC_TRN_MAX_REMOTE_IPS];
 	ep.remote_ips.remote_ips_val = remote_ips;
-	ep.remote_ips.remote_ips_len = 0;
-	ep.remote_ports.remote_ports_val = remote_ports;
-	ep.remote_ports.remote_ports_len = 0;
 	ep.veth = veth;
 	ep.hosted_interface = hosted_itf;
 	ep.interface = conf.intf;
@@ -193,13 +190,6 @@ void dump_ep(struct rpc_trn_endpoint_t *ep)
 	for (i = 0; i < ep->remote_ips.remote_ips_len; i++) {
 		print_msg("0x%x", ntohl(ep->remote_ips.remote_ips_val[i]));
 		if (i < ep->remote_ips.remote_ips_len - 1)
-			print_msg(", ");
-	}
-	print_msg("]\n");
-	print_msg("Remote Ports: [");
-	for (i = 0; i < ep->remote_ports.remote_ports_len; i++) {
-		print_msg("%d", ep->remote_ports.remote_ports_val[i]);
-		if (i < ep->remote_ports.remote_ports_len - 1)
 			print_msg(", ");
 	}
 	print_msg("]\n");

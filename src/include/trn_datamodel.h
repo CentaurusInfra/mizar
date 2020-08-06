@@ -29,6 +29,7 @@
 #define __ALWAYS_INLINE__ __attribute__((__always_inline__))
 
 #define TRAN_MAX_NEP 65537
+#define TRAN_MAX_NPORT 256
 #define TRAN_MAX_NSWITCH 32768
 #define TRAN_MAX_NROUTER 16384
 #define TRAN_MAX_REMOTES 256
@@ -58,6 +59,16 @@ enum trn_xdp_stage_t {
 	XDP_SCALED_EP_PROC
 };
 
+struct port_key_t {
+	__u32 tunip[3];
+	__u16 port;
+	__u8 protocol;
+} __attribute__((packed));
+
+struct port_t {
+	__u16 target_port;
+} __attribute__((packed, aligned(4)));
+
 struct endpoint_key_t {
 	__u32 tunip[3];
 } __attribute__((packed));
@@ -66,8 +77,6 @@ struct endpoint_t {
 	__u32 eptype;
 	__u32 nremote_ips;
 	__u32 remote_ips[TRAN_MAX_REMOTES];
-	__u32 nremote_ports;
-	__u16 remote_ports[TRAN_MAX_REMOTES];
 	int hosted_iface;
 	unsigned char mac[6];
 } __attribute__((packed, aligned(4)));

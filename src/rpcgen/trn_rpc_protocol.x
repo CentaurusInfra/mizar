@@ -66,7 +66,6 @@ struct rpc_trn_endpoint_t {
        uint32_t ip;
        uint32_t eptype;
        uint32_t remote_ips<RPC_TRN_MAX_REMOTE_IPS>;
-       uint16_t remote_ports<RPC_TRN_MAX_REMOTE_IPS>;
        unsigned char mac[6];
        string hosted_interface<20>;
        string veth<20>;
@@ -78,6 +77,25 @@ struct rpc_trn_endpoint_key_t {
        string interface<20>;
        uint64_t tunid;
        uint32_t ip;
+};
+
+/* Defines a port */
+struct rpc_trn_port_t {
+       string interface<20>;
+       uint32_t ip;
+       uint64_t tunid;
+       uint16_t port;
+       uint16_t target_port;
+       uint8_t protocol;
+};
+
+/* Defines a unique key to get/delete an RP (in DP) */
+struct rpc_trn_port_key_t {
+       string interface<20>;
+       uint64_t tunid;
+       uint32_t ip;
+       uint16_t port;
+       uint8_t protocol;
 };
 
 /* Defines a VPC */
@@ -149,29 +167,30 @@ program RPC_TRANSIT_REMOTE_PROTOCOL {
                 int UPDATE_VPC(rpc_trn_vpc_t) = 1;
                 int UPDATE_NET(rpc_trn_network_t) = 2;
                 int UPDATE_EP(rpc_trn_endpoint_t) = 3;
-                int UPDATE_AGENT_EP(rpc_trn_endpoint_t) = 4;
-                int UPDATE_AGENT_MD(rpc_trn_agent_metadata_t) = 5;
+                int UPDATE_PORT(rpc_trn_port_t) = 4;
+                int UPDATE_AGENT_EP(rpc_trn_endpoint_t) = 5;
+                int UPDATE_AGENT_MD(rpc_trn_agent_metadata_t) = 6;
 
-                int DELETE_VPC(rpc_trn_vpc_key_t) = 6;
-                int DELETE_NET(rpc_trn_network_key_t) = 7;
-                int DELETE_EP(rpc_trn_endpoint_key_t) = 8;
-                int DELETE_AGENT_EP(rpc_trn_endpoint_key_t) = 9;
-                int DELETE_AGENT_MD(rpc_intf_t) = 10;
+                int DELETE_VPC(rpc_trn_vpc_key_t) = 7;
+                int DELETE_NET(rpc_trn_network_key_t) = 8;
+                int DELETE_EP(rpc_trn_endpoint_key_t) = 9;
+                int DELETE_AGENT_EP(rpc_trn_endpoint_key_t) = 10;
+                int DELETE_AGENT_MD(rpc_intf_t) = 11;
 
-                rpc_trn_vpc_t      GET_VPC(rpc_trn_vpc_key_t) = 11;
-                rpc_trn_network_t  GET_NET(rpc_trn_network_key_t) = 12;
-                rpc_trn_endpoint_t GET_EP(rpc_trn_endpoint_key_t) = 13;
-                rpc_trn_endpoint_t GET_AGENT_EP(rpc_trn_endpoint_key_t) = 14;
-                rpc_trn_agent_metadata_t GET_AGENT_MD(rpc_intf_t) = 15;
+                rpc_trn_vpc_t      GET_VPC(rpc_trn_vpc_key_t) = 12;
+                rpc_trn_network_t  GET_NET(rpc_trn_network_key_t) = 13;
+                rpc_trn_endpoint_t GET_EP(rpc_trn_endpoint_key_t) = 14;
+                rpc_trn_endpoint_t GET_AGENT_EP(rpc_trn_endpoint_key_t) = 15;
+                rpc_trn_agent_metadata_t GET_AGENT_MD(rpc_intf_t) = 16;
 
-                int LOAD_TRANSIT_XDP(rpc_trn_xdp_intf_t) = 16;
-                int LOAD_TRANSIT_AGENT_XDP(rpc_trn_xdp_intf_t) = 17;
+                int LOAD_TRANSIT_XDP(rpc_trn_xdp_intf_t) = 17;
+                int LOAD_TRANSIT_AGENT_XDP(rpc_trn_xdp_intf_t) = 18;
 
-                int UNLOAD_TRANSIT_XDP(rpc_intf_t) = 18;
-                int UNLOAD_TRANSIT_AGENT_XDP(rpc_intf_t) = 19;
+                int UNLOAD_TRANSIT_XDP(rpc_intf_t) = 19;
+                int UNLOAD_TRANSIT_AGENT_XDP(rpc_intf_t) = 20;
 
-                int LOAD_TRANSIT_XDP_PIPELINE_STAGE(rpc_trn_ebpf_prog_t) = 20;
-                int UNLOAD_TRANSIT_XDP_PIPELINE_STAGE(rpc_trn_ebpf_prog_stage_t) = 21;
+                int LOAD_TRANSIT_XDP_PIPELINE_STAGE(rpc_trn_ebpf_prog_t) = 21;
+                int UNLOAD_TRANSIT_XDP_PIPELINE_STAGE(rpc_trn_ebpf_prog_stage_t) = 22;
           } = 1;
 
 } =  0x20009051;
