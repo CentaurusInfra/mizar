@@ -22,7 +22,6 @@
 import kopf
 import logging
 import luigi
-import epdb
 from mizar.common.common import *
 from mizar.common.constants import *
 from mizar.common.wf_factory import *
@@ -40,10 +39,7 @@ logger = logging.getLogger()
 @kopf.on.resume('arktos.futurewei.com', 'v1', 'networks', retries=OBJ_DEFAULTS.kopf_max_retries)
 @kopf.on.update('arktos.futurewei.com', 'v1', 'networks', retries=OBJ_DEFAULTS.kopf_max_retries)
 @kopf.on.create('arktos.futurewei.com', 'v1', 'networks', retries=OBJ_DEFAULTS.kopf_max_retries)
-def vpc_opr_on_vpc_init(body, spec, **kwargs):
-    print("hochan vpc_opr_on_vpc_init")
-    print(body)
-    epdb.serve(port=8888)
+def vpc_opr_on_vpc_init(body, spec, **kwargs):    
     param = HandlerParam()
     param.name = kwargs['name']
     param.body = body

@@ -128,5 +128,5 @@ class VpcOperator(object):
         # TODO: Keep track of VNI allocation
         pass
 
-    def get_network_stored_obj(self, name, body):
-        return Network(name, self.obj_api, body)
+    def create_network_stored_obj(self, name, vpcId, tenant):
+        return Network(name, self.obj_api, vpcId, tenant)

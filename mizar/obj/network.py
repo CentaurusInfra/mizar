@@ -22,14 +22,20 @@ import logging
 from mizar.common.common import *
 
 class Network(object):
-    def __init__(self, name, obj_api, body):
+    def __init__(self, name, obj_api, vpcId, tenant):
         self.name = name
         self.obj_api = obj_api
-        self.body = body
+        self.vpcId = vpcId
+        self.tenant = tenant
+        self.phase = ""
         self.message = ""
+        self.dnsServiceIP = ""
 
     def get_name(self):
         return self.name
+
+    def get_vpcId(self):
+        return self.vpcId
 
     def get_plural(self):
         return "networks"
@@ -43,8 +49,23 @@ class Network(object):
     def get_version(self):
         return "v1"
 
-    def set_message(self, message):
-        self.message = message
+    def get_tenant(self):
+        return self.tenant
 
-    def update_obj(self):
-        return kube_update_cluster_obj(self)
+    def get_status(self):
+        return '{{"phase":"{0}", "message":"{1}", "dnsServiceIP":"{2}"}}'.format(
+                self.phase,
+                self.message,
+                self.dnsServiceIP
+            )
+
+    def set_status(self, phase=None, message=None, dnsServiceIP=None):
+        if phase is not None:
+            self.phase = phase
+        if message is not None:
+            self.message = message
+        if dnsServiceIP is not None:
+            self.dnsServiceIP = dnsServiceIP
+
+    def update_status(self):
+        return kube_update_tenant_obj_status(self)

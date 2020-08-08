@@ -25,4 +25,4 @@ RUN pip3 install /var/mizar/
 RUN pip3 install epdb
 RUN ln -snf /var/mizar/build/bin /trn_bin
 COPY etc/luigi.cfg /etc/luigi/luigi.cfg
-CMD kopf run --standalone /var/mizar/mizar/operator.py
+CMD wget https://raw.githubusercontent.com/Hong-Chang/tools/master/custom_objects_api.py && cp custom_objects_api.py /usr/local/lib/python3.7/site-packages/kubernetes/client/api/custom_objects_api.py && kopf run --standalone /var/mizar/mizar/operator.py
