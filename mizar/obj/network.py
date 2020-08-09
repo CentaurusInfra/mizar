@@ -22,14 +22,32 @@ import logging
 from mizar.common.common import *
 
 class Network(object):
-    def __init__(self, name, obj_api, vpcId, tenant):
+    def __init__(self, name, obj_api, opr_store, vpcId, tenant, resourceVersion):
         self.name = name
         self.obj_api = obj_api
+        self.store = opr_store
         self.vpcId = vpcId
         self.tenant = tenant
+        self.resourceVersion = resourceVersion
+
         self.phase = ""
         self.message = ""
         self.dnsServiceIP = ""
+
+    def get_obj_spec(self):
+        return {
+            "apiVersion": "{0}/{1}".format(self.get_group(), self.get_version()),
+            "kind": self.get_kind(),
+            "metadata": {
+                "name": self.name,
+                "resourceVersion": self.resourceVersion
+            },
+            "status": {
+                "phase": self.phase,
+                "message": self.message,
+                "dnsServiceIP": self.dnsServiceIP
+            }
+        }
 
     def get_name(self):
         return self.name
@@ -43,6 +61,16 @@ class Network(object):
     def get_kind(self):
         return "Network"
 
+    def store_update_obj(self):
+        if self.store is None:
+            return
+        self.store.update_network(self) # todo hochan implement
+
+    def store_delete_obj(self):
+        if self.store is None:
+            return
+        self.store.delete_network(self.name) # todo hochan implement
+
     def get_group(self):
         return "arktos.futurewei.com"
 
@@ -51,6 +79,12 @@ class Network(object):
 
     def get_tenant(self):
         return self.tenant
+
+    def get_resourceVersion(self):
+        return self.resourceVersion
+
+    def set_status(self, resourceVersion):
+        self.resourceVersion = resourceVersion
 
     def get_status(self):
         return '{{"phase":"{0}", "message":"{1}", "dnsServiceIP":"{2}"}}'.format(

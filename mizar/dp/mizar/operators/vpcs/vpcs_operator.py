@@ -129,4 +129,4 @@ class VpcOperator(object):
         pass
 
     def create_network_stored_obj(self, name, vpcId, tenant):
-        return Network(name, self.obj_api, vpcId, tenant)
+        return Network(name, self.obj_api, self.store, vpcId, tenant)

@@ -51,7 +51,7 @@ class OprStore(object):
         self.bouncers_net_store = {}
         self.bouncers_vpc_store = {}
 
-        self.arktos_vpc_store = {} # then add entry to it
+        self.networks_store = {}
 
     def update_vpc(self, vpc):
         self.vpcs_store[vpc.name] = vpc
@@ -277,3 +277,24 @@ class OprStore(object):
         for b in self.bouncers_store.values():
             logger.info("Bouncer: {}, Spec: {}".format(
                 b.name, b.get_obj_spec()))
+
+    def update_network_vpc(self, network):
+        self.networks_store[network.name] = network
+
+    def delete_network(self, name):
+        if name in self.networks_store:
+            del self.networks_store[name]
+
+    def get_network(self, name):
+        if name in self.networks_store:
+            return self.networks_store[name]
+        return None
+
+    def contains_network(self, name):
+        if name in self.networks_store:
+            return True
+        return False
+
+    def _dump_networks(self):
+        for v in self.networks_store.values():
+            logger.info("Network: {}, Spec: {}".format(v.name, v.get_obj_spec()))

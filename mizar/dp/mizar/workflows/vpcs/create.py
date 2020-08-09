@@ -35,8 +35,9 @@ class VpcCreate(WorkflowTask):
         return []
 
     def run(self):        
-        logger.info("Run {task}".format(task=self.__class__.__name__))
+        logger.info("Run {task}".format(task=self.__class__.__name__))        
         if self.param.body["kind"] == "Network":
+            epdb.serve(port=8888)
             vpcId = self.param.body['spec']['vpcID']            
             network = vpcs_opr.create_network_stored_obj(
                 name=self.param.name,
@@ -48,11 +49,9 @@ class VpcCreate(WorkflowTask):
                 error_message = "No VPC found with id {}".format(vpcId)
                 network.set_status(phase="Failed", message=error_message)
                 network.update_status()
-            else:
-                epdb.serve(port=8888)
+            else:                
                 pass
 
-            pass
             # operator_store add entry to arktos_vpc_store
         else:
             v = vpcs_opr.get_vpc_stored_obj(self.param.name, self.param.spec)
