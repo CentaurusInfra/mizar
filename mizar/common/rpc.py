@@ -139,8 +139,8 @@ class TrnRpc:
         jsonconf = {
             "tunnel_id": tunid,
             "ip": ip,
-            "port": str(port),
-            "target_port": str(target_port),
+            "port": port,
+            "target_port": target_port,
             "protocol": protocol,
         }
         jsonconf = json.dumps(jsonconf)

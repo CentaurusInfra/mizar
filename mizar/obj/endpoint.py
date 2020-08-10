@@ -292,10 +292,10 @@ class Endpoint:
         return remote_ips
 
     def get_remote_ports(self):
-        return [port[1][0] for port in self.ports]
+        return [str(port[1][0]) for port in self.ports]
 
     def get_frontend_ports(self):
-        return [port[0] for port in self.ports]
+        return [str(port[0]) for port in self.ports]
 
     def get_port_protocols(self):
         return [port[1][1] for port in self.ports]

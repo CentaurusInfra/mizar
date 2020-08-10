@@ -171,7 +171,7 @@ class EndpointOperator(object):
             return
         service_spec = list(service.metadata.annotations.values())
         json_spec = json.loads(service_spec[0])
-        # port = {frontend_port: [backend_port, protocol]}
+        # ports = {frontend_port: [backend_port, protocol]}
         if isinstance(json_spec, dict):
             for port in json_spec["spec"]["ports"]:
                 ports[port["port"]] = []
