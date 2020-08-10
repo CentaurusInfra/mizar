@@ -1,6 +1,8 @@
 package v1alpha1
 
 import (
+	"reflect"
+
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextension "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -23,7 +25,7 @@ func CreateCRD(clientset apiextension.Interface) error {
 			Scope:   apiextensionv1beta1.NamespaceScoped,
 			Names: apiextensionv1beta1.CustomResourceDefinitionNames{
 				Plural: CRDPlural,
-				//Kind:   reflect.TypeOf(Vpc{}).Name(),
+				Kind:   reflect.TypeOf(Vpc{}).Name(),
 			},
 		},
 	}
