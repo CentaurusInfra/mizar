@@ -100,7 +100,7 @@ class OBJ_DEFAULTS:
 
 class RESOURCES:
     endpoints = "endpoints"
-    nets = "nets"
+    nets = "subnets"
     vpcs = "vpcs"
     droplets = "droplets"
     bouncers = "bouncers"
