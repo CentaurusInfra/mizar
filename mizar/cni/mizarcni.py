@@ -150,7 +150,7 @@ class Cni:
         if (veth_index in actived_idxs):
             return
 
-        logger.error("Move interface {}/{} to netns {}".format(
+        logger.info("Move interface {}/{} to netns {}".format(
             interface.veth.name, veth_index, netns))
         self.iproute.link('set', index=veth_index, net_ns_fd=netns)
 

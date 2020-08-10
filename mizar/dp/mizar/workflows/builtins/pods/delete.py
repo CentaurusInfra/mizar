@@ -21,24 +21,10 @@
 
 import logging
 from mizar.common.workflow import *
-from mizar.dp.mizar.operators.bouncers.bouncers_operator import *
 from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
 logger = logging.getLogger()
 
-
-import logging
-from mizar.common.workflow import *
-
-from mizar.dp.mizar.operators.bouncers.bouncers_operator import *
-from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
-from mizar.dp.mizar.operators.nets.nets_operator import *
-
-logger = logging.getLogger()
-
-bouncers_opr = BouncerOperator()
 endpoints_opr = EndpointOperator()
-nets_opr = NetOperator()
-
 
 class k8sPodDelete(WorkflowTask):
 
@@ -51,8 +37,7 @@ class k8sPodDelete(WorkflowTask):
         eps = endpoints_opr.store.get_eps_in_pod(self.param.name)
         logger.info("Deleting Pod {}".format(self.param.name))
 
-        for ep in eps:
-            ep_obj = endpoints_opr.store.get_ep(ep)
-            endpoints_opr.delete_simple_endpoint(ep_obj)
+        for ep in eps.values():
+            endpoints_opr.delete_simple_endpoint(ep)
 
         self.finalize()
