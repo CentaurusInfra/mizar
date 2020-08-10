@@ -278,7 +278,7 @@ class OprStore(object):
             logger.info("Bouncer: {}, Spec: {}".format(
                 b.name, b.get_obj_spec()))
 
-    def update_network_vpc(self, network):
+    def update_network(self, network):
         self.networks_store[network.name] = network
 
     def delete_network(self, name):

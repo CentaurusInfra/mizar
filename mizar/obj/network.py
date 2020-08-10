@@ -22,17 +22,72 @@ import logging
 from mizar.common.common import *
 
 class Network(object):
-    def __init__(self, name, obj_api, opr_store, vpcId, tenant, resourceVersion):
+    def __init__(self, name, obj_api, opr_store, body):
         self.name = name
         self.obj_api = obj_api
         self.store = opr_store
-        self.vpcId = vpcId
-        self.tenant = tenant
-        self.resourceVersion = resourceVersion
+        self.vpcName = body['spec']['vpcID']
+        self.tenant = body['metadata']['tenant']
+        self.resourceVersion = body['metadata']['resourceVersion']
 
         self.phase = ""
         self.message = ""
         self.dnsServiceIP = ""
+    
+    def get_name(self):
+        return self.name
+
+    def get_vpcName(self):
+        return self.vpcName
+
+    def get_plural(self):
+        return "networks"
+
+    def get_kind(self):
+        return "Network"
+    
+    def get_group(self):
+        return "arktos.futurewei.com"
+
+    def get_version(self):
+        return "v1"
+
+    def get_tenant(self):
+        return self.tenant
+
+    def get_resourceVersion(self):
+        return self.resourceVersion
+
+    def set_resourceVersion(self, resourceVersion):
+        self.resourceVersion = resourceVersion
+
+    def get_phase(self):
+        return self.phase
+
+    def set_phase(self, phase):
+        self.phase = phase
+
+    def get_message(self):
+        return self.message
+
+    def set_message(self, message):
+        self.message = message
+
+    def get_dnsServiceIP(self):
+        return self.dnsServiceIP
+
+    def set_dnsServiceIP(self, dnsServiceIP):
+        self.dnsServiceIP = dnsServiceIP
+
+    def store_update_obj(self):
+        if self.store is None:
+            return
+        self.store.update_network(self)
+
+    def store_delete_obj(self):
+        if self.store is None:
+            return
+        self.store.delete_network(self.name)
 
     def get_obj_spec(self):
         return {
@@ -48,58 +103,6 @@ class Network(object):
                 "dnsServiceIP": self.dnsServiceIP
             }
         }
-
-    def get_name(self):
-        return self.name
-
-    def get_vpcId(self):
-        return self.vpcId
-
-    def get_plural(self):
-        return "networks"
-
-    def get_kind(self):
-        return "Network"
-
-    def store_update_obj(self):
-        if self.store is None:
-            return
-        self.store.update_network(self) # todo hochan implement
-
-    def store_delete_obj(self):
-        if self.store is None:
-            return
-        self.store.delete_network(self.name) # todo hochan implement
-
-    def get_group(self):
-        return "arktos.futurewei.com"
-
-    def get_version(self):
-        return "v1"
-
-    def get_tenant(self):
-        return self.tenant
-
-    def get_resourceVersion(self):
-        return self.resourceVersion
-
-    def set_status(self, resourceVersion):
-        self.resourceVersion = resourceVersion
-
-    def get_status(self):
-        return '{{"phase":"{0}", "message":"{1}", "dnsServiceIP":"{2}"}}'.format(
-                self.phase,
-                self.message,
-                self.dnsServiceIP
-            )
-
-    def set_status(self, phase=None, message=None, dnsServiceIP=None):
-        if phase is not None:
-            self.phase = phase
-        if message is not None:
-            self.message = message
-        if dnsServiceIP is not None:
-            self.dnsServiceIP = dnsServiceIP
 
     def update_status(self):
         return kube_update_tenant_obj_status(self)

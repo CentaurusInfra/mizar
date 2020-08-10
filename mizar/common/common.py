@@ -167,8 +167,6 @@ def kube_update_tenant_obj_status(obj):
     tenant = obj.get_tenant()
     plural = obj.get_plural()
     name = obj.get_name()
-    kind = obj.get_kind()
-    status = obj.get_status()
 
     # Get object from api to retrieve latest resourceVersion
     body = obj.obj_api.get_tenant_custom_object(
@@ -177,24 +175,16 @@ def kube_update_tenant_obj_status(obj):
         tenant=tenant,
         plural=plural,
         name=name)
-    resourceVersion = body['metadata']['resourceVersion']    
+    obj.set_resourceVersion(body['metadata']['resourceVersion'])
     
-    data = json.loads('{{"apiVersion":"{0}/{1}","kind":"{2}","metadata":{{"name":"{3}","resourceVersion":"{4}"}},"status":{5}}}'.format(
-        group,
-        version,
-        kind,
-        name,
-        resourceVersion,
-        status
-    ))    
     body = obj.obj_api.replace_tenant_custom_object_status_with_http_info(
         group=group,
         version=version,
         tenant=tenant,
         plural=plural,
         name=name,
-        body=data)
-
+        body=obj.get_obj_spec())
+    obj.set_resourceVersion(body['metadata']['resourceVersion'])
 
 def kube_delete_obj(obj):
     try:

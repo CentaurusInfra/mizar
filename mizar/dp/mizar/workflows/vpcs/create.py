@@ -37,22 +37,22 @@ class VpcCreate(WorkflowTask):
     def run(self):        
         logger.info("Run {task}".format(task=self.__class__.__name__))        
         if self.param.body["kind"] == "Network":
-            epdb.serve(port=8888)
-            vpcId = self.param.body['spec']['vpcID']            
+            epdb.serve(port=8888)         
             network = vpcs_opr.create_network_stored_obj(
                 name=self.param.name,
-                vpcId=vpcId,
-                tenant=self.param.body['metadata']['tenant'])
-
-            vpc = vpcs_opr.store_get(vpcId)
-            if vpc is None:                
-                error_message = "No VPC found with id {}".format(vpcId)
-                network.set_status(phase="Failed", message=error_message)
+                body=self.param.body)
+            vpcName = network.get_vpcName()
+            vpc = vpcs_opr.store_get(vpcName)
+            if vpc is None:
+                network.set_phase("Failed")
+                network.set_message("No VPC found with name {}".format(vpcName))
                 network.update_status()
-            else:                
-                pass
-
-            # operator_store add entry to arktos_vpc_store
+            else:
+                # todo hochan set dns
+                network.set_phase("Ready")
+                network.set_dnsServiceIP("10.0.0.1")
+                network.update_status()
+                vpcs_opr.store_update_network(network)
         else:
             v = vpcs_opr.get_vpc_stored_obj(self.param.name, self.param.spec)
             vpcs_opr.allocate_vni(v)
