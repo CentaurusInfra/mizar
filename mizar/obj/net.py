@@ -78,7 +78,7 @@ class Net(object):
         return self.name
 
     def get_plural(self):
-        return "nets"
+        return "subnets"
 
     def get_kind(self):
         return "Net"
