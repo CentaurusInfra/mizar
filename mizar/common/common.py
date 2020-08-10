@@ -24,7 +24,6 @@ import ctypes
 import logging
 import luigi
 import kopf
-import json
 import datetime
 import dateutil.parser
 from kubernetes import watch, client

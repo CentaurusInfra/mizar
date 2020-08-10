@@ -25,4 +25,9 @@ RUN pip3 install /var/mizar/
 RUN pip3 install epdb
 RUN ln -snf /var/mizar/build/bin /trn_bin
 COPY etc/luigi.cfg /etc/luigi/luigi.cfg
+# Following is a temporary hack to support updating arktos api server
+# Current python is using kubenetes client which doesn't support arktos. We add arktos needed api in custom_objects_api.py, hence the client can support arktos api server.
+# Later Mizar will using proxy to communicate with api server, then the hack can be removed.
 CMD wget https://raw.githubusercontent.com/Hong-Chang/tools/master/custom_objects_api.py && cp custom_objects_api.py /usr/local/lib/python3.7/site-packages/kubernetes/client/api/custom_objects_api.py && kopf run --standalone /var/mizar/mizar/operator.py
+# After above hack removed, uncommend next line.
+# CMD kopf run --standalone /var/mizar/mizar/operator.py
