@@ -49,7 +49,7 @@ class VpcCreate(WorkflowTask):
             else:
                 network.set_phase("Pending")
                 network.update_status()
-                vpcs_opr.store_update_network(network)
+            vpcs_opr.store_update_network(network)
         else:
             v = vpcs_opr.get_vpc_stored_obj(self.param.name, self.param.spec)
             vpcs_opr.allocate_vni(v)

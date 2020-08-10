@@ -134,5 +134,5 @@ class VpcOperator(object):
     def store_update_network(self, network):
         self.store.update_network(network)
 
-    def store_get_network_by_vpc(self, vpcName):
-        return self.store.get_network_by_vpc(vpcName)
+    def store_get_network(self, name):
+        return self.store.get_network(name)
