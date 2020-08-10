@@ -20,7 +20,6 @@
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import logging
-import epdb
 from mizar.common.workflow import *
 from mizar.dp.mizar.operators.vpcs.vpcs_operator import *
 logger = logging.getLogger()
@@ -34,10 +33,10 @@ class VpcCreate(WorkflowTask):
         logger.info("Requires {task}".format(task=self.__class__.__name__))
         return []
 
-    def run(self):        
+    def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))        
-        if self.param.body["kind"] == "Network":
-            epdb.serve(port=8888)         
+
+        if self.param.body["kind"] == "Network":                   
             network = vpcs_opr.create_network_stored_obj(
                 name=self.param.name,
                 body=self.param.body)
@@ -48,9 +47,7 @@ class VpcCreate(WorkflowTask):
                 network.set_message("No VPC found with name {}".format(vpcName))
                 network.update_status()
             else:
-                # todo hochan set dns
-                network.set_phase("Ready")
-                network.set_dnsServiceIP("10.0.0.1")
+                network.set_phase("Pending")
                 network.update_status()
                 vpcs_opr.store_update_network(network)
         else:
