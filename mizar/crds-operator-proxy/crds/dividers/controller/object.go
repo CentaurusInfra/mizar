@@ -17,7 +17,7 @@ func (c *Controller) CreateObject() error {
 			Namespace: corev1.NamespaceDefault,
 		},
 		Spec: dividerv1.DividerSpec{
-			vpc:            "vpc1",
+			Vpc:            "vpc1",
 			Ip:             "10.0.0.1",
 			Mac:            "AA-BB-CC-DD-00-11",
 			Droplet:        "Droplet1",

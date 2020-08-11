@@ -64,15 +64,14 @@ func (c *Controller) CreateCRD() error {
 						"spec": {
 							Type: "object",
 							Properties: map[string]apiextensions.JSONSchemaProps{
-								"ip":             {Type: "string"},
-								"prefix":         {Type: "string"},
-								"vni":            {Type: "string"},
-								"dividers":       {Type: "string"},
-								"status":         {Type: "string"},
-								"createtime":     {Type: "string"},
-								"provisiondelay": {Type: "string"},
+								"mac":             	{Type: "string"},
+								"ip":         		{Type: "string"},
+								"status":           {Type: "string"},
+								"interface":       	{Type: "string"},
+								"createtime":     	{Type: "string"},
+								"provisiondelay": 	{Type: "string"},
 							},
-							Required: []string{"ip", "prefix", "status"},
+							Required: []string{"mac", "ip", "interface"},
 						},
 					},
 				},
@@ -125,3 +124,4 @@ func (c *Controller) CreateCRD() error {
 
 	return c.waitCRDAccepted()
 }
+

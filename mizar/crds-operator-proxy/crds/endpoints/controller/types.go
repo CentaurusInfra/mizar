@@ -16,18 +16,19 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog"
 
-	endpointclienteset "mizar.com/crds-operator-proxy/crds/endpoints/apis/generated/clientset/versioned"
+	endpointclientset "mizar.com/crds-operator-proxy/crds/endpoints/apis/generated/clientset/versioned"
 	endpointscheme "mizar.com/crds-operator-proxy/crds/endpoints/apis/generated/clientset/versioned/scheme"
 	endpointinformers "mizar.com/crds-operator-proxy/crds/endpoints/apis/generated/informers/externalversions"
+	endpointlisters "mizar.com/crds-operator-proxy/crds/endpoints/apis/generated/listers/apis/v1"	
 	endpointv1 "mizar.com/crds-operator-proxy/crds/endpoints/apis/v1"
 )
 
 type Controller struct {
 	kubeclientset          kubernetes.Interface
 	apiextensionsclientset apiextensionsclientset.Interface
-	endpointclientset      endpointclienteset.Interface
+	endpointclientset      endpointclientset.Interface
 	informer               cache.SharedIndexInformer
-	lister                 endpointlisters.endpointLister
+	lister                 endpointlisters.EndpointLister
 	recorder               record.EventRecorder
 	workqueue              workqueue.RateLimitingInterface
 }
@@ -42,10 +43,10 @@ func NewController() *Controller {
 
 	kubeClient := kubernetes.NewForConfigOrDie(config)
 	apiextensionsClient := apiextensionsclientset.NewForConfigOrDie(config)
-	testClient := endpointclienteset.NewForConfigOrDie(config)
+	testClient := endpointclientset.NewForConfigOrDie(config)
 
 	informerFactory := endpointinformers.NewSharedInformerFactory(testClient, time.Minute*1)
-	informer := informerFactory.Mizar().V1().endpoints()
+	informer := informerFactory.Mizar().V1().Endpoints()
 
 	utilruntime.Must(endpointv1.AddToScheme(endpointscheme.Scheme))
 	eventBroadcaster := record.NewBroadcaster()
@@ -74,3 +75,4 @@ func NewController() *Controller {
 
 	return c
 }
+

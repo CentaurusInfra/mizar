@@ -12,8 +12,8 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog"
-	endpointv1 "mizar.com/crds-operator-proxy/crds/Endpoints/apis/v1"
-	pb "mizar.com/crds-operator-proxy/grpc/Endpoints"
+	endpointv1 "mizar.com/crds-operator-proxy/crds/endpoints/apis/v1"
+	pb "mizar.com/crds-operator-proxy/grpc/endpoints"
 )
 
 const (
@@ -128,18 +128,77 @@ func gRPCRequest(command int, object interface{}) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	switch command {
-	case CREATE:
-		_, err = clientcon.CreateEndpoint(ctx, object)
-	case UPDATE:
-		_, err = clientcon.UpdateEndpoint(ctx, object)
-	case DELETE:
-		_, err = clientcon.DeleteEndpoint(ctx, object)
-	case READ:
-		var response string
-		response, err = clientcon.ReadEndpoint(ctx, object)
-		log.Printf("Read Endpoint: %s", response)
-	case RESUME:
-		_, err = clientcon.ResumeEndpoint(ctx, object)
+	case 1:
+		objectin := object.(*endpointv1.Endpoint)
+		objectspec := objectin.Spec
+		var resource pb.Endpoint
+		resource = pb.Endpoint{Type: string(objectspec.Type), 
+                        Mac: string(objectspec.Mac), 
+                        Ip: string(objectspec.Ip), 
+                        Gw: string(objectspec.Gw), 
+			Status: string(objectspec.Status), 
+			Network: string(objectspec.Network), 
+			Vpc: string(objectspec.Vpc), 
+			Vni: string(objectspec.Vni), 
+			Droplet: string(objectspec.Droplet), 
+			Interface: string(objectspec.Interface), 
+			Veth: string(objectspec.Veth), 
+			HostIp: string(objectspec.HostIp), 
+			HostMac: string(objectspec.HostMac), 
+			CreateTime: string(objectspec.CreateTime), 
+                        ProvisionDelay: string(objectspec.ProvisionDelay),
+			CniDelay: string(objectspec.CniDelay), }
+		_, err = clientcon.CreateEndpoint(ctx, &resource)
+	case 2:
+		objectin := object.(*endpointv1.Endpoint)
+		objectspec := objectin.Spec
+		var resource pb.Endpoint
+		resource = pb.Endpoint{Type: string(objectspec.Type), 
+                        Mac: string(objectspec.Mac), 
+                        Ip: string(objectspec.Ip), 
+                        Gw: string(objectspec.Gw), 
+			Status: string(objectspec.Status), 
+			Network: string(objectspec.Network), 
+			Vpc: string(objectspec.Vpc), 
+			Vni: string(objectspec.Vni), 
+			Droplet: string(objectspec.Droplet), 
+			Interface: string(objectspec.Interface), 
+			Veth: string(objectspec.Veth), 
+			HostIp: string(objectspec.HostIp), 
+			HostMac: string(objectspec.HostMac), 
+			CreateTime: string(objectspec.CreateTime), 
+                        ProvisionDelay: string(objectspec.ProvisionDelay),
+			CniDelay: string(objectspec.CniDelay), }
+		_, err = clientcon.UpdateEndpoint(ctx, &resource)
+	case 3:
+		objectin := object.(*endpointv1.Endpoint)
+		objectName := objectin.Name
+		_, err := clientcon.DeleteEndpoint(ctx, &pb.EndpointId{Id: objectName})
+		if err != nil {
+			log.Fatalf("%v", err)
+			return
+		}
+	case 4:
+		objectin := object.(*endpointv1.Endpoint)
+		objectName := objectin.Name
+		r, err := clientcon.ReadEndpoint(ctx, &pb.EndpointId{Id: objectName})
+		log.Printf("Read Endpoint: %v", r)
+		if err != nil {
+			log.Fatalf("%v", err)
+			return
+		}
+		if err != nil {
+			log.Fatalf("%v", err)
+			return
+		}
+	case 5:
+		objectin := object.(*endpointv1.Endpoint)
+		objectName := objectin.Name
+		_, err := clientcon.ResumeEndpoint(ctx, &pb.EndpointId{Id: objectName})
+		if err != nil {
+			log.Fatalf("%v", err)
+			return
+		}
 	default:
 		log.Println("command is not correct")
 	}
@@ -149,3 +208,4 @@ func gRPCRequest(command int, object interface{}) {
 	}
 	log.Printf("Returned Client")
 }
+

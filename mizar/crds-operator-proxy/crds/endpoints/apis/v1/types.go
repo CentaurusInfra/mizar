@@ -7,7 +7,7 @@ const (
 	GroupName string = "mizar.com"
 	Kind      string = "Endpoint"
 	Version   string = "v1"
-	Plural    string = "Vpcs"
+	Plural    string = "endpoints"
 	Singluar  string = "endpoint"
 	ShortName string = "ep"
 	Name      string = Plural + "." + GroupName
@@ -15,7 +15,7 @@ const (
 
 // Vpcspec specifies the 'spec' of Endpoint CRD.
 // filed_name type tag (e.g: `json:"ip"`)
-type Vpcspec struct {
+type EndpointSpec struct {
 	Type           string `json:"type"`
 	Mac            string `json:"mac"`
 	Ip             string `json:"ip"`
@@ -39,11 +39,11 @@ type Vpcspec struct {
 
 // Endpoint describes a Endpoint custom resource.
 type Endpoint struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta   	`json:",inline"`
+	metav1.ObjectMeta 	`json:"metadata,omitempty"`
 
-	Spec   Vpcspec `json:"spec"`
-	Status string  `json:"status"`
+	Spec   EndpointSpec `json:"spec"`
+	Status string  		`json:"status"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -55,3 +55,4 @@ type EndpointList struct {
 
 	Items []Endpoint `json:"items"`
 }
+

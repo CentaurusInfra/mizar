@@ -61,7 +61,7 @@ func (c *Controller) objectAddedCallback(object interface{}) {
 	// If the object is not handled yet, handle it by modifying its Status.
 	copy := resource.DeepCopy()
 	copy.Status = statusMessage
-	_, err := c.dividerclientset.MizarV1().Dvidervs(corev1.NamespaceDefault).Update(copy)
+	_, err := c.dividerclientset.MizarV1().Dividers(corev1.NamespaceDefault).Update(copy)
 	if err != nil {
 		klog.Errorf(err.Error())
 		return
@@ -84,7 +84,7 @@ func (c *Controller) objectUpdatedCallback(oldObject, newObject interface{}) {
 	// If the object is not handled yet, handle it by modifying its Status.
 	copy := resource.DeepCopy()
 	copy.Status = statusMessage
-	_, err := c.vpcclientset.MizarV1().Dividers(corev1.NamespaceDefault).Update(copy)
+	_, err := c.dividerclientset.MizarV1().Dividers(corev1.NamespaceDefault).Update(copy)
 	if err != nil {
 		klog.Errorf(err.Error())
 		return
@@ -123,27 +123,57 @@ func gRPCRequest(command int, object interface{}) {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	clientcon := pb.NewVpcsServiceClient(conn)
+	clientcon := pb.NewDividersServiceClient(conn)
 	// Contact the server and request crd services.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	switch command {
-	case CREATE:
-		_, err = clientcon.CreateDivider(ctx, object)
-	case UPDATE:
-		_, err = clientcon.UpdateDivider(ctx, object)
-	case DELETE:
-		_, err = clientcon.DeleteDivider(ctx, object)
-	case READ:
-		var response string
-		response, err = clientcon.ReadDivider(ctx, object)
-		log.Printf("Read VPC: %s", response)
-	case RESUME:
-		_, err = clientcon.ResumeDivider(ctx, object)
+	case 1:
+		objectin := object.(*dividerv1.Divider)
+		objectspec := objectin.Spec
+		//fmt.Println("spec=%v", objectspec)
+		var resource pb.Divider
+		resource = pb.Divider{Vpc: string(objectspec.Vpc), Ip: string(objectspec.Ip), Mac: string(objectspec.Mac), Droplet: string(objectspec.Droplet), Status: string(objectspec.Status), CreateTime: string(objectspec.CreateTime), ProvisionDelay: string(objectspec.ProvisionDelay)}
+		//clientcon.CreateVpc(ctx, &pb.Vpc{Ip: string(vpcspec.Ip), Prefix: "10.0.0.0", Vni: "16777210", Dividers: "2", Status: "active", CreateTime: "2020-07-20", ProvisionDelay: "20"})
+		_, err = clientcon.CreateDivider(ctx, &resource)
+	case 2:
+		objectin := object.(*dividerv1.Divider)
+		objectspec := objectin.Spec
+		var resource pb.Divider
+		resource = pb.Divider{Vpc: string(objectspec.Vpc), Ip: string(objectspec.Ip), Mac: string(objectspec.Mac), Droplet: string(objectspec.Droplet), Status: string(objectspec.Status), CreateTime: string(objectspec.CreateTime), ProvisionDelay: string(objectspec.ProvisionDelay)}
+		_, err = clientcon.UpdateDivider(ctx, &resource)
+	case 3:
+		objectin := object.(*dividerv1.Divider)
+		objectName := objectin.Name
+		_, err := clientcon.DeleteDivider(ctx, &pb.DividerId{Id: objectName})
+		if err != nil {
+			log.Fatalf("%v", err)
+			return
+		}
+	case 4:
+		objectin := object.(*dividerv1.Divider)
+		objectName := objectin.Name
+		r, err := clientcon.ReadDivider(ctx, &pb.DividerId{Id: objectName})
+		log.Printf("Read Divider: %v", r)
+		if err != nil {
+			log.Fatalf("%v", err)
+			return
+		}
+		if err != nil {
+			log.Fatalf("%v", err)
+			return
+		}
+	case 5:
+		objectin := object.(*dividerv1.Divider)
+		objectName := objectin.Name
+		_, err := clientcon.ResumeDivider(ctx, &pb.DividerId{Id: objectName})
+		if err != nil {
+			log.Fatalf("%v", err)
+			return
+		}
 	default:
 		log.Println("command is not correct")
 	}
-	//errorMessage = err
 	if err != nil {
 		log.Fatalf("could not create: %v", err)
 	}

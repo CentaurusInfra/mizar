@@ -133,12 +133,14 @@ func gRPCRequest(command int, object interface{}) {
 		objectspec := objectin.Spec
 		//fmt.Println("spec=%v", objectspec)
 		var resource pb.Bouncer
-		resource = pb.Bouncer{vpc: string(objectspec.vpc), net: string(objectspec.net), Ip: string(objectspec.Ip), Mac: string(objectspec.Mac), Droplet: string(objectspec.Droplet), Status: string(objectspec.Status), CreateTime: string(objectspec.CreateTime), ProvisionDelay: string(objectspec.ProvisionDelay)}
+		resource = pb.Bouncer{Vpc: string(objectspec.Vpc), Net: string(objectspec.Net), Ip: string(objectspec.Ip), Mac: string(objectspec.Mac), Droplet: string(objectspec.Droplet), Status: string(objectspec.Status), CreateTime: string(objectspec.CreateTime), ProvisionDelay: string(objectspec.ProvisionDelay)}
 		//clientcon.CreateVpc(ctx, &pb.Vpc{Ip: string(vpcspec.Ip), Prefix: "10.0.0.0", Vni: "16777210", Dividers: "2", Status: "active", CreateTime: "2020-07-20", ProvisionDelay: "20"})
 		_, err = clientcon.CreateBouncer(ctx, &resource)
 	case 2:
+                objectin := object.(*bouncerv1.Bouncer)
+		objectspec := objectin.Spec
 		var resource pb.Bouncer
-		resource = pb.Bouncer{vpc: string(objectspec.vpc), net: string(objectspec.net), Ip: string(objectspec.Ip), Mac: string(objectspec.Mac), Droplet: string(objectspec.Droplet), Status: string(objectspec.Status), CreateTime: string(objectspec.CreateTime), ProvisionDelay: string(objectspec.ProvisionDelay)}
+		resource = pb.Bouncer{Vpc: string(objectspec.Vpc), Net: string(objectspec.Net), Ip: string(objectspec.Ip), Mac: string(objectspec.Mac), Droplet: string(objectspec.Droplet), Status: string(objectspec.Status), CreateTime: string(objectspec.CreateTime), ProvisionDelay: string(objectspec.ProvisionDelay)}
 		//clientcon.CreateVpc(ctx, &pb.Vpc{Ip: string(vpcspec.Ip), Prefix: "10.0.0.0", Vni: "16777210", Dividers: "2", Status: "active", CreateTime: "2020-07-20", ProvisionDelay: "20"})
 		_, err = clientcon.UpdateBouncer(ctx, &resource)
 	case 3:

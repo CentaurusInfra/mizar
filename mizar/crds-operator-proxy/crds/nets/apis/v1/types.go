@@ -7,7 +7,7 @@ const (
 	GroupName string = "mizar.com"
 	Kind      string = "Net"
 	Version   string = "v1"
-	NetPlural string = "nets"
+	Plural    string = "nets"
 	Singluar  string = "net"
 	ShortName string = "net"
 	Name      string = Plural + "." + GroupName

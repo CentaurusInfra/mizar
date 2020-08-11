@@ -6,7 +6,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	endpointv1 "mizar.com/crds-operator-proxy/crds/Endpoints/apis/v1"
+	endpointv1 "mizar.com/crds-operator-proxy/crds/endpoints/apis/v1"
 )
 
 // Create a Endpoint object.

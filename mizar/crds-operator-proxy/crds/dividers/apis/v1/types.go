@@ -16,7 +16,7 @@ const (
 // DividerSpec specifies the 'spec' of Divider CRD.
 // filed_name type tag (e.g: `json:"ip"`)
 type DividerSpec struct {
-	vpc            string `json:"vpc"`
+	Vpc            string `json:"vpc"`
 	Ip             string `json:"ip"`
 	Mac            string `json:"mac"`
 	Droplet        string `json:"droplet"`

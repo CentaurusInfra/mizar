@@ -16,7 +16,7 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog"
 
-	dividerclienteset "mizar.com/crds-operator-proxy/crds/dividers/apis/generated/clientset/versioned"
+	dividerclientset "mizar.com/crds-operator-proxy/crds/dividers/apis/generated/clientset/versioned"
 	dividerscheme "mizar.com/crds-operator-proxy/crds/dividers/apis/generated/clientset/versioned/scheme"
 	dividerinformers "mizar.com/crds-operator-proxy/crds/dividers/apis/generated/informers/externalversions"
 	dividerlisters "mizar.com/crds-operator-proxy/crds/dividers/apis/generated/listers/apis/v1"
@@ -26,7 +26,7 @@ import (
 type Controller struct {
 	kubeclientset          kubernetes.Interface
 	apiextensionsclientset apiextensionsclientset.Interface
-	dividerclientset       dividerclienteset.Interface
+	dividerclientset       dividerclientset.Interface
 	informer               cache.SharedIndexInformer
 	lister                 dividerlisters.DividerLister
 	recorder               record.EventRecorder
@@ -46,7 +46,7 @@ func NewController() *Controller {
 	testClient := dividerclientset.NewForConfigOrDie(config)
 
 	informerFactory := dividerinformers.NewSharedInformerFactory(testClient, time.Minute*1)
-	informer := informerFactory.Mizar().V1().Vpcs()
+	informer := informerFactory.Mizar().V1().Dividers()
 
 	utilruntime.Must(dividerv1.AddToScheme(dividerscheme.Scheme))
 	eventBroadcaster := record.NewBroadcaster()
@@ -74,3 +74,4 @@ func NewController() *Controller {
 
 	return c
 }
+

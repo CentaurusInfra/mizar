@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog"
-	endpointv1 "mizar.com/crds-operator-proxy/crds/Vpcs/apis/v1"
+	endpointv1 "mizar.com/crds-operator-proxy/crds/endpoints/apis/v1"
 )
 
 func (c *Controller) doesCRDExist() (bool, error) {
@@ -179,3 +179,4 @@ func (c *Controller) CreateCRD() error {
 
 	return c.waitCRDAccepted()
 }
+

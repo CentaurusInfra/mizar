@@ -16,18 +16,19 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog"
 
-	netclienteset "mizar.futurewei.com/crds-operators/nets/apis/generated/clientset/versioned"
-	netscheme "mizar.futurewei.com/crds-operators/nets/apis/generated/clientset/versioned/scheme"
-	netinformers "mizar.futurewei.com/crds-operators/nets/apis/generated/informers/externalversions"
-	netv1 "mizar.futurewei.com/crds-operators/nets/apis/v1"
+	netclientset "mizar.com/crds-operator-proxy/crds/nets/apis/generated/clientset/versioned"
+	netscheme "mizar.com/crds-operator-proxy/crds/nets/apis/generated/clientset/versioned/scheme"
+	netinformers "mizar.com/crds-operator-proxy/crds/nets/apis/generated/informers/externalversions"
+	netv1 "mizar.com/crds-operator-proxy/crds/nets/apis/v1"
+	netlisters "mizar.com/crds-operator-proxy/crds/nets/apis/generated/listers/apis/v1"
 )
 
 type Controller struct {
 	kubeclientset          kubernetes.Interface
 	apiextensionsclientset apiextensionsclientset.Interface
-	netclientset           netclienteset.Interface
+	netclientset           netclientset.Interface
 	informer               cache.SharedIndexInformer
-	lister                 netlisters.netLister
+	lister                 netlisters.NetLister
 	recorder               record.EventRecorder
 	workqueue              workqueue.RateLimitingInterface
 }
@@ -42,10 +43,10 @@ func NewController() *Controller {
 
 	kubeClient := kubernetes.NewForConfigOrDie(config)
 	apiextensionsClient := apiextensionsclientset.NewForConfigOrDie(config)
-	testClient := netclienteset.NewForConfigOrDie(config)
+	testClient := netclientset.NewForConfigOrDie(config)
 
 	informerFactory := netinformers.NewSharedInformerFactory(testClient, time.Minute*1)
-	informer := informerFactory.Mizar().V1().nets()
+	informer := informerFactory.Mizar().V1().Nets()
 
 	utilruntime.Must(netv1.AddToScheme(netscheme.Scheme))
 	eventBroadcaster := record.NewBroadcaster()

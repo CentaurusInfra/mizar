@@ -16,14 +16,17 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog"
 
-	bouncerclienteset "mizar.com/crds-operator-proxy/crds/bouncers/apis/generated/clientset/versioned"
+	bouncerclientset "mizar.com/crds-operator-proxy/crds/bouncers/apis/generated/clientset/versioned"
 	bouncerlisters "mizar.com/crds-operator-proxy/crds/bouncers/apis/generated/listers/apis/v1"
+	bouncerscheme "mizar.com/crds-operator-proxy/crds/bouncers/apis/generated/clientset/versioned/scheme"
+	bouncerinformers "mizar.com/crds-operator-proxy/crds/bouncers/apis/generated/informers/externalversions"
+	bouncerv1 "mizar.com/crds-operator-proxy/crds/bouncers/apis/v1"
 )
 
 type Controller struct {
 	kubeclientset          kubernetes.Interface
 	apiextensionsclientset apiextensionsclientset.Interface
-	bouncerclientset       bouncerclienteset.Interface
+	bouncerclientset       bouncerclientset.Interface
 	informer               cache.SharedIndexInformer
 	lister                 bouncerlisters.BouncerLister
 	recorder               record.EventRecorder
@@ -43,9 +46,9 @@ func NewController() *Controller {
 	testClient := bouncerclientset.NewForConfigOrDie(config)
 
 	informerFactory := bouncerinformers.NewSharedInformerFactory(testClient, time.Minute*1)
-	informer := informerFactory.Mizar().V1().Vpcs()
+	informer := informerFactory.Mizar().V1().Bouncers()
 
-	utilruntime.Must(bouncerv1.AddToScheme(Vpcscheme.Scheme))
+	utilruntime.Must(bouncerv1.AddToScheme(bouncerscheme.Scheme))
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(klog.Infof)
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})

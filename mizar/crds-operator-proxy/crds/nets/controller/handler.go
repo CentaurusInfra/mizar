@@ -13,7 +13,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog"
 	netv1 "mizar.com/crds-operator-proxy/crds/nets/apis/v1"
-	pb "mizar.com/crds-operator-proxy/grpc/netss"
+	pb "mizar.com/crds-operator-proxy/grpc/nets"
 )
 
 const (
@@ -61,7 +61,7 @@ func (c *Controller) objectAddedCallback(object interface{}) {
 	// If the object is not handled yet, handle it by modifying its Status.
 	copy := resource.DeepCopy()
 	copy.Status = statusMessage
-	_, err := c.vpcclientset.MizarV1().Nets(corev1.NamespaceDefault).Update(copy)
+	_, err := c.netclientset.MizarV1().Nets(corev1.NamespaceDefault).Update(copy)
 	if err != nil {
 		klog.Errorf(err.Error())
 		return
@@ -128,18 +128,61 @@ func gRPCRequest(command int, object interface{}) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	switch command {
-	case CREATE:
-		_, err = clientcon.CreateNet(ctx, object)
-	case UPDATE:
-		_, err = clientcon.UpdateNet(ctx, object)
-	case DELETE:
-		_, err = clientcon.DeleteNet(ctx, object)
-	case READ:
-		var response string
-		response, err = clientcon.ReadNet(ctx, object)
-		log.Printf("Read Net: %s", response)
-	case RESUME:
-		_, err = clientcon.ResumeNet(ctx, object)
+	case 1:
+		objectin := object.(*netv1.Net)
+		objectspec := objectin.Spec
+		var resource pb.Net
+		resource = pb.Net{Ip: string(objectspec.Ip),
+			Prefix:         string(objectspec.Prefix),
+			Vni:            string(objectspec.Vni),
+			Vpc:            string(objectspec.Vpc),
+			Status:         string(objectspec.Status),
+			Bouncers:       string(objectspec.Bouncers),
+			CreateTime:     string(objectspec.CreateTime),
+			ProvisionDelay: string(objectspec.ProvisionDelay)}
+		_, err = clientcon.CreateNet(ctx, &resource)
+	case 2:
+		objectin := object.(*netv1.Net)
+		objectspec := objectin.Spec
+		var resource pb.Net
+		resource = pb.Net{Ip: string(objectspec.Ip),
+			Prefix:         string(objectspec.Prefix),
+			Vni:            string(objectspec.Vni),
+			Vpc:            string(objectspec.Vpc),
+			Status:         string(objectspec.Status),
+			Bouncers:       string(objectspec.Bouncers),
+			CreateTime:     string(objectspec.CreateTime),
+			ProvisionDelay: string(objectspec.ProvisionDelay)}
+		_, err = clientcon.UpdateNet(ctx, &resource)
+	case 3:
+		objectin := object.(*netv1.Net)
+		objectName := objectin.Name
+		_, err := clientcon.DeleteNet(ctx, &pb.NetId{Id: objectName})
+		if err != nil {
+			log.Fatalf("%v", err)
+			return
+		}
+	case 4:
+		objectin := object.(*netv1.Net)
+		objectName := objectin.Name
+		r, err := clientcon.ReadNet(ctx, &pb.NetId{Id: objectName})
+		log.Printf("Read Net: %v", r)
+		if err != nil {
+			log.Fatalf("%v", err)
+			return
+		}
+		if err != nil {
+			log.Fatalf("%v", err)
+			return
+		}
+	case 5:
+		objectin := object.(*netv1.Net)
+		objectName := objectin.Name
+		_, err := clientcon.ResumeNet(ctx, &pb.NetId{Id: objectName})
+		if err != nil {
+			log.Fatalf("%v", err)
+			return
+		}
 	default:
 		log.Println("command is not correct")
 	}
@@ -149,3 +192,4 @@ func gRPCRequest(command int, object interface{}) {
 	}
 	log.Printf("Returned Client")
 }
+

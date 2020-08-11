@@ -11,7 +11,7 @@ import (
 
 // Create a Vpc object.
 func (c *Controller) CreateObject() error {
-	object := &vpcv1.Vpc{
+	object := &netv1.Net{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "net1",
 			Namespace: corev1.NamespaceDefault,
@@ -19,8 +19,8 @@ func (c *Controller) CreateObject() error {
 		Spec: netv1.NetSpec{
 			Ip:             "10.0.0.1",
 			Prefix:         "10.0.0.0",
-			Vni:            "vni1",
-			Dividers:       "Dividers1",
+			Vni:            "Vni1",
+			Vpc:       		"Vpc1",
 			Status:         "Status1",
 			Bouncers:       "Bouncers1",
 			CreateTime:     "CreateTime1",
@@ -36,3 +36,4 @@ func (c *Controller) CreateObject() error {
 	fmt.Printf("Created Net %s", object.Name)
 	return err
 }
+

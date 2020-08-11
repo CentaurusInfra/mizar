@@ -61,7 +61,7 @@ func (c *Controller) objectAddedCallback(object interface{}) {
 	// If the object is not handled yet, handle it by modifying its Status.
 	copy := resource.DeepCopy()
 	copy.Status = statusMessage
-	_, err := c.dropletclientset.MizarV1().Vpcs(corev1.NamespaceDefault).Update(copy)
+	_, err := c.dropletclientset.MizarV1().Droplets(corev1.NamespaceDefault).Update(copy)
 	if err != nil {
 		klog.Errorf(err.Error())
 		return
@@ -123,23 +123,52 @@ func gRPCRequest(command int, object interface{}) {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	clientcon := pb.NewVpcsServiceClient(conn)
+	clientcon := pb.NewDropletsServiceClient(conn)
 	// Contact the server and request crd services.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	switch command {
-	case CREATE:
-		_, err = clientcon.CreateDroplet(ctx, object)
-	case UPDATE:
-		_, err = clientcon.UpdateDroplet(ctx, object)
-	case DELETE:
-		_, err = clientcon.DeleteDroplet(ctx, object)
-	case READ:
-		var response string
-		response, err = clientcon.ReadDroplet(ctx, object)
-		log.Printf("Read VPC: %s", response)
-	case RESUME:
-		_, err = clientcon.ResumeDroplet(ctx, object)
+	case 1:
+		objectin := object.(*dropletv1.Droplet)
+		objectspec := objectin.Spec
+		var resource pb.Droplet
+		resource = pb.Droplet{Mac: string(objectspec.Mac), Ip: string(objectspec.Ip), Status: string(objectspec.Status), Interface: string(objectspec.Interface), CreateTime: string(objectspec.CreateTime), ProvisionDelay: string(objectspec.ProvisionDelay)}
+		_, err = clientcon.CreateDroplet(ctx, &resource)
+	case 2:
+		objectin := object.(*dropletv1.Droplet)
+		objectspec := objectin.Spec
+		var resource pb.Droplet
+		resource = pb.Droplet{Mac: string(objectspec.Mac), Ip: string(objectspec.Ip), Status: string(objectspec.Status), Interface: string(objectspec.Interface), CreateTime: string(objectspec.CreateTime), ProvisionDelay: string(objectspec.ProvisionDelay)}
+		_, err = clientcon.UpdateDroplet(ctx, &resource)
+	case 3:
+		objectin := object.(*dropletv1.Droplet)
+		objectName := objectin.Name
+		_, err := clientcon.DeleteDroplet(ctx, &pb.DropletId{Id: objectName})
+		if err != nil {
+			log.Fatalf("%v", err)
+			return
+		}
+	case 4:
+		objectin := object.(*dropletv1.Droplet)
+		objectName := objectin.Name
+		r, err := clientcon.ReadDroplet(ctx, &pb.DropletId{Id: objectName})
+		log.Printf("Read Droplet: %v", r)
+		if err != nil {
+			log.Fatalf("%v", err)
+			return
+		}
+		if err != nil {
+			log.Fatalf("%v", err)
+			return
+		}
+	case 5:
+		objectin := object.(*dropletv1.Droplet)
+		objectName := objectin.Name
+		_, err := clientcon.ResumeDroplet(ctx, &pb.DropletId{Id: objectName})
+		if err != nil {
+			log.Fatalf("%v", err)
+			return
+		}
 	default:
 		log.Println("command is not correct")
 	}
@@ -149,3 +178,4 @@ func gRPCRequest(command int, object interface{}) {
 	}
 	log.Printf("Returned Client")
 }
+

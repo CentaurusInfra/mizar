@@ -17,16 +17,16 @@ import (
 	"k8s.io/klog"
 
 	dropletv1 "mizar.com/crds-operator-proxy/crds/droplets/apis/v1"
-	dropletclienteset "mizar.com/crds-operators/crds/droplets/apis/generated/clientset/versioned"
-	dropletscheme "mizar.com/crds-operators/crds/droplets/apis/generated/clientset/versioned/scheme"
-	dropletinformers "mizar.com/crds-operators/crds/droplets/apis/generated/informers/externalversions"
-	dropletlisters "mizar.com/crds-operators/crds/droplets/apis/generated/listers/apis/v1"
+	dropletclientset "mizar.com/crds-operator-proxy/crds/droplets/apis/generated/clientset/versioned"
+	dropletscheme "mizar.com/crds-operator-proxy/crds/droplets/apis/generated/clientset/versioned/scheme"
+	dropletinformers "mizar.com/crds-operator-proxy/crds/droplets/apis/generated/informers/externalversions"
+	dropletlisters "mizar.com/crds-operator-proxy/crds/droplets/apis/generated/listers/apis/v1"
 )
 
 type Controller struct {
 	kubeclientset          kubernetes.Interface
 	apiextensionsclientset apiextensionsclientset.Interface
-	dropletclientset       dropletclienteset.Interface
+	dropletclientset       dropletclientset.Interface
 	informer               cache.SharedIndexInformer
 	lister                 dropletlisters.DropletLister
 	recorder               record.EventRecorder
@@ -43,10 +43,10 @@ func NewController() *Controller {
 
 	kubeClient := kubernetes.NewForConfigOrDie(config)
 	apiextensionsClient := apiextensionsclientset.NewForConfigOrDie(config)
-	testClient := dropletclienteset.NewForConfigOrDie(config)
+	testClient := dropletclientset.NewForConfigOrDie(config)
 
 	informerFactory := dropletinformers.NewSharedInformerFactory(testClient, time.Minute*1)
-	informer := informerFactory.Mizar().V1().Vpcs()
+	informer := informerFactory.Mizar().V1().Droplets()
 
 	utilruntime.Must(dropletv1.AddToScheme(dropletscheme.Scheme))
 	eventBroadcaster := record.NewBroadcaster()
@@ -75,3 +75,4 @@ func NewController() *Controller {
 
 	return c
 }
+

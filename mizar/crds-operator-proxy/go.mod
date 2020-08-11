@@ -3,7 +3,7 @@ module mizar.com/crds-operator-proxy
 go 1.14
 
 require (
-	github.com/golang/protobuf v1.4.1
+	github.com/golang/protobuf v1.4.2
 	github.com/prometheus/client_model v0.2.0 // indirect
 	golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975 // indirect
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e // indirect

@@ -17,8 +17,8 @@ func (c *Controller) CreateObject() error {
 			Namespace: corev1.NamespaceDefault,
 		},
 		Spec: bouncerv1.BouncerSpec{
-			vpc:            "vpc1",
-			net:            "net1",
+			Vpc:            "vpc1",
+			Net:            "net1",
 			Ip:             "10.0.0.1",
 			Mac:            "AA-BB-CC-DD-00-11",
 			Droplet:        "droplet1",

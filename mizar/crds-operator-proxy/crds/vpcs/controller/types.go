@@ -17,7 +17,7 @@ import (
 	"k8s.io/klog"
 
 	vpcclienteset "mizar.com/crds-operator-proxy/crds/vpcs/apis/generated/clientset/versioned"
-	Vpcscheme "mizar.com/crds-operator-proxy/crds/vpcs/apis/generated/clientset/versioned/scheme"
+	vpcscheme "mizar.com/crds-operator-proxy/crds/vpcs/apis/generated/clientset/versioned/scheme"
 	vpcinformers "mizar.com/crds-operator-proxy/crds/vpcs/apis/generated/informers/externalversions"
 	vpclisters "mizar.com/crds-operator-proxy/crds/vpcs/apis/generated/listers/apis/v1"
 	vpcv1 "mizar.com/crds-operator-proxy/crds/vpcs/apis/v1"
@@ -48,11 +48,11 @@ func NewController() *Controller {
 	informerFactory := vpcinformers.NewSharedInformerFactory(testClient, time.Minute*1)
 	informer := informerFactory.Mizar().V1().Vpcs()
 
-	utilruntime.Must(vpcv1.AddToScheme(Vpcscheme.Scheme))
+	utilruntime.Must(vpcv1.AddToScheme(vpcscheme.Scheme))
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(klog.Infof)
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
-	recorder := eventBroadcaster.NewRecorder(Vpcscheme.Scheme, corev1.EventSource{Component: "vpc-controller"})
+	recorder := eventBroadcaster.NewRecorder(vpcscheme.Scheme, corev1.EventSource{Component: "vpc-controller"})
 
 	workqueue := workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
 

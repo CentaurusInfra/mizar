@@ -12,7 +12,7 @@ import (
 )
 
 func (c *Controller) doesCRDExist() (bool, error) {
-	crd, err := c.apiextensionsclientset.ApiextensionsV1beta1().CustomResourceDefinitions().Get(vpcv1.Name, metav1.GetOptions{})
+	crd, err := c.apiextensionsclientset.ApiextensionsV1beta1().CustomResourceDefinitions().Get(netv1.Name, metav1.GetOptions{})
 
 	if err != nil {
 		return false, err

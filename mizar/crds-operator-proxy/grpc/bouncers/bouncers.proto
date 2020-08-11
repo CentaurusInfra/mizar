@@ -19,8 +19,8 @@ service BouncersService {
 
 // requests
 message Bouncer {
-  string vpc = 1;
-  string net = 2;
+  string Vpc = 1;
+  string Net = 2;
   string Ip = 3;
   string Mac = 4;
   string Droplet = 5;

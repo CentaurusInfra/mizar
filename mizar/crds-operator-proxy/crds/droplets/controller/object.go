@@ -13,7 +13,7 @@ import (
 func (c *Controller) CreateObject() error {
 	object := &dropletv1.Droplet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "vpc1",
+			Name:      "droplet1",
 			Namespace: corev1.NamespaceDefault,
 		},
 		Spec: dropletv1.DropletSpec{

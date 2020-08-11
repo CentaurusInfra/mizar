@@ -16,8 +16,8 @@ const (
 // BouncerSpec specifies the 'spec' of Bouncer CRD.
 // filed_name type tag (e.g: `json:"ip"`)
 type BouncerSpec struct {
-	vpc            string `json:"vpc"`
-	net            string `json:"net"`
+	Vpc            string `json:"vpc"`
+	Net            string `json:"net"`
 	Ip             string `json:"ip"`
 	Mac            string `json:"mac"`
 	Droplet        string `json:"droplet"`
