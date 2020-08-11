@@ -1,0 +1,51 @@
+#gRPC 
+FROM golang:1.14 as server
+WORKDIR /
+#Protoc plugin install
+RUN go get github.com/golang/protobuf/protoc-gen-go
+ENV PATH="${PATH}:$(go env GOPATH)/bin" 
+#RUN export PATH="$PATH:$(go env GOPATH)/bin"
+#protobuf compiler install
+RUN PB_REL="https://github.com/protocolbuffers/protobuf/releases"
+RUN curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v3.12.1/protoc-3.12.1-linux-x86_64.zip
+RUN \
+apt-get update && \
+apt-get install unzip
+RUN unzip protoc-3.12.1-linux-x86_64.zip -d $HOME/.local
+ENV PATH="$HOME/.local/bin:${PATH}"
+RUN export PATH="$PATH:$HOME/.local/bin"
+#grpc-go install 
+WORKDIR /crds-operators
+RUN git clone -b v1.30.0 https://github.com/grpc/grpc-go
+#WORKDIR /crds-operators/grpc-go/cmd/protoc-gen-go-grpc
+#RUN go install .
+#RUN ls -al
+#RUN go install /crds-operators/grpc-go
+WORKDIR /crds-operators/Vpcs/proxy
+COPY . /crds-operators/Vpcs/proxy
+RUN ls -al
+RUN pwd
+#RUN ls -al /
+#RUN ls -al /crds-operators/
+#RUN ls -al /crds-operators/Vpcs
+RUN ls -al /crds-operators/Vpcs/proxy
+WORKDIR /crds-operators/Vpcs/proxy
+RUN (cd ../.. && pwd && ls -al)
+RUN pwd
+#RUN ls -al
+RUN (cd ../../grpc-go/cmd/protoc-gen-go-grpc && go install .)
+#RUN ls -al ../../grpc-go
+#RUN ls -al ../../grpc-go/cmd
+#RUN ls -al ../../grpc-go/cmd/protoc-gen-go-grpc
+RUN ls $HOME/.local
+RUN ls $HOME/.local/bin
+ENV PATH=${PATH}:${HOME}/.local/bin
+RUN $HOME/.local/bin/protoc \
+  --go_out=Mgrpc/service_config/service_config.proto=/internal/proto/grpc_service_config:. \
+  --go-grpc_out=Mgrpc/service_config/service_config.proto=/internal/proto/grpc_service_config:. \
+  --go_opt=paths=source_relative \
+  --go-grpc_opt=paths=source_relative \
+  Vpcs/Vpcs.proto
+EXPOSE 50051
+CMD go run ./Vpcs_server/main.go
+#ENTRYPOINT [ "go", "run", "." ]
