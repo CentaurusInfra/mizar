@@ -29,6 +29,8 @@ from mizar.obj.net import Net
 from mizar.obj.endpoint import Endpoint
 from mizar.obj.bouncer import Bouncer
 from mizar.store.operator_store import OprStore
+from mizar.dp.mizar.workflows.proxy_service.proxy_service import ProxyServiceClient
+from mizar.proto.nets_pb2 import *
 
 logger = logging.getLogger()
 
@@ -70,8 +72,16 @@ class NetOperator(object):
     def create_default_net(self):
         if self.store.get_net(OBJ_DEFAULTS.default_ep_net):
             return
-        n = Net(OBJ_DEFAULTS.default_ep_net, self.obj_api, self.store)
-        n.create_obj()
+        v = NetMessage(
+            Name=OBJ_DEFAULTS.default_ep_net,
+            Ip="10.0.0.0",
+            Prefix="24",
+            Vni="1",
+            Vpc=OBJ_DEFAULTS.default_ep_vpc,
+            Status="Init",
+            Bouncers="1"
+        )
+        ProxyServiceClient("localhost").CreateNet(v)
 
     def set_net_provisioned(self, net):
         net.set_status(OBJ_STATUS.net_status_provisioned)

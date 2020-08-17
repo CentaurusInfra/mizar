@@ -1,0 +1,33 @@
+syntax = "proto3";
+package mizar;
+
+// service
+service BuiltinsService {
+    rpc CreateService(BuiltinsMessage) returns (BuiltinsResponse) {}
+    rpc UpdateService(BuiltinsMessage) returns (BuiltinsResponse) {}
+    rpc ResumeService(BuiltinsMessage) returns (BuiltinsResponse) {}
+    rpc ReadService(BuiltinsMessage) returns (BuiltinsResponse) {}
+    rpc DeleteService(BuiltinsMessage) returns (BuiltinsResponse) {}
+
+    rpc CreatePod(BuiltinsMessage) returns (BuiltinsResponse) {}
+    rpc UpdatePod(BuiltinsMessage) returns (BuiltinsResponse) {}
+    rpc ResumePod(BuiltinsMessage) returns (BuiltinsResponse) {}
+    rpc ReadPod(BuiltinsMessage) returns (BuiltinsResponse) {}
+    rpc DeletePod(BuiltinsMessage) returns (BuiltinsResponse) {}
+
+    rpc CreateNode(BuiltinsMessage) returns (BuiltinsResponse) {}
+    rpc UpdateNode(BuiltinsMessage) returns (BuiltinsResponse) {}
+    rpc ResumeNode(BuiltinsMessage) returns (BuiltinsResponse) {}
+    rpc ReadNode(BuiltinsMessage) returns (BuiltinsResponse) {}
+    rpc DeleteNode(BuiltinsMessage) returns (BuiltinsResponse) {}
+}
+
+message BuiltinsMessage {
+  string Name = 1;
+  string Body = 2;
+  string Spec = 3;
+}
+
+message BuiltinsResponse {
+    string json_returncode = 1;
+}

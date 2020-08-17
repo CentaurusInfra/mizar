@@ -30,6 +30,8 @@ from mizar.obj.vpc import Vpc
 from mizar.obj.net import Net
 from mizar.obj.divider import Divider
 from mizar.store.operator_store import OprStore
+from mizar.dp.mizar.workflows.proxy_service.proxy_service import ProxyServiceClient
+from mizar.proto.vpcs_pb2 import *
 logger = logging.getLogger()
 
 
@@ -67,8 +69,15 @@ class VpcOperator(object):
     def create_default_vpc(self):
         if self.store.get_vpc(OBJ_DEFAULTS.default_ep_vpc):
             return
-        v = Vpc(OBJ_DEFAULTS.default_ep_vpc, self.obj_api, self.store)
-        v.create_obj()
+        v = VpcMessage(
+            Name=OBJ_DEFAULTS.default_ep_vpc,
+            Ip="10.0.0.0",
+            Prefix="16",
+            Vni="1",
+            Dividers="1",
+            Status="0"
+        )
+        ProxyServiceClient("localhost").CreateVpc(v)
 
     def store_update(self, vpc):
         self.store.update_vpc(vpc)

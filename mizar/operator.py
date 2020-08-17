@@ -38,9 +38,15 @@ from mizar.dp.mizar.workflows.endpoints.triggers import *
 from mizar.dp.mizar.workflows.builtins.services.triggers import *
 from mizar.dp.mizar.workflows.builtins.nodes.triggers import *
 from mizar.dp.mizar.workflows.builtins.pods.triggers import *
+import grpc
+from google.protobuf import empty_pb2
+from concurrent import futures
+from mizar.proto import vpcs_pb2_grpc as vpcs_pb2_grpc
+from mizar.proto import nets_pb2_grpc as nets_pb2_grpc
+from mizar.dp.mizar.workflows.proxy_service.proxy_service import ProxyServer
 
 logger = logging.getLogger()
-LOCK: asyncio.Lock
+POOL_WORKERS = 10
 
 
 @kopf.on.startup()
@@ -61,6 +67,18 @@ async def on_startup(logger, **kwargs):
         pass
     logger.info("Running luigid central scheduler pid={}!".format(pid))
 
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=POOL_WORKERS))
+
+    vpcs_pb2_grpc.add_VpcsServiceServicer_to_server(
+        ProxyServer(), server
+    )
+    nets_pb2_grpc.add_NetsServiceServicer_to_server(
+        ProxyServer(), server
+    )
+
+    server.add_insecure_port('[::]:50051')
+    server.start()
+    logger.info("Running Proxy Server!")
     start_time = time.time()
 
     run_workflow(wffactory().DropletOperatorStart(param=param))
