@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"k8s.io/klog"
+        config "mizar.com/crds-operator-proxy/config"
 	vpccontroller "mizar.com/crds-operator-proxy/crds/vpcs/controller"
 	bouncercontroller "mizar.com/crds-operator-proxy/crds/bouncers/controller"
 	dividercontroller "mizar.com/crds-operator-proxy/crds/dividers/controller"
@@ -13,25 +15,28 @@ import (
 )
 
 func main() {
+	args := os.Args[1:]
+	fmt.Println("args=>")
+	fmt.Println(args)
+        config.Server_addr = args[0]
+        fmt.Println(config.Server_addr)
+	//vpcs
+	vpcproxy := vpccontroller.NewController()
+	vpcproxy.CreateCRD()
+	if err := vpcproxy.CreateObject(); err != nil {
+		klog.Infoln(err)
+	}
+	fmt.Print("vpc proxy starts")
+//	vpcproxy.Run()
 	
-		//vpcs
-		vpcproxy := vpccontroller.NewController()
-		vpcproxy.CreateCRD()
-		if err := vpcproxy.CreateObject(); err != nil {
-			klog.Infoln(err)
-		}
-
-		fmt.Print("vpc proxy starts")
-		vpcproxy.Run()
-	
-		//bouncers
-		bouncerproxy := bouncercontroller.NewController()
-		bouncerproxy.CreateCRD()
-		if err := bouncerproxy.CreateObject(); err != nil {
-			klog.Infoln(err)
-		}
-		fmt.Print("bouncer proxy starts")
-		bouncerproxy.Run()
+	//bouncers
+	bouncerproxy := bouncercontroller.NewController()
+	bouncerproxy.CreateCRD()
+	if err := bouncerproxy.CreateObject(); err != nil {
+		klog.Infoln(err)
+	}
+	fmt.Print("bouncer proxy starts")
+//	bouncerproxy.Run()
 	
 	//dividers
 	dividerproxy := dividercontroller.NewController()
@@ -40,7 +45,7 @@ func main() {
 		klog.Infoln(err)
 	}
 	fmt.Print("divider proxy starts")
-	dividerproxy.Run()
+//	dividerproxy.Run()
 	
 	//droplets
 	dropletproxy := dropletcontroller.NewController()
@@ -49,7 +54,7 @@ func main() {
 		klog.Infoln(err)
 	}
 	fmt.Print("droplet proxy starts")
-	dropletproxy.Run()
+//	dropletproxy.Run()
         
 	//endpoints
 	endpointproxy := endpointcontroller.NewController()
@@ -58,7 +63,7 @@ func main() {
 		klog.Infoln(err)
 	}
 	fmt.Print("endpoint proxy starts")
-	endpointproxy.Run()
+//	endpointproxy.Run()
 	
 	//nets
 	netproxy := netcontroller.NewController()
@@ -67,7 +72,12 @@ func main() {
 		klog.Infoln(err)
 	}
 	fmt.Print("net proxy starts")
-	netproxy.Run()
-	
+        go vpcproxy.Run()
+        go bouncerproxy.Run()
+        go dividerproxy.Run()
+  		go netproxy.Run()
+		go endpointproxy.Run()
+ 		go dropletproxy.Run()
+        fmt.Scanln()        	
 }
 

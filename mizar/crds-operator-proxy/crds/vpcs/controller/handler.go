@@ -14,10 +14,11 @@ import (
 	"k8s.io/klog"
 	vpcv1 "mizar.com/crds-operator-proxy/crds/vpcs/apis/v1"
 	pb "mizar.com/crds-operator-proxy/grpc/vpcs"
+	config "mizar.com/crds-operator-proxy/config"
 )
 
 const (
-	address1      = "localhost:50051"
+	//address1      = "localhost:50051"
 	statusMessage = "HANDLED"
 	CREATE        = 1
 	UPDATE        = 2
@@ -117,11 +118,14 @@ func (c *Controller) objectDeletedCallback(object interface{}) {
 
 func gRPCRequest(command int, object interface{}) {
 	// Set up a connection to the server.
-	fmt.Println("command=%d", command)
-	conn, err := grpc.Dial(address1, grpc.WithInsecure(), grpc.WithBlock())
+	fmt.Println("command=%v", command)
+	conn, err := grpc.Dial(config.Server_addr, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
+                fmt.Println("ccc")
 		log.Fatalf("did not connect: %v", err)
+
 	}
+	fmt.Println("aaa")
 	defer conn.Close()
 	clientcon := pb.NewVpcsServiceClient(conn)
 	// Contact the server and request crd services.
@@ -139,9 +143,14 @@ func gRPCRequest(command int, object interface{}) {
 		//clientcon.CreateVpc(ctx, &pb.Vpc{Ip: string(vpcspec.Ip), Prefix: "10.0.0.0", Vni: "16777210", Dividers: "2", Status: "active", CreateTime: "2020-07-20", ProvisionDelay: "20"})
 		_, err = clientcon.CreateVpc(ctx, &resource)
 	case 2:
-		//vpc_in := object.(*vpcv1.Vpc)
-		//vpcspec := vpc_in.Spec
-		clientcon.UpdateVpc(ctx, &pb.Vpc{Ip: "10.0.0.1", Prefix: "10.0.0.0/24", Vni: "16777210", Dividers: "2", Status: "active", CreateTime: "2020-07-20", ProvisionDelay: "20"})
+		fmt.Println("bbb")
+		vpcin := object.(*vpcv1.Vpc)
+		vpcspec := vpcin.Spec
+                fmt.Println("vpcspec test =%v", vpcspec)
+		var resource pb.Vpc
+		resource = pb.Vpc{Ip: string(vpcspec.Ip), Prefix: string("vpcspec.Prefix"), Vni: string("vpcspec.Vni"), Dividers: string("vpcspec.Dividers"), Status: string(vpcspec.Status), CreateTime: string("vpcspec.CreateTime"), ProvisionDelay: string("vpcspec.ProvisionDelay")}
+		_, err = clientcon.UpdateVpc(ctx, &resource)
+		//clientcon.UpdateVpc(ctx, &pb.Vpc{Ip: "10.0.0.1", Prefix: "10.0.0.0/24", Vni: "16777210", Dividers: "2", Status: "active", CreateTime: "2020-07-20", ProvisionDelay: "20"})
 		//resource := pb.Vpc{vpcspec.Ip, vpcspec.Prefix, vpcspec.Vni, vpcspec.Dividers, vpcspec.Status, vpcspec.CreateTime, vpcspec.ProvisionDelay}
 		//_, err = clientcon.UpdateVpc(ctx, resource)
 	case 3:

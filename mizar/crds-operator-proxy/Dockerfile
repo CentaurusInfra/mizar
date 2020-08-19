@@ -27,14 +27,14 @@ RUN cp -r /mizar.com/crds-operator-proxy/crds/endpoints/apis/* /crds-operator-pr
 
 RUN ./generate-groups.sh all mizar.com/crds-operator-proxy/crds/nets/apis/generated mizar.com/crds-operator-proxy/crds/nets apis:v1 --go-header-file ./hack/boilerplate.go.txt --output-base ..
 RUN cp -r /mizar.com/crds-operator-proxy/crds/nets/apis/* /crds-operator-proxy/crds/nets/apis/
-#RUN rm -r /mizar.com
+RUN rm -r /mizar.com
 
 # Run custom resource controller. Requires KUBECONFIG env and a running Kubernetes cluster.
 FROM golang:1.14
 ENV GO111MODULE=on
+ENV KUBECONFIG=~/.kube/config 
 COPY --from=generatecode /crds-operator-proxy /crds-operator-proxy
 WORKDIR /crds-operator-proxy/cmd
 ENTRYPOINT [ "go", "run", "." ]
-#CMD go run ./main.go -command="read" -data='{"ip":"10.0.0.1"}'
 
 
