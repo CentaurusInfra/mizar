@@ -3,7 +3,6 @@ package mizar;
 
 import "google/protobuf/empty.proto";
 
-// service
 service VpcsService {
     rpc CreateVpc(VpcMessage) returns (google.protobuf.Empty) {}
     rpc UpdateVpc(VpcMessage) returns (google.protobuf.Empty) {}
@@ -12,7 +11,6 @@ service VpcsService {
     rpc ResumeVpc(VpcId) returns (google.protobuf.Empty) {}
 }
 
-// requests
 message VpcMessage {
   string Name = 1;
   string Ip = 2;

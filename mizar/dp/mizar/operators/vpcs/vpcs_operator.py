@@ -75,7 +75,7 @@ class VpcOperator(object):
             Prefix="16",
             Vni="1",
             Dividers="1",
-            Status="0"
+            Status="Init"
         )
         ProxyServiceClient("localhost").CreateVpc(v)
 

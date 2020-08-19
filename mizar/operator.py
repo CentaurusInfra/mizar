@@ -46,6 +46,7 @@ from mizar.proto import nets_pb2_grpc as nets_pb2_grpc
 from mizar.dp.mizar.workflows.proxy_service.proxy_service import ProxyServer
 
 logger = logging.getLogger()
+LOCK: asyncio.Lock
 POOL_WORKERS = 10
 
 

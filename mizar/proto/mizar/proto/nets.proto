@@ -4,7 +4,6 @@ package mizar;
 
 import "google/protobuf/empty.proto";
 
-// service
 service NetsService {
     rpc CreateNet(NetMessage) returns (google.protobuf.Empty) {}
     rpc UpdateNet(NetMessage) returns (google.protobuf.Empty) {}
@@ -13,7 +12,6 @@ service NetsService {
     rpc ResumeNet(NetId) returns (google.protobuf.Empty) {}
 }
 
-// requests
 message NetMessage {
   string Name = 1;
   string Ip = 2;
