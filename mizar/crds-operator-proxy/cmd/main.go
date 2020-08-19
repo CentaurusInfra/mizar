@@ -16,8 +16,6 @@ import (
 
 func main() {
 	args := os.Args[1:]
-	fmt.Println("args=>")
-	fmt.Println(args)
         config.Server_addr = args[0]
         fmt.Println(config.Server_addr)
 	//vpcs
