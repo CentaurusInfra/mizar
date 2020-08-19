@@ -26,8 +26,7 @@ func main() {
 	if err := vpcproxy.CreateObject(); err != nil {
 		klog.Infoln(err)
 	}
-	fmt.Print("vpc proxy starts")
-//	vpcproxy.Run()
+	fmt.Print("vpc proxy starts"
 	
 	//bouncers
 	bouncerproxy := bouncercontroller.NewController()
@@ -36,7 +35,6 @@ func main() {
 		klog.Infoln(err)
 	}
 	fmt.Print("bouncer proxy starts")
-//	bouncerproxy.Run()
 	
 	//dividers
 	dividerproxy := dividercontroller.NewController()
@@ -45,7 +43,6 @@ func main() {
 		klog.Infoln(err)
 	}
 	fmt.Print("divider proxy starts")
-//	dividerproxy.Run()
 	
 	//droplets
 	dropletproxy := dropletcontroller.NewController()
@@ -54,7 +51,6 @@ func main() {
 		klog.Infoln(err)
 	}
 	fmt.Print("droplet proxy starts")
-//	dropletproxy.Run()
         
 	//endpoints
 	endpointproxy := endpointcontroller.NewController()
@@ -63,7 +59,6 @@ func main() {
 		klog.Infoln(err)
 	}
 	fmt.Print("endpoint proxy starts")
-//	endpointproxy.Run()
 	
 	//nets
 	netproxy := netcontroller.NewController()
@@ -75,9 +70,9 @@ func main() {
         go vpcproxy.Run()
         go bouncerproxy.Run()
         go dividerproxy.Run()
-  		go netproxy.Run()
-		go endpointproxy.Run()
- 		go dropletproxy.Run()
+  	go netproxy.Run()
+	go endpointproxy.Run()
+ 	go dropletproxy.Run()
         fmt.Scanln()        	
 }
 
