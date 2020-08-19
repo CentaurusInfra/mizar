@@ -125,7 +125,6 @@ func gRPCRequest(command int, object interface{}) {
 		log.Fatalf("did not connect: %v", err)
 
 	}
-	fmt.Println("aaa")
 	defer conn.Close()
 	clientcon := pb.NewVpcsServiceClient(conn)
 	// Contact the server and request crd services.
@@ -135,15 +134,11 @@ func gRPCRequest(command int, object interface{}) {
 	case 1:
 		vpcin := object.(*vpcv1.Vpc)		
 		vpcspec := vpcin.Spec
-		//fmt.Println("vpcspec=%v", vpcspec)
-		//fmt.Println("ip=%s", string(vpcspec.Ip))
-                //fmt.Println("prefix=%s", string(vpcspec.Prefix))
 		var resource pb.Vpc
 		resource = pb.Vpc{Ip: string(vpcspec.Ip), Prefix: string(vpcspec.Prefix), Vni: string(vpcspec.Vni), Dividers: string(vpcspec.Dividers), Status: string(vpcspec.Status), CreateTime: string(vpcspec.CreateTime), ProvisionDelay: string(vpcspec.ProvisionDelay)}
 		//clientcon.CreateVpc(ctx, &pb.Vpc{Ip: string(vpcspec.Ip), Prefix: "10.0.0.0", Vni: "16777210", Dividers: "2", Status: "active", CreateTime: "2020-07-20", ProvisionDelay: "20"})
 		_, err = clientcon.CreateVpc(ctx, &resource)
 	case 2:
-		fmt.Println("bbb")
 		vpcin := object.(*vpcv1.Vpc)
 		vpcspec := vpcin.Spec
                 fmt.Println("vpcspec test =%v", vpcspec)
