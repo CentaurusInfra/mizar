@@ -7,12 +7,28 @@ import "google/protobuf/empty.proto";
 service BuiltinsService {
     rpc CreateService(BuiltinsMessage) returns (google.protobuf.Empty) {}
     rpc UpdateService(BuiltinsMessage) returns (google.protobuf.Empty) {}
+    rpc ResumeService(BuiltinsMessage) returns (google.protobuf.Empty) {}
+
+    rpc UpdateServiceEndpoint(BuiltinsMessage) returns (google.protobuf.Empty) {}
+    rpc ResumeServiceEndpoint(BuiltinsMessage) returns (google.protobuf.Empty) {}
+    rpc CreateServiceEndpoint(BuiltinsMessage) returns (google.protobuf.Empty) {}
+
+    rpc ResumePod(BuiltinsMessage) returns (google.protobuf.Empty) {}
+    rpc UpdatePod(BuiltinsMessage) returns (google.protobuf.Empty) {}
     rpc CreatePod(BuiltinsMessage) returns (google.protobuf.Empty) {}
+
     rpc CreateNode(BuiltinsMessage) returns (google.protobuf.Empty) {}
+    rpc ResumeNode(BuiltinsMessage) returns (google.protobuf.Empty) {}
+    rpc UpdateNode(BuiltinsMessage) returns (google.protobuf.Empty) {}
 }
 
 message BuiltinsMessage {
   string Name = 1;
   string Body = 2;
   string Spec = 3;
+}
+
+message BuiltinsServiceEndpointMessage {
+  message BuiltinsMessage = 1;
+  string Ports = 2;
 }
