@@ -1,0 +1,16 @@
+syntax = "proto3";
+package mizar;
+
+import "google/protobuf/empty.proto";
+
+// service
+service ArktosNetworkService {
+    rpc CreateArtkosNetwork(ArktosNetworkMessage) returns (google.protobuf.Empty) {}
+    rpc UpdateArktosDnsServiceIp(ArktosNetworkMessage) returns (google.protobuf.Empty)
+}
+
+message ArktosNetworkMessage {
+  string VpcId = 1;
+  string Ip = 2;
+}
+
