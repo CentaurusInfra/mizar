@@ -30,7 +30,7 @@ class WorkflowTask(luigi.Task):
     temporary_error_status = False
     permanent_error_status = False
     error_message = ""
-    delay = 5
+    delay = 10
     param = HandlerParam()
 
     def finalize(self):

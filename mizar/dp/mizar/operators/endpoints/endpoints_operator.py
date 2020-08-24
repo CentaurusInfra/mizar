@@ -89,7 +89,7 @@ class EndpointOperator(object):
         self.store.update_ep(ep)
 
     def update_bouncer_with_endpoints(self, bouncer):
-        eps = self.store.get_eps_in_net(bouncer.net).values()
+        eps = list(self.store.get_eps_in_net(bouncer.net).values())
         bouncer.update_eps(eps)
 
     def update_endpoints_with_bouncers(self, bouncer):
