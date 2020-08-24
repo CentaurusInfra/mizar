@@ -81,7 +81,7 @@ class Net(object):
         return "subnets"
 
     def get_kind(self):
-        return "Net"
+        return "Subnet"
 
     def store_update_obj(self):
         if self.store is None:

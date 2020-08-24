@@ -31,12 +31,12 @@ spec:
       served: true
       storage: true
   names:
-    kind: Net
+    kind: Subnet
     plural: subnets
     singular: subnet
     shortNames:
-      - net
-      - nets
+      - subnet
+      - subnets
   additionalPrinterColumns:
     - name: Ip
       type: string
