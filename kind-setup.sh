@@ -39,7 +39,7 @@ function get_status() {
 
 # Checks for status Provisioned of array of objects
 function check_ready() {
-    objects=("droplets" "vpcs" "nets" "dividers" "bouncers")
+    objects=("droplets" "vpcs" "subnets" "dividers" "bouncers")
     sum=0
     for i in "${objects[@]}"
     do
@@ -61,7 +61,7 @@ MIZARCONF="${HOME}/mizar/build/tests/mizarcni.config"
 KINDHOME="${HOME}/.kube/config"
 USER=${1:-user}
 NODES=${2:-3}
-timeout=240
+timeout=120
 
 kind delete cluster
 docker network rm kind 2> /dev/null

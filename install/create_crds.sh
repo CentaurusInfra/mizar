@@ -29,7 +29,7 @@ kubectl delete bouncers.mizar.com --all 2> /tmp/kubetctl.err
 kubectl delete dividers.mizar.com --all 2> /tmp/kubetctl.err
 kubectl delete droplets.mizar.com --all 2> /tmp/kubetctl.err
 kubectl delete endpoints.mizar.com --all 2> /tmp/kubetctl.err
-kubectl delete nets.mizar.com --all 2> /tmp/kubetctl.err
+kubectl delete subnets.mizar.com --all 2> /tmp/kubetctl.err
 kubectl delete vpcs.mizar.com --all 2> /tmp/kubetctl.err
 
 kubectl apply -f $DIR/etc/crds/bouncers.crd.yaml
