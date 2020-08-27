@@ -6,8 +6,8 @@ import "google/protobuf/empty.proto";
 // service
 service ArktosNetworkService {
     rpc CreateArtkosNetwork(ArktosNetworkMessage) returns (google.protobuf.Empty) {}
-    rpc UpdateArktosDnsServiceIp(ArktosNetworkMessage) returns (google.protobuf.Empty)
-    rpc ResumeArktosDnsServiceIp(ArktosNetworkMessage) returns (google.protobuf.Empty)
+    rpc UpdateArktosDnsServiceIp(ArktosNetworkMessage) returns (google.protobuf.Empty) {}
+    rpc ResumeArktosDnsServiceIp(ArktosNetworkMessage) returns (google.protobuf.Empty) {}
 }
 
 message ArktosNetworkMessage {

@@ -3,32 +3,61 @@ package mizar;
 
 import "google/protobuf/empty.proto";
 
-// service
+// May need to return a code in the event of a temporary failure for retry.
 service BuiltinsService {
-    rpc CreateService(BuiltinsMessage) returns (google.protobuf.Empty) {}
-    rpc UpdateService(BuiltinsMessage) returns (google.protobuf.Empty) {}
-    rpc ResumeService(BuiltinsMessage) returns (google.protobuf.Empty) {}
 
-    rpc UpdateServiceEndpoint(BuiltinsMessage) returns (google.protobuf.Empty) {}
-    rpc ResumeServiceEndpoint(BuiltinsMessage) returns (google.protobuf.Empty) {}
-    rpc CreateServiceEndpoint(BuiltinsMessage) returns (google.protobuf.Empty) {}
+    // For Services/Service Endpoints, network controller may want to annotate the Endpoints.
+    // If Endpoints are not annotated, there will be many updates from unwanted endpoints.
+    rpc CreateService(BuiltinsServiceEndpointMessage) returns (google.protobuf.Empty) {}
+    rpc UpdateService(BuiltinsServiceEndpointMessage) returns (google.protobuf.Empty) {}
+    rpc ResumeService(BuiltinsServiceEndpointMessage) returns (google.protobuf.Empty) {}
 
-    rpc ResumePod(BuiltinsMessage) returns (google.protobuf.Empty) {}
-    rpc UpdatePod(BuiltinsMessage) returns (google.protobuf.Empty) {}
-    rpc CreatePod(BuiltinsMessage) returns (google.protobuf.Empty) {}
+    rpc UpdateServiceEndpoint(BuiltinsServiceMessage) returns (google.protobuf.Empty) {}
+    rpc ResumeServiceEndpoint(BuiltinsServiceMessage) returns (google.protobuf.Empty) {}
+    rpc CreateServiceEndpoint(BuiltinsServiceMessage) returns (google.protobuf.Empty) {}
 
-    rpc CreateNode(BuiltinsMessage) returns (google.protobuf.Empty) {}
-    rpc ResumeNode(BuiltinsMessage) returns (google.protobuf.Empty) {}
-    rpc UpdateNode(BuiltinsMessage) returns (google.protobuf.Empty) {}
+    rpc ResumePod(BuiltinsPodMessage) returns (google.protobuf.Empty) {}
+    rpc UpdatePod(BuiltinsPodMessage) returns (google.protobuf.Empty) {}
+    rpc CreatePod(BuiltinsPodMessage) returns (google.protobuf.Empty) {}
+
+    rpc CreateNode(BuiltinsNodeMessage) returns (google.protobuf.Empty) {}
+    rpc ResumeNode(BuiltinsNodeMessage) returns (google.protobuf.Empty) {}
+    rpc UpdateNode(BuiltinsNodeMessage) returns (google.protobuf.Empty) {}
 }
 
-message BuiltinsMessage {
-  string Name = 1;
-  string Body = 2;
-  string Spec = 3;
+message BuiltinsNodeMessage {
+  string ip = 1;
+}
+
+message BuiltinsPodMessage {
+  string name = 1;
+  string host_ip = 2;
+  string namespace = 3;
+  string tenant = 4;
+  string arktos_network = 5;
+  string phase = 6;
+  repeated InterfacesMessage interfaces = 7;
+}
+
+message BuiltinsServiceMessage {
+  string name = 1;
+  string ip = 2;
 }
 
 message BuiltinsServiceEndpointMessage {
-  message BuiltinsMessage = 1;
-  string Ports = 2;
+  string name = 1;
+  string service_ip = 2;
+  repeated PortsMessage ports = 3;
+}
+
+message PortsMessage {
+  string frontend_port = 1;
+  string backend_port = 2;
+  string protocol = 3;
+}
+
+message InterfacesMessage {
+  string name = 1;
+  string ip = 2;
+  string subnet = 3;
 }
