@@ -94,7 +94,7 @@ class OBJ_DEFAULTS:
     mizar_service_annotation_key = "service.beta.kubernetes.io/mizar-scaled-endpoint-type"
     mizar_service_annotation_val = "scaled-endpoint"
 
-    kopf_max_retries = 10
+    kopf_max_retries = 5
 
     arktos_network_readiness_key = "arktos.futurewei.com/network-readiness"
 
