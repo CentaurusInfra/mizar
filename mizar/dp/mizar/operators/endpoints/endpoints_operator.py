@@ -274,6 +274,13 @@ class EndpointOperator(object):
 
             ep.set_vni(spec['vni'])
             ep.set_vpc(spec['vpc'])
+            """
+            'subnet' is an optional field for arktos
+            'ip' is also an optional field, and needs to fall within subnet's CIDR
+            since both fields are optional, we need force subnet to have the same
+            CIDR range as vpc,
+            OR arktos needs check wheter the ip and subnet is valid
+            """
             ep.set_net(net_info.get('subnet', spec['net']))
             ep.set_ip(net_info.get('ip', ''))
 

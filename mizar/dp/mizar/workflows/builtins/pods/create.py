@@ -67,6 +67,9 @@ class k8sPodCreate(WorkflowTask):
         if 'arktos.futurewei.com/network' in self.param.body['metadata'].get('labels', {}):
             spec['type'] =  COMPUTE_PROVIDER.arktos
 
+        # Example: arktos.futurewei.com/nic: [{"name": "eth0", "ip": "10.10.1.12", "subnet": "net1"}]
+        # all three fields are optional. Each item in the list corresponding to an endpoint
+        # which represents a network interface for a pod
         if 'arktos.futurewei.com/nic' in self.param.body['metadata'].get('annotations', {}):
             net_config = self.param.body['metadata']['annotations']['arktos.futurewei.com/nic']
             configs = json.loads(net_config)
