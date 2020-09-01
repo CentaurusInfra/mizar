@@ -95,7 +95,4 @@ class k8sPodCreate(WorkflowTask):
         # Create the corresponding simple endpoint objects
         endpoint_opr.create_simple_endpoints(interfaces, spec)
 
-        ## CNI interface has builtin synchronization, do not need trigger
-        if 'arktos.futurewei.com/network' in self.param.body['metadata'].get('labels', {}):
-            endpoint_opr.annotate_builtin_pods(spec['name'], spec['namespace'])
         self.finalize()

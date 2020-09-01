@@ -36,7 +36,6 @@ class Endpoint:
         # Initial values all none
         self.vpc = ""
         self.net = ""
-        self.k8s_pod_name = ""
         self.vni = ""
         self.status = ""
         self.gw = ""
@@ -177,9 +176,6 @@ class Endpoint:
 
     def set_net(self, net):
         self.net = net
-
-    def set_k8s_pod_name(self, k8s_pod_name):
-        self.k8s_pod_name = k8s_pod_name
 
     def set_vni(self, vni):
         self.vni = vni

@@ -144,24 +144,6 @@ class EndpointOperator(object):
                     "Retry updating annotating endpoints {}".format(name))
                 get_body = True
 
-    def annotate_builtin_pods(self, name, namespace='default'):
-        get_body = True
-        while get_body:
-            pod = self.core_api.read_namespaced_pod(
-                name=name,
-                namespace=namespace)
-            pod.metadata.annotations[OBJ_DEFAULTS.arktos_network_readiness_key] = "true"
-            try:
-                self.core_api.patch_namespaced_pod(
-                    name=name,
-                    namespace=namespace,
-                    body=pod)
-                get_body = False
-            except:
-                logger.debug(
-                    "Retry updating annotating pods {}".format(name))
-                get_body = True
-
     def delete_scaled_endpoint(self, ep):
         logger.info("Delete scaled endpoint {}".format(ep.name))
         ep.delete_obj()
@@ -288,7 +270,6 @@ class EndpointOperator(object):
             ep.set_veth_name(interface.veth.name)
             ep.set_veth_peer(interface.veth.peer)
             ep.set_droplet(spec['droplet'].name)
-            ep.set_k8s_pod_name(spec['name'])
 
             ep.set_droplet_ip(spec['droplet'].ip)
             ep.set_droplet_mac(spec['droplet'].mac)
