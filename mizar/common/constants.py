@@ -96,8 +96,6 @@ class OBJ_DEFAULTS:
 
     kopf_max_retries = 5
 
-    arktos_network_readiness_key = "arktos.futurewei.com/network-readiness"
-
 class RESOURCES:
     endpoints = "endpoints"
     nets = "nets"
