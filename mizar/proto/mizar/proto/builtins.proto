@@ -46,7 +46,7 @@ message BuiltinsServiceMessage {
 
 message BuiltinsServiceEndpointMessage {
   string name = 1;
-  string service_ip = 2;
+  repeated string backend_ips = 2;
   repeated PortsMessage ports = 3;
 }
 
