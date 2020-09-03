@@ -104,7 +104,7 @@ $ kubectl get vpcs
  * Get all Networks in the cluster
 
 ```
-$ kubectl get nets
+$ kubectl get subnets
 ```
 
  * Get all Dividers in the cluster

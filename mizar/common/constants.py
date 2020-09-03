@@ -101,14 +101,14 @@ class OBJ_DEFAULTS:
 
 class RESOURCES:
     endpoints = "endpoints"
-    nets = "nets"
+    nets = "subnets"
     vpcs = "vpcs"
     droplets = "droplets"
     bouncers = "bouncers"
     dividers = "dividers"
 
 class COMPUTE_PROVIDER:
-    kubernetes = "k8s"
+    kubernetes = "kubernetes"
     arktos = "arktos"
 
 class LAMBDAS:
