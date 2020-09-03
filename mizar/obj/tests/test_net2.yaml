@@ -19,37 +19,14 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import logging
-from mizar.common.workflow import *
-from mizar.dp.mizar.operators.nets.nets_operator import *
-from mizar.dp.mizar.operators.dividers.dividers_operator import *
-from mizar.dp.mizar.operators.bouncers.bouncers_operator import *
-from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
-
-logger = logging.getLogger()
-
-nets_opr = NetOperator()
-dividers_opr = DividerOperator()
-bouncers_opr = BouncerOperator()
-endpoints_opr = EndpointOperator()
-
-
-class NetCreate(WorkflowTask):
-
-    def requires(self):
-        logger.info("Requires {task}".format(task=self.__class__.__name__))
-        return []
-
-    def run(self):
-        logger.info("Run {task}".format(task=self.__class__.__name__))
-        n = nets_opr.get_net_stored_obj(self.param.name, self.param.spec)
-
-        while len(dividers_opr.store.get_dividers_of_vpc(n.vpc)) < 1:
-            pass
-        nets_opr.create_net_bouncers(n, n.n_bouncers)
-        nets_opr.set_net_provisioned(n)
-        nets_opr.store_update(n)
-        ep = endpoints_opr.create_gw_endpoint(
-            self.param.name + "_gw", n.get_gw_ip(), n.vni, n.vpc, n.name)
-        endpoints_opr.store_update(ep)
-        self.finalize()
+apiVersion: "mizar.com/v1"
+kind: Net
+metadata:
+  name: net2
+spec:
+  vpc: "vpc1"
+  vni: "0"
+  ip: "12.4.0.0"
+  prefix: "16"
+  status: "Init"
+  bouncers: 1

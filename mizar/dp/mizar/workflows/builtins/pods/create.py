@@ -20,6 +20,7 @@
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import logging
+import json
 from mizar.common.workflow import *
 from mizar.dp.mizar.operators.droplets.droplets_operator import *
 from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
@@ -41,45 +42,43 @@ class k8sPodCreate(WorkflowTask):
 
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
-        # name in self.param.body['metadata']['name']
-        # namespace in self.param.body['metadata']['namespace']
-        # label in self.param.body['metadata']['label']
-        # annotations in self.param.body['metadata']['annotations']
-
-        # logger.info("name: {}".format(self.param.body['metadata']['name']))
-        # logger.info("namespace: {}".format(
-        #     self.param.body['metadata']['namespace']))
-        # logger.info("label: {}".format(self.param.body['metadata']['labels']))
-        # logger.info("annotations: {}".format(
-        #     self.param.body['metadata']['annotations']))
-        # logger.info("hostNetwork: {}".format(
-        #     self.param.spec.get('hostNetwork', 'False')))
-        # logger.info("hostIP: {}".format(self.param.body['status']['hostIP']))
-        # logger.info("phase: {}".format(self.param.body['status']['phase']))
-        # logger.info("podIPs: {}".format(self.param.body['status']['podIPs']))
 
         if "hostIP" not in self.param.body['status']:
             self.raise_temporary_error("Pod spec not ready.")
         spec = {
             'hostIP': self.param.body['status']['hostIP'],
             'name': self.param.body['metadata']['name'],
-            'namespace': self.param.body['metadata']['namespace'],
-            'tenant': '',
-            # TODO (Cathy) in case of arktos
-            # get VPC and net information from annotation
-            'vpc': OBJ_DEFAULTS.default_ep_vpc,
+            'type': COMPUTE_PROVIDER.kubernetes,
+            'namespace': self.param.body['metadata'].get('namespace', 'default'),
+            'tenant': self.param.body['metadata'].get('tenant', ''),
+            'vpc': self.param.body['metadata'].get('labels', {}).get(
+                    OBJ_DEFAULTS.arktos_pod_annotation, OBJ_DEFAULTS.default_ep_vpc),
             'net': OBJ_DEFAULTS.default_ep_net,
             'phase': self.param.body['status']['phase'],
-            # TODO (Cathy) in case of arktos get list of interfaces to create on
-            # the host (names)
             'interfaces': [{'name': 'eth0'}]
         }
 
         logger.info("Pod spec {}".format(spec))
         spec['vni'] = vpc_opr.store_get(spec['vpc']).vni
         spec['droplet'] = droplet_opr.store_get_by_ip(spec['hostIP'])
-        # TODO (cathy): make sure not to trigger init or create simple endpoint
+
+        if OBJ_DEFAULTS.arktos_pod_label in self.param.body['metadata'].get('labels', {}):
+            spec['type'] =  COMPUTE_PROVIDER.arktos
+
+        # Example: arktos.futurewei.com/nic: [{"name": "eth0", "ip": "10.10.1.12", "subnet": "net1"}]
+        # all three fields are optional. Each item in the list corresponding to an endpoint
+        # which represents a network interface for a pod
+        if OBJ_DEFAULTS.arktos_pod_annotation in self.param.body['metadata'].get('annotations', {}):
+            net_config = self.param.body['metadata']['annotations'][OBJ_DEFAULTS.arktos_pod_annotation]
+            configs = json.loads(net_config)
+            spec['interfaces'] = configs
+
+        # make sure not to trigger init or create simple endpoint
         # if Arktos network is already marked ready
+        if spec['type'] ==  COMPUTE_PROVIDER.arktos:
+            self.finalize()
+            return
+
         if spec['phase'] != 'Pending':
             self.finalize()
             return
@@ -94,5 +93,4 @@ class k8sPodCreate(WorkflowTask):
         # Create the corresponding simple endpoint objects
         endpoint_opr.create_simple_endpoints(interfaces, spec)
 
-        # TODO (cathy): in Arktos shall we mark the pod network ready here?
         self.finalize()

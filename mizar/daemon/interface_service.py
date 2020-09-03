@@ -174,8 +174,7 @@ class InterfaceServer(InterfaceServiceServicer):
 
         for bouncer in interface.bouncers:
             self.rpc.update_agent_substrate_ep(
-                interface.veth.peer, bouncer.ip_address, bouncer.mac)
-
+                    interface.veth.peer, bouncer.ip_address, bouncer.mac)
         self.rpc.update_agent_metadata(interface)
         self.rpc.update_ep(interface)
 
@@ -219,8 +218,30 @@ class InterfaceServer(InterfaceServiceServicer):
         logger.error("Timeout, no new interface to consume!")
         return self._ConsumeInterfaces(requested_pod_name, cni_params)
 
+    def _DeleteVethInterface(self, interface):
+        """
+        Delete a veth interface
+        """
+        veth_peer_index = get_iface_index(interface.veth.peer, self.iproute)
+        self.rpc.unload_transit_agent_xdp(interface)
+        self.iproute.link('del', index=veth_peer_index)
+
     def DeleteInterface(self, request, context):
-        # TODO (Cathy): implement the reverse logic
+        """
+        Delete network interfaces for a pod
+        """
+        cni_params = request
+        pod_name = get_pod_name(cni_params.pod_id)
+        pod_interfaces = self.interfaces.get(pod_name, [])
+        iface = cni_params.interface
+        logger.info("Deleting interfaces for pod {} with interfaces {}".format(pod_name, pod_interfaces))
+
+        for interface in pod_interfaces:
+            self.interfaces[pod_name].remove(interface)
+            if iface == interface and interface.interface_type == InterfaceType.veth:
+                logger.info("Deleting interface: {}".format(iface))
+                self._DeleteVethInterface(interface)
+                logger.info("Removed {}".format(interface))
         return empty_pb2.Empty()
 
     def ActivateHostInterface(self, request, context):
@@ -266,8 +287,8 @@ class InterfaceServiceClient():
         resp = self.stub.ConsumeInterfaces(pod_id)
         return resp
 
-    def DeleteInterface(self, interface_id):
-        resp = self.stub.DeleteInterface(interface_id)
+    def DeleteInterface(self, interfaces_list):
+        resp = self.stub.DeleteInterface(interfaces_list)
         return resp
 
     def ActivateHostInterface(self, interface):
@@ -339,6 +360,15 @@ class LocalTransitRpc:
         returncode, text = run_cmd(cmd)
         logger.info(
             "load_transit_agent_xdp returns {} {}".format(returncode, text))
+
+    def unload_transit_agent_xdp(self, interface):
+        itf = interface.veth.peer
+        jsonconf = '\'{}\''
+        cmd = f'''{self.trn_cli_unload_transit_agent_xdp} -i \'{itf}\' -j {jsonconf} '''
+        logger.info("unload_transit_agent_xdp: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info(
+            "unload_transit_agent_xdp returns {} {}".format(returncode, text))
 
     def update_ep(self, interface):
         peer = interface.veth.peer

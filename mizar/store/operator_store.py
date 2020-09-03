@@ -43,6 +43,7 @@ class OprStore(object):
 
         self.eps_store = {}
         self.eps_net_store = {}
+        self.eps_pod_store = {}
 
         self.dividers_store = {}
         self.dividers_vpc_store = {}
@@ -138,6 +139,11 @@ class OprStore(object):
     def get_eps_in_net(self, net):
         if net in self.eps_net_store:
             return self.eps_net_store[net]
+        return {}
+
+    def get_eps_in_pod(self, pod):
+        if pod in self.eps_pod_store:
+            return self.eps_pod_store[pod]
         return {}
 
     def contains_ep(self, name):

@@ -114,12 +114,12 @@ class EndpointOperator(object):
         ep.create_obj()
         self.annotate_builtin_endpoints(name, namespace)
 
-    def create_gw_endpoint(self, name, ip):
+    def create_gw_endpoint(self, name, ip, vni, vpc, net):
         logger.info("Create gw endpoint")
         ep = Endpoint(name, self.obj_api, self.store)
-        ep.set_vni(OBJ_DEFAULTS.default_vpc_vni)
-        ep.set_vpc(OBJ_DEFAULTS.default_ep_vpc)
-        ep.set_net(OBJ_DEFAULTS.default_ep_net)
+        ep.set_vni(vni)
+        ep.set_vpc(vpc)
+        ep.set_net(net)
         ep.set_mac(self.rand_mac())
         ep.set_ip(ip)
         ep.set_type(OBJ_DEFAULTS.ep_type_gateway)
@@ -194,7 +194,8 @@ class EndpointOperator(object):
     def delete_bouncer_from_endpoints(self, bouncer):
         eps = self.store.get_eps_in_net(bouncer.net).values()
         for ep in eps:
-            ep.update_bouncers(set([bouncer]), False)
+            if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
+                ep.update_bouncers({bouncer.name: bouncer}, False)
 
     def produce_simple_endpoint_interface(self, ep):
         """
@@ -239,16 +240,13 @@ class EndpointOperator(object):
             interfaces = InterfaceServiceClient(
                 ep.get_droplet_ip()).ProduceInterfaces(InterfacesList(interfaces=interfaces_list))
 
-        # At this point Mizar has provisioned the network
-        # TODO (cathy): mark the pod network as ready! Shall it be here or in
-        # the pod builtin wf.
         logger.info("Produced {}".format(interfaces))
 
     def create_simple_endpoints(self, interfaces, spec):
         """
         Create a simple endpoint object (calling the API operator)
         """
-        for interface in interfaces.interfaces:
+        for interface, net_info in zip(interfaces.interfaces, spec['interfaces']):
             logger.info("Create simple endpoint {}".format(interface))
             name = get_itf_name(interface.interface_id)
             ep = Endpoint(name, self.obj_api, self.store)
@@ -258,7 +256,15 @@ class EndpointOperator(object):
 
             ep.set_vni(spec['vni'])
             ep.set_vpc(spec['vpc'])
-            ep.set_net(spec['net'])
+            """
+            'subnet' is an optional field for arktos
+            'ip' is also an optional field, and needs to fall within subnet's CIDR
+            since both fields are optional, we need force subnet to have the same
+            CIDR range as vpc,
+            OR arktos needs check wheter the ip and subnet is valid
+            """
+            ep.set_net(net_info.get('subnet', spec['net']))
+            ep.set_ip(net_info.get('ip', ''))
 
             ep.set_mac(interface.address.mac)
             ep.set_veth_name(interface.veth.name)
@@ -320,10 +326,14 @@ class EndpointOperator(object):
             veth_peer = "veth-" + local_id
             veth = VethInterface(name=veth_name, peer=veth_peer)
 
+            pod_provider = PodProvider.K8S
+            if spec['type'] == 'arktos':
+                pod_provider = PodProvider.ARKTOS
+
             interfaces_list.append(Interface(
                 interface_id=interface_id,
                 interface_type=InterfaceType.veth,
-                pod_provider=PodProvider.K8S,
+                pod_provider=pod_provider,
                 veth=veth,
                 status=InterfaceStatus.init
             ))
@@ -354,3 +364,7 @@ class EndpointOperator(object):
         ))
         interfaces = InterfacesList(interfaces=interfaces_list)
         return InterfaceServiceClient(droplet.ip).InitializeInterfaces(interfaces)
+
+    def delete_simple_endpoint(self, ep):
+        logger.info("Delete endpoint object assicated with interface {}".format(ep.name))
+        ep.delete_obj()
