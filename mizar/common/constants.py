@@ -94,6 +94,9 @@ class OBJ_DEFAULTS:
     mizar_service_annotation_key = "service.beta.kubernetes.io/mizar-scaled-endpoint-type"
     mizar_service_annotation_val = "scaled-endpoint"
 
+    arktos_pod_label = "arktos.futurewei.com/network"
+    arktos_pod_annotation = "arktos.futurewei.com/nic"
+
     kopf_max_retries = 5
 
 class RESOURCES:
@@ -105,7 +108,7 @@ class RESOURCES:
     dividers = "dividers"
 
 class COMPUTE_PROVIDER:
-    k8s = "k8s"
+    kubernetes = "k8s"
     arktos = "arktos"
 
 class LAMBDAS:

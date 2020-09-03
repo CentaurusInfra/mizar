@@ -117,10 +117,6 @@ class OprStore(object):
         if ep.net not in self.eps_net_store:
             self.eps_net_store[ep.net] = {}
         self.eps_net_store[ep.net][ep.name] = ep
-        if ep.k8s_pod_name != '':
-            if ep.k8s_pod_name not in self.eps_pod_store:
-                self.eps_pod_store[ep.k8s_pod_name] = {}
-            self.eps_pod_store[ep.k8s_pod_name][ep.name] = ep
 
     def delete_ep(self, name):
         if name not in self.eps_store:
@@ -133,14 +129,6 @@ class OprStore(object):
         l = len(self.eps_net_store[ep.net])
         if l == 0:
             del self.eps_net_store[ep.net]
-
-        if ep.k8s_pod_name in self.eps_pod_store.keys():
-            if name not in self.eps_pod_store[ep.k8s_pod_name]:
-                return ep
-            self.eps_pod_store[ep.k8s_pod_name].pop(name)
-            l = len(self.eps_pod_store[ep.k8s_pod_name])
-            if l == 0:
-                del self.eps_pod_store[ep.k8s_pod_name]
         return ep
 
     def get_ep(self, name):

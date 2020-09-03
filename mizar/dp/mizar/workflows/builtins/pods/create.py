@@ -48,15 +48,13 @@ class k8sPodCreate(WorkflowTask):
         spec = {
             'hostIP': self.param.body['status']['hostIP'],
             'name': self.param.body['metadata']['name'],
-            'type': COMPUTE_PROVIDER.k8s,
+            'type': COMPUTE_PROVIDER.kubernetes,
             'namespace': self.param.body['metadata'].get('namespace', 'default'),
             'tenant': self.param.body['metadata'].get('tenant', ''),
             'vpc': self.param.body['metadata'].get('labels', {}).get(
-                    'arktos.futurewei.com/network', OBJ_DEFAULTS.default_ep_vpc),
+                    OBJ_DEFAULTS.arktos_pod_annotation, OBJ_DEFAULTS.default_ep_vpc),
             'net': OBJ_DEFAULTS.default_ep_net,
             'phase': self.param.body['status']['phase'],
-            'readiness': self.param.body['metadata'].get('annotations', {}).get(
-                    'arktos.futurewei.com/network-readiness', ''),
             'interfaces': [{'name': 'eth0'}]
         }
 
@@ -64,20 +62,20 @@ class k8sPodCreate(WorkflowTask):
         spec['vni'] = vpc_opr.store_get(spec['vpc']).vni
         spec['droplet'] = droplet_opr.store_get_by_ip(spec['hostIP'])
 
-        if 'arktos.futurewei.com/network' in self.param.body['metadata'].get('labels', {}):
+        if OBJ_DEFAULTS.arktos_pod_label in self.param.body['metadata'].get('labels', {}):
             spec['type'] =  COMPUTE_PROVIDER.arktos
 
         # Example: arktos.futurewei.com/nic: [{"name": "eth0", "ip": "10.10.1.12", "subnet": "net1"}]
         # all three fields are optional. Each item in the list corresponding to an endpoint
         # which represents a network interface for a pod
-        if 'arktos.futurewei.com/nic' in self.param.body['metadata'].get('annotations', {}):
-            net_config = self.param.body['metadata']['annotations']['arktos.futurewei.com/nic']
+        if OBJ_DEFAULTS.arktos_pod_annotation in self.param.body['metadata'].get('annotations', {}):
+            net_config = self.param.body['metadata']['annotations'][OBJ_DEFAULTS.arktos_pod_annotation]
             configs = json.loads(net_config)
             spec['interfaces'] = configs
 
         # make sure not to trigger init or create simple endpoint
         # if Arktos network is already marked ready
-        if spec['type'] ==  COMPUTE_PROVIDER.arktos and spec['readiness'] == 'true':
+        if spec['type'] ==  COMPUTE_PROVIDER.arktos:
             self.finalize()
             return
 
