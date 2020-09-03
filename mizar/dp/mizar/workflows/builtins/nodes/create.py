@@ -22,7 +22,8 @@
 import logging
 from mizar.common.workflow import *
 from mizar.dp.mizar.operators.droplets.droplets_operator import *
-
+from mizar.arktos.arktos_service import ArktosServiceClient
+from mizar.proto.builtins_pb2 import *
 logger = logging.getLogger()
 
 droplet_opr = DropletOperator()
@@ -37,9 +38,31 @@ class k8sDropletCreate(WorkflowTask):
     def run(self):
 
         logger.info("Run {task}".format(task=self.__class__.__name__))
+        client = ArktosServiceClient("localhost")
         for addr in self.param.body['status']['addresses']:
             if addr['type'] != 'InternalIP':
                 continue
             ip = addr['address']
-            droplet_opr.create_droplet(ip)
+            # droplet_opr.create_droplet(ip)
+            m = BuiltinsNodeMessage(
+                ip=ip
+            )
+            client.CreateNode(m)
         self.finalize()
+
+
+# class k8sDropletCreate(WorkflowTask):
+
+#     def requires(self):
+#         logger.info("Requires {task}".format(task=self.__class__.__name__))
+#         return []
+
+#     def run(self):
+
+#         logger.info("Run {task}".format(task=self.__class__.__name__))
+#         for addr in self.param.body['status']['addresses']:
+#             if addr['type'] != 'InternalIP':
+#                 continue
+#             ip = addr['address']
+#             droplet_opr.create_droplet(ip)
+#         self.finalize()

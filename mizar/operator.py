@@ -39,11 +39,11 @@ from mizar.dp.mizar.workflows.builtins.services.triggers import *
 from mizar.dp.mizar.workflows.builtins.nodes.triggers import *
 from mizar.dp.mizar.workflows.builtins.pods.triggers import *
 import grpc
+import threading
 from google.protobuf import empty_pb2
 from concurrent import futures
-from mizar.proto import vpcs_pb2_grpc as vpcs_pb2_grpc
-from mizar.proto import nets_pb2_grpc as nets_pb2_grpc
-from mizar.dp.mizar.workflows.proxy_service.proxy_service import ProxyServer
+from mizar.proto import builtins_pb2_grpc as builtins_pb2_grpc
+from mizar.arktos.arktos_service import ArktosService
 
 logger = logging.getLogger()
 LOCK: asyncio.Lock
@@ -68,19 +68,7 @@ async def on_startup(logger, **kwargs):
         pass
     logger.info("Running luigid central scheduler pid={}!".format(pid))
 
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=POOL_WORKERS))
-
-    vpcs_pb2_grpc.add_VpcsServiceServicer_to_server(
-        ProxyServer(), server
-    )
-    nets_pb2_grpc.add_NetsServiceServicer_to_server(
-        ProxyServer(), server
-    )
-
-    server.add_insecure_port('[::]:50051')
-    server.start()
-    logger.info("Running Proxy Server!")
-    start_time = time.time()
+    threading.Thread(target=grpc_server).start()
 
     run_workflow(wffactory().DropletOperatorStart(param=param))
     run_workflow(wffactory().DividerOperatorStart(param=param))
@@ -93,3 +81,15 @@ async def on_startup(logger, **kwargs):
     run_workflow(wffactory().EndpointOperatorStart(param=param))
 
     logger.info("Bootstrap time:  %s seconds ---" % (time.time() - start_time))
+
+
+def grpc_server():
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=POOL_WORKERS))
+
+    builtins_pb2_grpc.add_BuiltinsServiceServicer_to_server(
+        ArktosService(), server
+    )
+    server.add_insecure_port('[::]:50052')
+    server.start()
+    logger.info("Running gRPC server for Network Controller!")
+    server.wait_for_termination()

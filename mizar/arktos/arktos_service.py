@@ -20,6 +20,7 @@ from mizar.dp.mizar.operators.droplets.droplets_operator import *
 from mizar.dp.mizar.operators.bouncers.bouncers_operator import *
 from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
 from mizar.dp.mizar.operators.vpcs.vpcs_operator import *
+from google.protobuf import empty_pb2
 
 droplet_opr = DropletOperator()
 bouncer_opr = BouncerOperator()
@@ -28,7 +29,7 @@ vpc_opr = VpcOperator()
 logger = logging.getLogger()
 
 
-class ProxyServer(ArktosNetworkServiceServicer, BuiltinsServiceServicer):
+class ArktosService(ArktosNetworkServiceServicer, BuiltinsServiceServicer):
 
     def __init__(self):
         self.store = OprStore()
@@ -36,8 +37,9 @@ class ProxyServer(ArktosNetworkServiceServicer, BuiltinsServiceServicer):
         self.obj_api = client.CustomObjectsApi()
 
     def CreatePod(self, request, context):
+        logger.info("Creating pod from Arktos Service {}".format(request.name))
         spec = {
-            'hostIP': request.ip,
+            'hostIP': request.host_ip,
             'name': request.name,
             'namespace': request.namespace,
             'tenant': '',
@@ -50,14 +52,21 @@ class ProxyServer(ArktosNetworkServiceServicer, BuiltinsServiceServicer):
         logger.info("Pod spec {}".format(spec))
         spec['vni'] = vpc_opr.store_get(spec['vpc']).vni
         spec['droplet'] = droplet_opr.store_get_by_ip(spec['hostIP'])
+        if not spec['droplet']:
+            logger.error("Droplet not yet created.")
+            return empty_pb2.Empty()
         if request.phase != 'Pending':
-            return
+            return empty_pb2.Empty()
         interfaces = endpoint_opr.init_simple_endpoint_interfaces(
             spec['hostIP'], spec)
         endpoint_opr.create_simple_endpoints(interfaces, spec)
+        return empty_pb2.Empty()
 
     def CreateNode(self, request, context):
+        logger.info(
+            "Creating droplet from Arktos Service {}".format(request.ip))
         droplet_opr.create_droplet(request.ip)
+        return empty_pb2.Empty()
 
     def CreateService(self, request, context):
         logger.info("Create scaled endpoint {}.".format(request.name))
@@ -66,11 +75,13 @@ class ProxyServer(ArktosNetworkServiceServicer, BuiltinsServiceServicer):
         ep.set_vni(OBJ_DEFAULTS.default_vpc_vni)
         ep.set_vpc(OBJ_DEFAULTS.default_ep_vpc)
         ep.set_net(OBJ_DEFAULTS.default_ep_net)
-        ep.set_ip(ip)
+        if ip != "":
+            ep.set_ip(ip)
         ep.set_mac(endpoint_opr.rand_mac())
         ep.set_type(OBJ_DEFAULTS.ep_type_scaled)
         ep.set_status(OBJ_STATUS.ep_status_init)
         ep.create_obj()
+        return empty_pb2.Empty()
 
     def CreateServiceEndpoint(self, request, context):
         ep = self.__update_scaled_endpoint_backend(
@@ -80,6 +91,7 @@ class ProxyServer(ArktosNetworkServiceServicer, BuiltinsServiceServicer):
                 logger.error("Bouncers not yet ready")
             else:
                 bouncer_opr.update_endpoint_with_bouncers(ep)
+        return empty_pb2.Empty()
 
     def ResumePod(self, request, context):
         self.CreatePod(request, context)
@@ -129,10 +141,10 @@ class ProxyServer(ArktosNetworkServiceServicer, BuiltinsServiceServicer):
         return endpoint_opr.store.get_ep(name)
 
 
-class ProxyServiceClient():
+class ArktosServiceClient():
     def __init__(self, ip):
-        self.channel = grpc.insecure_channel('{}:50051'.format(ip))
-        self.stub_arktos = ArktosNetworkServiceStub(self.channel)
+        self.channel = grpc.insecure_channel('{}:50052'.format(ip))
+        # self.stub_arktos = ArktosNetworkServiceStub(self.channel)
         self.stub_builtins = BuiltinsServiceStub(self.channel)
 
     def CreatePod(self, BuiltinsMessage):
