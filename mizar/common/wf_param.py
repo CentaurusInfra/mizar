@@ -27,3 +27,4 @@ class HandlerParam(luigi.Parameter):
     body = dict()
     spec = dict()
     diff = dict()
+    extra = None

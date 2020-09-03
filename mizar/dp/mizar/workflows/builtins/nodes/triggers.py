@@ -26,7 +26,6 @@ from mizar.common.common import *
 from mizar.common.constants import *
 from mizar.common.wf_factory import *
 from mizar.common.wf_param import *
-
 logger = logging.getLogger()
 
 

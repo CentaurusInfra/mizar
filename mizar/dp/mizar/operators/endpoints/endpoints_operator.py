@@ -193,6 +193,30 @@ class EndpointOperator(object):
             "Update scaled endpoint {} with backends: {}".format(name, backends))
         return self.store.get_ep(name)
 
+    def update_scaled_endpoint_backend_service(self, name, namespace, ports, backend_ips):
+        ep = self.store.get_ep(name)
+        if ep is None:
+            return None
+        backends = set()
+        for b in backend_ips:
+            logger.info("Service update scaled endpoint add ip {}".format(b))
+            backends.add(b)
+        ports_map = {}
+        for port in ports:
+            ports_map[ports.frontend_port] = []
+            ports_map[ports.frontend_port].append(port.frontend_port)
+            proto = port.proto
+            if proto == "TCP":
+                ports_map[ports.frontend_port].append(CONSTANTS.IPPROTO_TCP)
+            if proto == "UDP":
+                ports_map[ports.frontend_port].append(CONSTANTS.IPROTO_UDP)
+        ep.set_backends(list(backends))
+        ep.set_ports(sorted(ports_map.items()))  # Sorted by frontend ports
+        self.store_update(ep)
+        logger.info(
+            "Service update scaled endpoint {} with backends: {}".format(name, backends))
+        return self.store.get_ep(name)
+
     def delete_endpoints_from_bouncers(self, bouncer):
         eps = self.store.get_eps_in_net(bouncer.net).values()
         bouncer.delete_eps(eps)
@@ -372,5 +396,6 @@ class EndpointOperator(object):
         return InterfaceServiceClient(droplet.ip).InitializeInterfaces(interfaces)
 
     def delete_simple_endpoint(self, ep):
-        logger.info("Delete endpoint object assicated with interface {}".format(ep.name))
+        logger.info(
+            "Delete endpoint object assicated with interface {}".format(ep.name))
         ep.delete_obj()

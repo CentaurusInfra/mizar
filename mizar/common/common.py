@@ -31,6 +31,7 @@ from ctypes.util import find_library
 from mizar.common.constants import *
 from pathlib import Path
 from luigi.execution_summary import LuigiStatusCode
+from mizar.proto.builtins_pb2 import *
 _libc = ctypes.CDLL(find_library('c'), use_errno=True)
 
 logger = logging.getLogger()
@@ -67,7 +68,7 @@ def host_nsenter(pid=1):
     _host_nsenter('ipc', pid)
     _host_nsenter('net', pid)
     _host_nsenter('pid', pid)
-    #_host_nsenter('user', pid)
+    # _host_nsenter('user', pid)
     _host_nsenter('uts', pid)
 
 
@@ -268,6 +269,34 @@ def run_workflow(task):
     if results.status == LuigiStatusCode.FAILED:
         raise kopf.PermanentError(
             "Unknown Error: {}".format(results.summary_text))
+
+
+def run_arktos_workflow(task):
+    results = luigi.build([task], detailed_summary=True)
+    if task.param.extra:
+        return_message = task.param.extra
+    else:
+        return_message = "OK"
+    rc = ReturnCode(
+        code=CodeType.OK,
+        message=return_message
+    )
+    if task.temporary_error:
+        logger.info("Temporary Error: {}".format(task.error))
+        rc.code = CodeType.TEMP_ERROR
+        rc.message = task.error
+        return rc
+    elif task.permanent_error:
+        logger.info("Permanent Error: {}".format(task.error))
+        rc.code = CodeType.PERM_ERROR
+        rc.message = task.error
+        return rc
+    elif results.status == LuigiStatusCode.FAILED:
+        logger.info("Unknown Error: {}".format(results.summary_text))
+        rc.code = CodeType.PERM_ERROR
+        rc.message = results.summary_text
+        return rc
+    return rc
 
 
 def get_pod_name(pod_id):

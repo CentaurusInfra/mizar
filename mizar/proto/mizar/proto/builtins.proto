@@ -6,9 +6,9 @@ service BuiltinsService {
 
     // For Services/Service Endpoints, network controller may want to annotate the Endpoints.
     // If Endpoints are not annotated, there will be many updates from unwanted endpoints.
-    rpc CreateService(BuiltinsServiceMessage) returns (BuiltinsServiceMessage) {}
-    rpc UpdateService(BuiltinsServiceMessage) returns (BuiltinsServiceMessage) {}
-    rpc ResumeService(BuiltinsServiceMessage) returns (BuiltinsServiceMessage) {}
+    rpc CreateService(BuiltinsServiceMessage) returns (ReturnCode) {}
+    rpc UpdateService(BuiltinsServiceMessage) returns (ReturnCode) {}
+    rpc ResumeService(BuiltinsServiceMessage) returns (ReturnCode) {}
 
     rpc UpdateServiceEndpoint(BuiltinsServiceEndpointMessage) returns (ReturnCode) {}
     rpc ResumeServiceEndpoint(BuiltinsServiceEndpointMessage) returns (ReturnCode) {}
@@ -36,7 +36,7 @@ message BuiltinsPodMessage {
   string host_ip = 2;
   string namespace = 3;
   string tenant = 4;
-  string arktos_network = 5;
+  string vpc = 5;
   string phase = 6;
   repeated InterfacesMessage interfaces = 7;
 }
@@ -44,13 +44,10 @@ message BuiltinsPodMessage {
 message BuiltinsServiceMessage {
   string arktos_network = 1;
   string name = 2;
-  string ip = 3;
-  enum CodeType{
-    OK = 0;
-    TEMP_ERROR = 1;
-    PERM_ERROR = 2;
-  }
-  CodeType code = 4;
+  string namespace = 3;
+  string tenant = 4;
+  string ip = 5;
+  ReturnCode return_code = 6;
 }
 
 message BuiltinsServiceEndpointMessage {
@@ -60,8 +57,7 @@ message BuiltinsServiceEndpointMessage {
 }
 
 message BuiltinsArktosMessage {
-  string vpc_id = 1;
-  string ip = 2;
+  string vpc = 1;
 }
 
 message PortsMessage {
@@ -77,10 +73,12 @@ message InterfacesMessage {
 }
 
 message ReturnCode {
-  enum CodeType{
+  CodeType code = 1;
+  string message = 2;
+}
+
+enum CodeType{
     OK = 0;
     TEMP_ERROR = 1;
     PERM_ERROR = 2;
-  }
-  CodeType code = 1;
 }
