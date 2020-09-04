@@ -9,6 +9,7 @@ service BuiltinsService {
     rpc CreateService(BuiltinsServiceMessage) returns (ReturnCode) {}
     rpc UpdateService(BuiltinsServiceMessage) returns (ReturnCode) {}
     rpc ResumeService(BuiltinsServiceMessage) returns (ReturnCode) {}
+    rpc DeleteService(BuiltinsServiceMessage) returns (ReturnCode) {}
 
     rpc UpdateServiceEndpoint(BuiltinsServiceEndpointMessage) returns (ReturnCode) {}
     rpc ResumeServiceEndpoint(BuiltinsServiceEndpointMessage) returns (ReturnCode) {}
@@ -21,6 +22,7 @@ service BuiltinsService {
     rpc CreateNode(BuiltinsNodeMessage) returns (ReturnCode) {}
     rpc ResumeNode(BuiltinsNodeMessage) returns (ReturnCode) {}
     rpc UpdateNode(BuiltinsNodeMessage) returns (ReturnCode) {}
+    rpc DeleteNode(BuiltinsNodeMessage) returns (ReturnCode) {}
 
     rpc CreateArktosNetwork(BuiltinsArktosMessage) returns (ReturnCode) {}
     rpc ResumeArktosNetwork(BuiltinsArktosMessage) returns (ReturnCode) {}
@@ -28,7 +30,8 @@ service BuiltinsService {
 }
 
 message BuiltinsNodeMessage {
-  string ip = 1;
+  string name = 1;
+  string ip = 2;
 }
 
 message BuiltinsPodMessage {
@@ -42,8 +45,8 @@ message BuiltinsPodMessage {
 }
 
 message BuiltinsServiceMessage {
-  string arktos_network = 1;
-  string name = 2;
+  string name = 1;
+  string arktos_network = 2;
   string namespace = 3;
   string tenant = 4;
   string ip = 5;
@@ -56,7 +59,8 @@ message BuiltinsServiceEndpointMessage {
 }
 
 message BuiltinsArktosMessage {
-  string vpc = 1;
+  string name = 1;
+  string vpc = 2;
 }
 
 message PortsMessage {
