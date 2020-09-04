@@ -53,7 +53,7 @@ class k8sPodCreate(WorkflowTask):
             'tenant': self.param.body['metadata'].get('tenant', ''),
             'vpc': self.param.body['metadata'].get('labels', {}).get(
                     OBJ_DEFAULTS.arktos_pod_annotation, OBJ_DEFAULTS.default_ep_vpc),
-            'net': OBJ_DEFAULTS.default_ep_net,
+            'subnet': OBJ_DEFAULTS.default_ep_net,
             'phase': self.param.body['status']['phase'],
             'interfaces': [{'name': 'eth0'}]
         }
@@ -74,10 +74,10 @@ class k8sPodCreate(WorkflowTask):
             spec['interfaces'] = configs
 
         # make sure not to trigger init or create simple endpoint
-        # if Arktos network is already marked ready
-        if spec['type'] ==  COMPUTE_PROVIDER.arktos:
-            self.finalize()
-            return
+        # if Arktos network is already marked ready (Needs to confirm with Arktos team)
+        # if spec['type'] ==  COMPUTE_PROVIDER.arktos && spec['readiness'] == true:
+        #     self.finalize()
+        #     return
 
         if spec['phase'] != 'Pending':
             self.finalize()

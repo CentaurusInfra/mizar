@@ -20,7 +20,7 @@
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 apiVersion: "mizar.com/v1"
-kind: Net
+kind: Subnet
 metadata:
   name: net2
 spec:
