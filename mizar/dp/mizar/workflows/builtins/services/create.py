@@ -20,15 +20,20 @@
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import logging
+from kubernetes import client
 from mizar.common.workflow import *
+from mizar.common.common import kube_patch_service
 from mizar.dp.mizar.operators.bouncers.bouncers_operator import *
 from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
 from mizar.dp.mizar.operators.nets.nets_operator import *
+from mizar.dp.mizar.operators.vpcs.vpcs_operator import *
+
 logger = logging.getLogger()
 
 endpoints_opr = EndpointOperator()
 bouncers_opr = BouncerOperator()
-
+nets_opr = NetOperator()
+vpcs_opr = VpcOperator()
 
 class k8sServiceCreate(WorkflowTask):
 
@@ -38,10 +43,18 @@ class k8sServiceCreate(WorkflowTask):
 
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
-        endpoints_opr.create_scaled_endpoint(
-            self.param.name, self.param.spec, self.param.body['metadata']['namespace'])
+        net = nets_opr.store.get_net(OBJ_DEFAULTS.default_ep_net)
+        if 'arktos.futurewei.com/network' in self.param.body['metadata'].get('labels', {}):
+            arktosnet = self.param.body['metadata']['labels']['arktos.futurewei.com/network']
+            vpc = vpcs_opr.store.get_vpc_in_arktosnet(arktosnet)
+            nets = nets_opr.store.get_nets_in_vpc(vpc)
+            if nets:
+                net = next(iter(nets.values()))
+        ep = endpoints_opr.create_scaled_endpoint(
+                    self.param.name, self.param.spec, net, self.param.body['metadata']['namespace'])
+        if 'clusterIP' not in self.param.spec:
+            kube_patch_service(client.CoreV1Api(), self.param.name, {"spec": {"clusterIP": ep.ip}}, self.param.body['metadata']['namespace'])
         self.finalize()
-
 
 class k8sEndpointsUpdate(WorkflowTask):
 

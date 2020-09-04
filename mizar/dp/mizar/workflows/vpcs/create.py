@@ -35,9 +35,15 @@ class VpcCreate(WorkflowTask):
 
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
-        v = vpcs_opr.get_vpc_stored_obj(self.param.name, self.param.spec)
-        vpcs_opr.allocate_vni(v)
-        vpcs_opr.create_vpc_dividers(v, v.n_dividers)
-        vpcs_opr.set_vpc_provisioned(v)
-        vpcs_opr.store_update(v)
-        self.finalize()
+        if self.param.body["kind"] == "Network":
+            vpc = self.param.spec['vpcID']
+            vpcs_opr.store.update_arktosnet_vpc(self.param.name, vpc)
+            logger.info("Update Arktos Network {} with VPC {}".format(
+                    self.param.name, vpcs_opr.store.get_vpc_in_arktosnet(self.param.name)))
+        else:
+            v = vpcs_opr.get_vpc_stored_obj(self.param.name, self.param.spec)
+            vpcs_opr.allocate_vni(v)
+            vpcs_opr.create_vpc_dividers(v, v.n_dividers)
+            vpcs_opr.set_vpc_provisioned(v)
+            vpcs_opr.store_update(v)
+            self.finalize()
