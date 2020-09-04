@@ -47,7 +47,6 @@ message BuiltinsServiceMessage {
   string namespace = 3;
   string tenant = 4;
   string ip = 5;
-  ReturnCode return_code = 6;
 }
 
 message BuiltinsServiceEndpointMessage {
