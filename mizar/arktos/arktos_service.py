@@ -19,26 +19,11 @@
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import logging
-import sys
-import os
-import subprocess
-import time
 import grpc
-from kubernetes import client, config
-from concurrent import futures
 from google.protobuf import empty_pb2
-from mizar.obj.vpc import Vpc
-from mizar.obj.net import Net
-from mizar.obj.divider import Divider
-from mizar.obj.endpoint import Endpoint
-from mizar.common.cidr import Cidr
-from mizar.store.operator_store import OprStore
 from mizar.proto.arktos_pb2_grpc import ArktosNetworkServiceServicer,  ArktosNetworkServiceStub
 from mizar.proto.builtins_pb2_grpc import BuiltinsServiceServicer, BuiltinsServiceStub
 from mizar.common.workflow import *
-from mizar.dp.mizar.operators.droplets.droplets_operator import *
-from mizar.dp.mizar.operators.bouncers.bouncers_operator import *
-from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
 from mizar.dp.mizar.operators.vpcs.vpcs_operator import *
 from mizar.proto.builtins_pb2 import *
 from mizar.common.wf_param import *
@@ -49,11 +34,6 @@ logger = logging.getLogger()
 
 
 class ArktosService(BuiltinsServiceServicer):
-
-    def __init__(self):
-        self.store = OprStore()
-        config.load_incluster_config()
-        self.obj_api = client.CustomObjectsApi()
 
     def CreatePod(self, request, context):
         logger.info("Creating pod from Arktos Service {}".format(request.name))
@@ -205,6 +185,6 @@ class ArktosServiceClient():
         resp = self.stub_builtins.UpdateArktosNetwork(BuiltinsArktosMessage)
         return resp
 
-    def ResumeArktosNetowrk(self, BuiltinsArktosMessage):
-        resp = self.stub_builtins.ResumeArktosNetowrk(BuiltinsArktosMessage)
+    def ResumeArktosNetwork(self, BuiltinsArktosMessage):
+        resp = self.stub_builtins.ResumeArktosNetwork(BuiltinsArktosMessage)
         return resp

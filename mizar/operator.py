@@ -44,6 +44,8 @@ from google.protobuf import empty_pb2
 from concurrent import futures
 from mizar.proto import builtins_pb2_grpc as builtins_pb2_grpc
 from mizar.arktos.arktos_service import ArktosService
+from kubernetes import client, config
+import socket
 
 logger = logging.getLogger()
 LOCK: asyncio.Lock
@@ -67,8 +69,10 @@ async def on_startup(logger, **kwargs):
     while not os.path.exists("/proc/{}".format(pid)):
         pass
     logger.info("Running luigid central scheduler pid={}!".format(pid))
-
+    create_config_map()
     threading.Thread(target=grpc_server).start()
+
+    start_time = time.time()
 
     run_workflow(wffactory().DropletOperatorStart(param=param))
     run_workflow(wffactory().DividerOperatorStart(param=param))
@@ -93,3 +97,27 @@ def grpc_server():
     server.start()
     logger.info("Running gRPC server for Network Controller!")
     server.wait_for_termination()
+
+
+def create_config_map():
+    config.load_incluster_config()
+    ip = socket.gethostbyname(socket.gethostname())
+    core_api = client.CoreV1Api()
+    metadata = client.V1ObjectMeta(
+        name="mizar-grpc-service",
+        namespace="default",
+    )
+    configmap = client.V1ConfigMap(
+        api_version="v1",
+        kind="ConfigMap",
+        data=dict(host=ip),
+        metadata=metadata
+    )
+    try:
+        response = core_api.create_namespaced_config_map(
+            namespace="default",
+            body=configmap
+        )
+        print(response)
+    except:
+        print("Exception when calling CoreV1Api -> create_namespaced_config_map")
