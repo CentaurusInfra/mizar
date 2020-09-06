@@ -20,8 +20,6 @@
 
 import logging
 import grpc
-from google.protobuf import empty_pb2
-from mizar.proto.arktos_pb2_grpc import ArktosNetworkServiceServicer,  ArktosNetworkServiceStub
 from mizar.proto.builtins_pb2_grpc import BuiltinsServiceServicer, BuiltinsServiceStub
 from mizar.common.workflow import *
 from mizar.dp.mizar.operators.vpcs.vpcs_operator import *
@@ -135,6 +133,23 @@ class ArktosService(BuiltinsServiceServicer):
     def UpdateServiceEndpoint(self, request, context):
         self.CreateServiceEndpoint(request, context)
 
+    def DeleteNode(self, request, context):
+        rc = ReturnCode(
+            code=CodeType.OK,
+            message="OK"
+        )
+        return rc
+
+    def DeletePod(self, request, context):
+        param = HandlerParam()
+        param.name = request.name
+        return run_arktos_workflow(wffactory().k8sPodDelete(param=param))
+
+    def DeleteService(self, request, context):
+        param = HandlerParam()
+        param.name = request.name
+        return run_arktos_workflow(wffactory().k8sServiceDelete(param=param))
+
 
 class ArktosServiceClient():
     def __init__(self, ip):
@@ -153,38 +168,50 @@ class ArktosServiceClient():
         resp = self.stub_builtins.CreateNode(BuiltinsNodeMessage)
         return resp
 
+    def CreateArktosNetwork(self, BuiltinsArktosMessage):
+        resp = self.stub_builtins.CreateArktosNetwork(BuiltinsArktosMessage)
+        return resp
+
     def UpdatePod(self, BuiltinsPodMessage):
-        resp = self.stub_builtins.CreatePod(BuiltinsPodMessage)
+        resp = self.stub_builtins.UpdatePod(BuiltinsPodMessage)
         return resp
 
     def UpdateService(self, BuiltinsServiceMessage):
-        resp = self.stub_builtins.CreateService(BuiltinsServiceMessage)
+        resp = self.stub_builtins.UpdateService(BuiltinsServiceMessage)
         return resp
 
     def UpdateNode(self, BuiltinsNodeMessage):
-        resp = self.stub_builtins.CreateNode(BuiltinsNodeMessage)
-        return resp
-
-    def ResumePod(self, BuiltinsPodMessage):
-        resp = self.stub_builtins.CreatePod(BuiltinsPodMessage)
-        return resp
-
-    def ResumeService(self, BuiltinsServiceMessage):
-        resp = self.stub_builtins.CreateService(BuiltinsServiceMessage)
-        return resp
-
-    def ResumeNode(self, BuiltinsNodeMessage):
-        resp = self.stub_builtins.CreateNode(BuiltinsNodeMessage)
-        return resp
-
-    def CreateArktosNetwork(self, BuiltinsArktosMessage):
-        resp = self.stub_builtins.CreateArktosNetwork(BuiltinsArktosMessage)
+        resp = self.stub_builtins.UpdateNode(BuiltinsNodeMessage)
         return resp
 
     def UpdateArktosNetwork(self, BuiltinsArktosMessage):
         resp = self.stub_builtins.UpdateArktosNetwork(BuiltinsArktosMessage)
         return resp
 
+    def ResumePod(self, BuiltinsPodMessage):
+        resp = self.stub_builtins.ResumePod(BuiltinsPodMessage)
+        return resp
+
+    def ResumeService(self, BuiltinsServiceMessage):
+        resp = self.stub_builtins.ResumeService(BuiltinsServiceMessage)
+        return resp
+
+    def ResumeNode(self, BuiltinsNodeMessage):
+        resp = self.stub_builtins.ResumeNode(BuiltinsNodeMessage)
+        return resp
+
     def ResumeArktosNetwork(self, BuiltinsArktosMessage):
         resp = self.stub_builtins.ResumeArktosNetwork(BuiltinsArktosMessage)
+        return resp
+
+    def DeleteNode(self, BuiltinsNodeMessage):
+        resp = self.stub_builtins.DeleteNode(BuiltinsNodeMessage)
+        return resp
+
+    def DeleteService(self, BuiltinsServiceMessage):
+        resp = self.stub_builtins.DeleteService(BuiltinsServiceMessage)
+        return resp
+
+    def DeletePod(self, BuiltinsPodMessage):
+        resp = self.stub_builtins.DeletePod(BuiltinsPodMessage)
         return resp

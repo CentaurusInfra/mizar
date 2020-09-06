@@ -38,3 +38,12 @@ async def droplet_opr_on_node(body, spec, **kwargs):
     param.body = body
     param.spec = spec
     run_workflow(wffactory().k8sDropletCreate(param=param))
+
+
+@kopf.on.delete('', 'v1', 'nodes', retries=OBJ_DEFAULTS.kopf_max_retries)
+async def droplet_opr_on_node_delete(body, spec, **kwargs):
+    param = HandlerParam()
+    param.name = kwargs['name']
+    param.body = body
+    param.spec = spec
+    run_workflow(wffactory().k8sDropletDelete(param=param))
