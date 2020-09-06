@@ -90,6 +90,7 @@ class OBJ_DEFAULTS:
     ep_type_scaled = 'scaled'
     ep_type_host = 'host'
     ep_type_gateway = 'gateway'
+    droplet_eps = [ep_type_simple, ep_type_host]
 
     mizar_service_annotation_key = "service.beta.kubernetes.io/mizar-scaled-endpoint-type"
     mizar_service_annotation_val = "scaled-endpoint"
@@ -99,6 +100,7 @@ class OBJ_DEFAULTS:
 
     kopf_max_retries = 5
 
+
 class RESOURCES:
     endpoints = "endpoints"
     nets = "subnets"
@@ -107,9 +109,11 @@ class RESOURCES:
     bouncers = "bouncers"
     dividers = "dividers"
 
+
 class COMPUTE_PROVIDER:
     kubernetes = "kubernetes"
     arktos = "arktos"
+
 
 class LAMBDAS:
     ep_status_init = lambda body, **_: body.get('spec', {}).get(

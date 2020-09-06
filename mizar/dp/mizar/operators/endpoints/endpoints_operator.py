@@ -95,6 +95,8 @@ class EndpointOperator(object):
     def update_endpoints_with_bouncers(self, bouncer):
         eps = list(self.store.get_eps_in_net(bouncer.net).values())
         for ep in eps:
+            logger.info("EP {} update agent with bouncer {}".format(
+                bouncer.name, ep.name))
             if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
                 ep.update_bouncers({bouncer.name: bouncer})
 

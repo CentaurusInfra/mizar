@@ -18,6 +18,7 @@ service BuiltinsService {
     rpc ResumePod(BuiltinsPodMessage) returns (ReturnCode) {}
     rpc UpdatePod(BuiltinsPodMessage) returns (ReturnCode) {}
     rpc CreatePod(BuiltinsPodMessage) returns (ReturnCode) {}
+    rpc DeletePod(BuiltinsPodMessage) returns (ReturnCode) {}
 
     rpc CreateNode(BuiltinsNodeMessage) returns (ReturnCode) {}
     rpc ResumeNode(BuiltinsNodeMessage) returns (ReturnCode) {}
