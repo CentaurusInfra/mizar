@@ -334,7 +334,7 @@ class EndpointOperator(object):
             ep.set_droplet_mac(droplet.mac)
             ep.set_interface(interface)
             ep.create_obj()
-            self.store_update(ep)
+            return ep
 
     def init_simple_endpoint_interfaces(self, worker_ip, spec):
         """

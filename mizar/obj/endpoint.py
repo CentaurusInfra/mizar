@@ -71,6 +71,8 @@ class Endpoint:
         return TrnRpc(self.droplet_ip, self.droplet_mac)
 
     def get_nip(self):
+        if self.type == OBJ_DEFAULTS.ep_type_host:
+            return OBJ_DEFAULTS.default_net_ip
         ip = ipaddress.ip_interface(self.ip + '/' + self.prefix)
         return str(ip.network.network_address)
 

@@ -49,9 +49,12 @@ class EndpointCreate(WorkflowTask):
         if ep.type in OBJ_DEFAULTS.droplet_eps and not ep.droplet_obj:
             self.raise_temporary_error(
                 "Task: {} Endpoint: {} Droplet Object not ready.".format(self.__class__.__name__, ep.name))
-        nets_opr.allocate_endpoint(ep)
-        if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
-            endpoints_opr.produce_simple_endpoint_interface(ep)
+        if not bouncers_opr.store.get_bouncers_of_net(ep.net):
+            self.raise_temporary_error(
+                "Task: {} Endpoint: {} Bouncers not yet provisioned.".format(self.__class__.__name__, ep.name))
         bouncers_opr.update_endpoint_with_bouncers(ep)
+        if ep.type == OBJ_DEFAULTS.ep_type_simple:
+            nets_opr.allocate_endpoint(ep)
+            endpoints_opr.produce_simple_endpoint_interface(ep)
         endpoints_opr.set_endpoint_provisioned(ep)
         self.finalize()
