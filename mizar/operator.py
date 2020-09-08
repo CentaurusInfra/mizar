@@ -106,6 +106,7 @@ def create_config_map():
     metadata = client.V1ObjectMeta(
         name="mizar-grpc-service",
         namespace="default",
+        labels=dict(service="mizar")
     )
     configmap = client.V1ConfigMap(
         api_version="v1",
