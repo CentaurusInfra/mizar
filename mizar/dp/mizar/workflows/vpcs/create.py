@@ -25,9 +25,9 @@ from mizar.dp.mizar.operators.vpcs.vpcs_operator import *
 from mizar.dp.mizar.operators.droplets.droplets_operator import *
 
 logger = logging.getLogger()
-
 vpcs_opr = VpcOperator()
 droplets_opr = DropletOperator()
+
 
 class VpcCreate(WorkflowTask):
 
@@ -37,10 +37,10 @@ class VpcCreate(WorkflowTask):
 
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
-        v = vpcs_opr.store.get_vpc(self.param.name)
+        v = vpcs_opr.get_vpc_stored_obj(self.param.name, self.param.spec)
         if len(droplets_opr.store.get_all_droplets()) == 0:
             self.raise_temporary_error(
-                    "Task: {} VPC: {} No droplets available.".format(self.__class__.__name__, v.name))
+                "Task: {} VPC: {} No droplets available.".format(self.__class__.__name__, v.name))
         vpcs_opr.allocate_vni(v)
         vpcs_opr.create_vpc_dividers(v, v.n_dividers)
         vpcs_opr.set_vpc_provisioned(v)

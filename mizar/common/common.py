@@ -254,6 +254,28 @@ def kube_patch_service(core_api, service_name, service_body, service_namespace='
     finally:
         return response
 
+def kube_create_config_map(core_api, namespace, configmap):
+    try:
+        response = core_api.create_namespaced_config_map(
+            namespace=namespace,
+            body=configmap
+        )
+        print(response)
+    except:
+        print("Exception when calling CoreV1Api -> create_namespaced_config_map")
+
+
+def kube_read_config_map(core_api, name, namespace):
+    try:
+        response = core_api.read_namespaced_config_map(
+            name=name,
+            namespace=namespace
+        )
+        return response
+    except:
+        return None
+
+
 def get_spec_val(key, spec, default=""):
     return default if key not in spec else spec[key]
 

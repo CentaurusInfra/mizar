@@ -29,9 +29,9 @@ from mizar.common.wf_param import *
 logger = logging.getLogger()
 
 
-@kopf.on.resume('', 'v1', 'nodes', retries=OBJ_DEFAULTS.kopf_max_retries)
-@kopf.on.update('', 'v1', 'nodes', retries=OBJ_DEFAULTS.kopf_max_retries)
-@kopf.on.create('', 'v1', 'nodes', retries=OBJ_DEFAULTS.kopf_max_retries)
+@kopf.on.resume('', 'v1', 'nodes', retries=OBJ_DEFAULTS.kopf_max_retries, when=LAMBDAS.k8s_provider_vanilla)
+@kopf.on.update('', 'v1', 'nodes', retries=OBJ_DEFAULTS.kopf_max_retries, when=LAMBDAS.k8s_provider_vanilla)
+@kopf.on.create('', 'v1', 'nodes', retries=OBJ_DEFAULTS.kopf_max_retries, when=LAMBDAS.k8s_provider_vanilla)
 async def droplet_opr_on_node(body, spec, **kwargs):
     param = HandlerParam()
     param.name = kwargs['name']
@@ -40,7 +40,7 @@ async def droplet_opr_on_node(body, spec, **kwargs):
     run_workflow(wffactory().k8sDropletCreate(param=param))
 
 
-@kopf.on.delete('', 'v1', 'nodes', retries=OBJ_DEFAULTS.kopf_max_retries)
+@kopf.on.delete('', 'v1', 'nodes', retries=OBJ_DEFAULTS.kopf_max_retries, when=LAMBDAS.k8s_provider_vanilla)
 async def droplet_opr_on_node_delete(body, spec, **kwargs):
     param = HandlerParam()
     param.name = kwargs['name']

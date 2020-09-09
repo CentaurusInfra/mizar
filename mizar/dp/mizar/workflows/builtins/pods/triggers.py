@@ -30,10 +30,10 @@ from mizar.common.wf_param import *
 logger = logging.getLogger()
 
 
-@kopf.on.resume('', 'v1', 'pods', retries=OBJ_DEFAULTS.kopf_max_retries)
-@kopf.on.update('', 'v1', 'pods', retries=OBJ_DEFAULTS.kopf_max_retries)
-@kopf.on.create('', 'v1', 'pods', retries=OBJ_DEFAULTS.kopf_max_retries)
-async def builtins_on_pod_create(body, spec, **kwargs):
+@kopf.on.resume('', 'v1', 'pods', retries=OBJ_DEFAULTS.kopf_max_retries, when=LAMBDAS.k8s_provider_vanilla)
+@kopf.on.update('', 'v1', 'pods', retries=OBJ_DEFAULTS.kopf_max_retries, when=LAMBDAS.k8s_provider_vanilla)
+@kopf.on.create('', 'v1', 'pods', retries=OBJ_DEFAULTS.kopf_max_retries, when=LAMBDAS.k8s_provider_vanilla)
+async def builtins_on_pod(body, spec, **kwargs):
     param = HandlerParam()
     param.name = kwargs['name']
     param.body = body

@@ -46,6 +46,7 @@ from mizar.proto import builtins_pb2_grpc as builtins_pb2_grpc
 from mizar.arktos.arktos_service import ArktosService
 from kubernetes import client, config
 import socket
+from mizar.common.constants import *
 
 logger = logging.getLogger()
 LOCK: asyncio.Lock
@@ -58,7 +59,7 @@ async def on_startup(logger, **kwargs):
     global LOCK
     LOCK = asyncio.Lock()
     param = HandlerParam()
-
+    config.load_incluster_config()
     sched = 'luigid --background --port 8082 --pidfile /var/run/luigi/luigi.pid --logdir /var/log/luigi --state-path /var/lib/luigi/luigi.state'
     subprocess.call(sched, shell=True)
     while not os.path.exists("/var/run/luigi/luigi.pid"):
@@ -69,9 +70,13 @@ async def on_startup(logger, **kwargs):
     while not os.path.exists("/proc/{}".format(pid)):
         pass
     logger.info("Running luigid central scheduler pid={}!".format(pid))
-    create_config_map()
-    threading.Thread(target=grpc_server).start()
 
+    threading.Thread(target=grpc_server).start()
+    create_config_map()
+    configmap = read_config_map()
+    if configmap:
+        if read_config_map().data["name"] == "arktos":
+            COMPUTE_PROVIDER.k8s = False
     start_time = time.time()
 
     run_workflow(wffactory().DropletOperatorStart(param=param))
@@ -100,25 +105,20 @@ def grpc_server():
 
 
 def create_config_map():
-    config.load_incluster_config()
-    ip = socket.gethostbyname(socket.gethostname())
-    core_api = client.CoreV1Api()
-    metadata = client.V1ObjectMeta(
+    metadata = metadata = client.V1ObjectMeta(
         name="mizar-grpc-service",
         namespace="default",
         labels=dict(service="mizar")
     )
+    data = dict(host=socket.gethostbyname(socket.gethostname()))
     configmap = client.V1ConfigMap(
         api_version="v1",
         kind="ConfigMap",
-        data=dict(host=ip),
+        data=data,
         metadata=metadata
     )
-    try:
-        response = core_api.create_namespaced_config_map(
-            namespace="default",
-            body=configmap
-        )
-        print(response)
-    except:
-        print("Exception when calling CoreV1Api -> create_namespaced_config_map")
+    kube_create_config_map(client.CoreV1Api(), "default", configmap)
+
+
+def read_config_map():
+    return kube_read_config_map(client.CoreV1Api(), "system-source", "kube-system")

@@ -97,7 +97,6 @@ class OBJ_DEFAULTS:
 
     arktos_pod_label = "arktos.futurewei.com/network"
     arktos_pod_annotation = "arktos.futurewei.com/nic"
-
     kopf_max_retries = 5
 
 
@@ -112,6 +111,7 @@ class RESOURCES:
 
 class COMPUTE_PROVIDER:
     kubernetes = "kubernetes"
+    k8s = True
     arktos = "arktos"
 
 
@@ -173,3 +173,4 @@ class LAMBDAS:
         'status', '') == OBJ_STATUS.divider_status_provisioned
     divider_status_placed = lambda body, **_: body.get('spec', {}).get(
         'status', '') == OBJ_STATUS.divider_status_placed
+    k8s_provider_vanilla = lambda **_: COMPUTE_PROVIDER.k8s == True
