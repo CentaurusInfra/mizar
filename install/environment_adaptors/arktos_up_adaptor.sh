@@ -32,6 +32,9 @@ function environment_adaptor:deploy_mizar {
     local cwd=$(pwd)
     source install/create_crds.sh $cwd
 
+    # Indicate the system is from Arktos
+    kubectl create configmap system-source --namespace=kube-system --from-literal=name=arktos --from-literal=company=futurewei
+
     # Deploy daemon first, then deploy operator after daemon pod is running. We hold operator, wait until daemon is running. Mizar won't work correctly if directly deploying operator without waiting for daemon. 
     kubectl apply -f etc/deploy/deploy.daemon.yaml
     sleep 5 # Wait when daemon pod is being created
