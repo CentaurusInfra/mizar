@@ -35,8 +35,7 @@ class NetProvisioned(WorkflowTask):
 
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
-        net = nets_opr.get_net_stored_obj(self.param.name, self.param.spec)
-        nets_opr.store_update(net)
+        net = nets_opr.store.get_net(self.param.name)
 
         for d in self.param.diff:
             if d[0] == 'change':

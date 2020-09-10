@@ -44,7 +44,7 @@ class NetCreate(WorkflowTask):
 
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
-        n = nets_opr.get_net_stored_obj(self.param.name, self.param.spec)
+        n = nets_opr.store.get_net(self.param.name)
         if len(droplets_opr.store.get_all_droplets()) == 0:
             self.raise_temporary_error(
                 "Task: {} Net: {} No droplets available.".format(self.__class__.__name__, n.name))

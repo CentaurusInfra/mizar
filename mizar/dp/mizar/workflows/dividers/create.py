@@ -46,8 +46,9 @@ class DividerCreate(WorkflowTask):
         if not droplets_opr.is_bootstrapped():
             self.raise_temporary_error(
                 "Task: {} Divider: {} Droplet operator not ready.".format(self.__class__.__name__, divider.name))
-
-        droplets_opr.assign_divider_droplet(divider)
+        if not droplets_opr.assign_divider_droplet(divider):
+            self.raise_temporary_error(
+                "Task: {} Divider: {} No droplets available.".format(self.__class__.__name__, divider.name))
 
         # Update vpc on bouncers
         bouncers_opr.update_bouncers_with_divider(divider)

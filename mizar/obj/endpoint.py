@@ -157,9 +157,11 @@ class Endpoint:
         self.store.delete_ep(self.name)
 
     # K8s APIs
+    # This function does a store update
     def create_obj(self):
         return kube_create_obj(self)
 
+    # This function does a store update
     def update_obj(self):
         return kube_update_obj(self)
 

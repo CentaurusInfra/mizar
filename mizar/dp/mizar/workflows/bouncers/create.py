@@ -57,8 +57,9 @@ class BouncerCreate(WorkflowTask):
         if not net:
             self.raise_temporary_error(
                 "Task: {} Bouncer: {} Net {} not ready.".format(self.__class__.__name__, bouncer.name, bouncer.net))
-
-        droplets_opr.assign_bouncer_droplet(bouncer)
+        if not droplets_opr.assign_bouncer_droplet(bouncer):
+            self.raise_temporary_error("Task: {} Bouncer: {} No droplets available.".format(
+                self.__class__.__name__, bouncer.name))
 
         # Update vpc on bouncer
         # Needs a list of all dividers

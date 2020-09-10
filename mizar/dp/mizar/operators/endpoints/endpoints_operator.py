@@ -308,7 +308,6 @@ class EndpointOperator(object):
             ep.set_droplet_mac(spec['droplet'].mac)
             ep.set_interface(interface)
             ep.create_obj()
-            self.store_update(ep)
 
     def create_host_endpoint(self, ip, droplet, interfaces):
         for interface in interfaces.interfaces:
