@@ -47,7 +47,7 @@ class ArktosService(BuiltinsServiceServicer):
         param.body['metadata']['namespace'] = request.namespace
         param.body['status']['phase'] = request.phase
 
-        param.body['metadata']["labels"] = OBJ_DEFAULTS.arktos_pod_label
+        param.body['metadata']["labels"][OBJ_DEFAULTS.arktos_pod_label] = {}
         if request.vpc != "":
             param.body['metadata']["labels"][OBJ_DEFAULTS.arktos_pod_annotation] = request.vpc
 
@@ -104,34 +104,34 @@ class ArktosService(BuiltinsServiceServicer):
         return rc
 
     def UpdateArktosNetwork(self, request, context):
-        self.CreateArktosNetwork(request, context)
+        return self.CreateArktosNetwork(request, context)
 
     def ResumeArktosNetowrk(self, request, context):
-        self.CreateArktosNetwork(request, context)
+        return self.CreateArktosNetwork(request, context)
 
     def ResumePod(self, request, context):
-        self.CreatePod(request, context)
+        return self.CreatePod(request, context)
 
     def ResumeNode(self, request, context):
-        self.CreateNode(request, context)
+        return self.CreateNode(request, context)
 
     def ResumeService(self, request, context):
-        self.CreateService(request, context)
+        return self.CreateService(request, context)
 
     def ResumeServiceEndpoint(self, request, context):
-        self.CreateServiceEndpoint(request, context)
+        return self.CreateServiceEndpoint(request, context)
 
     def UpdatePod(self, request, context):
-        self.CreatePod(request, context)
+        return self.CreatePod(request, context)
 
     def UpdateNode(self, request, context):
-        self.CreateNode(request, context)
+        return self.CreateNode(request, context)
 
     def UpdateService(self, request, context):
-        self.CreateService(request, context)
+        return self.CreateService(request, context)
 
     def UpdateServiceEndpoint(self, request, context):
-        self.CreateServiceEndpoint(request, context)
+        return self.CreateServiceEndpoint(request, context)
 
     def DeleteNode(self, request, context):
         rc = ReturnCode(

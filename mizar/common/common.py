@@ -285,10 +285,10 @@ def run_workflow(task):
     if task.temporary_error:
         raise kopf.TemporaryError(
             "Temporary Error: {}".format(task.error), delay=task.retry_delay)
-    if task.permanent_error:
+    elif task.permanent_error:
         raise kopf.PermanentError(
             "Permanent Error: {}".format(task.error))
-    if results.status == LuigiStatusCode.FAILED:
+    elif results.status == LuigiStatusCode.FAILED:
         raise kopf.PermanentError(
             "Unknown Error: {}".format(results.summary_text))
 
@@ -296,29 +296,30 @@ def run_workflow(task):
 def run_arktos_workflow(task):
     results = luigi.build([task], detailed_summary=True)
     if task.param.extra:
+        code = CodeType.OK
         return_message = task.param.extra
     else:
+        code = CodeType.OK
         return_message = "OK"
-    rc = ReturnCode(
-        code=CodeType.OK,
-        message=return_message
-    )
+
     if task.temporary_error:
         logger.info("Temporary Error: {}".format(task.error))
-        rc.code = CodeType.TEMP_ERROR
-        rc.message = task.error
-        return rc
+        code = CodeType.TEMP_ERROR
+        return_message = task.error
     elif task.permanent_error:
         logger.info("Permanent Error: {}".format(task.error))
-        rc.code = CodeType.PERM_ERROR
-        rc.message = task.error
-        return rc
+        code = CodeType.PERM_ERROR
+        return_message = task.error
     elif results.status == LuigiStatusCode.FAILED:
         logger.info("Unknown Error: {}".format(results.summary_text))
-        rc.code = CodeType.PERM_ERROR
-        rc.message = results.summary_text
-        return rc
-    return rc
+        code = CodeType.PERM_ERROR
+        return_message = results.summary_text
+    logger.info("Return code is {}".format(code))
+    logger.info("Return message is {}".format(return_message))
+    return ReturnCode(
+        code=code,
+        message=return_message
+    )
 
 
 def get_pod_name(pod_id):
