@@ -282,7 +282,7 @@ class EndpointOperator(object):
             logger.info("Create simple endpoint {}".format(interface))
             name = get_itf_name(interface.interface_id)
             ep = Endpoint(name, self.obj_api, self.store)
-
+            ep.set_pod(spec["name"])
             ep.set_type(OBJ_DEFAULTS.ep_type_simple)
             ep.set_status(OBJ_STATUS.ep_status_init)
 

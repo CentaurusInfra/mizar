@@ -65,6 +65,7 @@ class Endpoint:
             self.set_obj_spec(spec)
         self.deleted = False
         self.interface = None
+        self.pod = ""
 
     @property
     def rpc(self):
@@ -104,7 +105,8 @@ class Endpoint:
             "hostip": self.droplet_ip,
             "hostmac": self.droplet_mac,
             "cnidelay": self.cnidelay,
-            "provisiondelay": self.provisiondelay
+            "provisiondelay": self.provisiondelay,
+            "pod": self.pod
         }
 
         return self.obj
@@ -127,6 +129,7 @@ class Endpoint:
         self.droplet_mac = get_spec_val('hostmac', spec)
         self.cnidelay = get_spec_val('cnidelay', spec)
         self.provisiondelay = get_spec_val('provisiondelay', spec)
+        self.pod = get_spec_val('pod', spec)
 
     def set_interface(self, interface):
         self.interface = interface
@@ -237,6 +240,9 @@ class Endpoint:
 
     def set_veth_peer_mac(self, veth_peer_mac):
         self.veth_peer_mac = veth_peer_mac
+
+    def set_pod(self, pod):
+        self.pod = pod
 
     def update_bouncers(self, bouncers, add=True):
         for bouncer in bouncers.values():
