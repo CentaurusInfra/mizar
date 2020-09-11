@@ -51,19 +51,20 @@ class k8sPodCreate(WorkflowTask):
             'type': COMPUTE_PROVIDER.kubernetes,
             'namespace': self.param.body['metadata'].get('namespace', 'default'),
             'tenant': self.param.body['metadata'].get('tenant', ''),
-            'vpc': self.param.body['metadata'].get('labels', {}).get(
-                    OBJ_DEFAULTS.arktos_pod_annotation, OBJ_DEFAULTS.default_ep_vpc),
+            'vpc': OBJ_DEFAULTS.default_ep_vpc,
             'subnet': OBJ_DEFAULTS.default_ep_net,
             'phase': self.param.body['status']['phase'],
             'interfaces': [{'name': 'eth0'}]
         }
-
         logger.info("Pod spec {}".format(spec))
+
         spec['vni'] = vpc_opr.store_get(spec['vpc']).vni
         spec['droplet'] = droplet_opr.store_get_by_ip(spec['hostIP'])
 
         if OBJ_DEFAULTS.arktos_pod_label in self.param.body['metadata'].get('labels', {}):
             spec['type'] =  COMPUTE_PROVIDER.arktos
+            spec['vpc'] = vpc_opr.store.get_vpc_in_arktosnet(
+                                        self.param.body['metadata']['labels'][OBJ_DEFAULTS.arktos_pod_label])
 
         # Example: arktos.futurewei.com/nic: [{"name": "eth0", "ip": "10.10.1.12", "subnet": "net1"}]
         # all three fields are optional. Each item in the list corresponding to an endpoint

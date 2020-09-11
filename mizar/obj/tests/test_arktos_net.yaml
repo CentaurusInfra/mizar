@@ -4,6 +4,7 @@ metadata:
   name: my-net-mizar-1
 spec:
   type: mizar
-  vpcID: 12345-mizar
+  vpcID: vpc0
   service:
-    ipam: Arktos
+    ipam: External
+

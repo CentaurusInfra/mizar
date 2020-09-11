@@ -33,7 +33,7 @@ logger = logging.getLogger()
 @kopf.on.resume('', 'v1', 'pods', retries=OBJ_DEFAULTS.kopf_max_retries)
 @kopf.on.update('', 'v1', 'pods', retries=OBJ_DEFAULTS.kopf_max_retries)
 @kopf.on.create('', 'v1', 'pods', retries=OBJ_DEFAULTS.kopf_max_retries)
-async def builtins_on_pod(body, spec, **kwargs):
+async def builtins_on_pod_create(body, spec, **kwargs):
     param = HandlerParam()
     param.name = kwargs['name']
     param.body = body
