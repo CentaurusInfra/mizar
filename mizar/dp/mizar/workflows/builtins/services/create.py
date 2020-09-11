@@ -52,8 +52,6 @@ class k8sServiceCreate(WorkflowTask):
                 net = next(iter(nets.values()))
         ep = endpoints_opr.create_scaled_endpoint(
                     self.param.name, self.param.spec, net, self.param.body['metadata']['namespace'])
-        if 'clusterIP' not in self.param.spec:
-            kube_patch_service(client.CoreV1Api(), self.param.name, {"spec": {"clusterIP": ep.ip}}, self.param.body['metadata']['namespace'])
         self.finalize()
 
 class k8sEndpointsUpdate(WorkflowTask):
