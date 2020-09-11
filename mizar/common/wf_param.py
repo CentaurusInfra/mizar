@@ -28,3 +28,4 @@ class HandlerParam(luigi.Parameter):
     spec = dict()
     diff = dict()
     extra = None
+    return_message = None

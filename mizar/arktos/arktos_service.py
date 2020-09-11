@@ -39,26 +39,21 @@ class ArktosService(BuiltinsServiceServicer):
         param.name = request.name
         param.body['status'] = {}
         param.body['metadata'] = {}
-        param.body['metadata']["annotations"] = {}
-        param.body['metadata']["labels"] = {}
-
         param.body['status']['hostIP'] = request.host_ip
         param.body['metadata']['name'] = request.name
         param.body['metadata']['namespace'] = request.namespace
         param.body['status']['phase'] = request.phase
-
-        param.body['metadata']["labels"][OBJ_DEFAULTS.arktos_pod_label] = {}
-        if request.vpc != "":
-            param.body['metadata']["labels"][OBJ_DEFAULTS.arktos_pod_annotation] = request.vpc
-
+        param.extra = {}
+        if request.arktos_network != "":
+            param.extra["arktos_network"] = request.arktos_network
         if len(request.interfaces) > 0:
-            param.body['metadata']["annotations"][OBJ_DEFAULTS.arktos_pod_annotation] = list()
+            param.extra["interfaces"] = list()
             itf_string = '['
             for interface in request.interfaces:
                 itf_string += '{"name": "{}", "ip": "{}", "subnet": "{}"},'.format(
                     interface.name, interface.ip, interface.subnet)
             itf_string = itf_string[:-1] + ']'
-            param.body['metadata']["annotations"][OBJ_DEFAULTS.arktos_pod_annotation] = itf_string
+            param.extra.interfaces = itf_string
         return run_arktos_workflow(wffactory().k8sPodCreate(param=param))
 
     def CreateNode(self, request, context):
@@ -82,6 +77,7 @@ class ArktosService(BuiltinsServiceServicer):
 
         param.body['metadata']['namespace'] = request.namespace
         param.spec["clusterIP"] = request.ip
+        param.extra["arktos_network"] = request.arktos_network
         return run_arktos_workflow(wffactory().k8sServiceCreate(param=param))
 
     def CreateServiceEndpoint(self, request, context):
@@ -98,9 +94,12 @@ class ArktosService(BuiltinsServiceServicer):
             code=CodeType.OK,
             message="OK"
         )
-        if vpc_opr.store_get(request.vpc):
+        vpc_opr.store_get(request.vpc)
+        if not vpc_opr.store_get(request.vpc):
             rc.code = CodeType.PERM_ERROR
             rc.message = "ERROR: VPC Does not exist."
+        else:
+            vpc_opr.store.update_arktosnet_vpc(request.name, request.vpc)
         return rc
 
     def UpdateArktosNetwork(self, request, context):

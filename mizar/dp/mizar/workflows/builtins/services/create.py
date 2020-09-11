@@ -45,17 +45,19 @@ class k8sServiceCreate(WorkflowTask):
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
         net = nets_opr.store.get_net(OBJ_DEFAULTS.default_ep_net)
-        if 'arktos.futurewei.com/network' in self.param.body['metadata'].get('labels', {}):
-            arktosnet = self.param.body['metadata']['labels']['arktos.futurewei.com/network']
+        logger.info("NET OBJECT {}".format(net))
+        if self.param.extra:
+            arktosnet = self.param.extra['arktos_network']
             vpc = vpcs_opr.store.get_vpc_in_arktosnet(arktosnet)
             nets = nets_opr.store.get_nets_in_vpc(vpc)
             if nets:
                 net = next(iter(nets.values()))
+        if not net:
+            self.raise_temporary_error(
+                "Task: {} Default net: {} Not yet created.".format(self.__class__.__name__, net.name))
         ep = endpoints_opr.create_scaled_endpoint(
             self.param.name, self.param.spec, net, self.param.body['metadata']['namespace'])
-        endpoints_opr.create_scaled_endpoint(
-            self.param.name, self.param.spec, self.param.body['metadata']['namespace'])
-        self.param.extra = ep.ip
+        self.param.return_message = ep.ip
         self.finalize()
 
 
@@ -70,6 +72,10 @@ class k8sEndpointsUpdate(WorkflowTask):
         if 'subsets' not in self.param.body and not self.param.extra:
             return
         namespace = self.param.body["metadata"]["namespace"]
+        ep = endpoints_opr.store.get_ep(self.param.name)
+        if not ep:
+            self.raise_temporary_error(
+                "Task: {} Endpoint: {} Not yet created.".format(self.__class__.__name__, ep.name))
         if self.param.extra:
             endpoints_opr.update_scaled_endpoint_backend_service(
                 self.param.extra.name, namespace, self.param.extra.ports, self.param.extra.backend_ip)

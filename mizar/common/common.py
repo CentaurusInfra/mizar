@@ -240,6 +240,7 @@ def kube_get_service(core_api, service_name, service_namespace):
     finally:
         return response
 
+
 def kube_patch_service(core_api, service_name, service_body, service_namespace='default'):
     response = None
     try:
@@ -253,6 +254,7 @@ def kube_patch_service(core_api, service_name, service_body, service_namespace='
             service_name, service_namespace))
     finally:
         return response
+
 
 def kube_create_config_map(core_api, namespace, configmap):
     try:
@@ -295,9 +297,9 @@ def run_workflow(task):
 
 def run_arktos_workflow(task):
     results = luigi.build([task], detailed_summary=True)
-    if task.param.extra:
+    if task.param.return_message:
         code = CodeType.OK
-        return_message = task.param.extra
+        return_message = task.param.return_message
     else:
         code = CodeType.OK
         return_message = "OK"

@@ -104,7 +104,7 @@ class EndpointOperator(object):
         logger.info("Create scaled endpoint {} spec {}".format(name, spec))
         ep = Endpoint(name, self.obj_api, self.store)
         ip = ''
-        if 'clusterIP' in spec:
+        if spec['clusterIP'] != "":
             ip = spec['clusterIP']
         else:
             ip = net.allocate_ip()
@@ -296,7 +296,6 @@ class EndpointOperator(object):
             OR arktos needs check wheter the ip and subnet is valid
             """
             ep.set_net(net_info.get('subnet', spec['subnet']))
-            ep.set_prefix(net_info.get('prefix', spec['net_prefix']))
             ep.set_ip(net_info.get('ip', ''))
 
             ep.set_mac(interface.address.mac)

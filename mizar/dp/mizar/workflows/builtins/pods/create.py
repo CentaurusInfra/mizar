@@ -26,8 +26,6 @@ from mizar.dp.mizar.operators.droplets.droplets_operator import *
 from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
 from mizar.dp.mizar.operators.vpcs.vpcs_operator import *
 from mizar.common.constants import *
-from mizar.arktos.arktos_service import ArktosServiceClient
-from mizar.proto.builtins_pb2 import *
 
 logger = logging.getLogger()
 
@@ -41,64 +39,6 @@ class k8sPodCreate(WorkflowTask):
     def requires(self):
         logger.info("Requires {task}".format(task=self.__class__.__name__))
         return []
-
-    # def run(self):
-    #     logger.info("Run {task}".format(task=self.__class__.__name__))
-    #     # name in self.param.body['metadata']['name']
-    #     # namespace in self.param.body['metadata']['namespace']
-    #     # label in self.param.body['metadata']['label']
-    #     # annotations in self.param.body['metadata']['annotations']
-
-    #     # logger.info("name: {}".format(self.param.body['metadata']['name']))
-    #     # logger.info("namespace: {}".format(
-    #     #     self.param.body['metadata']['namespace']))
-    #     # logger.info("label: {}".format(self.param.body['metadata']['labels']))
-    #     # logger.info("annotations: {}".format(
-    #     #     self.param.body['metadata']['annotations']))
-    #     # logger.info("hostNetwork: {}".format(
-    #     #     self.param.spec.get('hostNetwork', 'False')))
-    #     # logger.info("hostIP: {}".format(self.param.body['status']['hostIP']))
-    #     # logger.info("phase: {}".format(self.param.body['status']['phase']))
-    #     # logger.info("podIPs: {}".format(self.param.body['status']['podIPs']))
-
-    #     if "hostIP" not in self.param.body['status']:
-    #         self.raise_temporary_error("Pod spec not ready.")
-    #     spec = {
-    #         'hostIP': self.param.body['status']['hostIP'],
-    #         'name': self.param.body['metadata']['name'],
-    #         'namespace': self.param.body['metadata']['namespace'],
-    #         'tenant': '',
-    #         # TODO (Cathy) in case of arktos
-    #         # get VPC and net information from annotation
-    #         'vpc': OBJ_DEFAULTS.default_ep_vpc,
-    #         'net': OBJ_DEFAULTS.default_ep_net,
-    #         'phase': self.param.body['status']['phase'],
-    #         # TODO (Cathy) in case of arktos get list of interfaces to create on
-    #         # the host (names)
-    #         'interfaces': [{'name': 'eth0'}]
-    #     }
-
-    #     logger.info("Pod spec {}".format(spec))
-    #     spec['vni'] = vpc_opr.store_get(spec['vpc']).vni
-    #     spec['droplet'] = droplet_opr.store_get_by_ip(spec['hostIP'])
-    #     # TODO (cathy): make sure not to trigger init or create simple endpoint
-    #     # if Arktos network is already marked ready
-    #     if spec['phase'] != 'Pending':
-    #         self.finalize()
-    #         return
-    #     # Preexisting pods triggered when droplet objects are not yet created.
-    #     if not spec['droplet']:
-    #         self.raise_temporary_error("Droplet not yet created.")
-
-    #     # Init all interfaces on the host
-    #     interfaces = endpoint_opr.init_simple_endpoint_interfaces(
-    #         spec['hostIP'], spec)
-
-    #     # Create the corresponding simple endpoint objects
-    #     endpoint_opr.create_simple_endpoints(interfaces, spec)
-
-    #     # TODO (cathy): in Arktos shall we mark the pod network ready here?
-    #     self.finalize()
 
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
@@ -121,18 +61,18 @@ class k8sPodCreate(WorkflowTask):
         spec['vni'] = vpc_opr.store_get(spec['vpc']).vni
         spec['droplet'] = droplet_opr.store_get_by_ip(spec['hostIP'])
 
-        if OBJ_DEFAULTS.arktos_pod_label in self.param.body['metadata'].get('labels', {}):
+        if self.param.extra:
             spec['type'] = COMPUTE_PROVIDER.arktos
-            spec['vpc'] = vpc_opr.store.get_vpc_in_arktosnet(
-                self.param.body['metadata']['labels'][OBJ_DEFAULTS.arktos_pod_label])
-
-        # Example: arktos.futurewei.com/nic: [{"name": "eth0", "ip": "10.10.1.12", "subnet": "net1"}]
-        # all three fields are optional. Each item in the list corresponding to an endpoint
-        # which represents a network interface for a pod
-        if OBJ_DEFAULTS.arktos_pod_annotation in self.param.body['metadata'].get('annotations', {}):
-            net_config = self.param.body['metadata']['annotations'][OBJ_DEFAULTS.arktos_pod_annotation]
-            configs = json.loads(net_config)
-            spec['interfaces'] = configs
+            if "arktos_network" in self.param.extra:
+                spec['vpc'] = vpc_opr.store.get_vpc_in_arktosnet(
+                    self.param.extra["arktos_network"])
+            # Example: arktos.futurewei.com/nic: [{"name": "eth0", "ip": "10.10.1.12", "subnet": "net1"}]
+            # all three fields are optional. Each item in the list corresponding to an endpoint
+            # which represents a network interface for a pod
+            if "interfaces" in self.param.extra:
+                net_config = self.param.extra["interfaces"]
+                configs = json.loads(net_config)
+                spec['interfaces'] = configs
 
         # make sure not to trigger init or create simple endpoint
         # if Arktos network is already marked ready (Needs to confirm with Arktos team)
@@ -147,14 +87,11 @@ class k8sPodCreate(WorkflowTask):
         if not spec['droplet']:
             self.raise_temporary_error("Droplet not yet created.")
 
-        client = ArktosServiceClient("localhost")
-        m = BuiltinsPodMessage(
-            host_ip=spec["hostIP"],
-            name=spec["name"],
-            namespace=spec["namespace"],
-            phase=spec["phase"]
+        # Init all interfaces on the host
+        interfaces = endpoint_opr.init_simple_endpoint_interfaces(
+            spec['hostIP'], spec)
 
-        )
-        client.CreatePod(m)
+        # Create the corresponding simple endpoint objects
+        endpoint_opr.create_simple_endpoints(interfaces, spec)
 
         self.finalize()
