@@ -34,6 +34,8 @@ class CONSTANTS:
     ON_XDP_REDIRECT = "ON_XDP_REDIRECT"
     ON_XDP_DROP = "ON_XDP_DROP"
     ON_XDP_SCALED_EP = "ON_XDP_SCALED_EP"
+    IPPROTO_TCP = "6"
+    IPROTO_UDP = "17"
 
 
 class OBJ_STATUS:
@@ -92,17 +94,22 @@ class OBJ_DEFAULTS:
     mizar_service_annotation_key = "service.beta.kubernetes.io/mizar-scaled-endpoint-type"
     mizar_service_annotation_val = "scaled-endpoint"
 
-    kopf_max_retries = 5
+    arktos_pod_label = "arktos.futurewei.com/network"
+    arktos_pod_annotation = "arktos.futurewei.com/nic"
 
+    kopf_max_retries = 5
 
 class RESOURCES:
     endpoints = "endpoints"
-    nets = "nets"
+    nets = "subnets"
     vpcs = "vpcs"
     droplets = "droplets"
     bouncers = "bouncers"
     dividers = "dividers"
 
+class COMPUTE_PROVIDER:
+    kubernetes = "kubernetes"
+    arktos = "arktos"
 
 class LAMBDAS:
     ep_status_init = lambda body, **_: body.get('spec', {}).get(

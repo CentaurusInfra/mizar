@@ -38,11 +38,13 @@ class OprStore(object):
         self.droplets_store = {}
 
         self.vpcs_store = {}
+        self.arktosnet_vpc_store = {}
         self.nets_vpc_store = {}
         self.nets_store = {}
 
         self.eps_store = {}
         self.eps_net_store = {}
+        self.eps_pod_store = {}
 
         self.dividers_store = {}
         self.dividers_vpc_store = {}
@@ -61,6 +63,15 @@ class OprStore(object):
     def get_vpc(self, name):
         if name in self.vpcs_store:
             return self.vpcs_store[name]
+        return None
+
+    def update_arktosnet_vpc(self, a, v):
+        if v in self.vpcs_store:
+            self.arktosnet_vpc_store[a] = v
+
+    def get_vpc_in_arktosnet(self, name):
+        if name in self.arktosnet_vpc_store:
+            return self.arktosnet_vpc_store[name]
         return None
 
     def contains_vpc(self, name):
@@ -128,7 +139,6 @@ class OprStore(object):
         l = len(self.eps_net_store[ep.net])
         if l == 0:
             del self.eps_net_store[ep.net]
-        return ep
 
     def get_ep(self, name):
         if name in self.eps_store:
@@ -138,6 +148,11 @@ class OprStore(object):
     def get_eps_in_net(self, net):
         if net in self.eps_net_store:
             return self.eps_net_store[net]
+        return {}
+
+    def get_eps_in_pod(self, pod):
+        if pod in self.eps_pod_store:
+            return self.eps_pod_store[pod]
         return {}
 
     def contains_ep(self, name):

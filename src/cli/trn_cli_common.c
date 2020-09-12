@@ -211,6 +211,103 @@ int trn_cli_parse_xdp(const cJSON *jsonobj, rpc_trn_xdp_intf_t *xdp_intf)
 	return 0;
 }
 
+int trn_cli_parse_port_key(const cJSON *jsonobj,
+			   struct rpc_trn_port_key_t *port)
+{
+	cJSON *tunnel_id = cJSON_GetObjectItem(jsonobj, "tunnel_id");
+	cJSON *ip = cJSON_GetObjectItem(jsonobj, "ip");
+	cJSON *front_port = cJSON_GetObjectItem(jsonobj, "port");
+	cJSON *protocol = cJSON_GetObjectItem(jsonobj, "protocol");
+
+	if (tunnel_id == NULL) {
+		port->tunid = 0;
+		print_err("Warning: Tunnel ID default is used: %ld\n",
+			  port->tunid);
+	} else if (cJSON_IsString(tunnel_id)) {
+		port->tunid = atoi(tunnel_id->valuestring);
+	} else {
+		print_err("Error: Tunnel ID Error\n");
+		return -EINVAL;
+	}
+
+	if (ip != NULL && cJSON_IsString(ip)) {
+		struct sockaddr_in sa;
+		inet_pton(AF_INET, ip->valuestring, &(sa.sin_addr));
+		port->ip = sa.sin_addr.s_addr;
+	} else {
+		print_err("Error: IP is missing or non-string\n");
+		return -EINVAL;
+	}
+
+	if (front_port != NULL && cJSON_IsString(front_port)) {
+		port->port = htons(atoi(front_port->valuestring));
+	} else {
+		print_err("Error: Port is missing or non-string\n");
+		return -EINVAL;
+	}
+
+	if (protocol != NULL && cJSON_IsString(protocol)) {
+		port->protocol = htons(atoi(protocol->valuestring));
+	} else {
+		print_err("Error: Port is missing or non-string\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int trn_cli_parse_port(const cJSON *jsonobj, struct rpc_trn_port_t *port)
+{
+	cJSON *tunnel_id = cJSON_GetObjectItem(jsonobj, "tunnel_id");
+	cJSON *ip = cJSON_GetObjectItem(jsonobj, "ip");
+	cJSON *front_port = cJSON_GetObjectItem(jsonobj, "port");
+	cJSON *target_port = cJSON_GetObjectItem(jsonobj, "target_port");
+	cJSON *protocol = cJSON_GetObjectItem(jsonobj, "protocol");
+
+	if (tunnel_id == NULL) {
+		port->tunid = 0;
+		print_err("Warning: Tunnel ID default is used: %ld\n",
+			  port->tunid);
+	} else if (cJSON_IsString(tunnel_id)) {
+		port->tunid = atoi(tunnel_id->valuestring);
+	} else {
+		print_err("Error: Tunnel ID Error\n");
+		return -EINVAL;
+	}
+
+	if (ip != NULL && cJSON_IsString(ip)) {
+		struct sockaddr_in sa;
+		inet_pton(AF_INET, ip->valuestring, &(sa.sin_addr));
+		port->ip = sa.sin_addr.s_addr;
+	} else {
+		print_err("Error: IP is missing or non-string\n");
+		return -EINVAL;
+	}
+
+	if (front_port != NULL && cJSON_IsString(front_port)) {
+		port->port = htons(atoi(front_port->valuestring));
+	} else {
+		print_err("Error: Port is missing or non-string\n");
+		return -EINVAL;
+	}
+
+	if (target_port != NULL && cJSON_IsString(target_port)) {
+		port->target_port = htons(atoi(target_port->valuestring));
+	} else {
+		print_err("Error: Target Port is missing or non-string\n");
+		return -EINVAL;
+	}
+
+	if (protocol != NULL && cJSON_IsString(protocol)) {
+		port->protocol = atoi(protocol->valuestring);
+	} else {
+		print_err("Error: Port Protocol is missing or non-string\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 int trn_cli_parse_ep(const cJSON *jsonobj, struct rpc_trn_endpoint_t *ep)
 {
 	cJSON *tunnel_id = cJSON_GetObjectItem(jsonobj, "tunnel_id");
@@ -304,6 +401,7 @@ int trn_cli_parse_ep(const cJSON *jsonobj, struct rpc_trn_endpoint_t *ep)
 			break;
 		}
 	}
+
 	return 0;
 }
 

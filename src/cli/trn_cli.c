@@ -33,6 +33,7 @@ static const struct cmd {
 	{ "update-vpc", trn_cli_update_vpc_subcmd },
 	{ "update-net", trn_cli_update_net_subcmd },
 	{ "update-ep", trn_cli_update_ep_subcmd },
+	{ "update-port", trn_cli_update_port_subcmd },
 	{ "update-agent-ep", trn_cli_update_agent_ep_subcmd },
 	{ "update-agent-metadata", trn_cli_update_agent_md_subcmd },
 	{ "load-transit-xdp", trn_cli_load_transit_subcmd },

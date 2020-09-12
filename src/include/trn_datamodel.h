@@ -58,6 +58,16 @@ enum trn_xdp_stage_t {
 	XDP_SCALED_EP_PROC
 };
 
+struct port_key_t {
+	__u32 tunip[3];
+	__u16 port;
+	__u8 protocol;
+} __attribute__((packed));
+
+struct port_t {
+	__u16 target_port;
+} __attribute__((packed, aligned(4)));
+
 struct endpoint_key_t {
 	__u32 tunip[3];
 } __attribute__((packed));

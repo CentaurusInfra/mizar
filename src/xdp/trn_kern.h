@@ -428,6 +428,31 @@ static inline void trn_set_src_dst_inner_ip_csum(struct transit_packet *pkt,
 }
 
 __ALWAYS_INLINE__
+static inline void trn_set_src_dst_port(struct transit_packet *pkt, __u16 sport,
+					__u16 dport)
+{
+	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_TCP) {
+		if (pkt->inner_tcp + 1 > pkt->data_end)
+			return;
+		pkt->inner_tcp->source = sport;
+		pkt->inner_tcp->dest = dport;
+		bpf_debug("Modified Inner TCP Ports src: %u, dest: %u\n",
+			  bpf_ntohs(pkt->inner_tcp->source),
+			  bpf_ntohs(pkt->inner_tcp->dest));
+	} else if (pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
+		if (pkt->inner_udp + 1 > pkt->data_end)
+			return;
+		pkt->inner_udp->source = sport;
+		pkt->inner_udp->dest = dport;
+		bpf_debug("Modified Inner UDP Ports src: %u, dest: %u\n",
+			  bpf_ntohs(pkt->inner_udp->source),
+			  bpf_ntohs(pkt->inner_udp->dest));
+	} else {
+		return;
+	}
+}
+
+__ALWAYS_INLINE__
 static inline void trn_reverse_ipv4_tuple(struct ipv4_tuple_t *tuple)
 {
 	__u32 tmp_addr = tuple->saddr;

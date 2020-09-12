@@ -20,13 +20,11 @@
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 apiVersion: "mizar.com/v1"
-kind: Net
+kind: Vpc
 metadata:
-  name: net1
+  name: vpc1
 spec:
-  vpc: "vpc1"
-  vni: "0"
-  ip: "12.0.2.0"
-  prefix: "24"
+  ip: "12.0.0.0"
+  prefix: "8"
   status: "Init"
-  bouncers: 2
+  dividers: 2

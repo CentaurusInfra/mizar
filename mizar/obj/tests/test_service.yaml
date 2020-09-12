@@ -24,13 +24,22 @@ kind: Service
 metadata:
   name: test-service-3
   annotations:
-        service.beta.kubernetes.io/mizar-scaled-endpoint-type: "scaled-endpoint"
+    service.beta.kubernetes.io/mizar-scaled-endpoint-type: "scaled-endpoint"
   labels:
     run: test-service-3
 spec:
   ports:
-  - port: 80
-    protocol: TCP
+    - name: http
+      protocol: TCP
+      port: 8000
+      targetPort: 7000
+    - name: tcp
+      protocol: TCP
+      port: 8001
+      targetPort: 9001
+    - name: udp
+      protocol: UDP
+      port: 8002
+      targetPort: 5001
   selector:
     run: example3
-
