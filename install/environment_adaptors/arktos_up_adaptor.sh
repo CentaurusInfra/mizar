@@ -45,27 +45,5 @@ function environment_adaptor:deploy_mizar {
 
     echo "Waiting for Mizar to be up and running."
     local timeout=60
-    common:execute_and_retry "common:check_mizar_ready" 1 "" "ERROR: Mizar setup timed out after $timeout seconds!" $timeout 1
-
-    # This is walk around to make sure newly creating pods will be running under mizarcni instead of bridge.
-    # The walk around is to redeploy mizar daemon and operator.
-    common:execute_and_retry "environment_adaptor:redeploy_mizar" 1 "Newly created pods will be running under mizar cni." "ERROR: Newly created pods will NOT be running under mizar cni!" 600 1
-}
-
-function environment_adaptor:redeploy_mizar {    
-    sleep 30 # Necessary cool down time before re-deploy daemon and operator.
-    kubectl delete -f etc/deploy/deploy.operator.yaml
-    sleep 5 # Wait to make sure execution order
-    kubectl delete -f etc/deploy/deploy.daemon.yaml
-    sleep 5 # Wait to make sure execution order
-    kubectl apply -f etc/deploy/deploy.daemon.yaml
-    sleep 5 # Wait when daemon pod is being created
-    for pod_name in $(kubectl get pods -l job=mizar-daemon | grep -v 'Terminating\|STATUS' | awk '{print $1}'); do kubectl wait --for=condition=Ready pod/$pod_name --timeout=2m;done
-
-    kubectl apply -f etc/deploy/deploy.operator.yaml
-
     common:execute_and_retry "common:check_mizar_ready" 1 "Mizar is now ready!" "ERROR: Mizar setup timed out after $timeout seconds!" $timeout 1
-
-    common:check_pod_running_in_mizar; local is_pod_running_in_mizar=$?
-    return $is_pod_running_in_mizar
-}
+   }

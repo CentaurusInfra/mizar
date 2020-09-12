@@ -75,7 +75,7 @@ function common:get_object_status {
 
 # Checks for mizar status by provisioned objects array
 function common:check_mizar_ready {
-    local objects=("droplets" "vpcs" "nets" "dividers" "bouncers")
+    local objects=("droplets" "vpcs" "subnets" "dividers" "bouncers")
     local sum=0
     for i in "${objects[@]}"
     do
