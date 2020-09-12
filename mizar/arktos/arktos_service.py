@@ -44,8 +44,8 @@ class ArktosService(BuiltinsServiceServicer):
         param.body['metadata']['namespace'] = request.namespace
         param.body['status']['phase'] = request.phase
         param.extra = {}
-        if request.arktos_network != "":
-            param.extra["arktos_network"] = request.arktos_network
+        # if request.arktos_network != "":
+        #     param.extra["arktos_network"] = request.arktos_network
         if len(request.interfaces) > 0:
             param.extra["interfaces"] = list()
             itf_string = '['
@@ -74,10 +74,13 @@ class ArktosService(BuiltinsServiceServicer):
         param = HandlerParam()
         param.name = request.name
         param.body['metadata'] = {}
+        param.extra = {}
 
         param.body['metadata']['namespace'] = request.namespace
         param.spec["clusterIP"] = request.ip
+        logger.info("From grpc server: Service IP is {}".format(request.ip))
         param.extra["arktos_network"] = request.arktos_network
+        param.extra["tenant"] = request.tenant
         return run_arktos_workflow(wffactory().k8sServiceCreate(param=param))
 
     def CreateServiceEndpoint(self, request, context):

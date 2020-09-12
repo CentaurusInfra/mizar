@@ -45,18 +45,20 @@ class k8sServiceCreate(WorkflowTask):
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
         net = nets_opr.store.get_net(OBJ_DEFAULTS.default_ep_net)
-        logger.info("NET OBJECT {}".format(net))
+        namespace = self.param.body['metadata']['namespace']
+        name = self.param.name + "-{}".format(namespace)
         if self.param.extra:
             arktosnet = self.param.extra['arktos_network']
             vpc = vpcs_opr.store.get_vpc_in_arktosnet(arktosnet)
             nets = nets_opr.store.get_nets_in_vpc(vpc)
             if nets:
                 net = next(iter(nets.values()))
+            name = name + "-{}".format(self.param.extra["tenant"])
         if not net:
             self.raise_temporary_error(
-                "Task: {} Default net: {} Not yet created.".format(self.__class__.__name__, net.name))
+                "Task: {} Net Not yet created.".format(self.__class__.__name__))
         ep = endpoints_opr.create_scaled_endpoint(
-            self.param.name, self.param.spec, net, self.param.body['metadata']['namespace'])
+            name, self.param.spec, net, self.param.body['metadata']['namespace'])
         self.param.return_message = ep.ip
         self.finalize()
 
@@ -72,6 +74,9 @@ class k8sEndpointsUpdate(WorkflowTask):
         if 'subsets' not in self.param.body and not self.param.extra:
             return
         namespace = self.param.body["metadata"]["namespace"]
+        name = self.param.name + "-{}".format(namespace)
+        if param.extra:
+            name = name + "-{}".format(self.param.extra.tenant)
         ep = endpoints_opr.store.get_ep(self.param.name)
         if not ep:
             self.raise_temporary_error(
@@ -79,7 +84,6 @@ class k8sEndpointsUpdate(WorkflowTask):
         if self.param.extra:
             endpoints_opr.update_scaled_endpoint_backend_service(
                 self.param.extra.name, namespace, self.param.extra.ports, self.param.extra.backend_ip)
-            self.param.extra = None
         else:
             ep = endpoints_opr.update_scaled_endpoint_backend(
                 self.param.name, namespace, self.param.body['subsets'])

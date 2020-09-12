@@ -281,6 +281,9 @@ class EndpointOperator(object):
         for interface, net_info in zip(interfaces.interfaces, spec['interfaces']):
             logger.info("Create simple endpoint {}".format(interface))
             name = get_itf_name(interface.interface_id)
+            if self.store.get_ep(name):
+                logger.info("EP already exists!")
+                return
             ep = Endpoint(name, self.obj_api, self.store)
             ep.set_pod(spec["name"])
             ep.set_type(OBJ_DEFAULTS.ep_type_simple)
@@ -360,20 +363,21 @@ class EndpointOperator(object):
             pod_provider = PodProvider.K8S
             if spec['type'] == 'arktos':
                 pod_provider = PodProvider.ARKTOS
+            if not self.store.get_ep(itf_name):
+                interfaces_list.append(Interface(
+                    interface_id=interface_id,
+                    interface_type=InterfaceType.veth,
+                    pod_provider=pod_provider,
+                    veth=veth,
+                    status=InterfaceStatus.init
+                ))
+        if len(interfaces_list) > 0:
+            interfaces = InterfacesList(interfaces=interfaces_list)
 
-            interfaces_list.append(Interface(
-                interface_id=interface_id,
-                interface_type=InterfaceType.veth,
-                pod_provider=pod_provider,
-                veth=veth,
-                status=InterfaceStatus.init
-            ))
-
-        interfaces = InterfacesList(interfaces=interfaces_list)
-
-        # The Interface service will create the veth peers for the interface and
-        # allocate the mac addresses for us.
-        return InterfaceServiceClient(worker_ip).InitializeInterfaces(interfaces)
+            # The Interface service will create the veth peers for the interface and
+            # allocate the mac addresses for us.
+            return InterfaceServiceClient(worker_ip).InitializeInterfaces(interfaces)
+        return None
 
     def init_host_endpoint_interfaces(self, droplet):
         interfaces_list = []

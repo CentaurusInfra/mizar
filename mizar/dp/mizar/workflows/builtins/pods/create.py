@@ -90,7 +90,9 @@ class k8sPodCreate(WorkflowTask):
         # Init all interfaces on the host
         interfaces = endpoint_opr.init_simple_endpoint_interfaces(
             spec['hostIP'], spec)
-
+        if not interfaces:
+            self.raise_temporary_error(
+                "Endpoint {} already exists!".format(spec["name"]))
         # Create the corresponding simple endpoint objects
         endpoint_opr.create_simple_endpoints(interfaces, spec)
 

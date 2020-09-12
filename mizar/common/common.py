@@ -316,6 +316,7 @@ def run_arktos_workflow(task):
         logger.info("Unknown Error: {}".format(results.summary_text))
         code = CodeType.PERM_ERROR
         return_message = results.summary_text
+    logger.info("Name: {}".format(task.param.name))
     logger.info("Return code is {}".format(code))
     logger.info("Return message is {}".format(return_message))
     return ReturnCode(
