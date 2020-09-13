@@ -46,4 +46,4 @@ nsenter -t 1 -m -u -n -i ln -snf /var/mizar/build/xdp /trn_xdp && \
 nsenter -t 1 -m -u -n -i ln -snf /var/mizar/etc/cni/10-mizarcni.conf /etc/cni/net.d/10-mizarcni.conf && \
 nsenter -t 1 -m -u -n -i ln -snf /var/mizar/mizar/cni.py /opt/cni/bin/mizarcni && \
 nsenter -t 1 -m -u -n -i ln -snf /var/mizar/build/tests/mizarcni.config /etc/mizarcni.config && \
-echo "mizar-complete" 
+echo "mizar-complete"

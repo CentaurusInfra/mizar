@@ -41,20 +41,15 @@ function common:check_cluster_ready {
     local function_name="common:check_cluster_ready"
     echo "[$function_name] Checking cluster readyness by getting node status."
     if [[ $show_cluster_status == 1 ]]; then
-        kubectl get nodes
+        kubectl cluster-info
     fi
-    local nodes_status=`kubectl get nodes | awk '{print $2}' | tail -n +2`
-    if [[ -z "$nodes_status" ]]; then
+
+    local cluster_status=`kubectl cluster-info | grep Kubernetes | grep master | grep is | grep running`
+    if [[ -z "$cluster_status" ]]; then
         return 0
+    else
+        return 1
     fi
-    for line in $nodes_status; 
-    do
-        if [[ $line != "Ready" ]]; then
-            return 0
-        fi
-    done
-    echo "[$function_name] Cluster is up and running."
-    return 1
 }
 
 # Checks for status: Provisioned for given object
