@@ -36,7 +36,7 @@ class DropletDelete(WorkflowTask):
 
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
-        d = droplets_opr.get_droplet_stored_obj(
-            self.param.name, self.param.spec)
+        d = droplets_opr.store.get_droplet(self.param.name)
         droplets_opr.store.delete_droplet(d.name)
+        d.delete_obj()
         self.finalize()
