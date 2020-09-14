@@ -44,8 +44,8 @@ class ArktosService(BuiltinsServiceServicer):
         param.body['metadata']['namespace'] = request.namespace
         param.body['status']['phase'] = request.phase
         param.extra = {}
-        # if request.arktos_network != "":
-        #     param.extra["arktos_network"] = request.arktos_network
+        if request.arktos_network != "":
+            param.extra["arktos_network"] = request.arktos_network
         if len(request.interfaces) > 0:
             param.extra["interfaces"] = list()
             itf_string = '['

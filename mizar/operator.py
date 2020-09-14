@@ -76,8 +76,8 @@ async def on_startup(logger, **kwargs):
     configmap = read_config_map()
     if configmap:
         if read_config_map().data["name"] == "arktos":
-            logger.info("FOUND CONFIGMAP!")
-            #COMPUTE_PROVIDER.k8s = False
+            logger.info("Found config map, disabling builtin kopf triggers!")
+            COMPUTE_PROVIDER.k8s = False
     start_time = time.time()
 
     run_workflow(wffactory().DropletOperatorStart(param=param))

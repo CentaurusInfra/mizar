@@ -100,7 +100,7 @@ class EndpointOperator(object):
             if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
                 ep.update_bouncers({bouncer.name: bouncer})
 
-    def create_scaled_endpoint(self, name, spec, net, namespace="default"):
+    def create_scaled_endpoint(self, name, spec, net, extra, namespace="default"):
         logger.info("Create scaled endpoint {} spec {}".format(name, spec))
         ep = Endpoint(name, self.obj_api, self.store)
         ip = ''
@@ -119,7 +119,8 @@ class EndpointOperator(object):
         ep.set_type(OBJ_DEFAULTS.ep_type_scaled)
         ep.set_status(OBJ_STATUS.ep_status_init)
         ep.create_obj()
-        self.annotate_builtin_endpoints(name, namespace)
+        if not extra:
+            self.annotate_builtin_endpoints(name, namespace)
         return ep
 
     def create_gw_endpoint(self, name, ip, vni, vpc, net):
