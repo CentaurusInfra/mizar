@@ -102,7 +102,7 @@ class EndpointOperator(object):
 
     def create_scaled_endpoint(self, name, ep_name, spec, net, extra, namespace="default"):
         logger.info("Create scaled endpoint {} spec {}".format(name, spec))
-        ep = Endpoint(name, self.obj_api, self.store)
+        ep = Endpoint(ep_name, self.obj_api, self.store)
         ip = ''
         if spec['clusterIP'] != "":
             ip = spec['clusterIP']
@@ -164,8 +164,8 @@ class EndpointOperator(object):
             random.randint(0, 255),
         )
 
-    def update_scaled_endpoint_backend(self, name, namespace, spec):
-        ep = self.store.get_ep(name)
+    def update_scaled_endpoint_backend(self, name, ep_name, namespace, spec):
+        ep = self.store.get_ep(ep_name)
         if ep is None:
             return None
         backends = set()
@@ -176,28 +176,26 @@ class EndpointOperator(object):
         ep.set_backends(list(backends))
         ports = {}
         service = kube_get_service(self.core_api, name, namespace)
-        if not service or not service.metadata or not service.metadata.annotations:
+        if not service:
+            logger.info("Service not found!")
             return
-        service_spec = list(service.metadata.annotations.values())
-        json_spec = json.loads(service_spec[0])
         # ports = {frontend_port: [backend_port, protocol]}
-        if isinstance(json_spec, dict):
-            for port in json_spec["spec"]["ports"]:
-                ports[port["port"]] = []
-                ports[port["port"]].append(port["targetPort"])
-                proto = port["protocol"]
-                if proto == "TCP":
-                    ports[port["port"]].append(CONSTANTS.IPPROTO_TCP)
-                if proto == "UDP":
-                    ports[port["port"]].append(CONSTANTS.IPROTO_UDP)
+        for service_ports in service.spec.ports:
+            ports[service_ports.port] = []
+            ports[service_ports.port].append(service_ports.target_port)
+            proto = service_ports.protocol
+            if proto == "TCP":
+                ports[service_ports.port].append(CONSTANTS.IPPROTO_TCP)
+            if proto == "UDP":
+                ports[service_ports.port].append(CONSTANTS.IPROTO_UDP)
         ep.set_ports(sorted(ports.items()))  # Sorted by frontend ports
         self.store_update(ep)
         logger.info(
-            "Update scaled endpoint {} with backends: {}".format(name, backends))
-        return self.store.get_ep(name)
+            "Update scaled endpoint {} with backends: {}".format(ep_name, backends))
+        return self.store.get_ep(ep_name)
 
-    def update_scaled_endpoint_backend_service(self, name, namespace, ports, backend_ips):
-        ep = self.store.get_ep(name)
+    def update_scaled_endpoint_backend_service(self, name, ep_name, namespace, ports, backend_ips):
+        ep = self.store.get_ep(ep_name)
         if ep is None:
             return None
         backends = set()
@@ -217,8 +215,8 @@ class EndpointOperator(object):
         ep.set_ports(sorted(ports_map.items()))  # Sorted by frontend ports
         self.store_update(ep)
         logger.info(
-            "Service update scaled endpoint {} with backends: {}".format(name, backends))
-        return self.store.get_ep(name)
+            "Service update scaled endpoint {} with backends: {}".format(ep_name, backends))
+        return self.store.get_ep(ep_name)
 
     def delete_endpoints_from_bouncers(self, bouncer):
         eps = self.store.get_eps_in_net(bouncer.net).values()

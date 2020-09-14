@@ -80,14 +80,14 @@ class k8sEndpointsUpdate(WorkflowTask):
         ep = endpoints_opr.store.get_ep(name)
         if not ep:
             self.raise_temporary_error(
-                "Task: {} Endpoint: {} Not yet created.".format(self.__class__.__name__, ep.name))
+                "Task: {} Endpoint: {} Not yet created.".format(self.__class__.__name__, name))
 
         if self.param.extra:
             endpoints_opr.update_scaled_endpoint_backend_service(
-                name, namespace, self.param.extra.ports, self.param.extra.backend_ip)
+                self.param.name, name, namespace, self.param.extra.ports, self.param.extra.backend_ip)
         else:
             ep = endpoints_opr.update_scaled_endpoint_backend(
-                name, namespace, self.param.body['subsets'])
+                self.param.name, name, namespace, self.param.body['subsets'])
         if ep:
             if not bouncers_opr.store.get_bouncers_of_net(ep.net):
                 self.raise_temporary_error(
