@@ -302,13 +302,13 @@ class Endpoint:
         return remote_ips
 
     def get_remote_ports(self):
-        return [str(port[1][0]) for port in self.ports]
+        return [str(self.ports[port]) for port in self.ports]
 
     def get_frontend_ports(self):
-        return [str(port[0]) for port in self.ports]
+        return [port.split(",")[0] for port in self.ports]
 
     def get_port_protocols(self):
-        return [port[1][1] for port in self.ports]
+        return [port.split(",")[1] for port in self.ports]
 
     def get_remote_macs(self):
         remote_macs = [self.droplet_mac]

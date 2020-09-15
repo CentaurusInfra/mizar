@@ -120,6 +120,7 @@ class EndpointOperator(object):
         ep.set_status(OBJ_STATUS.ep_status_init)
         ep.create_obj()
         if not extra:
+            logger.info("Annotating endpoint!")
             self.annotate_builtin_endpoints(name, namespace)
         return ep
 
@@ -179,16 +180,18 @@ class EndpointOperator(object):
         if not service:
             logger.info("Service not found!")
             return
-        # ports = {frontend_port: [backend_port, protocol]}
+        # ports = {"frontend_port, protocol"]: [backend_port]}
         for service_ports in service.spec.ports:
-            ports[service_ports.port] = []
-            ports[service_ports.port].append(service_ports.target_port)
+            frontend_port = service_ports.port
+            backend_port = service_ports.target_port
             proto = service_ports.protocol
-            if proto == "TCP":
-                ports[service_ports.port].append(CONSTANTS.IPPROTO_TCP)
-            if proto == "UDP":
-                ports[service_ports.port].append(CONSTANTS.IPROTO_UDP)
-        ep.set_ports(sorted(ports.items()))  # Sorted by frontend ports
+            if service_ports.protocol == "TCP":
+                proto = CONSTANTS.IPPROTO_TCP
+            if service_ports.protocol == "UDP":
+                proto = CONSTANTS.IPROTO_UDP
+            ports["{},{}".format(frontend_port, proto)] = backend_port
+        logger.info("Mizar service ports {}".format(ports))
+        ep.set_ports(ports)
         self.store_update(ep)
         logger.info(
             "Update scaled endpoint {} with backends: {}".format(ep_name, backends))
@@ -204,15 +207,17 @@ class EndpointOperator(object):
             backends.add(b)
         ports_map = {}
         for port in ports:
-            ports_map[ports.frontend_port] = []
-            ports_map[ports.frontend_port].append(port.frontend_port)
+            frontend_port = port.frontend_port
+            backend_port = port.backend_port
             proto = port.proto
-            if proto == "TCP":
-                ports_map[ports.frontend_port].append(CONSTANTS.IPPROTO_TCP)
-            if proto == "UDP":
-                ports_map[ports.frontend_port].append(CONSTANTS.IPROTO_UDP)
+            if port.proto == "TCP":
+                proto = CONSTANTS.IPPROTO_TCP
+            if port.proto == "UDP":
+                proto = CONSTANTS.IPROTO_UDP
+            ports_map["{},{}".format(frontend_port, proto)] = backend_port
+        logger.info("Arktos service ports {}".format(ports_map))
         ep.set_backends(list(backends))
-        ep.set_ports(sorted(ports_map.items()))  # Sorted by frontend ports
+        ep.set_ports(ports_map)
         self.store_update(ep)
         logger.info(
             "Service update scaled endpoint {} with backends: {}".format(ep_name, backends))
