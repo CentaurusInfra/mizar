@@ -37,6 +37,10 @@ class k8sServiceDelete(WorkflowTask):
 
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
-        ep = endpoints_opr.store.get_ep(self.param.name)
+        name = self.param.name + \
+            "-{}".format(self.param.body["metadata"]["namespace"])
+        if self.param.extra:
+            name = name + "-{}".format(self.param.extra)
+        ep = endpoints_opr.store.get_ep(name)
         endpoints_opr.delete_scaled_endpoint(ep)
         self.finalize()

@@ -61,11 +61,11 @@ class Endpoint:
         self.bouncers = {}
         self.backends = []
         self.ports = []
-        if spec is not None:
-            self.set_obj_spec(spec)
+        self.pod = ""
         self.deleted = False
         self.interface = None
-        self.pod = ""
+        if spec is not None:
+            self.set_obj_spec(spec)
 
     @property
     def rpc(self):

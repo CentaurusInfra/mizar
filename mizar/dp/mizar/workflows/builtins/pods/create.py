@@ -47,7 +47,7 @@ class k8sPodCreate(WorkflowTask):
             self.raise_temporary_error("Pod spec not ready.")
         spec = {
             'hostIP': self.param.body['status']['hostIP'],
-            'name': self.param.body['metadata']['name'],
+            'name': self.param.name,
             'type': COMPUTE_PROVIDER.kubernetes,
             'namespace': self.param.body['metadata'].get('namespace', 'default'),
             'tenant': self.param.body['metadata'].get('tenant', ''),
