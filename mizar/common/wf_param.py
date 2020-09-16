@@ -24,8 +24,8 @@ import luigi
 
 class HandlerParam(luigi.Parameter):
     name = ''
-    body = dict()
-    spec = dict()
-    diff = dict()
+    body = {}
+    spec = {}
+    diff = {}
     extra = None
     return_message = None

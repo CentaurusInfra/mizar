@@ -20,6 +20,7 @@
 
 import logging
 import grpc
+import json
 from mizar.proto.builtins_pb2_grpc import BuiltinsServiceServicer, BuiltinsServiceStub
 from mizar.common.workflow import *
 from mizar.dp.mizar.operators.vpcs.vpcs_operator import *
@@ -35,7 +36,7 @@ class ArktosService(BuiltinsServiceServicer):
 
     def CreatePod(self, request, context):
         logger.info("Creating pod from Arktos Service {}".format(request.name))
-        param = HandlerParam()
+        param = reset_param(HandlerParam())
         param.name = request.name
         param.body['status'] = {}
         param.body['metadata'] = {}
@@ -58,7 +59,7 @@ class ArktosService(BuiltinsServiceServicer):
     def CreateNode(self, request, context):
         logger.info(
             "Creating droplet from Arktos Service {}".format(request.ip))
-        param = HandlerParam()
+        param = reset_param(HandlerParam())
         param.body['status'] = {}
         param.body['status']['addresses'] = list()
         param.body['status']['addresses'].append({})
@@ -69,8 +70,8 @@ class ArktosService(BuiltinsServiceServicer):
 
     def CreateService(self, request, context):
         logger.info(
-            "Create scaled endpoint from Network Controller {}.".format(request.name))
-        param = HandlerParam()
+            "Create scaled endpoint from Network Controller {} {} {}.".format(request.name, request.namespace, request.tenant))
+        param = reset_param(HandlerParam())
         param.name = request.name
         param.body['metadata'] = {}
         param.extra = {}
@@ -82,7 +83,7 @@ class ArktosService(BuiltinsServiceServicer):
         param.extra["tenant"] = request.tenant
         return run_arktos_workflow(wffactory().k8sServiceCreate(param=param))
 
-    def CreateServiceEndpoint(self, request, context):
+    def CreateServiceEndpointProtobuf(self, request, context):
         logger.info(
             "Create Service Endpoint from Network Controller {}".format(request.name))
         param = HandlerParam()
@@ -90,6 +91,25 @@ class ArktosService(BuiltinsServiceServicer):
         param.body['metadata'] = {}
         param.body["metadata"]["namespace"] = request.namespace
         param.extra = request
+        return run_arktos_workflow(wffactory().k8sEndpointsUpdate(param=param))
+
+    def CreateServiceEndpoint(self, request, context):
+        logger.info(
+            "Create Service Endpoint from Network Controller {}".format(request.name))
+        param = reset_param(HandlerParam())
+        param.name = request.name
+        param.body['metadata'] = {}
+        param.body["metadata"]["namespace"] = request.namespace
+        ips = json.loads(request.backend_ips_json)
+        ports = json.loads(request.ports_json)
+        param.extra = {}
+        param.extra["request"] = request
+        param.extra["backend_ips"] = ips
+        param.extra["ports"] = ports
+        for ip in ips:
+            logger.info(ip)
+        for port in ports:
+            logger.info(port)
         return run_arktos_workflow(wffactory().k8sEndpointsUpdate(param=param))
 
     def CreateArktosNetwork(self, request, context):
@@ -140,21 +160,21 @@ class ArktosService(BuiltinsServiceServicer):
     def DeleteNode(self, request, context):
         logger.info(
             "Deleting droplet from Network Controller {}".format(request.name))
-        param = HandlerParam()
+        param = reset_param(HandlerParam())
         param.name = request.name
         return run_arktos_workflow(wffactory().DropletDelete(param=param))
 
     def DeletePod(self, request, context):
         logger.info(
             "Deleting pod from Network Controller {}".format(request.name))
-        param = HandlerParam()
+        param = reset_param(HandlerParam())
         param.name = request.name
         return run_arktos_workflow(wffactory().k8sPodDelete(param=param))
 
     def DeleteService(self, request, context):
         logger.info(
             "Deleting servoce from Network Controller {}".format(request.name))
-        param = HandlerParam()
+        param = reset_param(HandlerParam())
         param.name = request.name
         param.body['metadata'] = {}
         param.body["metadata"]["namespace"] = request.namespace

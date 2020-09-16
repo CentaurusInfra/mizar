@@ -331,3 +331,13 @@ def get_pod_name(pod_id):
 
 def get_itf_name(itf):
     return get_pod_name(itf.pod_id) + '-' + itf.interface
+
+
+def reset_param(param):
+    param.name = ''
+    param.body = {}
+    param.spec = {}
+    param.diff = {}
+    param.extra = None
+    param.return_message = None
+    return param

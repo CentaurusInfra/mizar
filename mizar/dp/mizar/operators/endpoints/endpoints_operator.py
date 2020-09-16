@@ -223,6 +223,32 @@ class EndpointOperator(object):
             "Service update scaled endpoint {} with backends: {}".format(ep_name, backends))
         return self.store.get_ep(ep_name)
 
+    def update_scaled_endpoint_backend_service_json(self, name, ep_name, namespace, ports, backend_ips):
+        ep = self.store.get_ep(ep_name)
+        if ep is None:
+            return None
+        backends = set()
+        for b in backend_ips:
+            logger.info("Service update scaled endpoint add ip {}".format(b))
+            backends.add(b)
+        ports_map = {}
+        for port in ports:
+            frontend_port = port["frontend_port"]
+            backend_port = port["backend_port"]
+            proto = port["protocol"]
+            if port["protocol"] == "TCP":
+                proto = CONSTANTS.IPPROTO_TCP
+            if port["protocol"] == "UDP":
+                proto = CONSTANTS.IPROTO_UDP
+            ports_map["{},{}".format(frontend_port, proto)] = backend_port
+        logger.info("Arktos service ports {}".format(ports_map))
+        ep.set_backends(list(backends))
+        ep.set_ports(ports_map)
+        self.store_update(ep)
+        logger.info(
+            "Service update scaled endpoint {} with backends: {}".format(ep_name, backends))
+        return self.store.get_ep(ep_name)
+
     def delete_endpoints_from_bouncers(self, bouncer):
         eps = self.store.get_eps_in_net(bouncer.net).values()
         bouncer.delete_eps(eps)
