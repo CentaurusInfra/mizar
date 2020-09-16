@@ -26,6 +26,7 @@ logger = logging.getLogger()
 
 endpoints_opr = EndpointOperator()
 
+
 class k8sPodDelete(WorkflowTask):
 
     def requires(self):

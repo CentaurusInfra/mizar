@@ -50,24 +50,28 @@ class BouncerCreate(WorkflowTask):
         logger.info("Run {task}".format(task=self.__class__.__name__))
         bouncer = bouncers_opr.get_bouncer_stored_obj(
             self.param.name, self.param.spec)
-        while not droplets_opr.is_bootstrapped():
-            pass
-
-        droplets_opr.assign_bouncer_droplet(bouncer)
+        if not droplets_opr.is_bootstrapped():
+            self.raise_temporary_error(
+                "Task: {} Bouncer: {} Droplet operator not ready.".format(self.__class__.__name__, bouncer.name))
+        net = nets_opr.store.get_net(bouncer.net)
+        if not net:
+            self.raise_temporary_error(
+                "Task: {} Bouncer: {} Net {} not ready.".format(self.__class__.__name__, bouncer.name, bouncer.net))
+        if not droplets_opr.assign_bouncer_droplet(bouncer):
+            self.raise_temporary_error("Task: {} Bouncer: {} No droplets available.".format(
+                self.__class__.__name__, bouncer.name))
 
         # Update vpc on bouncer
         # Needs a list of all dividers
         bouncer.set_vni(vpcs_opr.store.get_vpc(bouncer.vpc).vni)
         dividers_opr.update_vpc(bouncer)
 
+        # Update net on dividers
+
+        net.bouncers[bouncer.name] = bouncer
+        dividers_opr.update_divider_with_bouncers(bouncer, net)
         endpoints_opr.update_bouncer_with_endpoints(bouncer)
         endpoints_opr.update_endpoints_with_bouncers(bouncer)
-
-        # Update net on dividers
-        net = nets_opr.store.get_net(bouncer.net)
-        if net:
-            net.bouncers[bouncer.name] = bouncer
-            dividers_opr.update_divider_with_bouncers(bouncer, net)
         bouncer.load_transit_xdp_pipeline_stage()
         bouncers_opr.set_bouncer_provisioned(bouncer)
         bouncers_opr.store.update_bouncer(bouncer)

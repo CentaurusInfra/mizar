@@ -29,7 +29,6 @@ from mizar.obj.net import Net
 from mizar.obj.endpoint import Endpoint
 from mizar.obj.bouncer import Bouncer
 from mizar.store.operator_store import OprStore
-
 logger = logging.getLogger()
 
 
@@ -109,38 +108,10 @@ class NetOperator(object):
 
         return
 
-    def on_net_delete(self, body, spec, **kwargs):
-        logger.info("on_net_delete {}".format(spec))
-
-    def on_bouncer_provisioned(self, body, spec, **kwargs):
-        name = kwargs['name']
-        logger.info(
-            "Net on_bouncer_provisioned {} with spec: {}".format(name, spec))
-        b = Bouncer(name, self.obj_api, None, spec)
-        n = self.store.get_net(b.net)
-        if n.status != OBJ_STATUS.net_status_provisioned:
-            n.set_status(OBJ_STATUS.net_status_provisioned)
-            n.update_obj()
-
-    def on_endpoint_init(self, body, spec, **kwargs):
-        name = kwargs['name']
-        logger.info("Net on_endpoint_init {} with spec: {}".format(name, spec))
-        ep = Endpoint(name, self.obj_api, None, spec)
-        n = self.store.get_net(ep.net)
-        ip = n.allocate_ip()
-        gw = n.get_gw_ip()
-        prefix = n.get_prefixlen()
-        ep.set_ip(ip)
-        ep.set_gw(gw)
-        ep.set_prefix(prefix)
-        ep.load_transit_agent()
-        n.mark_ip_as_allocated(ip)
-        ep.set_status(OBJ_STATUS.ep_status_allocated)
-        ep.update_obj()
-
     def allocate_endpoint(self, ep):
         n = self.store.get_net(ep.net)
-        if ep.ip == '':
+        logger.info("IP {} for net {}".format(ep.ip, n.name))
+        if ep.ip == "":
             if ep.type == OBJ_DEFAULTS.ep_type_host:
                 ip = ep.get_droplet_ip()
             else:
@@ -156,7 +127,9 @@ class NetOperator(object):
         # if ep.type == OBJ_DEFAULTS.ep_type_simple:
         #	ep.load_transit_agent()
 
+        logger.info("After Allocate IP {} for net {}".format(ep.ip, n.name))
         n.mark_ip_as_allocated(ep.ip)
+        self.store.update_net(n)
         ep.set_vni(n.vni)
 
     def deallocate_endpoint(self, ep):

@@ -95,14 +95,16 @@ class EndpointOperator(object):
     def update_endpoints_with_bouncers(self, bouncer):
         eps = list(self.store.get_eps_in_net(bouncer.net).values())
         for ep in eps:
+            logger.info("EP {} update agent with bouncer {}".format(
+                bouncer.name, ep.name))
             if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
                 ep.update_bouncers({bouncer.name: bouncer})
 
-    def create_scaled_endpoint(self, name, spec, net, namespace="default"):
+    def create_scaled_endpoint(self, name, ep_name, spec, net, extra, namespace="default"):
         logger.info("Create scaled endpoint {} spec {}".format(name, spec))
-        ep = Endpoint(name, self.obj_api, self.store)
+        ep = Endpoint(ep_name, self.obj_api, self.store)
         ip = ''
-        if 'clusterIP' in spec:
+        if spec['clusterIP'] != "":
             ip = spec['clusterIP']
         else:
             ip = net.allocate_ip()
@@ -117,7 +119,9 @@ class EndpointOperator(object):
         ep.set_type(OBJ_DEFAULTS.ep_type_scaled)
         ep.set_status(OBJ_STATUS.ep_status_init)
         ep.create_obj()
-        self.annotate_builtin_endpoints(name, namespace)
+        if not extra:
+            logger.info("Annotating endpoint!")
+            self.annotate_builtin_endpoints(name, namespace)
         return ep
 
     def create_gw_endpoint(self, name, ip, vni, vpc, net):
@@ -161,8 +165,8 @@ class EndpointOperator(object):
             random.randint(0, 255),
         )
 
-    def update_scaled_endpoint_backend(self, name, namespace, spec):
-        ep = self.store.get_ep(name)
+    def update_scaled_endpoint_backend(self, name, ep_name, namespace, spec):
+        ep = self.store.get_ep(ep_name)
         if ep is None:
             return None
         backends = set()
@@ -173,25 +177,77 @@ class EndpointOperator(object):
         ep.set_backends(list(backends))
         ports = {}
         service = kube_get_service(self.core_api, name, namespace)
-        if not service or not service.metadata or not service.metadata.annotations:
+        if not service:
+            logger.info("Service not found!")
             return
-        service_spec = list(service.metadata.annotations.values())
-        json_spec = json.loads(service_spec[0])
-        # ports = {frontend_port: [backend_port, protocol]}
-        if isinstance(json_spec, dict):
-            for port in json_spec["spec"]["ports"]:
-                ports[port["port"]] = []
-                ports[port["port"]].append(port["targetPort"])
-                proto = port["protocol"]
-                if proto == "TCP":
-                    ports[port["port"]].append(CONSTANTS.IPPROTO_TCP)
-                if proto == "UDP":
-                    ports[port["port"]].append(CONSTANTS.IPROTO_UDP)
-        ep.set_ports(sorted(ports.items()))  # Sorted by frontend ports
+        # ports = {"frontend_port, protocol"]: [backend_port]}
+        for service_ports in service.spec.ports:
+            frontend_port = service_ports.port
+            backend_port = service_ports.target_port
+            proto = service_ports.protocol
+            if service_ports.protocol == "TCP":
+                proto = CONSTANTS.IPPROTO_TCP
+            if service_ports.protocol == "UDP":
+                proto = CONSTANTS.IPROTO_UDP
+            ports["{},{}".format(frontend_port, proto)] = backend_port
+        logger.info("Mizar service ports {}".format(ports))
+        ep.set_ports(ports)
         self.store_update(ep)
         logger.info(
-            "Update scaled endpoint {} with backends: {}".format(name, backends))
-        return self.store.get_ep(name)
+            "Update scaled endpoint {} with backends: {}".format(ep_name, backends))
+        return self.store.get_ep(ep_name)
+
+    def update_scaled_endpoint_backend_service(self, name, ep_name, namespace, ports, backend_ips):
+        ep = self.store.get_ep(ep_name)
+        if ep is None:
+            return None
+        backends = set()
+        for b in backend_ips:
+            logger.info("Service update scaled endpoint add ip {}".format(b))
+            backends.add(b)
+        ports_map = {}
+        for port in ports:
+            frontend_port = port.frontend_port
+            backend_port = port.backend_port
+            proto = port.proto
+            if port.proto == "TCP":
+                proto = CONSTANTS.IPPROTO_TCP
+            if port.proto == "UDP":
+                proto = CONSTANTS.IPROTO_UDP
+            ports_map["{},{}".format(frontend_port, proto)] = backend_port
+        logger.info("Arktos service ports {}".format(ports_map))
+        ep.set_backends(list(backends))
+        ep.set_ports(ports_map)
+        self.store_update(ep)
+        logger.info(
+            "Service update scaled endpoint {} with backends: {}".format(ep_name, backends))
+        return self.store.get_ep(ep_name)
+
+    def update_scaled_endpoint_backend_service_json(self, name, ep_name, namespace, ports, backend_ips):
+        ep = self.store.get_ep(ep_name)
+        if ep is None:
+            return None
+        backends = set()
+        for b in backend_ips:
+            logger.info("Service update scaled endpoint add ip {}".format(b))
+            backends.add(b)
+        ports_map = {}
+        for port in ports:
+            frontend_port = port["frontend_port"]
+            backend_port = port["backend_port"]
+            proto = port["protocol"]
+            if port["protocol"] == "TCP":
+                proto = CONSTANTS.IPPROTO_TCP
+            if port["protocol"] == "UDP":
+                proto = CONSTANTS.IPROTO_UDP
+            ports_map["{},{}".format(frontend_port, proto)] = backend_port
+        logger.info("Arktos service ports {}".format(ports_map))
+        ep.set_backends(list(backends))
+        ep.set_ports(ports_map)
+        self.store_update(ep)
+        logger.info(
+            "Service update scaled endpoint {} with backends: {}".format(ep_name, backends))
+        return self.store.get_ep(ep_name)
 
     def delete_endpoints_from_bouncers(self, bouncer):
         eps = self.store.get_eps_in_net(bouncer.net).values()
@@ -255,8 +311,11 @@ class EndpointOperator(object):
         for interface, net_info in zip(interfaces.interfaces, spec['interfaces']):
             logger.info("Create simple endpoint {}".format(interface))
             name = get_itf_name(interface.interface_id)
+            if self.store.get_ep(name):
+                logger.info("EP already exists!")
+                return
             ep = Endpoint(name, self.obj_api, self.store)
-
+            ep.set_pod(spec["name"])
             ep.set_type(OBJ_DEFAULTS.ep_type_simple)
             ep.set_status(OBJ_STATUS.ep_status_init)
 
@@ -281,7 +340,6 @@ class EndpointOperator(object):
             ep.set_droplet_mac(spec['droplet'].mac)
             ep.set_interface(interface)
             ep.create_obj()
-            self.store_update(ep)
 
     def create_host_endpoint(self, ip, droplet, interfaces):
         for interface in interfaces.interfaces:
@@ -308,7 +366,7 @@ class EndpointOperator(object):
             ep.set_droplet_mac(droplet.mac)
             ep.set_interface(interface)
             ep.create_obj()
-            self.store_update(ep)
+            return ep
 
     def init_simple_endpoint_interfaces(self, worker_ip, spec):
         """
@@ -335,20 +393,21 @@ class EndpointOperator(object):
             pod_provider = PodProvider.K8S
             if spec['type'] == 'arktos':
                 pod_provider = PodProvider.ARKTOS
+            if not self.store.get_ep(itf_name):
+                interfaces_list.append(Interface(
+                    interface_id=interface_id,
+                    interface_type=InterfaceType.veth,
+                    pod_provider=pod_provider,
+                    veth=veth,
+                    status=InterfaceStatus.init
+                ))
+        if len(interfaces_list) > 0:
+            interfaces = InterfacesList(interfaces=interfaces_list)
 
-            interfaces_list.append(Interface(
-                interface_id=interface_id,
-                interface_type=InterfaceType.veth,
-                pod_provider=pod_provider,
-                veth=veth,
-                status=InterfaceStatus.init
-            ))
-
-        interfaces = InterfacesList(interfaces=interfaces_list)
-
-        # The Interface service will create the veth peers for the interface and
-        # allocate the mac addresses for us.
-        return InterfaceServiceClient(worker_ip).InitializeInterfaces(interfaces)
+            # The Interface service will create the veth peers for the interface and
+            # allocate the mac addresses for us.
+            return InterfaceServiceClient(worker_ip).InitializeInterfaces(interfaces)
+        return None
 
     def init_host_endpoint_interfaces(self, droplet):
         interfaces_list = []
@@ -372,5 +431,6 @@ class EndpointOperator(object):
         return InterfaceServiceClient(droplet.ip).InitializeInterfaces(interfaces)
 
     def delete_simple_endpoint(self, ep):
-        logger.info("Delete endpoint object assicated with interface {}".format(ep.name))
+        logger.info(
+            "Delete endpoint object assicated with interface {}".format(ep.name))
         ep.delete_obj()

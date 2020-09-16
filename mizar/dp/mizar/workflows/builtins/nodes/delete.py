@@ -21,6 +21,23 @@
 
 import logging
 from mizar.common.workflow import *
-from mizar.dp.mizar.operators.bouncers.bouncers_operator import *
-from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
+from mizar.dp.mizar.operators.droplets.droplets_operator import *
 logger = logging.getLogger()
+
+droplet_opr = DropletOperator()
+
+
+class k8sDropletDelete(WorkflowTask):
+
+    def requires(self):
+        logger.info("Requires {task}".format(task=self.__class__.__name__))
+        return []
+
+    def run(self):
+
+        logger.info("Run {task}".format(task=self.__class__.__name__))
+        droplet = droplet_opr.store.get_droplet(self.param.name)
+        logger.info("Deleting Droplet {}".format(self.param.name))
+        droplet.delete_obj()
+
+        self.finalize()

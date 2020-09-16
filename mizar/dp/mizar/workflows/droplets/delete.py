@@ -21,7 +21,22 @@
 
 import logging
 from mizar.common.workflow import *
-from mizar.dp.mizar.operators.vpcs.vpcs_operator import *
+from mizar.dp.mizar.operators.droplets.droplets_operator import *
+
 logger = logging.getLogger()
 
-vpcs_opr = VpcOperator()
+droplets_opr = DropletOperator()
+
+
+class DropletDelete(WorkflowTask):
+
+    def requires(self):
+        logger.info("Requires {task}".format(task=self.__class__.__name__))
+        return []
+
+    def run(self):
+        logger.info("Run {task}".format(task=self.__class__.__name__))
+        d = droplets_opr.store.get_droplet(self.param.name)
+        droplets_opr.store.delete_droplet(d.name)
+        d.delete_obj()
+        self.finalize()

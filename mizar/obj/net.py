@@ -70,8 +70,6 @@ class Net(object):
             'bouncers', spec, OBJ_DEFAULTS.default_n_bouncers))
         ip = get_spec_val('ip', spec, OBJ_DEFAULTS.default_net_ip)
         prefix = get_spec_val('prefix', spec, OBJ_DEFAULTS.default_net_prefix)
-        self.cidr = Cidr(prefix, ip)
-        self.gw = self.cidr.gw
 
     # K8s APIs
     def get_name(self):

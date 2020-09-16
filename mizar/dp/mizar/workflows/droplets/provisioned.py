@@ -43,5 +43,6 @@ class DropletProvisioned(WorkflowTask):
         interfaces = endpoint_opr.init_host_endpoint_interfaces(
             droplet)
         # TODO: Create host endpoint in seperate network.
-        endpoint_opr.create_host_endpoint(droplet.ip, droplet, interfaces)
+        ep = endpoint_opr.create_host_endpoint(droplet.ip, droplet, interfaces)
+        endpoint_opr.produce_simple_endpoint_interface(ep)
         self.finalize()

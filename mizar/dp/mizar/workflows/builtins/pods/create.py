@@ -47,7 +47,7 @@ class k8sPodCreate(WorkflowTask):
             self.raise_temporary_error("Pod spec not ready.")
         spec = {
             'hostIP': self.param.body['status']['hostIP'],
-            'name': self.param.body['metadata']['name'],
+            'name': self.param.name,
             'type': COMPUTE_PROVIDER.kubernetes,
             'namespace': self.param.body['metadata'].get('namespace', 'default'),
             'tenant': self.param.body['metadata'].get('tenant', ''),
@@ -61,18 +61,18 @@ class k8sPodCreate(WorkflowTask):
         spec['vni'] = vpc_opr.store_get(spec['vpc']).vni
         spec['droplet'] = droplet_opr.store_get_by_ip(spec['hostIP'])
 
-        if OBJ_DEFAULTS.arktos_pod_label in self.param.body['metadata'].get('labels', {}):
-            spec['type'] =  COMPUTE_PROVIDER.arktos
-            spec['vpc'] = vpc_opr.store.get_vpc_in_arktosnet(
-                                        self.param.body['metadata']['labels'][OBJ_DEFAULTS.arktos_pod_label])
-
-        # Example: arktos.futurewei.com/nic: [{"name": "eth0", "ip": "10.10.1.12", "subnet": "net1"}]
-        # all three fields are optional. Each item in the list corresponding to an endpoint
-        # which represents a network interface for a pod
-        if OBJ_DEFAULTS.arktos_pod_annotation in self.param.body['metadata'].get('annotations', {}):
-            net_config = self.param.body['metadata']['annotations'][OBJ_DEFAULTS.arktos_pod_annotation]
-            configs = json.loads(net_config)
-            spec['interfaces'] = configs
+        if self.param.extra:
+            spec['type'] = COMPUTE_PROVIDER.arktos
+            if "arktos_network" in self.param.extra:
+                spec['vpc'] = vpc_opr.store.get_vpc_in_arktosnet(
+                    self.param.extra["arktos_network"])
+            # Example: arktos.futurewei.com/nic: [{"name": "eth0", "ip": "10.10.1.12", "subnet": "net1"}]
+            # all three fields are optional. Each item in the list corresponding to an endpoint
+            # which represents a network interface for a pod
+            if "interfaces" in self.param.extra:
+                net_config = self.param.extra["interfaces"]
+                configs = json.loads(net_config)
+                spec['interfaces'] = configs
 
         # make sure not to trigger init or create simple endpoint
         # if Arktos network is already marked ready (Needs to confirm with Arktos team)
@@ -90,7 +90,9 @@ class k8sPodCreate(WorkflowTask):
         # Init all interfaces on the host
         interfaces = endpoint_opr.init_simple_endpoint_interfaces(
             spec['hostIP'], spec)
-
+        if not interfaces:
+            self.raise_temporary_error(
+                "Endpoint {} already exists!".format(spec["name"]))
         # Create the corresponding simple endpoint objects
         endpoint_opr.create_simple_endpoints(interfaces, spec)
 

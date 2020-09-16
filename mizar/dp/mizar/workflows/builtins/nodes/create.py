@@ -22,7 +22,6 @@
 import logging
 from mizar.common.workflow import *
 from mizar.dp.mizar.operators.droplets.droplets_operator import *
-
 logger = logging.getLogger()
 
 droplet_opr = DropletOperator()

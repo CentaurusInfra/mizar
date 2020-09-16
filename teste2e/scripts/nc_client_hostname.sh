@@ -2,7 +2,7 @@ IP=$1
 PROTOCOL=${2:-tcp}
 TYPE=${3:-simple}
 
-if [ "$PROTOCOL" == "udp" ]
+if [ "$PROTOCOL" == "tcp" ]
 then
     if [ "$TYPE" == "scaled" ]
     then

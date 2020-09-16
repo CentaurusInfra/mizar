@@ -61,16 +61,19 @@ class Endpoint:
         self.bouncers = {}
         self.backends = []
         self.ports = []
-        if spec is not None:
-            self.set_obj_spec(spec)
+        self.pod = ""
         self.deleted = False
         self.interface = None
+        if spec is not None:
+            self.set_obj_spec(spec)
 
     @property
     def rpc(self):
         return TrnRpc(self.droplet_ip, self.droplet_mac)
 
     def get_nip(self):
+        if self.type == OBJ_DEFAULTS.ep_type_host:
+            return OBJ_DEFAULTS.default_net_ip
         ip = ipaddress.ip_interface(self.ip + '/' + self.prefix)
         return str(ip.network.network_address)
 
@@ -102,7 +105,8 @@ class Endpoint:
             "hostip": self.droplet_ip,
             "hostmac": self.droplet_mac,
             "cnidelay": self.cnidelay,
-            "provisiondelay": self.provisiondelay
+            "provisiondelay": self.provisiondelay,
+            "pod": self.pod
         }
 
         return self.obj
@@ -125,6 +129,7 @@ class Endpoint:
         self.droplet_mac = get_spec_val('hostmac', spec)
         self.cnidelay = get_spec_val('cnidelay', spec)
         self.provisiondelay = get_spec_val('provisiondelay', spec)
+        self.pod = get_spec_val('pod', spec)
 
     def set_interface(self, interface):
         self.interface = interface
@@ -155,9 +160,11 @@ class Endpoint:
         self.store.delete_ep(self.name)
 
     # K8s APIs
+    # This function does a store update
     def create_obj(self):
         return kube_create_obj(self)
 
+    # This function does a store update
     def update_obj(self):
         return kube_update_obj(self)
 
@@ -234,6 +241,9 @@ class Endpoint:
     def set_veth_peer_mac(self, veth_peer_mac):
         self.veth_peer_mac = veth_peer_mac
 
+    def set_pod(self, pod):
+        self.pod = pod
+
     def update_bouncers(self, bouncers, add=True):
         for bouncer in bouncers.values():
             if add:
@@ -292,13 +302,13 @@ class Endpoint:
         return remote_ips
 
     def get_remote_ports(self):
-        return [str(port[1][0]) for port in self.ports]
+        return [str(self.ports[port]) for port in self.ports]
 
     def get_frontend_ports(self):
-        return [str(port[0]) for port in self.ports]
+        return [port.split(",")[0] for port in self.ports]
 
     def get_port_protocols(self):
-        return [port[1][1] for port in self.ports]
+        return [port.split(",")[1] for port in self.ports]
 
     def get_remote_macs(self):
         remote_macs = [self.droplet_mac]

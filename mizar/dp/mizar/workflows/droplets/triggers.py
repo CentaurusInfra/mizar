@@ -48,3 +48,12 @@ def droplet_opr_on_droplet_provisioned(body, spec, **kwargs):
     param.body = body
     param.spec = spec
     run_workflow(wffactory().DropletProvisioned(param=param))
+
+
+@kopf.on.delete(group, version, RESOURCES.droplets, retries=OBJ_DEFAULTS.kopf_max_retries)
+def droplet_opr_on_droplet_delete(body, spec, **kwargs):
+    param = HandlerParam()
+    param.name = kwargs['name']
+    param.body = body
+    param.spec = spec
+    run_workflow(wffactory().DropletDelete(param=param))
