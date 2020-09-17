@@ -49,7 +49,7 @@ class k8sServiceCreate(WorkflowTask):
         name = self.param.name + "-{}".format(namespace)
         if self.param.extra:
             arktosnet = self.param.extra['arktos_network']
-            if arktosnet != "" or arktosnet != "default":
+            if arktosnet != "":
                 vpc_name = vpcs_opr.store.get_vpc_in_arktosnet(arktosnet)
                 if not vpc_name:
                     self.raise_temporary_error(
