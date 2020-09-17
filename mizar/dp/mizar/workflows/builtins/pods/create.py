@@ -25,6 +25,7 @@ from mizar.common.workflow import *
 from mizar.dp.mizar.operators.droplets.droplets_operator import *
 from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
 from mizar.dp.mizar.operators.vpcs.vpcs_operator import *
+from mizar.dp.mizar.operators.nets.nets_operator import *
 from mizar.common.constants import *
 
 logger = logging.getLogger()
@@ -32,6 +33,7 @@ logger = logging.getLogger()
 droplet_opr = DropletOperator()
 endpoint_opr = EndpointOperator()
 vpc_opr = VpcOperator()
+net_opr = NetOperator()
 
 
 class k8sPodCreate(WorkflowTask):
@@ -64,8 +66,16 @@ class k8sPodCreate(WorkflowTask):
         if self.param.extra:
             spec['type'] = COMPUTE_PROVIDER.arktos
             if "arktos_network" in self.param.extra:
-                spec['vpc'] = vpc_opr.store.get_vpc_in_arktosnet(
+                vpc = vpc_opr.store.get_vpc_in_arktosnet(
                     self.param.extra["arktos_network"])
+                spec['vpc'] = vpc
+                nets = net_opr.store.get_nets_in_vpc(vpc)
+                net = OBJ_DEFAULTS.default_ep_net
+                if nets:
+                    net = next(iter(nets.values())).name
+                spec["subnet"] = net
+                logger.info("Putting pod in VPC {} and Net {}".format(
+                    spec["vpc"], spec["subnet"]))
             # Example: arktos.futurewei.com/nic: [{"name": "eth0", "ip": "10.10.1.12", "subnet": "net1"}]
             # all three fields are optional. Each item in the list corresponding to an endpoint
             # which represents a network interface for a pod
