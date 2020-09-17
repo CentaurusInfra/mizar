@@ -45,12 +45,17 @@ class NetCreate(WorkflowTask):
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
         n = nets_opr.store.get_net(self.param.name)
+        if not n:
+            logger.info("NetCreate: Net not found in store. Creating new network object for {}".format(
+                self.param.name))
+            n = nets_opr.get_net_stored_obj(self.param.name, self.param.spec)
         if len(droplets_opr.store.get_all_droplets()) == 0:
             self.raise_temporary_error(
                 "Task: {} Net: {} No droplets available.".format(self.__class__.__name__, n.name))
         if len(dividers_opr.store.get_dividers_of_vpc(n.vpc)) < 1:
             self.raise_temporary_error(
                 "Task: {} Net: {} Dividers not available".format(self.__class__.__name__, n.name))
+        logger.info("NetCreate Net ip is {}".format(n.ip))
         nets_opr.create_net_bouncers(n, n.n_bouncers)
         nets_opr.set_net_provisioned(n)
         nets_opr.store_update(n)

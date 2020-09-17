@@ -36,7 +36,11 @@ class NetProvisioned(WorkflowTask):
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
         net = nets_opr.store.get_net(self.param.name)
-
+        if not net:
+            logger.info("NetProvisioned: Net not found in store. Creating new network object for {}".format(
+                self.param.name))
+            net = nets_opr.get_net_stored_obj(self.param.name, self.param.spec)
+        logger.info("Provisioned Net ip is {}".format(net.ip))
         for d in self.param.diff:
             if d[0] == 'change':
                 self.process_change(net=net, field=d[1], old=d[2], new=d[3])

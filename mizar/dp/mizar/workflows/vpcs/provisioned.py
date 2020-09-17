@@ -36,6 +36,11 @@ class VpcProvisioned(WorkflowTask):
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
         vpc = vpcs_opr.store.get_vpc(self.param.name)
+        logger.info("VpcProvisioned VPC IP is {}".format(vpc.ip))
+        if not vpc:
+            logger.info("VpcProvisioned: VPC not found in store. Creating new VPC object for {}".format(
+                self.param.name))
+            vpc = vpcs_opr.get_vpc_stored_obj(self.param.name, self.param.spec)
         for d in self.param.diff:
             if d[0] == 'change':
                 self.process_change(vpc=vpc, field=d[1], old=d[2], new=d[3])

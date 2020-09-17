@@ -81,6 +81,8 @@ class OBJ_DEFAULTS:
     default_ep_net = 'net0'
     default_ep_type = 'simple'
     default_vpc_vni = '1'
+    default_vpc_ip = '20.0.0.0'
+    default_vpc_prefix = '8'
     default_net_ip = '20.0.0.0'
     default_net_prefix = '8'
     default_n_bouncers = 1
