@@ -122,7 +122,8 @@ class ArktosService(BuiltinsServiceServicer):
         vpc_opr.store_get(request.vpc)
         if not vpc_opr.store_get(request.vpc):
             rc.code = CodeType.PERM_ERROR
-            rc.message = "ERROR: VPC Does not exist."
+            rc.message = "ERROR: VPC {} does not exist for arktos network {}.".format(
+                request.vpc, request.name)
         else:
             vpc_opr.store.update_arktosnet_vpc(request.name, request.vpc)
         return rc

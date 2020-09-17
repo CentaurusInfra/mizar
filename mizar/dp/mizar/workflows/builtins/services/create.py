@@ -49,14 +49,18 @@ class k8sServiceCreate(WorkflowTask):
         name = self.param.name + "-{}".format(namespace)
         if self.param.extra:
             arktosnet = self.param.extra['arktos_network']
-            vpc = vpcs_opr.store.get_vpc_in_arktosnet(arktosnet)
-            nets = nets_opr.store.get_nets_in_vpc(vpc)
+            vpc_name = vpcs_opr.store.get_vpc_in_arktosnet(arktosnet)
+            if not vpc_name:
+                logger.info(
+                    "No vpc found for arktos network {}. Using default VPC and subnet".format(arktosnet))
+            nets = nets_opr.store.get_nets_in_vpc(vpc_name)
             name = name + "-{}".format(self.param.extra["tenant"])
             if nets:
                 net = next(iter(nets.values()))
         if not net:
             self.raise_temporary_error(
-                "Task: {} Net Not yet created.".format(self.__class__.__name__))
+                "Task: {} Net not yet created.".format(self.__class__.__name__))
+        logger.info("Creating scaled endpoint in subnet: {}.".format(net))
         ep = endpoints_opr.create_scaled_endpoint(
             self.param.name, name, self.param.spec, net, self.param.extra, self.param.body['metadata']['namespace'])
         self.param.return_message = ep.ip
