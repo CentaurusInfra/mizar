@@ -37,18 +37,25 @@ class Net(object):
         self.name = name
         self.vpc = OBJ_DEFAULTS.default_ep_vpc
         self.vni = OBJ_DEFAULTS.default_vpc_vni
-        self.cidr = Cidr(OBJ_DEFAULTS.default_net_prefix,
-                         OBJ_DEFAULTS.default_net_ip)
         self.n_bouncers = OBJ_DEFAULTS.default_n_bouncers
         self.n_allocated_bouncers = 0
         self.bouncers = {}
         self.endpoints = {}
         self.obj_api = obj_api
         self.store = opr_store
-        self.gw = self.cidr.gw
         self.status = OBJ_STATUS.net_status_init
+        self.ip = OBJ_DEFAULTS.default_net_ip
+        self.prefix = OBJ_DEFAULTS.default_net_prefix
         if spec is not None:
             self.set_obj_spec(spec)
+        if self.prefix == "":
+            logger.info("Prefix is empty string!")
+            self.prefix = OBJ_DEFAULTS.default_net_prefix
+        self.cidr = Cidr(self.prefix,
+                         self.ip)
+        self.ip = self.cidr.ip
+        self.prefix = self.cidr.prefixlen
+        self.gw = self.cidr.gw
 
     def get_obj_spec(self):
         self.obj = {
@@ -68,8 +75,9 @@ class Net(object):
         self.vni = get_spec_val('vni', spec)
         self.n_bouncers = int(get_spec_val(
             'bouncers', spec, OBJ_DEFAULTS.default_n_bouncers))
-        ip = get_spec_val('ip', spec, OBJ_DEFAULTS.default_net_ip)
-        prefix = get_spec_val('prefix', spec, OBJ_DEFAULTS.default_net_prefix)
+        self.ip = get_spec_val('ip', spec, OBJ_DEFAULTS.default_net_ip)
+        self.prefix = get_spec_val(
+            'prefix', spec, OBJ_DEFAULTS.default_net_prefix)
 
     # K8s APIs
     def get_name(self):

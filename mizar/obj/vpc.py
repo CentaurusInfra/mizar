@@ -36,8 +36,6 @@ class Vpc(object):
     def __init__(self, name, obj_api, opr_store, spec=None):
         self.name = name
         self.vni = OBJ_DEFAULTS.default_vpc_vni
-        self.cidr = Cidr(OBJ_DEFAULTS.default_net_prefix,
-                         OBJ_DEFAULTS.default_net_ip)
         self.n_dividers = OBJ_DEFAULTS.default_n_dividers
         self.n_allocated_dividers = 0
         self.obj_api = obj_api
@@ -45,8 +43,16 @@ class Vpc(object):
         self.dividers = {}
         self.networks = {}
         self.store = opr_store
+        self.ip = OBJ_DEFAULTS.default_vpc_ip
+        self.prefix = OBJ_DEFAULTS.default_vpc_prefix
         if spec is not None:
             self.set_obj_spec(spec)
+        if self.prefix == "":
+            logger.info("Prefix is empty string!")
+            self.prefix = OBJ_DEFAULTS.default_vpc_prefix
+        self.cidr = Cidr(self.prefix, self.ip)
+        self.ip = self.cidr.ip
+        self.prefix = self.cidr.prefixlen
 
     def get_obj_spec(self):
         self.obj = {
@@ -61,6 +67,9 @@ class Vpc(object):
 
     def set_obj_spec(self, spec):
         self.status = get_spec_val('status', spec, OBJ_STATUS.vpc_status_init)
+        self.ip = get_spec_val('ip', spec, OBJ_DEFAULTS.default_vpc_ip)
+        self.prefix = get_spec_val(
+            "prefix", spec, OBJ_DEFAULTS.default_vpc_prefix)
         self.vni = get_spec_val('vni', spec, None)
         self.n_dividers = int(get_spec_val(
             'dividers', spec, OBJ_DEFAULTS.default_n_dividers))

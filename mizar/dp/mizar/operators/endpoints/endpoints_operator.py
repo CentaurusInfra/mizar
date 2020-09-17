@@ -106,7 +106,9 @@ class EndpointOperator(object):
         ip = ''
         if spec['clusterIP'] != "":
             ip = spec['clusterIP']
+            logger.info("Service {} already has IP {}".format(name, ip))
         else:
+            logger.info("Allocating IP {} for service {}".format(ip, name))
             ip = net.allocate_ip()
         net.mark_ip_as_allocated(ip)
         # If not provided in Pod, use defaults
