@@ -64,7 +64,7 @@ spec:
             path: /var
             type: Directory
       initContainers:
-        - image: localhost:5000/mizar:latest
+        - image: fwnetworking/mizar:latest
           name: node-init
           command: [./node-init.sh]
           securityContext:
@@ -73,7 +73,7 @@ spec:
             - name: mizar
               mountPath: /home
       containers:
-        - image: localhost:5000/dropletd:latest
+        - image: fwnetworking/dropletd:latest
           name: mizar-daemon
           securityContext:
             privileged: true
