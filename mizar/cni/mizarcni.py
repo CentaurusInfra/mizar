@@ -32,10 +32,9 @@ from mizar.proto.interface_pb2 import *
 from pyroute2 import IPRoute, NetNS
 
 logger = logging.getLogger('mizarcni')
-logger.setLevel(logging.INFO)
-handler = SysLogHandler(address='/dev/log')
+handler = logging.FileHandler('/tmp/mizarcni.log')
 logger.addHandler(handler)
-logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
 class Cni:
@@ -165,18 +164,17 @@ class Cni:
                         prefixlen=int(interface.address.ip_prefix))
         iproute_ns.route('add', gateway=interface.address.gateway_ip)
 
+        # Disable TSO and checksum offload as xdp currently does not support
         logger.info("Disable tso for pod")
-        cmd = "nsenter -t 1 -m -u -n -i ip netns exec {} ethtool -K {} tso off gso off ufo off".format(
-            netns, interface.veth.name)
+        cmd = "ip netns exec {} ethtool -K {} tso off gso off ufo off".format(
+            netns, "eth0")
         rc, text = run_cmd(cmd)
-        logger.info("Disabled tso rc:{} text{}".format(rc, text))
-
+        logger.info("Executed cmd {} tso rc: {} text {}".format(cmd, rc, text))
         logger.info("Disable rx tx offload for pod")
-        cmd = "nsenter -t 1 -m -u -n -i ip netns exec {} ethtool --offload {} rx off tx off".format(
-            netns, interface.veth.name)
+        cmd = "ip netns exec {} ethtool --offload {} rx off tx off".format(
+            netns, "eth0")
         rc, text = run_cmd(cmd)
-        logger.info(
-            "Disabled rx tx offload for pod rc:{} text{}".format(rc, text))
+        logger.info("Executed cmd {} rc: {} text {}".format(cmd, rc, text))
 
     def do_delete(self):
         param = CniParameters(pod_id=self.pod_id,

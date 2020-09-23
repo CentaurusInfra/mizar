@@ -430,7 +430,7 @@ static inline void trn_set_src_dst_inner_ip_csum(struct transit_packet *pkt,
 	pkt->inner_ip->check = csum;
 
 	bpf_debug(
-		"123Modified Inner IP Address, src: 0x%x, dst: 0x%x, csum: 0x%x\n",
+		"Modified Inner IP Address, src: 0x%x, dst: 0x%x, csum: 0x%x\n",
 		pkt->inner_ip->saddr, pkt->inner_ip->daddr,
 		pkt->inner_ip->check);
 }
