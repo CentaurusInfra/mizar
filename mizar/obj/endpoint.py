@@ -258,6 +258,8 @@ class Endpoint:
     def update_bouncers_list(self, bouncers, add=True):
         for bouncer in bouncers.values():
             if add:
+                logger.info("Updating ep {} list with bouncers {}".format(
+                    self.name, bouncer.name))
                 self.bouncers[bouncer.name] = bouncer
             else:
                 self.bouncers.pop(bouncer.name)

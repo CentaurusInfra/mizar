@@ -174,7 +174,7 @@ class InterfaceServer(InterfaceServiceServicer):
 
         for bouncer in interface.bouncers:
             self.rpc.update_agent_substrate_ep(
-                    interface.veth.peer, bouncer.ip_address, bouncer.mac)
+                interface.veth.peer, bouncer.ip_address, bouncer.mac)
         self.rpc.update_agent_metadata(interface)
         self.rpc.update_ep(interface)
 
@@ -234,7 +234,8 @@ class InterfaceServer(InterfaceServiceServicer):
         pod_name = get_pod_name(cni_params.pod_id)
         pod_interfaces = self.interfaces.get(pod_name, [])
         iface = cni_params.interface
-        logger.info("Deleting interfaces for pod {} with interfaces {}".format(pod_name, pod_interfaces))
+        logger.info("Deleting interfaces for pod {} with interfaces {}".format(
+            pod_name, pod_interfaces))
 
         for interface in pod_interfaces:
             self.interfaces[pod_name].remove(interface)
@@ -245,6 +246,20 @@ class InterfaceServer(InterfaceServiceServicer):
         return empty_pb2.Empty()
 
     def ActivateHostInterface(self, request, context):
+
+        #         script = (f''' bash -c '\
+        # nsenter -t 1 -m -u -n -i ip netns add {netns} && \
+        # nsenter -t 1 -m -u -n -i ip link set {interface.veth.name} netns {netns} && \
+        # nsenter -t 1 -m -u -n -i ip netns exec {netns} ip addr add {interface.address.ip_address}/{interface.address.ip_prefix} dev {interface.veth.name} && \
+        # nsenter -t 1 -m -u -n -i ip netns exec {netns} ip link set dev {interface.veth.name} up && \
+        # nsenter -t 1 -m -u -n -i ip netns exec {netns} sysctl -w net.ipv4.tcp_mtu_probing=2 && \
+        # nsenter -t 1 -m -u -n -i ip netns exec {netns} ethtool -K {interface.veth.name} tso off gso off ufo off && \
+        # nsenter -t 1 -m -u -n -i ip netns exec {netns} ethtool --offload {interface.veth.name} rx off tx off && \
+        # nsenter -t 1 -m -u -n -i ip link set dev {interface.veth.peer} up mtu 9000 && \
+        # nsenter -t 1 -m -u -n -i ip route add {OBJ_DEFAULTS.default_net_ip}/{OBJ_DEFAULTS.default_net_prefix} dev {interface.veth.name}  && \
+        # nsenter -t 1 -m -u -n -i ip netns exec {netns} route add default gw {interface.address.gateway_ip} &&  \
+        # nsenter -t 1 -m -u -n -i ip netns exec {netns} ifconfig lo up' ''')
+
         interface = request
 
         # Provision host veth interface and load transit xdp agent.
@@ -267,6 +282,18 @@ class InterfaceServer(InterfaceServiceServicer):
 
         self.iproute.route('add', dst=OBJ_DEFAULTS.default_net_ip,
                            mask=int(OBJ_DEFAULTS.default_net_prefix), oif=veth_index)
+        logger.info("Disable tso for host ep")
+        cmd = "nsenter -t 1 -m -u -n -i ethtool -K {} tso off gso off ufo off".format(
+            interface.veth.name)
+        rc, text = run_cmd(cmd)
+        logger.info("Disabled tso rc:{} text{}".format(rc, text))
+
+        logger.info("Disable rx tx offload for host ep")
+        cmd = "nsenter -t 1 -m -u -n -i ethtool --offload {} rx off tx off".format(
+            interface.veth.name)
+        rc, text = run_cmd(cmd)
+        logger.info(
+            "Disabled rx tx offload for host ep rc:{} text{}".format(rc, text))
         return interface
 
 

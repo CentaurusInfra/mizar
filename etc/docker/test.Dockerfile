@@ -24,7 +24,10 @@ RUN apt-get update -y
 RUN apt-get install iputils-ping
 RUN apt-get install -y netcat
 RUN apt-get install -y iperf3
-RUN apt install -y net-tools
+RUN apt-get install -y net-tools
+RUN apt-get install -y tcpdump
+RUN apt-get install -y ethtool
+RUN apt-get install -y sudo
 COPY teste2e/ /var/mizar/test
 EXPOSE 8000 9001 5001
 CMD /var/mizar/test/scripts/run_servers.sh

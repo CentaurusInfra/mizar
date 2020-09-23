@@ -68,6 +68,8 @@ class k8sPodCreate(WorkflowTask):
             if "arktos_network" in self.param.extra:
                 vpc = vpc_opr.store.get_vpc_in_arktosnet(
                     self.param.extra["arktos_network"])
+                if self.param.extra["arktos_network"] == "default":
+                    vpc = OBJ_DEFAULTS.default_ep_vpc
                 spec['vpc'] = vpc
                 nets = net_opr.store.get_nets_in_vpc(vpc)
                 net = OBJ_DEFAULTS.default_ep_net
@@ -101,7 +103,7 @@ class k8sPodCreate(WorkflowTask):
         interfaces = endpoint_opr.init_simple_endpoint_interfaces(
             spec['hostIP'], spec)
         if not interfaces:
-            self.raise_temporary_error(
+            self.raise_permanent_error(
                 "Endpoint {} already exists!".format(spec["name"]))
         # Create the corresponding simple endpoint objects
         endpoint_opr.create_simple_endpoints(interfaces, spec)

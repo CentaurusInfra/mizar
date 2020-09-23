@@ -165,12 +165,25 @@ class Cni:
                         prefixlen=int(interface.address.ip_prefix))
         iproute_ns.route('add', gateway=interface.address.gateway_ip)
 
+        logger.info("Disable tso for pod")
+        cmd = "nsenter -t 1 -m -u -n -i ip netns exec {} ethtool -K {} tso off gso off ufo off".format(
+            netns, interface.veth.name)
+        rc, text = run_cmd(cmd)
+        logger.info("Disabled tso rc:{} text{}".format(rc, text))
+
+        logger.info("Disable rx tx offload for pod")
+        cmd = "nsenter -t 1 -m -u -n -i ip netns exec {} ethtool --offload {} rx off tx off".format(
+            netns, interface.veth.name)
+        rc, text = run_cmd(cmd)
+        logger.info(
+            "Disabled rx tx offload for pod rc:{} text{}".format(rc, text))
+
     def do_delete(self):
         param = CniParameters(pod_id=self.pod_id,
-                                netns=self.netns,
-                                interface=self.interface)
+                              netns=self.netns,
+                              interface=self.interface)
         InterfaceServiceClient(
-                "localhost").DeleteInterface(param)
+            "localhost").DeleteInterface(param)
         exit(0)
 
     def do_get(self):

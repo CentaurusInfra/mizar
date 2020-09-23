@@ -43,6 +43,7 @@ class ArktosService(BuiltinsServiceServicer):
         param.body['status']['hostIP'] = request.host_ip
         param.body['metadata']['namespace'] = request.namespace
         param.body['status']['phase'] = request.phase
+        param.body['metadata']['tenant'] = request.tenant
         param.extra = {}
         if request.arktos_network != "":
             param.extra["arktos_network"] = request.arktos_network
@@ -120,7 +121,7 @@ class ArktosService(BuiltinsServiceServicer):
             message="OK"
         )
         vpc = request.vpc
-        if request.name == "default" and request.vpc == "":
+        if request.name == "default" and request.vpc == "system-default-network":
             vpc = OBJ_DEFAULTS.default_ep_vpc
         vpc_opr.store_get(vpc)
         if not vpc_opr.store_get(request.vpc):

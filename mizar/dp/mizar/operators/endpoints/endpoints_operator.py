@@ -355,6 +355,7 @@ class EndpointOperator(object):
             ep.set_vni(OBJ_DEFAULTS.default_vpc_vni)
             ep.set_vpc(OBJ_DEFAULTS.default_ep_vpc)
             ep.set_net(OBJ_DEFAULTS.default_ep_net)
+            ep.set_gw(OBJ_DEFAULTS.default_net_gw)
 
             ep.set_mac(interface.address.mac)
             ep.set_veth_name(interface.veth.name)
@@ -395,14 +396,13 @@ class EndpointOperator(object):
             pod_provider = PodProvider.K8S
             if spec['type'] == 'arktos':
                 pod_provider = PodProvider.ARKTOS
-            if not self.store.get_ep(itf_name):
-                interfaces_list.append(Interface(
-                    interface_id=interface_id,
-                    interface_type=InterfaceType.veth,
-                    pod_provider=pod_provider,
-                    veth=veth,
-                    status=InterfaceStatus.init
-                ))
+            interfaces_list.append(Interface(
+                interface_id=interface_id,
+                interface_type=InterfaceType.veth,
+                pod_provider=pod_provider,
+                veth=veth,
+                status=InterfaceStatus.init
+            ))
         if len(interfaces_list) > 0:
             interfaces = InterfacesList(interfaces=interfaces_list)
 

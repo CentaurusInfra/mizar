@@ -84,6 +84,7 @@ class OBJ_DEFAULTS:
     default_vpc_ip = '20.0.0.0'
     default_vpc_prefix = '8'
     default_net_ip = '20.0.0.0'
+    default_net_gw = '20.0.0.1'
     default_net_prefix = '8'
     default_n_bouncers = 1
     default_n_dividers = 1

@@ -51,6 +51,8 @@ class k8sServiceCreate(WorkflowTask):
             arktosnet = self.param.extra['arktos_network']
             if arktosnet != "":
                 vpc_name = vpcs_opr.store.get_vpc_in_arktosnet(arktosnet)
+                if arktosnet == "default":
+                    vpc_name = OBJ_DEFAULTS.default_ep_vpc
                 if not vpc_name:
                     self.raise_temporary_error(
                         "No VPC found for Arktos Network {}.".format(arktosnet))
