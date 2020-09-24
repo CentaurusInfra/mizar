@@ -1128,8 +1128,8 @@ are to be listed in alphabetical order.
 
 ## Appendix C: Referenced Documents ##
 
-\[1\] Sherif, Phu and Cathy ***Zeta: Modular Network Services via
-Distributed and Elastic Middleboxes***
+\[1\] Sherif, Phu and Cathy [***Zeta: Modular Network Services via
+Distributed and Elastic Middleboxes***](https://github.com/futurewei-cloud/mizar/pull/176)
 
 \[2\] ***Mizar project official documentation:***[<span class="underline">https://mizar.readthedocs.io/en/latest/</span>](https://mizar.readthedocs.io/en/latest/)
 
