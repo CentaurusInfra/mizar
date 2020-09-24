@@ -124,31 +124,33 @@ Table of Contents
 
 List of Figures
 
-[Figure 1 - OpenStack System Architecture with Zeta Gateway Service](#_Toc51312300)
+[Figure 1 - Zeta Gateway Service in Hosting Environments](#_Toc513123000)
 
-[Figure 2 - Zeta Data Plane](#_Toc51759820)
+[Figure 2 - OpenStack System Architecture with Zeta Gateway Service](#_Toc51312300)
 
-[Figure 3 - Networking Model Transformation](#_Toc51759821)
+[Figure 3 - Zeta Data Plane](#_Toc51759820)
 
-[Figure 4 - Zeta Logical Architecture](#_Toc51312302)
+[Figure 4 - Networking Model Transformation](#_Toc51759821)
 
-[Figure 5 Deployment Model Best Practice](#_Toc51759823)
+[Figure 5 - Zeta Logical Architecture](#_Toc51312302)
 
-[Figure 6 Op Scenario: Between Instances](#_Toc51759824)
+[Figure 6 Deployment Model Best Practice](#_Toc51759823)
 
-[Figure 7 Op Scenario: Access Service from Internet](#_Toc51759825)
+[Figure 7 Op Scenario: Between Instances](#_Toc51759824)
 
-[Figure 8 Op Scenario: Access Service from Internet](#_Toc51759826)
+[Figure 8 Op Scenario: Access Service from Internet](#_Toc51759825)
 
-[Figure 9 Op Scenario: Instance ARP request](#_Toc51759827)
+[Figure 9 Op Scenario: Access Service from Internet](#_Toc51759826)
 
-[Figure 10 Op Scenario: Zeta Gateway Node Failure](#_Toc51759828)
+[Figure 10 Op Scenario: Instance ARP request](#_Toc51759827)
 
-[Figure 11 Op Scenario: Destination Compute Node Failure](#_Toc51759829)
+[Figure 11 Op Scenario: Zeta Gateway Node Failure](#_Toc51759828)
 
-[Figure 12 Op Scenario: Destination Regular Instance Failure](#_Toc51759830)
+[Figure 12 Op Scenario: Destination Compute Node Failure](#_Toc51759829)
 
-[Figure 13 Op Scenario: Destination Service Instance Failure](#_Toc51759831)
+[Figure 13 Op Scenario: Destination Regular Instance Failure](#_Toc51759830)
+
+[Figure 14 Op Scenario: Destination Service Instance Failure](#_Toc51759831)
 
 List of Tables
 
@@ -373,6 +375,11 @@ The design of Zeta Gateway service needs to meet following guidelines:
 2. Avoid tight coupling and hard dependency with external environments
 3. Forward thinking, avoid compromising on core design 
 
+<span id="_Toc513123000" class="anchor"></span>Figure 1 - Zeta 
+Gateway Service in Hosting Environments
+
+![](.//png/Zeta_Diagrams_v1-Zeta_in_hosting_env.png)
+
 ### 3.2 Development Methods & Contingencies
 
 Zeta Gateway Service interacts with Alcor and Compute nodes components
@@ -399,7 +406,7 @@ Service in OpenStack Cloud.
 
 ### 4.1 System Architecture Diagram
 
-<span id="_Toc51312300" class="anchor"></span>Figure 1 - OpenStack
+<span id="_Toc51312300" class="anchor"></span>Figure 2 - OpenStack
 System Architecture with Zeta Gateway Service
 
 ![](.//png/Zeta_Diagrams_v1-System_Diagram.png)
@@ -450,7 +457,7 @@ deployed within its own K8S cluster hosted on Zeta control nodes.
 
 #### 4.1.2 Zeta Data Plane
 
-<span id="_Toc51759820" class="anchor"></span>Figure 2 - Zeta Data Plane
+<span id="_Toc51759820" class="anchor"></span>Figure 3 - Zeta Data Plane
 
 ![](.//png/Zeta_Diagrams_v1-Zeta_Data_Plane.png)
 
@@ -690,7 +697,7 @@ while designing a solution satisfying their new perspective for virtual
 environment, a new networking model must be developed which can still
 resemble the old concept.
 
-<span id="_Toc51759821" class="anchor"></span>Figure 3 - Networking
+<span id="_Toc51759821" class="anchor"></span>Figure 4 - Networking
 Model Transformation
 
 ![](.//png/Zeta_Diagrams_v1-networking_logic_model_landscape.png)
@@ -737,7 +744,7 @@ reference \[2\] for detail.
 
 #### 4.3.1 Logical View
 
-<span id="_Toc51312302" class="anchor"></span>Figure 4 - Zeta Logical
+<span id="_Toc51312302" class="anchor"></span>Figure 5 - Zeta Logical
 Architecture
 
 ![](.//png/Zeta_Diagrams_v1-Logical_Architecture.png)
@@ -924,7 +931,7 @@ prevent catastrophic failures:
 
 #### 4.4.1 Best Practices
 
-<span id="_Toc51759823" class="anchor"></span>Figure 5 Deployment Model
+<span id="_Toc51759823" class="anchor"></span>Figure 6 Deployment Model
 Best Practice
 
 ![](.//png/Zeta_Diagrams_v1-Best_Practice_Networking.png)
@@ -1010,56 +1017,56 @@ Documentation.
 
 ### 6.1 Compute Instance to instance
 
-<span id="_Toc51759824" class="anchor"></span>Figure 6 Op Scenario:
+<span id="_Toc51759824" class="anchor"></span>Figure 7 Op Scenario:
 Between Instances
 
 ![](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/liangbin-pub/mizar/zeta/docs/design/puml/zeta_packet_farwarding_normal_between_instances.puml)
 
 ### 6.2 Compute Instance to instance Direct Path
 
-<span id="_Toc51759825" class="anchor"></span>Figure 7 Op Scenario:
+<span id="_Toc51759825" class="anchor"></span>Figure 8 Op Scenario:
 Between Instances
 
 ![](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/liangbin-pub/mizar/zeta/docs/design/puml/zeta_packet_farwarding_normal_between_instances_directpath.puml)
 
 ### 6.3 External Client Accesses Scaled Service
 
-<span id="_Toc51759826" class="anchor"></span>Figure 8 Op Scenario:
+<span id="_Toc51759826" class="anchor"></span>Figure 9 Op Scenario:
 Access Service from Internet
 
 ![](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/liangbin-pub/mizar/zeta/docs/design/puml/zeta_packet_farwarding_normal_internet_to_service.puml)
 
 ### 6.4 Instance ARP Request
 
-<span id="_Toc51759827" class="anchor"></span>Figure 9 Op Scenario:
+<span id="_Toc51759827" class="anchor"></span>Figure 10 Op Scenario:
 Instance ARP request
 
 ![](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/liangbin-pub/mizar/zeta/docs/design/puml/zeta_packet_farwarding_normal_arp_request.puml)
 
 ### 6.5 ZGC Gateway Node Failure
 
-<span id="_Toc51759828" class="anchor"></span>Figure 10 Op Scenario: Zeta
+<span id="_Toc51759828" class="anchor"></span>Figure 11 Op Scenario: Zeta
 Gateway Node Failure
 
 ![](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/liangbin-pub/mizar/zeta/docs/design/puml/zeta_packet_farwarding_failure_fwd.puml)
 
 ### 6.6 Destination Compute Node Failure
 
-<span id="_Toc51759829" class="anchor"></span>Figure 11 Op Scenario:
+<span id="_Toc51759829" class="anchor"></span>Figure 12 Op Scenario:
 Destination Compute Node Failure
 
 ![](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/liangbin-pub/mizar/zeta/docs/design/puml/zeta_packet_farwarding_failure_dest_host.puml)
 
 ### 6.7 Destination Regular Instance Failure
 
-<span id="_Toc51759830" class="anchor"></span>Figure 12 Op Scenario:
+<span id="_Toc51759830" class="anchor"></span>Figure 13 Op Scenario:
 Destination Regular Instance Failure
 
 ![](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/liangbin-pub/mizar/zeta/docs/design/puml/zeta_packet_farwarding_failure_dest_instance.puml)
 
 ### 6.8 Destination Service Instance Failure
 
-<span id="_Toc51759831" class="anchor"></span>Figure 13 Op Scenario:
+<span id="_Toc51759831" class="anchor"></span>Figure 14 Op Scenario:
 Destination Service Instance Failure
 
 ![](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/liangbin-pub/mizar/zeta/docs/design/puml/zeta_packet_farwarding_failure_dest_service_instance.puml)
