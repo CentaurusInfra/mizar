@@ -20,13 +20,15 @@
 ' TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 ' THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-title Forwarding between Instances
+title Forwarding between Instances with direct path
 skinparam monochrome true
 autonumber
 
 participant "vm a at\nHost A" as a
 participant "OVS at\nHost A" as oa
+participant "Host A\nDaemon" as DA
 participant "FWD\n" as FWD
+participant "FWD\nDaemon" as DM
 participant "DFN\n" as DFN
 participant "OVS at\nHost B" as ob
 participant "vm b at\nHost B" as b
@@ -39,56 +41,59 @@ alt flow not exist
     endrnote
 end
 oa -> FWD: Pkt-Host A to FWD [Packet-a to b]
-alt flow cache miss
-    rnote over FWD
-        Select DFT chain for inner flow
-        Insert Opt for Lookup
-    endrnote
-    FWD -> DFN: Pkt-FWD to DFN + Opt [Packet-a to b]
-    alt flow already exists
-        rnote over DFN
-            Update Opt with verdicts
-        endrnote
-    else new flow
-        rnote over DFN
-            lookup for XDP chain for flow
-            execute XDPs till finish
-            create flow with final verdicts
-            Update DFT as needed
-            Update Opt with verdicts
-        endrnote
-    end
-    DFN -> FWD: Pkt-DFN to FWD + Opt [Packet-a to b]
-    rnote over FWD
-        Extract Opt
-        Add flow cache
-    endrnote
-end
+
 rnote over FWD
-    Examine flow verdict
+    flow cache miss
+    Select DFT chain for inner flow
+    Insert Opt for Lookup
 endrnote
-alt flow verdict indicates DROP
-    rnote over FWD
-        Drop the packet
+FWD -> DFN: Pkt-FWD to DFN + Opt [Packet-a to b]
+alt flow already exists
+    rnote over DFN
+        Update Opt with verdicts
     endrnote
-else flow verdict indicates Unreachable
-    rnote over FWD
-        Modify the packet
+else new flow
+    rnote over DFN
+        lookup for XDP chain for flow
+        execute XDPs till finish
+        create flow with final verdicts
+        Update DFT as needed
+        Update Opt with verdicts, DirectPath
     endrnote
-    FWD -> oa: Pkt-FWD to Host A [ICMP-b Unreachable]
-    rnote over oa
-        Invalidate local flow
-    endrnote
-    oa -> a: ICMP-b Unreachable
-else flow verdict indicates FORWARDING
-    rnote over FWD
-        Modify the packet
-    endrnote
-    FWD -> ob: Pkt-FWD to Host B [Packet-a to b]
-    rnote over ob
-        Add local flow
-    endrnote
-    ob -> b: Packet-a to b
 end
+DFN -> FWD: Pkt-DFN to FWD + Opt [Packet-a to b]
+rnote over FWD
+    Extract Opt
+    Add flow cache
+    flow verdict indicates DirectPath
+    Update BPF map to trigger Flow Injection
+    Modify packet
+endrnote
+FWD --> DM: Direct Path Injection
+FWD -> ob: Pkt-FWD to Host B [Packet-a to b]
+rnote over ob
+    Add local flow
+endrnote
+ob -> b: Packet-a to b
+
+rnote over DM
+    Compose OAM packet
+endrnote
+DM -> FWD: Pkt-FWD to Host A + Opt
+FWD -> oa: Pkt-FWD to Host A + Opt
+rnote over oa
+    Match special punt rule
+endrnote
+oa -> DA: Pkt-FWD to Host A + Opt
+rnote over DA
+    Merge and modify OVS flow table
+endrnote
+== Direct Path Activated ==
+a -> oa: Pkt-a to b
+rnote over oa
+    flow exists
+endrnote
+oa -> ob: Pkt-Host A to Host B [Packet-a to b]
+ob -> b: Packet-a to b
 
 @enduml
