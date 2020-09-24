@@ -1,0 +1,94 @@
+@startuml
+
+' SPDX-License-Identifier: MIT
+' Copyright (c) 2020 The Authors.
+
+' Authors: Bin Liang
+
+' Permission is hereby granted, free of charge, to any person obtaining a copy
+' of this software and associated documentation files (the "Software"), to deal
+' in the Software without restriction, including without limitation the rights
+' to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+' copies of the Software, and to permit persons to whom the Software is
+' furnished to do so, subject to the following conditions:The above copyright
+' notice and this permission notice shall be included in all copies or
+' substantial portions of the Software.THE SOFTWARE IS PROVIDED "AS IS",
+' WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+' TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+' NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+' FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+' TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+' THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+title Forwarding between Instances
+skinparam monochrome true
+autonumber
+
+participant "vm a at\nHost A" as a
+participant "OVS at\nHost A" as oa
+participant "FWD\n" as FWD
+participant "DFN\n" as DFN
+participant "OVS at\nHost B" as ob
+participant "vm b at\nHost B" as b
+
+a -> oa: Pkt-a to b
+alt flow not exist
+    rnote over oa
+        Select ZGC entry point: FWD
+        Add local flow towards FWD
+    endrnote
+end
+oa -> FWD: Pkt-Host A to FWD [Packet-a to b]
+alt flow cache miss
+    rnote over FWD
+        Select DFT chain for inner flow
+        Insert Opt for Lookup
+    endrnote
+    FWD -> DFN: Pkt-FWD to DFN + Opt [Packet-a to b]
+    alt flow already exists
+        rnote over DFN
+            Update Opt with verdicts
+        endrnote
+    else new flow
+        rnote over DFN
+            lookup for XDP chain for flow
+            execute XDPs till finish
+            create flow with final verdicts
+            Update DFT as needed
+            Update Opt with verdicts
+        endrnote
+    end
+    DFN -> FWD: Pkt-DFN to FWD + Opt [Packet-a to b]
+    rnote over FWD
+        Extract Opt
+        Update flow cache
+    endrnote
+end
+rnote over FWD
+    Examine flow verdict
+endrnote
+alt flow verdict indicates DROP
+    rnote over FWD
+        Drop the packet
+    endrnote
+else flow verdict indicates Unreachable
+    rnote over FWD
+        Modify the packet
+    endrnote
+    FWD -> oa: Pkt-FWD to Host A [ICMP-b Unreachable]
+    rnote over oa
+        Invalidate local flow
+    endrnote
+    oa -> a: ICMP-b Unreachable
+else flow verdict indicates FORWARDING
+    rnote over FWD
+        Modify the packet
+    endrnote
+    FWD -> ob: Pkt-FWD to Host B [Packet-a to b]
+    rnote over ob
+        Add local flow
+    endrnote
+    ob -> b: Packet-a to b
+end
+
+@enduml

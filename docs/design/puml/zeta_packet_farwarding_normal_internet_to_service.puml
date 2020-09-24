@@ -1,0 +1,95 @@
+@startuml
+
+' SPDX-License-Identifier: MIT
+' Copyright (c) 2020 The Authors.
+
+' Authors: Bin Liang
+
+' Permission is hereby granted, free of charge, to any person obtaining a copy
+' of this software and associated documentation files (the "Software"), to deal
+' in the Software without restriction, including without limitation the rights
+' to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+' copies of the Software, and to permit persons to whom the Software is
+' furnished to do so, subject to the following conditions:The above copyright
+' notice and this permission notice shall be included in all copies or
+' substantial portions of the Software.THE SOFTWARE IS PROVIDED "AS IS",
+' WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+' TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+' NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+' FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+' TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+' THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+title Forwarding From Internet to Service
+skinparam monochrome true
+autonumber
+
+participant "Client from\nInternet" as a
+participant "Router at\nProvider network" as oa
+participant "FWD_p\nProvider Facing" as FWD_p
+participant "DFN\n" as DFN
+participant "FWD_t\nTenant Facing" as FWD_t
+participant "OVS at\nHost B" as ob
+participant "Service instance\nb at Host B" as b
+
+a -> oa: Packet-a to service Public IP
+alt New flow
+    rnote over oa
+        Select ZGC entry point
+        : Provider facing FWD
+        Add local flow
+    endrnote
+end
+oa -> FWD_p: Packet-a to service Public IP
+alt flow cache miss
+    rnote over FWD_p
+        Select DFT chain for the flow
+        Add Geneve Encapsulation
+        Insert Opt for Lookup
+    endrnote
+    FWD_p -> DFN: Pkt-FWD_p to DFN + Opt [Packet-a to service Public IP]
+    rnote over DFN
+        lookup for XDP chain for flow
+        execute XDPs till finish, including:
+            DNAT to service virtual IP (vIP)
+            vIP Load Balancing to instance b
+        create flow with final verdicts
+        Update DFT as needed
+        Select Tenant facing FWD_t as proxy
+        Update Opt with Verdicts & Proxy 
+    endrnote
+    DFN -> FWD_p: Pkt-DFN to FWD_p + Opt [Packet-a to service Public IP]
+    alt Opt indicates Proxy
+        rnote over FWD_p
+            Add flow cache for proxy to FWD_t
+            Modify the packet (for proxy)
+        endrnote
+        FWD_p -> FWD_t: Pkt-FWD_p to FWD_t + Opt [Packet-a to service Public IP]
+        rnote over FWD_t
+            Extract Opt
+            Add flow cache for actual pkt modification
+            Modify the packet
+        endrnote
+        FWD_t -> ob: Pkt-FWD_t to Host B [Packet-a to instance b]
+        ob -> b: Packet-a to instance b
+    end
+else flow cache hit
+    alt flow verdict indicates DROP
+        rnote over FWD_p 
+            Drop the packet
+        endrnote
+    else flow verdict indicates Proxy
+        rnote over FWD_p
+            Modify the packet (for proxy)
+        endrnote
+        FWD_p -> FWD_t: Pkt-FWD_p to HFWD_t [Packet-a to service Public IP]
+        rnote over FWD_t
+            Fetch flow from cache
+            Modify the packet
+        endrnote
+        FWD_t -> ob: Pkt-FWD_t to Host B [Packet-a to instance b]
+        ob -> b: Packet-a to instance b
+    end
+end
+
+@enduml

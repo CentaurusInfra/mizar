@@ -1,0 +1,72 @@
+@startuml
+
+' SPDX-License-Identifier: MIT
+' Copyright (c) 2020 The Authors.
+
+' Authors: Bin Liang
+
+' Permission is hereby granted, free of charge, to any person obtaining a copy
+' of this software and associated documentation files (the "Software"), to deal
+' in the Software without restriction, including without limitation the rights
+' to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+' copies of the Software, and to permit persons to whom the Software is
+' furnished to do so, subject to the following conditions:The above copyright
+' notice and this permission notice shall be included in all copies or
+' substantial portions of the Software.THE SOFTWARE IS PROVIDED "AS IS",
+' WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+' TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+' NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+' FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+' TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+' THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+title Forwarding Destination Host Failure
+skinparam monochrome true
+autonumber
+
+participant "vm at\nHost A" as a
+participant "OVA at\nHost A" as oa
+participant "FWD\n" as FWD
+participant "DFN\n" as DFN
+participant "OVS at\nHost B" as ob
+participant "vm b at\nHost B" as b
+
+rnote over b
+    Deceased
+endrnote
+...
+
+a -> oa: Pkt-a to b
+rnote over oa
+    Found FWD in local flow
+endrnote
+oa -> FWD: Pkt-Host A to FWD [Pkt-a to b]
+rnote over FWD
+    Found flow cache
+    Modify the packet
+endrnote
+FWD ->x ob: Pkt-FWD to Host B [Pkt-a to b]
+...
+
+[--> DFN: Control: Host B Deceased
+rnote over DFN
+    Update affected service flows with new service instances
+    Notify FWDs caching those service flows
+endrnote
+rnote over DFN
+    Invalidate naffected on-service flows
+    Notify FWDs caching those non-service flows
+endrnote
+DFN -> FWD: Pkt-DFN to FWD + Opt
+rnote over FWD
+    Invalidate flow cache for Pkt-a to b
+endrnote
+...
+a -> oa: Pkt-a to b
+rnote over oa
+    Found FWD in local flow
+endrnote
+oa -> FWD: Pkt-Host A to FWD [Pkt-a to b]
+== Follow normal flow creation process ==
+
+@enduml

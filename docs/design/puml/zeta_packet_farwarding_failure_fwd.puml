@@ -1,0 +1,76 @@
+@startuml
+
+' SPDX-License-Identifier: MIT
+' Copyright (c) 2020 The Authors.
+
+' Authors: Bin Liang
+
+' Permission is hereby granted, free of charge, to any person obtaining a copy
+' of this software and associated documentation files (the "Software"), to deal
+' in the Software without restriction, including without limitation the rights
+' to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+' copies of the Software, and to permit persons to whom the Software is
+' furnished to do so, subject to the following conditions:The above copyright
+' notice and this permission notice shall be included in all copies or
+' substantial portions of the Software.THE SOFTWARE IS PROVIDED "AS IS",
+' WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+' TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+' NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+' FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+' TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+' THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+title Forwarding Gateway Entry point Failure
+skinparam monochrome true
+autonumber
+
+participant "vm at\nHost A" as a
+participant "OVS at\nHost A" as oa
+participant "FWD_u\nUnfortunate" as FWD_u
+participant "FWD_l\nLucky" as FWD_l
+participant "DFN\n" as DFN
+participant "OVS at\nHost B" as ob
+participant "vm b at\nHost B" as b
+
+rnote over FWD_u
+    Deceased
+endrnote
+...
+[--> FWD_l: Control: ReDistribute FWD_u IPs
+rnote over FWD_l
+    Update IP aliasing
+    FWD_l aliases FWD_u now
+endrnote
+a -> oa: Packet-a to b
+rnote over oa
+    Found FWD_u from local flow
+endrnote
+oa -> FWD_l: Pkt-Host A to FWD_u [Packet-a to b]
+alt flow cache miss
+    rnote over FWD_l
+        Select DFT chain for the flow
+        Insert Opt for Lookup
+    endrnote
+    FWD_l -> DFN: Pkt-FWDl to DFN + Opt [Packet-a to b]
+    rnote over DFN
+        founder flow in local cache
+    endrnote
+    DFN -> FWD_l: Pkt-DFN to FWD_l + Opt [Packet-a to b]
+    rnote over FWD_l
+        Extract Opt
+        Add flow cache
+    endrnote
+end
+alt flow verdict indicates DROP
+    rnote over FWD_l
+        Drop the packet
+    endrnote
+else flow verdict indicates FORWARDING
+    rnote over FWD_l
+        Modify the packet
+    endrnote
+    FWD_l -> ob: Pkt-FWD_u to Host B [Packet-a to b]
+    ob -> b: Packet-1 to b
+end
+
+@enduml
