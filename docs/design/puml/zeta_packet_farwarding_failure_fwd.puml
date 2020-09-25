@@ -28,7 +28,7 @@ participant "vm at\nHost A" as a
 participant "OVS at\nHost A" as oa
 participant "FWD_u\nUnfortunate" as FWD_u
 participant "FWD_l\nLucky" as FWD_l
-participant "DFN\n" as DFN
+participant "FTN\n" as FTN
 participant "OVS at\nHost B" as ob
 participant "vm b at\nHost B" as b
 
@@ -51,11 +51,11 @@ alt flow cache miss
         Select DFT chain for the flow
         Insert Opt for Lookup
     endrnote
-    FWD_l -> DFN: Pkt-FWDl to DFN + Opt [Packet-a to b]
-    rnote over DFN
+    FWD_l -> FTN: Pkt-FWDl to FTN + Opt [Packet-a to b]
+    rnote over FTN
         founder flow in local cache
     endrnote
-    DFN -> FWD_l: Pkt-DFN to FWD_l + Opt [Packet-a to b]
+    FTN -> FWD_l: Pkt-FTN to FWD_l + Opt [Packet-a to b]
     rnote over FWD_l
         Extract Opt
         Add flow cache

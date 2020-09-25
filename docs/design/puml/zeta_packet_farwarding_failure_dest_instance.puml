@@ -27,7 +27,7 @@ autonumber
 participant "vm at\nHost A" as a
 participant "OVA at\nHost A" as oa
 participant "FWD\n" as FWD
-participant "DFN\n" as DFN
+participant "FTN\n" as FTN
 participant "OVS at\nHost B" as ob
 participant "vm b at\nHost B" as b
 
@@ -52,13 +52,13 @@ rnote over FWD
     Select DFT chain for the original flow
     Insert Opt for original flow Invalidation
 endrnote
-FWD -> DFN: Pkt-FWD to DFN + Opt [ICMP-b Unreachable]
-rnote over DFN
+FWD -> FTN: Pkt-FWD to FTN + Opt [ICMP-b Unreachable]
+rnote over FTN
     Realize its not service flow
     Invalidate original flow
     Acknowledge Invalidation in Opt with NoDrop  
 endrnote
-DFN -> FWD: Pkt-DFN to FWD + Opt [ICMP-b Unreachable]
+FTN -> FWD: Pkt-FTN to FWD + Opt [ICMP-b Unreachable]
 rnote over FWD
     Invalidate original flow cache
     Modify the packet according to Opt

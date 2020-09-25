@@ -235,7 +235,7 @@ Next is a list of abbreviations used within this document.
 | ZGS          | Zeta Gateway Service                                                       |
 | vIP          | Service Virtual IP                                                         |
 | FWD          | Zeta Gateway Service Forwarding Node                                       |
-| DFN          | Zeta Gateway Service                                                       |
+| FTN          | Zeta Gateway Service                                                       |
 | OVS          | Open vSwitch                                                               |
 | VM           | Tenant Virtual Compute Instance, including Virtual Machine, Container etc. |
 
@@ -525,7 +525,7 @@ nodes, it will register the Network node to Zeta Control Plane with its
 node information and Zeta Gateway Cluster assignment. After the
 registration, Zeta Control Plane will provision the Network Node as
 either Forwarding node (FWD for short) or Distributed Flow Table node
-(DFN for short) or both, depends on hardware capabilities and scaling
+(FTN for short) or both, depends on hardware capabilities and scaling
 demand for the particular Network node type. To simplify the
 architecture description, we will view FWD and FTN as separate nodes
 from now on even though a single Zeta Network node can serve as both FWD
@@ -544,10 +544,10 @@ main responsibilities for FWD nodes are:
 
 3.  Lookup flow cache for Tenant traffic
     
-    1.  If not found in local cache, query from DFN which may triggering
-        flow creation on DFN
+    1.  If not found in local cache, query from FTN which may triggering
+        flow creation on FTN
     
-    2.  Add flow entry returned from DFN into local cache
+    2.  Add flow entry returned from FTN into local cache
 
 4.  Act on the packet based on verdict from the matching flow entry
     cache:
@@ -648,7 +648,7 @@ By definition, ZGC follows administrative rules listed below:
 
   - A Zeta Network Node is administratively assigned to one of the ZGCs
 
-  - A ZGC will have at least two FWD nodes deployed with one or many DFN
+  - A ZGC will have at least two FWD nodes deployed with one or many FTN
     nodes
 
   - A ZGC will provide exclusive Zeta Gateway Service to one or many
@@ -669,9 +669,9 @@ can be hundreds even tens of thousands compute nodes served by each ZGC.
 A novel solution for this problem has been developed and the detail will
 be available in the short future.
 
-##### 4.1.3 DFN And DFT
+##### 4.1.3 FTN And DFT
 
-DFN nodes are internal Zeta Network Nodes within a ZGC. DFN offers
+FTN nodes are internal Zeta Network Nodes within a ZGC. FTN offers
 lookaside assistance to FWD hence they are not required to be attached
 to the same Tenant network as Compute Nodes. Inter-connecting DFWs and
 FDNs on an Isolated network avoids interfering between ZGC internal
@@ -679,7 +679,7 @@ traffic with Tenant traffics. It also allows fully customized
 communication scheme without any compatibility issues with Compute Nodes
 if needed, such as enabling Jumbo frame.
 
-The main responsibilities for DFN nodes are:
+The main responsibilities for FTN nodes are:
 
 1.  Building block for Distributed Flow Table (DFT for short), refer to
     \[1\] for DFT details
@@ -942,7 +942,7 @@ For the SBI gRPC channel between Zeta control plane and Zeta Network
 node, authentication and encryption can be enabled as an administrative
 configuration option.
 
-For intra ZGC internal communication between FWDs and DFNs, the network
+For intra ZGC internal communication between FWDs and FTNs, the network
 can be made totally isolated and authentication/encryption can be
 enabled as configuration option.
 
@@ -1020,7 +1020,7 @@ Best Practice
 
 3.  Minimal requirements for Zeta network nodes:
     
-    1.  Minimal 6 nodes, 2 host FWD and 4 host DFN
+    1.  Minimal 6 nodes, 2 host FWD and 4 host FTN
     
     2.  Minimal hardware configuration:
         

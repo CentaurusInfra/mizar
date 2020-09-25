@@ -27,7 +27,7 @@ autonumber
 participant "vm a at\nHost A" as a
 participant "OVS at\nHost A" as oa
 participant "FWD\n" as FWD
-participant "DFN\n" as DFN
+participant "FTN\n" as FTN
 participant "OVS at\nHost B" as ob
 participant "vm b at\nHost B" as b
 
@@ -44,13 +44,13 @@ alt flow cache miss
         Select DFT chain for inner flow
         Insert Opt for Lookup
     endrnote
-    FWD -> DFN: Pkt-FWD to DFN + Opt [Packet-a to b]
+    FWD -> FTN: Pkt-FWD to FTN + Opt [Packet-a to b]
     alt flow already exists
-        rnote over DFN
+        rnote over FTN
             Update Opt with verdicts
         endrnote
     else new flow
-        rnote over DFN
+        rnote over FTN
             lookup for XDP chain for flow
             execute XDPs till finish
             create flow with final verdicts
@@ -58,7 +58,7 @@ alt flow cache miss
             Update Opt with verdicts
         endrnote
     end
-    DFN -> FWD: Pkt-DFN to FWD + Opt [Packet-a to b]
+    FTN -> FWD: Pkt-FTN to FWD + Opt [Packet-a to b]
     rnote over FWD
         Extract Opt
         Add flow cache

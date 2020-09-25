@@ -27,7 +27,7 @@ autonumber
 participant "vm at\nHost A" as a
 participant "OVA at\nHost A" as oa
 participant "FWD\n" as FWD
-participant "DFN\n" as DFN
+participant "FTN\n" as FTN
 participant "OVS at\nHost B" as ob
 participant "vm b at\nHost B" as b
 
@@ -48,16 +48,16 @@ endrnote
 FWD ->x ob: Pkt-FWD to Host B [Pkt-a to b]
 ...
 
-[--> DFN: Control: Host B Deceased
-rnote over DFN
+[--> FTN: Control: Host B Deceased
+rnote over FTN
     Update affected service flows with new service instances
     Notify FWDs caching those service flows
 endrnote
-rnote over DFN
+rnote over FTN
     Invalidate naffected on-service flows
     Notify FWDs caching those non-service flows
 endrnote
-DFN -> FWD: Pkt-DFN to FWD + Opt
+FTN -> FWD: Pkt-FTN to FWD + Opt
 rnote over FWD
     Invalidate flow cache for Pkt-a to b
 endrnote

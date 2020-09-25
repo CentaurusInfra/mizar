@@ -27,7 +27,7 @@ autonumber
 participant "vm a at\nHost A" as a
 participant "OVS at\nHost A" as oa
 participant "FWD\n" as FWD
-participant "DFN\n" as DFN
+participant "FTN\n" as FTN
 participant "OVS at\nHost B" as ob
 participant "vm b at\nHost B" as b
 participant "OVS at\nHost C" as oc
@@ -54,14 +54,14 @@ rnote over FWD
     Select DFT chain for the original flow
     Insert Opt for original flow Invalidation
 endrnote
-FWD -> DFN: Pkt-FWD to DFN + Opt [ICMP-b Unreachable]
-rnote over DFN
+FWD -> FTN: Pkt-FWD to FTN + Opt [ICMP-b Unreachable]
+rnote over FTN
     Realize its service flow
     Select new service instance c
     Update original flow with new instance
     Update OPT with flow entry and DropCurrent
 endrnote
-DFN -> FWD: Pkt-DFN to FWD + OPT [ICMP-b Unreachable]
+FTN -> FWD: Pkt-FTN to FWD + OPT [ICMP-b Unreachable]
 rnote over FWD
     Update local flow entry
     Drop the ICMP packet

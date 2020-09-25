@@ -27,7 +27,7 @@ autonumber
 participant "Client from\nInternet" as a
 participant "Router at\nProvider network" as oa
 participant "FWD_p\nProvider Facing" as FWD_p
-participant "DFN\n" as DFN
+participant "FTN\n" as FTN
 participant "FWD_t\nTenant Facing" as FWD_t
 participant "OVS at\nHost B" as ob
 participant "Service instance\nb at Host B" as b
@@ -47,8 +47,8 @@ alt flow cache miss
         Add Geneve Encapsulation
         Insert Opt for Lookup
     endrnote
-    FWD_p -> DFN: Pkt-FWD_p to DFN + Opt [Packet-a to service Public IP]
-    rnote over DFN
+    FWD_p -> FTN: Pkt-FWD_p to FTN + Opt [Packet-a to service Public IP]
+    rnote over FTN
         lookup for XDP chain for flow
         execute XDPs till finish, including:
             DNAT to service virtual IP (vIP)
@@ -58,7 +58,7 @@ alt flow cache miss
         Select Tenant facing FWD_t as proxy
         Update Opt with Verdicts & Proxy 
     endrnote
-    DFN -> FWD_p: Pkt-DFN to FWD_p + Opt [Packet-a to service Public IP]
+    FTN -> FWD_p: Pkt-FTN to FWD_p + Opt [Packet-a to service Public IP]
     alt Opt indicates Proxy
         rnote over FWD_p
             Add flow cache for proxy to FWD_t

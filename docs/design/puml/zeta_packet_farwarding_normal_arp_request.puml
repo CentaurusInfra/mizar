@@ -27,7 +27,7 @@ autonumber
 participant "vm a at\nHost A" as a
 participant "OVS at\nHost A" as oa
 participant "FWD\n" as FWD
-participant "DFN\n" as DFN
+participant "FTN\n" as FTN
 
 rnote over a
     a wants to send pkt to b
@@ -46,12 +46,12 @@ else b is on same local network
     rnote over FWD
         Add Opt for ARP
     endrnote
-    FWD -> DFN: Pkt-FWD to DFN + Opt [ARP Query (who has b)]
-    rnote over DFN
+    FWD -> FTN: Pkt-FWD to FTN + Opt [ARP Query (who has b)]
+    rnote over FTN
         Lookup b
         Update Opt for ARP
     endrnote
-    DFN -> FWD: Pkt-DFN to FWD + Opt [ARP Query (who has b)]
+    FTN -> FWD: Pkt-FTN to FWD + Opt [ARP Query (who has b)]
     rnote over FWD
         Extract Opt
         Modify Packet for ARP response
