@@ -38,6 +38,12 @@ Table of Contents
 
 [2.1 General Overview](#general-overview)
 
+[2.1.1 What is designed by Zeta project](#what-is-designed-by-zeta-project)
+
+[2.1.2 What values Zeta project brings in](#what-values-zeta-project-brings-in)
+
+[2.1.3 What use case is supported in Zeta's initial release](#what-use-case-is-supported-in-zeta's-initial-release)
+
 [2.2 Assumptions/Constraints/Risks](#assumptionsconstraintsrisks)
 
 [2.2.1 Assumptions](#assumptions)
@@ -241,6 +247,47 @@ guidelines when designing and implementing the Zeta Gateway service.
 
 ### 2.1 General Overview
 
+#### 2.1.1 What is designed by Zeta project
+
+What we are designing in Zeta project is a common Networking Service Gateway (NSG for short) in
+Cloud and Data Center virtual networking environment.
+
+- To existing virtual networking infrastructure, Zeta NSG serves as a common proxy for offloaded
+or additional virtual networking functions (VNF for short) in the form of XDP programs
+- To those VNFs, Zeta NSG serves as a common hosting platform and framework to integrate them
+into the overall virtual networking environment
+- Zeta NSG offers performance, scalability and fault-tolerance for both Gateway service itself and
+the VNFs it hosts
+- Depends on capability and availability of hosted networking functions, Zeta NSG service extends
+from most basic "Encapsulation proxy" all the way up to complete End-to-End networking service chain.
+- Zeta NSG can operate in a standalone mode or extends its framework to Compute nodes for some or
+ all its VNFs, in a distributed fashion
+
+#### 2.1.2 What values Zeta project brings in
+
+Compares to traditional central hosted virtual networking solutions, Zeta NSG solution offers:
+- NSG clustering for scalability and reliability
+- Unique Transparent Cluster Scaling to the NSG clients
+- XDP/eBPF based VNF for maximal performance and minimal forwarding overhead
+
+Compares to distributed virtual networking solutions, Zeta NSG solution offers:
+- Support large compute node mesh, scaling up to tens of thousands
+- Achieves same even better performance and latency characteristics
+- XDP/eBPF based VNF for maximal performance and minimal forwarding overhead
+
+#### 2.1.3 What use case is supported in Zeta's initial release
+
+In the initial release, Zeta NSG will support following use case to demonstrate the framework with
+a basic VNF in standalone fashion:
+- Zeta Network Service Gateway framework
+  - Deployment environment: OpenStack
+  - Zeta Control plane
+  - Zeta NSG on dedicated Network nodes
+- VNF to offer: Encapsulation Proxy
+  - Offering proxy service to Lookup and Encap the 1st packet in instance flow to its destination host
+  - Enable compute host to host Direct Path for following packets in same flow
+  - Support load balancing for tenant compute service  
+
 ### 2.2 Assumptions/Constraints/Risks
 
 #### 2.2.1 Assumptions
@@ -369,7 +416,7 @@ Success Factors
 </tbody>
 </table>
 
-The design of Zeta Gateway service needs to meet following guidelines:
+The design of Zeta Gateway service needs to meet following general guidelines:
 
 1. Keep the design modular, easy to combine and scale
 2. Avoid tight coupling and hard dependency with external environments
