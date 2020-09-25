@@ -26,107 +26,107 @@ Version 0.2
 
 Table of Contents
 
-[1. Introduction](#introduction)
+[1. Introduction](#1-introduction)
 
-[1.1 Purpose of the SDD](#purpose-of-the-sdd)
+[1.1 Purpose of the SDD](#11-purpose-of-the-sdd)
 
-[1.2 Roles and Responsibilities](#roles-and-responsibilities)
+[1.2 Roles and Responsibilities](#12-roles-and-responsibilities)
 
-[1.3 Terminology and Abbreviations](#terminology-and-abbreviations)
+[1.3 Terminology and Abbreviations](#13-terminology-and-abbreviations)
 
-[2. General Overview and Design Guidelines/Approach](#general-overview-and-design-guidelinesapproach)
+[2. General Overview and Design Guidelines/Approach](#2-general-overview-and-design-guidelinesapproach)
 
-[2.1 General Overview](#general-overview)
+[2.1 General Overview](#21-general-overview)
 
-[2.1.1 What is designed by Zeta project](#what-is-designed-by-zeta-project)
+[2.1.1 What is designed by Zeta project](#211-what-is-designed-by-zeta-project)
 
-[2.1.2 What values Zeta project brings in](#what-values-zeta-project-brings-in)
+[2.1.2 What values Zeta project brings in](#212-what-values-zeta-project-brings-in)
 
-[2.1.3 What use case is supported in Zeta's initial release](#what-use-case-is-supported-in-zeta's-initial-release)
+[2.1.3 What use case is supported in Zeta's initial release](#213-what-use-case-is-supported-in-zetas-initial-release)
 
-[2.2 Assumptions/Constraints/Risks](#assumptionsconstraintsrisks)
+[2.2 Assumptions/Constraints/Risks](#22-assumptionsconstraintsrisks)
 
-[2.2.1 Assumptions](#assumptions)
+[2.2.1 Assumptions](#221-assumptions)
 
-[2.2.2 Constraints](#constraints)
+[2.2.2 Constraints](#222-constraints)
 
-[2.2.3 Risks Analysis](#risks-analysis)
+[2.2.3 Risks Analysis](#223-risks-analysis)
 
-[3. Design Considerations](#design-considerations)
+[3. Design Considerations](#3-design-considerations)
 
-[3.1 Goals and Guidelines](#goals-and-guidelines)
+[3.1 Goals and Guidelines](#31-goals-and-guidelines)
 
-[3.2 Development Methods & Contingencies](#development-methods-contingencies)
+[3.2 Development Methods & Contingencies](#32-development-methods--contingencies)
 
-[4. System Architecture and Zeta Gateway Design](#system-architecture-and-zeta-gateway-design)
+[4. System Architecture and Zeta Gateway Design](#4-system-architecture-and-zeta-gateway-design)
 
-[4.1 System Architecture Diagram](#system-architecture-diagram)
+[4.1 System Architecture Diagram](#41-system-architecture-diagram)
 
-[4.1.1 Zeta Control Plane](#zeta-control-plane)
+[4.1.1 Zeta Control Plane](#411-zeta-control-plane)
 
-[4.1.2 Zeta Data Plane](#zeta-data-plane)
+[4.1.2 Zeta Data Plane](#412-zeta-data-plane)
 
-[4.1.3 Zeta Networking Model](#zeta-networking-model)
+[4.1.3 Zeta Networking Model](#413-zeta-networking-model)
 
-[4.2 Hardware Architecture](#hardware-architecture)
+[4.2 Hardware Architecture](#42-hardware-architecture)
 
-[4.3 Software Architecture](#software-architecture)
+[4.3 Software Architecture](#43-software-architecture)
 
-[4.3.1 Logical View](#logical-view)
+[4.3.1 Logical View](#431-logical-view)
 
-[4.3.2 Control Plane Enhancement](#control-plane-enhancement)
+[4.3.2 Control Plane Enhancement](#432-control-plane-enhancement)
 
-[4.3.3 Data Plane Enhancement](#data-plane-enhancement)
+[4.3.3 Data Plane Enhancement](#433-data-plane-enhancement)
 
-[4.3.4 Security Software Architecture](#security-software-architecture)
+[4.3.4 Security Software Architecture](#434-security-software-architecture)
 
-[4.3.5 Performance and Scalability Software Architecture](#performance-and-scalability-software-architecture)
+[4.3.5 Performance and Scalability Software Architecture](#435-performance-and-scalability-software-architecture)
 
-[4.3.6 System Robustness](#system-robustness)
+[4.3.6 System Robustness](#436-system-robustness)
 
-[4.4 Packaging and Deployment](#packaging-and-deployment)
+[4.4 Packaging and Deployment](#44-packaging-and-deployment)
 
-[4.4.1 Best Practices](#best-practices)
+[4.4.1 Best Practices](#441-best-practices)
 
-[4.4.2 Prerequisites for deployment](#prerequisites-for-deployment)
+[4.4.2 Prerequisites for deployment](#442-prerequisites-for-deployment)
 
-[4.4.3 Zeta Control Plane installation](#zeta-control-plane-installation)
+[4.4.3 Zeta Control Plane installation](#443-zeta-control-plane-installation)
 
-[4.4.4 Zeta Network Node Installation](#zeta-network-node-installation)
+[4.4.4 Zeta Network Node Installation](#444-zeta-network-node-installation)
 
-[4.4.5 Nova Compute Node Installation](#nova-compute-node-installation)
+[4.4.5 Nova Compute Node Installation](#445-nova-compute-node-installation)
 
-[5. External Interfaces](#external-interfaces)
+[5. External Interfaces](#5-external-interfaces)
 
-[5.1 Interface Architecture](#interface-architecture)
+[5.1 Interface Architecture](#51-interface-architecture)
 
-[5.2 Interface Detailed Design](#interface-detailed-design)
+[5.2 Interface Detailed Design](#52-interface-detailed-design)
 
-[6. Operational Scenarios](#operational-scenarios)
+[6. Operational Scenarios](#6-operational-scenarios)
 
-[6.1 Compute Instance to instance](#compute-instance-to-instance)
+[6.1 Compute Instance to instance](#61-compute-instance-to-instance)
 
-[6.2 Compute Instance to instance Direct Path](#compute-instance-to-instance-direct-path)
+[6.2 Compute Instance to instance Direct Path](#62-compute-instance-to-instance-direct-path)
 
-[6.3 External Client Accesses Scaled Service](#external-client-accesses-scaled-service)
+[6.3 External Client Accesses Scaled Service](#63-external-client-accesses-scaled-service)
 
-[6.4 Instance ARP Request](#instance-arp-request)
+[6.4 Instance ARP Request](#64-instance-arp-request)
 
-[6.5 ZGC Gateway Node Failure](#zgc-gateway-node-failure)
+[6.5 ZGC Gateway Node Failure](#65-zgc-gateway-node-failure)
 
-[6.6 Destination Compute Node Failure](#destination-compute-node-failure)
+[6.6 Destination Compute Node Failure](#66-destination-compute-node-failure)
 
-[6.7 Destination Regular Instance Failure](#destination-regular-instance-failure)
+[6.7 Destination Regular Instance Failure](#67-destination-regular-instance-failure)
 
-[6.8 Destination Service Instance Failure](#destination-service-instance-failure)
+[6.8 Destination Service Instance Failure](#68-destination-service-instance-failure)
 
 [Appendix A: Record of Changes](#_Toc490026795)
 
-[Appendix C: Glossary](#_Toc396111629)
+[Appendix B: Glossary](#_Toc396111629)
 
-[Appendix D: Referenced Documents](#_Toc396111630)
+[Appendix C: Referenced Documents](#_Toc396111630)
 
-[Appendix E: Review Comments](#_Toc396111631)
+[Appendix D: Review Comments](#_Toc396111631)
 
 List of Figures
 
@@ -170,9 +170,9 @@ List of Tables
 
 [Table 5 - Record of Changes](#_Toc444160465)
 
-[Table 7 - Glossary](#_Ref441754492)
+[Table 6 - Glossary](#_Ref441754492)
 
-[Table 8 – Review Comments](#_Toc398804287)
+[Table 7 – Review Comments](#_Toc398804287)
 
 ## 1 Introduction
 
@@ -1167,7 +1167,7 @@ Instructions: Provide clear and concise definitions for terms used in
 this document that may be unfamiliar to readers of the document. Terms
 are to be listed in alphabetical order.
 
-<span id="_Ref441754492" class="anchor"></span>Table 7 - Glossary
+<span id="_Ref441754492" class="anchor"></span>Table 6 - Glossary
 
 |          |             |                |
 | -------- | ----------- | -------------- |
@@ -1196,7 +1196,7 @@ session will capture important review and discussion outputs for the
 benefit of open community to understand the historical contexts,
 regarding some of the design and decisions make during the journey.
 
-<span id="_Toc398804287" class="anchor"></span>Table 8 – Review Comments
+<span id="_Toc398804287" class="anchor"></span>Table 7 – Review Comments
 
 | Comments | Date |
 | -------- | ---- |
