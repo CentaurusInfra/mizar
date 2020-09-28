@@ -1,5 +1,7 @@
 # Mizar – High Scale and High Performance Cloud Network #
 
+centaurus
+
 Mizar is a large scale and high-performance cloud network to run virtual
 machines, containers, and other compute workloads. Mizar offers flexible
 in-network processing, which simplifies the programming of data-plane to scale
