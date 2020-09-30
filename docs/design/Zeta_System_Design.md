@@ -22,7 +22,7 @@ THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 # Zeta System Design Document
 
-Version 0.2
+Version 0.3
 
 Table of Contents
 
@@ -42,7 +42,7 @@ Table of Contents
 
 [2.1.2 What values Zeta project brings in](#212-what-values-zeta-project-brings-in)
 
-[2.1.3 What use case is supported in Zeta's initial release](#213-what-use-case-is-supported-in-zetas-initial-release)
+[2.1.3 Scope of Zeta's initial release](#213-scope-of-zetas-initial-release)
 
 [2.2 Assumptions/Constraints/Risks](#22-assumptionsconstraintsrisks)
 
@@ -120,6 +120,48 @@ Table of Contents
 
 [6.8 Destination Service Instance Failure](#68-destination-service-instance-failure)
 
+[7. Initial Release](#7-initial-release)
+
+[7.1 Use Cases](#71-use-cases)
+
+[7.1.1 Deploy Zeta Control Plane](#711-deploy-zeta-control-plane)
+
+[7.1.2 Scale Zeta Control Plane](#712-scale-zeta-control-plane)
+
+[7.1.3 Deploy Zeta Gateway Cluster](#713-deploy-zeta-gateway-cluster)
+
+[7.1.4 Scale Zeta Gateway Cluster](#714-scale-zeta-gateway-cluster)
+
+[7.1.5 Create Tenant Network And ZGC Affiliation](#715-create-tenant-network-and-zgc-affiliation)
+
+[7.1.6 Modify Tenant network And ZGC Affiliation](#716-modify-tenant-network-and-zgc-affiliation)
+
+[7.1.7 Deploy VNF to ZGC](#717-deploy-vnf-to-zgc)
+
+[7.1.8 VNF Live Update on ZGC](#718-vnf-live-update-on-zgc)
+
+[7.1.9 VNF Enable and Disable](#719-vnf-enable-and-disable)
+
+[7.1.10 Monitor And Report](#7110-monitor-and-report)
+
+[7.1.11 East West Flow Between Instances On Same Node](#7111-east-west-flow-between-instances-on-same-node)
+
+[7.1.12 East West Flow Between Instances On different Node](#7112-east-west-flow-between-instances-on-different-node)
+
+[7.1.13 North South Flow Initiated From External](#7113-north-south-flow-initiated-from-external)
+
+[7.1.14 North South Flow Initiated From Instances](#7114-north-south-flow-initiated-from-instances)
+
+[7.1.15 Flow Towards Multi Instances Service](#7115-flow-towards-multi-instances-service)
+
+[7.1.16 Scale Compute Instances](#7116-scale-compute-instances)
+
+[7.2 System Parameters](#72-system-parameters)
+
+[7.3 External APIs](#73-external-apis)
+
+[7.4 Control Workflows](#74-control-workflows)
+
 [Appendix A: Record of Changes](#_Toc490026795)
 
 [Appendix B: Glossary](#_Toc396111629)
@@ -168,15 +210,21 @@ List of Tables
 
 [Table 4 Zeta Phase I Key Success Factors](#_Toc51759841)
 
-[Table 5 - Record of Changes](#_Toc444160465)
+[Table 5 - System Parameters](#_Ref441754491)
 
-[Table 6 - Glossary](#_Ref441754492)
+[Table 6 - Record of Changes](#_Toc444160465)
 
-[Table 7 – Review Comments](#_Toc398804287)
+[Table 7 - Glossary](#_Ref441754492)
+
+[Table 8 – Review Comments](#_Toc398804287)
 
 ## 1 Introduction
 
 ### 1.1 Purpose of the SDD
+
+The System Design Document is intent to layout the overall system architecture for Zeta network service gateway.
+It defines the internal modules and logic, but more importantly, it defines the external interfaces and expected
+behaviors at both control plane and data plane levels.
 
 ### 1.2 Roles and Responsibilities
 
@@ -187,12 +235,11 @@ contact for issues and concerns relating to the Zeta Phase I execution.
 <span id="_Toc51312298" class="anchor"></span>Table 1 Roles and
 Responsibilities
 
-|                       |               |         |
-| --------------------- | ------------- | ------- |
 | Role                  | Name          | Contact |
+| --------------------- | ------------- | ------- |
 | Product Owner         | Ying Xiong    |         |
 | Project Manager       |               |         |
-| Team Lead - Futurewei | Bin Liang     |         |
+| Team Lead - Zeta      | Bin Liang     |         |
 | Team Lead – USTC      | Gongming Zhao |         |
 | Team Lead - Mizar     |               |         |
 | Team Lead – Alcor     | Liguang Xie   |         |
@@ -208,25 +255,21 @@ model.
 <span id="_Toc51312299" class="anchor"></span>Table 2 Terminology Cross
 Reference
 
-|                   |                                                                         |                 |
-| ----------------- | ----------------------------------------------------------------------- | --------------- |
 | Term in OpenStack | Behavior Characteristics                                                | Zeta Term       |
+| ----------------- | ----------------------------------------------------------------------- | --------------- |
 | Project/Tenant    | To group and isolate resources from one another                         | Tenant          |
-| Network           | Container of 1 or more subnets                                          | VPC             |
-| Subnet            | L2 broadcast domain                                                     | Subnet          |
+| Network           | Container of 1 or more subnets when used in context with subnet. When used alone, it refers to subnet in general                                                                                       | VPC             |
+| Subnet            | L2 broadcast domain, packets are routed if cross subnet: unique VNI     | Subnet          |
 | Router            | Forward packets between subnets                                         | Divider (close) |
 | Port              | Connection point to connect a single device to a subnet with IP and MAC | End Point       |
 | Host Interface    |                                                                         | Droplet         |
-
-Terminology Mapping
 
 Next is a list of abbreviations used within this document.
 
 <span id="_Toc51759840" class="anchor"></span>Table 3 Abbreviations
 
-|              |                                                                            |
-| ------------ | -------------------------------------------------------------------------- |
 | Abbreviation | Literal Translation                                                        |
+| ------------ | -------------------------------------------------------------------------- |
 | TNW          | Tenant Network                                                             |
 | PNW          | Provider Network                                                           |
 | CNode        | Compute Node                                                               |
@@ -260,8 +303,9 @@ into the overall virtual networking environment
 the VNFs it hosts
 - Depends on capability and availability of hosted networking functions, Zeta NSG service extends
 from most basic "Encapsulation proxy" all the way up to complete End-to-End networking service chain.
-- Zeta NSG can operate in a standalone mode or extends its framework to Compute nodes for some or
- all its VNFs, in a distributed fashion
+- Zeta NSG can operate in a standalone mode using dedicated networking nodes, or extends even fully
+distributes its framework into Compute nodes to carry out some or complete networking services chain
+in a distributed fashion
 
 #### 2.1.2 What values Zeta project brings in
 
@@ -275,18 +319,20 @@ Compares to distributed virtual networking solutions, Zeta NSG solution offers:
 - Achieves same even better performance and latency characteristics
 - XDP/eBPF based VNF for maximal performance and minimal forwarding overhead
 
-#### 2.1.3 What use case is supported in Zeta's initial release
+#### 2.1.3 Scope of Zeta's initial release
 
-In the initial release, Zeta NSG will support following use case to demonstrate the framework with
-a basic VNF in standalone fashion:
+In the initial release, Zeta NSG will include following capabilities to demonstrate the framework with
+some basic network functionalities, deployed in a standalone fashion:
 - Zeta Network Service Gateway framework
-  - Deployment environment: OpenStack
-  - Zeta Control plane
+  - Deployment environment: OpenStack Cloud
+  - Zeta Control plane peered with Alcor networking controller
   - Zeta NSG on dedicated Network nodes
-- VNF to offer: Encapsulation Proxy
-  - Offering proxy service to Lookup and Encap the 1st packet in instance flow to its destination host
-  - Enable compute host to host Direct Path for following packets in same flow
-  - Support load balancing for tenant compute service  
+- VNF to offer: Instance Proxy Service
+  - Offering scalable proxy service to deliver Tenant traffic to target compute instance
+  - Enable host to host Direct Path after initial packet in the flow goes through ZGC
+  - Transparent load balancing for tenant compute service backed by multiple instances 
+
+Detailed use cases supported in initial Zeta release will be covered in detail in Chapter 7
 
 ### 2.2 Assumptions/Constraints/Risks
 
@@ -1119,11 +1165,257 @@ Destination Service Instance Failure
 ![](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/liangbin-pub/mizar/zeta/docs/design/puml/zeta_packet_farwarding_failure_dest_service_instance.puml)
 
 
+## 7 Initial Release
+
+### 7.1 Use Cases
+
+#### 7.1.1 Deploy Zeta Control Plane
+
+**prerequisites**
+
+- Zeta Control Nodes meets hardware requirements
+- Zeta Control Nodes are connected to physical networks following best practice
+- Zeta Control Node Base Image is installed and SSH accessible
+- Zeta Control Nodes "Control Network" interface IPs are known
+
+**Expectations**
+
+1. As a provider admin, I want to be able to deploy Zeta Control Plane onto single or multiple Zeta Control Nodes
+2. As a provider admin, I want to be able to deploy Zeta Control Plane onto Zeta Control Nodes from an OpenStack control node with just a script and configuration file
+3. As a provider admin, I want Zeta Control Plane NBI API to be available on configured IP and port once ready
+4. As a provider admin, I want Zeta Control Plane to manage and monitor its own resources with logs for tracking
+
+#### 7.1.2 Scale Zeta Control Plane
+
+**prerequisites**
+
+- Existing Zeta Control Plane
+
+**Expectations**
+
+1. As a provider admin, I want to be able to add new Zeta Control Node to existing Zeta Control Plane through its NBI API
+2. As a provider admin, I want to be able to remove Zeta Control Node from existing Zeta Control Plane through its NBI API
+3. As a provider admin, I want Zeta Control Plane to re-balance its load after the change
+4. As a provider admin, I want the change to have minimal to zero impact to existing networking services
+
+#### 7.1.3 Deploy Zeta Gateway Cluster
+
+**prerequisites**
+
+- Zeta Network Nodes meets hardware requirements
+- Zeta Network Nodes are connected to physical networks following best practice
+- Zeta Network Node Base Image is installed and SSH accessible
+- Zeta Network Node "Control Network" interface IP are known
+- Zeta Control Plane is up running
+
+**Expectations**
+
+1. As a provider admin, I want to be able to deploy a Zeta Gateway Cluster onto single or multiple Zeta Network Nodes
+2. As a provider admin, I want to be able to deploy ZGC through Zeta Control Plane NBI API
+3. As a provider admin, I want to be able to deploy ZGC from an OpenStack control node with just a script and configuration file
+
+#### 7.1.4 Scale Zeta Gateway Cluster
+
+**prerequisites**
+
+- Existing Zeta Control Plane and ZGC
+
+**Expectations**
+
+1. As a provider admin, I want to be able to add new Zeta Network Node to existing ZGC through Zeta Control Plane NBI API
+2. As a provider admin, I want to be able to remove Zeta Network Node from existing ZGC through Zeta Control Plane NBI API
+3. As a provider admin, I want ZGC to re-balance its load after the change
+4. As a provider admin, I want the change to be transparent to Compute Nodes and have minimal to zero impact to existing networking services
+
+#### 7.1.5 Create Tenant Network And ZGC Affiliation  
+
+**prerequisites**
+
+- Existing Zeta Control Plane and ZGC
+- Physical Network reachability between Tenant Compute Nodes and ZGC Network Nodes
+- Support for existing non-ZGC-affiliated Tenant network is not expected in this release 
+
+**Expectations**
+
+1. As a provider admin, I want to be able to affiliate one and only one ZGC to a Tenant/Project network (VPC) through Zeta Control Plane NBI API, there is no restriction on how many Tenant/Project networks a ZGC can have affiliation with
+2. As a provider admin, I want to be able to query such affiliation between Tenant/Project network and ZGC through Zeta Control Plane NBI API
+3. As a provider admin, I want to see Tenant/Project network traffic flows use affiliated ZGC as network service gateway
+
+#### 7.1.6 Modify Tenant network And ZGC Affiliation  
+
+**prerequisites**
+
+- Existing Zeta Control Plane and ZGC
+- Physical Network reachability between Tenant Compute Nodes and ZGC Network Nodes
+- Removing ZGC affiliation from Tenant network is not supported in this release 
+
+**Expectations**
+
+1. As a provider admin, I want to be able to change Tenant/Project network and ZGC affiliation through Zeta Control Plane NBI API
+2. As a provider admin, I want the switch over to be synchronized cross affected Compute Nodes at scheduled time
+3. As a provider admin, I want the switch over be have minimal to zero impact to existing networking services
+3. As a provider admin, I want to see new Tenant/Project network traffic flows use newly affiliated ZGC as network service gateway
+
+#### 7.1.7 Deploy VNF to ZGC  
+
+**prerequisites**
+
+- Existing Zeta Control Plane and ZGC
+- No Tenant network affiliation with the ZGC
+
+**Expectations**
+
+1. As a provider admin, I want to be able to deploy one or more versioned Zeta VNFs to a ZGC through Zeta Control Plane NBI API, which is "Instance Proxy" VNF in initial release
+2. As a provider admin, I want to be able to query information about deployed VNFs on ZGC through Zeta Control Plane NBI API
+3. As a provider admin, I want to see VNF specific control APIs available on Zeta Control Plane NBI after successful deployment
+
+#### 7.1.8 VNF Live Update on ZGC  
+
+**prerequisites**
+
+- Existing Zeta Control Plane and ZGC
+- Tenant network has already affiliated with the ZGC
+
+**Expectations**
+
+1. As a provider admin, I want to be able to update a deployed Zeta VNFs to different version through Zeta Control Plane NBI API, which is "Instance Proxy" VNF in initial release
+2. As a provider admin, I want to see VNF specific control APIs changed as well on Zeta Control Plane NBI after successful update
+3. As a provider admin, I want to see minimal or no interruption to existing networking services
+
+#### 7.1.9 VNF Enable and Disable
+
+**prerequisites**
+
+- Existing Zeta Control Plane and ZGC
+- VNF has been deployed on ZGC
+
+**Expectations**
+
+1. As a provider admin, I want to be able to enable/disable VNF through Zeta Control Plane NBI API if it provides, otherwise it will be enabled by default. "Instance Proxy" VNF doesn't have such explicit APIs so it's always enabled
+2. As a provider admin, I want to see VNF correctly plugged into networking service chain once enabled and applicable in ZGC. For "Instance Proxy" VNF, hooks will be added to compute nodes after security/switching/routing for all instance destinations such that it can take over the responsibility to lookup instance-to-host mapping and tunnel the packet to its final destination 
+3. As a provider admin, I want to see VNF correctly unplugged from networking service chain once disabled in ZGC, not applicable to VNFs always enabled
+4. As a provider admin, I want to see minimal or no interruption to existing networking services, not applicable to VNFs always enabled
+
+#### 7.1.10 Monitor And Report
+
+**prerequisites**
+
+- Existing Zeta Control Plane and ZGC
+
+**Expectations**
+
+1. As a provider admin, I want Zeta Control Plane to manage and monitor its resources with logs for tracking
+2. As a provider admin, I want Zeta Control Plane to provide health status on query from its NBI API, for both control plane and each ZGC, including ZGC scaling alert
+
+#### 7.1.11 East West Flow Between Instances On Same Node
+
+**prerequisites**
+
+- Existing Zeta Control Plane and ZGC
+- Instance Proxy VNF has been deployed on ZGC
+- Alcor/Neutron provides security/switching/routing services
+
+**Expectations**
+
+1. As a provider admin, I want to see flow is locally switched in the compute node if the two instances belongs to same subnet, without going through ZGC
+2. As a provider admin, I want to see flow is locally routed in the compute node if the two instances belongs to different subnet but under same Tenant network, without going through ZGC
+3. As a provider admin, I want to see flow is routed through external provider gateway if the two instances belongs to different Tenant network, without going through ZGC
+
+#### 7.1.12 East West Flow Between Instances On different Node
+
+**prerequisites**
+
+- Existing Zeta Control Plane and ZGC
+- Instance Proxy VNF has been deployed on ZGC
+- Alcor/Neutron provides security/switching/routing services
+
+**Expectations**
+
+1. As a provider admin, I want to see flow switched/routed then tunneled to end host through one of ZGC entry points initially, then bypassing ZGC for the rest of the flow.
+2. As a provider admin, I want to see this behavior for both in-subnet flows and between-subnet flows under same Tenant network
+3. As a provider admin, I want to see flow is routed through external provider gateway if the two instances belongs to different Tenant network, without going through ZGC
+4. As a provider admin, I want to see load balancing across ZGC entry points for Tenant network flows initiated from the same compute node.
+
+#### 7.1.13 North South Flow Initiated From External
+
+**prerequisites**
+
+- Existing Zeta Control Plane and ZGC
+- Instance Proxy VNF has been deployed on ZGC
+- Alcor/Neutron provides security/switching/routing/NAT services
+- Tenant Instance has floating IP assigned
+
+**Expectations**
+
+1. As a provider admin, I want to see flow from provider network routed then tunneled to end host through one of ZGC entry points initially, then bypassing ZGC for the rest of the flow.
+2. As a provider admin, I want to see load balancing across ZGC entry points for Tenant network flows coming from provider network.
+
+#### 7.1.14 North South Flow Initiated From Instances
+
+**prerequisites**
+
+- Existing Zeta Control Plane and ZGC
+- Instance Proxy VNF has been deployed on ZGC
+- Alcor/Neutron provides security/switching/routing/SNAT services
+
+**Expectations**
+
+1. As a provider admin, I want to see flow is routed through external provider gateway, without going through ZGC
+
+#### 7.1.15 Flow Towards Multi Instances Service
+
+**prerequisites**
+
+- Existing Zeta Control Plane and ZGC
+- Instance Proxy VNF has been deployed on ZGC
+- Alcor/Neutron provides security/switching/routing/NAT services
+- Service has floating IP assigned if it serve external requests
+
+**Expectations**
+
+1. As a provider admin, I want to see flow switched/routed (DNATed if initiated from external) then tunneled to end host through one of ZGC entry points initially, then bypassing ZGC for the rest of the flow.
+2. As a provider admin, I want to see load balancing across service instances.
+3. As a provider admin, I want to see load balancing across ZGC entry points for Tenant network flows initiated from the same compute/router node.
+
+#### 7.1.16 Scale Compute Instances
+
+**prerequisites**
+
+- Existing Zeta Control Plane and ZGC
+- Instance Proxy VNF has been deployed on ZGC
+- Alcor/Neutron provides security/switching/routing services
+
+**Expectations**
+
+1. As a provider admin, I want to see consistent instance bring up time irrelevant to the total number of tenant/project instances
+2. As a provider admin, I want to see no impact to existing networking services when a new compute instance is created, irrelevant to the total number of tenant/project instances
+3. As a provider admin, I want to see no impact to unrelated instances when a compute instance is removed, irrelevant to the total number of tenant/project instances
+
+### 7.2 System Parameters
+
+System parameters required and generalized to support use cases defined above - To be completed.
+
+<span id="_Ref441754491" class="anchor"></span>Table 5 - System Parameters
+
+| category     | Parameter   | Description    |
+| ------------ | ----------- | -------------- |
+| System level | \<Acronym\> | \<Definition\> |
+| ZGC level    | \<Acronym\> | \<Definition\> |
+| VPC level    | \<Acronym\> | \<Definition\> |
+
+### 7.3 External APIs
+
+External API definition based on uses cases and related system parameters - To be completed.
+
+### 7.4 Control Workflows
+
+Internal workflow definition based on uses cases, system parameters and External APIs - To be completed.
+
 <span id="_Toc490026795" class="anchor"></span>
 
-## Appendix A: Record of Changes ##
+## Appendix A: Record of Changes
 
-<span id="_Toc444160465" class="anchor"></span>Table 5 - Record of
+<span id="_Toc444160465" class="anchor"></span>Table 6 - Record of
 Changes
 
 <table>
@@ -1153,34 +1445,33 @@ Changes
 </ol></td>
 </tr>
 <tr class="even">
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td>0.3</td>
+<td>09/29/2020</td>
+<td>Bin Liang</td>
+<td>Added Initial release scope Chapter 2.1 and Initial Release use cases Chapter 7.1</td>
 </tr>
 </tbody>
 </table>
 
-<span id="_Toc396111629" class="anchor"></span>Appendix C: Glossary
+<span id="_Toc396111629" class="anchor"></span>
+
+## Appendix B: Glossary
 
 Instructions: Provide clear and concise definitions for terms used in
 this document that may be unfamiliar to readers of the document. Terms
 are to be listed in alphabetical order.
 
-<span id="_Ref441754492" class="anchor"></span>Table 6 - Glossary
+<span id="_Ref441754492" class="anchor"></span>Table 7 - Glossary
 
-|          |             |                |
-| -------- | ----------- | -------------- |
 | Term     | Acronym     | Definition     |
+| -------- | ----------- | -------------- |
 | \<Term\> | \<Acronym\> | \<Definition\> |
 | \<Term\> | \<Acronym\> | \<Definition\> |
 | \<Term\> | \<Acronym\> | \<Definition\> |
-
-## Appendix B: Glossary ##
 
 <span id="_Toc396111630" class="anchor"></span>
 
-## Appendix C: Referenced Documents ##
+## Appendix C: Referenced Documents
 
 \[1\] Sherif, Phu and Cathy [***Zeta: Modular Network Services via
 Distributed and Elastic Middleboxes***](https://github.com/futurewei-cloud/mizar/pull/176)
@@ -1189,14 +1480,14 @@ Distributed and Elastic Middleboxes***](https://github.com/futurewei-cloud/mizar
 
 <span id="_Toc396111631" class="anchor"></span>
 
-## Appendix D: Review Comments ##
+## Appendix D: Review Comments
 
 This is a live document and will continue evolving as we progress. This
 session will capture important review and discussion outputs for the
 benefit of open community to understand the historical contexts,
 regarding some of the design and decisions make during the journey.
 
-<span id="_Toc398804287" class="anchor"></span>Table 7 – Review Comments
+<span id="_Toc398804287" class="anchor"></span>Table 8 – Review Comments
 
 | Comments | Date |
 | -------- | ---- |
