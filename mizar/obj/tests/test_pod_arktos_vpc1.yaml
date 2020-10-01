@@ -3,12 +3,10 @@ kind: Pod
 metadata:
   name: arktospodvpc1net1
   labels:
-    arktos.futurewei.com/network: vpc1
+    arktos.futurewei.com/network: my-net-mizar-1
   annotations:
-    arktos.futurewei.com/nic: "[{\"name\": \"eth0\", \"ip\": \"12.2.0.4\", \"subnet\": \"net1\"}]"
+    arktos.futurewei.com/nic: "[{\"name\": \"eth0\", \"ip\": \"20.0.0.14\", \"subnet\": \"net0\"}]"
 spec:
   containers:
   - name: arktospodvpc1net1
-    image: localhost:5000/testpod
-    ports:
-      - containerPort: 443
+    image: fwnetworking/testpod
