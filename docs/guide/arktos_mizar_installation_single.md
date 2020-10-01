@@ -3,6 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2020 The Authors.
 
 Authors: Catherine Lu      <@clu2>
+         Hongwei Chen      <@hong.chen>
+         Hong Chang        <@hchang>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -32,30 +34,25 @@ For more details on Arktos installation, please refer to [this link](https://git
 1. Prepare lab machine, the prefered OS is **Ubuntu 18.04**. If you are using AWS, the recommanded instance size is ```t2.2xlarge``` and the storage size is ```128GB``` or more 
 
 ```bash
-wget https://raw.githubusercontent.com/Hong-Chang/tools/master/setup-machine-arktos.sh && chmod 755 setup-machine-arktos.sh && ./setup-machine-arktos.sh
-
-```
-Once above script is completed, you will be automatically logged out of the lab machine. 
-
-2. You will need ssh into the same lab machine again, and download mizar source code onto your lab machine: 
-
-```bash
-cd /home/ubuntu/go/src/k8s.io/
+cd
 git clone https://github.com/centaurus-cloud/mizar.git
 cd mizar
+chmod 755 setup-machine-arktos.sh
+./setup-machine-arktos.sh
 ```
+The lab machine will be rebooted once above script is completed, you will be automatically logged out of the lab machine. 
 
-3. Once Mizar source code is downloaded, you can then run ```bootstrap.sh``` script to bootstrap your lab machine. 
+2. Log onto your lab machine, then run ```bootstrap.sh``` script from the mizar project folder to bootstrap your lab machine. 
 
-4. Once bootstrap is completed, you can then compile mizar: 
+3. Once bootstrap is completed, you can then compile mizar: 
 
 ```bash
-cd /home/ubuntu/go/src/k8s.io/mizar
+cd ~/mizar
 make
 make proto
 ```
 
-5. Deploy CNI and restart containerd: 
+4. Deploy CNI and restart containerd: 
 ```bash
 wget -qO- https://github.com/futurewei-cloud/containerd/releases/download/tenant-cni-args/containerd.zip | zcat > /tmp/containerd
 chmod +x /tmp/containerd
@@ -66,7 +63,7 @@ sudo systemctl restart containerd
 sudo systemctl start docker
 ```
 
-6. Build arktos-network-controller (as it is not part of arktos-up.sh yet)
+5. Build arktos-network-controller (as it is not part of arktos-up.sh yet)
 ```bash
 make all WHAT=cmd/arktos-network-controller
 sudo rm -f /etc/resolv.conf
@@ -78,7 +75,7 @@ Also, please ensure the hostname and its ip address in /etc/hosts. For instance,
 172.31.41.177 ip-172-31-41-177
 ```
 
-7. Before installing Mizar, you will need first start up Arktos server: 
+6. Before installing Mizar, you will need first start up Arktos server: 
 
 ```bash
 cd /home/ubuntu/go/src/k8s.io/arktos
@@ -110,7 +107,7 @@ Alternatively, you can write to the default kubeconfig:
 Once you see above text, your arktos server is now running. 
 To verify, you can run ```kubectl get nodes```, you should see a node running with the name starts with "ip" followed by the private ip address of your lab machine. 
 
-8. Start Arktos network controller. From a new terminal window, run:
+7. Start Arktos network controller. From a new terminal window, run:
 
 ```bash
 ./_output/local/bin/linux/amd64/arktos-network-controller --kubeconfig=/var/run/kubernetes/admin.kubeconfig --kube-apiserver-ip=xxx.xxx.xxx.xxx
@@ -118,7 +115,7 @@ To verify, you can run ```kubectl get nodes```, you should see a node running wi
 where the ```kube-apiserver-ip``` is your lab machine's **private ip address**
 
 
-9. Deploy Mizar. Open a new terminal window, and run: 
+8. Deploy Mizar. Open a new terminal window, and run: 
 ```bash
 cd /home/ubuntu/go/src/k8s.io/mizar
 ./deploy-mizar.sh
