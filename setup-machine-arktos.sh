@@ -185,6 +185,18 @@ pip3 install PyYAML
 
 ####################
 
+echo Setup: Change Containerd
+
+wget -qO- https://github.com/futurewei-cloud/containerd/releases/download/tenant-cni-args/containerd.zip | zcat > /tmp/containerd
+chmod +x /tmp/containerd
+sudo systemctl stop containerd
+sudo mv /usr/bin/containerd /usr/bin/containerd.bak
+sudo mv /tmp/containerd /usr/bin/
+sudo systemctl restart containerd
+sudo systemctl start docker
+
+####################
+
 echo Setup: Setup profile
 
 echo PATH=\"\$HOME/go/src/k8s.io/arktos/third_party/etcd:/usr/local/go/bin:\$HOME/go/bin:\$HOME/go/src/k8s.io/arktos/_output/bin:\$HOME/go/src/k8s.io/arktos/_output/dockerized/bin/linux/amd64:\$PATH\" >> ~/.profile

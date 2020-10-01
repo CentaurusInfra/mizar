@@ -52,19 +52,9 @@ make
 make proto
 ```
 
-4. Deploy CNI and restart containerd: 
+4. Build arktos-network-controller (as it is not part of arktos-up.sh yet)
 ```bash
-wget -qO- https://github.com/futurewei-cloud/containerd/releases/download/tenant-cni-args/containerd.zip | zcat > /tmp/containerd
-chmod +x /tmp/containerd
-sudo systemctl stop containerd
-sudo mv /usr/bin/containerd /usr/bin/containerd.bak
-sudo mv /tmp/containerd /usr/bin/
-sudo systemctl restart containerd
-sudo systemctl start docker
-```
-
-5. Build arktos-network-controller (as it is not part of arktos-up.sh yet)
-```bash
+cd /home/ubuntu/go/src/k8s.io/arktos
 make all WHAT=cmd/arktos-network-controller
 sudo rm -f /etc/resolv.conf
 sudo ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
@@ -75,7 +65,7 @@ Also, please ensure the hostname and its ip address in /etc/hosts. For instance,
 172.31.41.177 ip-172-31-41-177
 ```
 
-6. Before installing Mizar, you will need first start up Arktos server: 
+5. Before installing Mizar, you will need first start up Arktos server: 
 
 ```bash
 cd /home/ubuntu/go/src/k8s.io/arktos
@@ -105,9 +95,9 @@ Alternatively, you can write to the default kubeconfig:
 ```
 
 Once you see above text, your arktos server is now running. 
-To verify, you can run ```kubectl get nodes```, you should see a node running with the name starts with "ip" followed by the private ip address of your lab machine. 
+To verify, you can open a new terminal and run ```kubectl get nodes```, you should see a node running with the name starts with "ip" followed by the private ip address of your lab machine. 
 
-7. Start Arktos network controller. From a new terminal window, run:
+6. Start Arktos network controller. From a new terminal window, run:
 
 ```bash
 ./_output/local/bin/linux/amd64/arktos-network-controller --kubeconfig=/var/run/kubernetes/admin.kubeconfig --kube-apiserver-ip=xxx.xxx.xxx.xxx
@@ -115,7 +105,7 @@ To verify, you can run ```kubectl get nodes```, you should see a node running wi
 where the ```kube-apiserver-ip``` is your lab machine's **private ip address**
 
 
-8. Deploy Mizar. Open a new terminal window, and run: 
+7. Deploy Mizar. Open a new terminal window, and run: 
 ```bash
 cd /home/ubuntu/go/src/k8s.io/mizar
 ./deploy-mizar.sh

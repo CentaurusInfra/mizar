@@ -10,3 +10,5 @@ spec:
   containers:
   - name: arktospodvpc1net1
     image: fwnetworking/testpod
+    ports:
+      - containerPort: 443
