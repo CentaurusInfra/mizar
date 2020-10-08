@@ -1,0 +1,53 @@
+@startuml
+
+' SPDX-License-Identifier: MIT
+' Copyright (c) 2020 The Authors.
+
+' Authors: Bin Liang
+
+' Permission is hereby granted, free of charge, to any person obtaining a copy
+' of this software and associated documentation files (the "Software"), to deal
+' in the Software without restriction, including without limitation the rights
+' to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+' copies of the Software, and to permit persons to whom the Software is
+' furnished to do so, subject to the following conditions:The above copyright
+' notice and this permission notice shall be included in all copies or
+' substantial portions of the Software.THE SOFTWARE IS PROVIDED "AS IS",
+' WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+' TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+' NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+' FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+' TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+' THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+title OVS rules for Zeta Gateway Cluster
+skinparam monochrome true
+autonumber
+
+participant "Zeta\nmanagement" as z
+participant "Alcor\nController" as a
+participant "ACA @ new\nCompute Node" as aca
+participant "OVS @ new\nCompute Node" as ovs
+
+==VPC Creation==
+a -> z: GET Zeta Gateway Cluster(Project, VPC)
+rnote over z
+    Find ZGC for VPC
+    based on Tenant, load policy
+endrnote
+z -> a: Zeta Gateway Cluster(FWD[(MAC,IP)])
+rnote over a
+    Update VPC-ZGC DB
+endrnote
+
+==New Compute Instance Provisioning==
+rnote over aca
+    New Instance provisioning
+endrnote
+alt the instance belongs to VPC NEW to this host
+    aca -> a: gRPC: Request new VPC context
+    a -> aca: gRPC: new VPC context with ZGC info
+    aca -> ovs: Provisioning br-tun default ZGC rule for the VPC
+end
+
+@enduml

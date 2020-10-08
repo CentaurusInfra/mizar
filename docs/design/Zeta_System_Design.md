@@ -120,6 +120,10 @@ Table of Contents
 
 [6.8 Destination Service Instance Failure](#68-destination-service-instance-failure)
 
+[6.9 Control Plane Add OVS Default ZGC Rules](#69-control-plane-add-ovs-default-zgc-rules)
+
+[6.10 Control Plane Add Compute Instance](#610-control-plane-add-compute-instance)
+
 [7. Initial Release](#7-initial-release)
 
 [7.1 Use Cases](#71-use-cases)
@@ -199,6 +203,11 @@ List of Figures
 [Figure 13 Op Scenario: Destination Regular Instance Failure](#_Toc51759830)
 
 [Figure 14 Op Scenario: Destination Service Instance Failure](#_Toc51759831)
+
+[Figure 15 Op Scenario: Control Plane Add OVS Default ZGC Rules](#_Toc51759832)
+
+[Figure 16 Op Scenario: Control Plane Add Compute Instance](#_Toc51759833)
+
 
 List of Tables
 
@@ -1164,6 +1173,19 @@ Destination Service Instance Failure
 
 ![](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/liangbin-pub/mizar/zeta/docs/design/puml/zeta_packet_farwarding_failure_dest_service_instance.puml)
 
+### 6.9 Control Plane Add OVS Default ZGC Rules
+
+<span id="_Toc51759832" class="anchor"></span>Figure 15 Op Scenario:
+Control Plane Add OVS Default ZGC Rules
+
+![](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/liangbin-pub/mizar/zeta/docs/design/puml/zeta_control_ovs_default_gateway_rules.puml)
+
+### 6.10 Control Plane Add Compute Instance
+
+<span id="_Toc51759833" class="anchor"></span>Figure 16 Op Scenario:
+Control Plane Add Compute Instance
+
+![](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/liangbin-pub/mizar/zeta/docs/design/puml/zeta_control_add_compute_instance.puml)
 
 ## 7 Initial Release
 
