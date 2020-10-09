@@ -97,6 +97,26 @@ Alternatively, you can write to the default kubeconfig:
 Once you see above text, your arktos server is now running. 
 To verify, you can open a new terminal and run ```kubectl get nodes```, you should see a node running with the name starts with "ip" followed by the private ip address of your lab machine. 
 
+You also want make sure the default kubernetes bridge network configuration file is deleted: 
+
+```bash
+sudo ls /etc/cni/net.d
+(you should see two config files, one is mizar cni config and another one is bridge config)
+sudo rm /etc/cni/net.d/bridge.conf
+```
+
+To make sure containerd is running as expected, run: 
+
+```bash
+systemctl status containerd.service
+```
+
+to restart, run: 
+
+```bash
+systemctl restart containerd.service
+```
+
 6. Start Arktos network controller. From a new terminal window, run:
 
 ```bash
@@ -125,3 +145,4 @@ kubectl create -f mizar/obj/tests/test_arktos_net.yaml
 kubectl create -f mizar/obj/tests/test_pod_arktos_vpc1.yaml
 
 ```
+
