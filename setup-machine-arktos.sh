@@ -182,6 +182,7 @@ pip3 install ipaddress
 pip3 install netaddr
 pip3 install kopf
 pip3 install PyYAML
+pip3 install netifaces
 
 ####################
 
