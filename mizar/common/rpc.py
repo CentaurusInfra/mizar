@@ -21,13 +21,14 @@
 
 import logging
 import json
+import netifaces
 from mizar.common.common import run_cmd
 
 logger = logging.getLogger()
 
 
 class TrnRpc:
-    def __init__(self, ip, mac, itf='eth0', benchmark=False):
+    def __init__(self, ip, mac, itf=netifaces.interfaces()[1], benchmark=False):
         self.ip = ip
         self.mac = mac
         self.phy_itf = itf
