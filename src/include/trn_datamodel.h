@@ -148,3 +148,9 @@ struct scaled_endpoint_remote_t {
 	unsigned char h_source[6];
 	unsigned char h_dest[6];
 } __attribute__((packed));
+
+struct enforced_src_ip_t {
+	__be64 tun_id;
+	__be32 ip_addr;
+} __attribute__((packed));
+

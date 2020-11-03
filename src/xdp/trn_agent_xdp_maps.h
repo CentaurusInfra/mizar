@@ -101,3 +101,13 @@ struct bpf_map_def SEC("maps") ep_host_cache_ref = {
 	.map_flags = 0,
 };
 BPF_ANNOTATE_KV_PAIR(ep_host_cache_ref, int, __u32);
+
+// pinned map
+struct bpf_map_def SEC("maps") vsip_enforce_map = {
+	.type = BPF_MAP_TYPE_HASH,
+	.key_size = sizeof(struct enforced_src_ip_t),
+	.value_size = sizeof(__u8),
+	.max_entries = 1024 * 1024,
+	.map_flags = 0,
+};
+BPF_ANNOTATE_KV_PAIR(vsip_enforce_map, struct enforced_src_ip_t, __u8);

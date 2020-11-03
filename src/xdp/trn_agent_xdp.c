@@ -36,6 +36,7 @@
 #include <linux/udp.h>
 #include <stddef.h>
 #include <string.h>
+#include <errno.h>
 
 #include "extern/bpf_endian.h"
 #include "extern/bpf_helpers.h"
@@ -277,6 +278,18 @@ static __inline int trn_redirect(struct transit_packet *pkt, __u32 inner_src_ip,
 	return trn_encapsulate(pkt, md, tunnel_id, inner_src_ip, inner_dst_ip);
 }
 
+static __inline int enforece_egress_policy(struct transit_packet *pkt) {
+	struct enforced_src_ip_t vsip = {.tun_id = pkt->agent_ep_tunid, .ip_addr = pkt->inner_ip->saddr};
+	__u8 *v = bpf_map_lookup_elem(&vsip_enforce_map, &vsip);
+	if (!v || !*v){
+		// source is not isolated; allow it.
+		return 0 ;
+	}
+
+	// todo: add finer policy checks to allow egress packets
+	return -EPERM;
+}
+
 static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 {
 	pkt->inner_ip = (void *)pkt->inner_eth + pkt->inner_eth_off;
@@ -331,6 +344,14 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 
 		pkt->inner_ipv4_tuple.sport = pkt->inner_udp->source;
 		pkt->inner_ipv4_tuple.dport = pkt->inner_udp->dest;
+	}
+
+	/* to enforce network policy */
+	if (!enforece_egress_policy(pkt)) {
+		bpf_debug("[Agent:%ld.0x%x] ABORTED: egress policy denied \n",
+			pkt->agent_ep_tunid,
+			bpf_ntohl(pkt->agent_ep_ipv4));
+		return XDP_ABORTED;
 	}
 
 	/* Check if we need to apply a forward flow update */
