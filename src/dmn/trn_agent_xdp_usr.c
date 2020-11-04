@@ -32,6 +32,9 @@ static int def_rev_flow_mod_cache_map_fd = -1;
 static int def_ep_flow_host_cache_map_fd = -1;
 static int def_ep_host_cache_map_fd = -1;
 
+// global pinned map file paths
+const char *vsip_enforce_map_path = "/sys/fs/bpf/vsip_enforce_map";
+
 int trn_agent_user_metadata_free(struct agent_user_metadata_t *md)
 {
 	__u32 curr_prog_id = 0;
@@ -253,11 +256,15 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 		bpf_map__next(md->rev_flow_mod_cache_ref, md->obj);
 	md->ep_host_cache_ref =
 		bpf_map__next(md->ep_flow_host_cache_ref, md->obj);
+	md->vsip_enforce_map =
+		bpf_map__next(md->ep_host_cache_ref, md->obj);
 
 	if (!md->jmp_table_map || !md->agentmetadata_map ||
 	    !md->endpoints_map | !md->xdpcap_hook_map ||
 	    !md->fwd_flow_mod_cache_ref || !md->rev_flow_mod_cache_ref ||
-	    !md->ep_flow_host_cache_ref || !md->ep_host_cache_ref) {
+	    !md->ep_flow_host_cache_ref || !md->ep_host_cache_ref ||
+	    !md->vsip_enforce_map)
+	{
 		TRN_LOG_ERROR("Failure finding maps objects.");
 		return 1;
 	}
@@ -270,6 +277,10 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 	md->rev_flow_mod_cache_ref_fd = bpf_map__fd(md->rev_flow_mod_cache_ref);
 	md->ep_flow_host_cache_ref_fd = bpf_map__fd(md->ep_flow_host_cache_ref);
 	md->ep_host_cache_ref_fd = bpf_map__fd(md->ep_host_cache_ref);
+	md->vsip_enforce_map_fd = bpf_map__fd(md->vsip_enforce_map);
+
+	// todo: consider to create & pin map to where node is initializing
+	bpf_map__pin(md->vsip_enforce_map, vsip_enforce_map_path);
 
 	if (bpf_map__unpin(md->xdpcap_hook_map, md->pcapfile) == 0) {
 		TRN_LOG_INFO("unpin exiting pcap map file: %s", md->pcapfile);
@@ -347,6 +358,7 @@ static int _trn_bpf_agent_prog_load_xattr(struct agent_user_metadata_t *md,
 					  struct bpf_object **pobj,
 					  int *prog_fd)
 {
+	int fd_map_pinned;
 	struct bpf_program *prog, *first_prog = NULL;
 	_trn_refresh_default_maps();
 
@@ -392,6 +404,24 @@ static int _trn_bpf_agent_prog_load_xattr(struct agent_user_metadata_t *md,
 		md->ep_flow_host_cache_ref = NULL;
 		TRN_LOG_INFO("ep_flow_host_cache_ref inner fd is not set!\n");
 		goto error;
+	}
+
+	// to share the pinned vsip_enforce_map if already exist
+	fd_map_pinned = bpf_obj_get(vsip_enforce_map_path);
+	if (fd_map_pinned >= 0)
+	{
+		struct bpf_map *pmap = bpf_object__find_map_by_name(*pobj, "vsip_enforce_map");
+		if (!pmap)
+		{
+			TRN_LOG_INFO("failed to find map vsip_enforce_map: %s\n", strerror(errno));
+			goto error;
+		}
+
+		if (bpf_map__reuse_fd(pmap, fd_map_pinned))
+		{
+			TRN_LOG_INFO("failed to reuse map fd: %s\n", strerror(errno));
+			goto error;
+		}
 	}
 
 	/* Only one prog is supported */

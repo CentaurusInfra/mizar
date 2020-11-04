@@ -347,7 +347,7 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 	}
 
 	/* to enforce network policy */
-	if (!enforece_egress_policy(pkt)) {
+	if (enforece_egress_policy(pkt)) {
 		bpf_debug("[Agent:%ld.0x%x] ABORTED: egress policy denied \n",
 			pkt->agent_ep_tunid,
 			bpf_ntohl(pkt->agent_ep_ipv4));
