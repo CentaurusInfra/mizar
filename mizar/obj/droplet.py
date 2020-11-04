@@ -22,6 +22,7 @@
 import logging
 import json
 import netifaces
+import os
 from mizar.common.rpc import TrnRpc
 from mizar.common.constants import *
 from mizar.common.common import *
@@ -38,7 +39,7 @@ class Droplet(object):
         self.store = opr_store
         self.ip = ""
         self.mac = ""
-        self.phy_itf = netifaces.interfaces()[1]
+        self.phy_itf = os.getenv("INET")
         self.status = OBJ_STATUS.droplet_status_init
         self.known_substrates = {}
         self.known_bouncers = {}
