@@ -34,6 +34,8 @@ static int def_ep_host_cache_map_fd = -1;
 
 // global pinned map file paths
 const char *vsip_enforce_map_path = "/sys/fs/bpf/vsip_enforce_map";
+const char *vsip_dip_prim_map_path = "/sys/fs/bpf/vsip_dip_prim_map";
+const char *vsip_proto_port_map_path = "/sys/fs/bpf/vsip_proto_port_map";
 
 int trn_agent_user_metadata_free(struct agent_user_metadata_t *md)
 {
@@ -258,6 +260,8 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 		bpf_map__next(md->ep_flow_host_cache_ref, md->obj);
 	md->vsip_enforce_map =
 		bpf_map__next(md->ep_host_cache_ref, md->obj);
+	md->vsip_dip_prim_map = bpf_map__next(md->vsip_enforce_map, md->obj);
+	md->vsip_proto_port_map = bpf_map__next(md->vsip_dip_prim_map, md->obj);
 
 	if (!md->jmp_table_map || !md->agentmetadata_map ||
 	    !md->endpoints_map | !md->xdpcap_hook_map ||
@@ -278,9 +282,13 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 	md->ep_flow_host_cache_ref_fd = bpf_map__fd(md->ep_flow_host_cache_ref);
 	md->ep_host_cache_ref_fd = bpf_map__fd(md->ep_host_cache_ref);
 	md->vsip_enforce_map_fd = bpf_map__fd(md->vsip_enforce_map);
+	md->vsip_dip_prim_map_fd = bpf_map__fd(md->vsip_dip_prim_map);
+	md->vsip_proto_port_map_fd = bpf_map__fd(md->vsip_proto_port_map);
 
 	// todo: consider to create & pin map to where node is initializing
 	bpf_map__pin(md->vsip_enforce_map, vsip_enforce_map_path);
+	bpf_map__pin(md->vsip_dip_prim_map, vsip_dip_prim_map_path);
+	bpf_map__pin(md->vsip_proto_port_map, vsip_proto_port_map_path);
 
 	if (bpf_map__unpin(md->xdpcap_hook_map, md->pcapfile) == 0) {
 		TRN_LOG_INFO("unpin exiting pcap map file: %s", md->pcapfile);
@@ -353,12 +361,33 @@ static void _trn_refresh_default_maps(void)
 				       TRAN_MAX_CACHE_SIZE, 0);
 }
 
+
+// to share the pinned vsip_enforce_map if already exist
+static int _trn_bpf_agent_reuse_shared_map_if_exists(struct bpf_object *pobj, const char *map_name, const char *pinned_file)
+{
+	int fd_map_pinned = bpf_obj_get(pinned_file);
+	if (fd_map_pinned >= 0)
+	{
+		struct bpf_map *pmap = bpf_object__find_map_by_name(pobj, map_name);
+		if (!pmap)
+		{
+			return -ENOENT;
+		}
+
+		if (bpf_map__reuse_fd(pmap, fd_map_pinned))
+		{
+			return -EBADF;
+		}
+	}
+
+	return 0;
+}
+
 static int _trn_bpf_agent_prog_load_xattr(struct agent_user_metadata_t *md,
 					  const struct bpf_prog_load_attr *attr,
 					  struct bpf_object **pobj,
 					  int *prog_fd)
 {
-	int fd_map_pinned;
 	struct bpf_program *prog, *first_prog = NULL;
 	_trn_refresh_default_maps();
 
@@ -406,22 +435,20 @@ static int _trn_bpf_agent_prog_load_xattr(struct agent_user_metadata_t *md,
 		goto error;
 	}
 
-	// to share the pinned vsip_enforce_map if already exist
-	fd_map_pinned = bpf_obj_get(vsip_enforce_map_path);
-	if (fd_map_pinned >= 0)
-	{
-		struct bpf_map *pmap = bpf_object__find_map_by_name(*pobj, "vsip_enforce_map");
-		if (!pmap)
-		{
-			TRN_LOG_INFO("failed to find map vsip_enforce_map: %s\n", strerror(errno));
-			goto error;
-		}
+	// todo: better error logging
+	if (_trn_bpf_agent_reuse_shared_map_if_exists(*pobj, "vsip_enforce_map", vsip_enforce_map_path)) {
+		TRN_LOG_INFO("failed to reuse shared map at %s\n", vsip_enforce_map_path);
+		goto error;
+	}
 
-		if (bpf_map__reuse_fd(pmap, fd_map_pinned))
-		{
-			TRN_LOG_INFO("failed to reuse map fd: %s\n", strerror(errno));
-			goto error;
-		}
+	if (_trn_bpf_agent_reuse_shared_map_if_exists(*pobj, "vsip_dip_prim_map", vsip_dip_prim_map_path)) {
+		TRN_LOG_INFO("failed to reuse shared map at %s\n", vsip_dip_prim_map_path);
+		goto error;
+	}
+
+	if (_trn_bpf_agent_reuse_shared_map_if_exists(*pobj, "vsip_proto_port_map", vsip_proto_port_map_path)) {
+		TRN_LOG_INFO("failed to reuse shared map at %s\n", vsip_proto_port_map_path);
+		goto error;
 	}
 
 	/* Only one prog is supported */

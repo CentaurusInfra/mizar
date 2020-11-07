@@ -286,7 +286,49 @@ static __inline int enforece_egress_policy(struct transit_packet *pkt) {
 		return 0 ;
 	}
 
-	// todo: add finer policy checks to allow egress packets
+	// todo: allow reply packet
+
+	// given tuple of vni, sip, sport, dip, dport, proto
+	// lookup vsip_dip_prim_map & vsip_proto_port_map; if there is policy allows it, does so
+	struct vsip_dip_cidr_t vsip_dip_cidr = {
+		.prefixlen = (sizeof(struct vsip_dip_cidr_t) - sizeof(__u32))*8,
+		.tun_idr = pkt->agent_ep_tunid,
+		.sip = pkt->inner_ip->saddr,
+		.dip = pkt->inner_ip->daddr,
+	};
+	struct vsip_ppo_t vsip_ppo = {
+		.tun_idr = pkt->agent_ep_tunid,
+		.sip = pkt->inner_ip->saddr,
+		.proto = pkt->inner_ipv4_tuple.protocol,
+		.port = pkt->inner_ipv4_tuple.dport,
+	};
+	struct vsip_ppo_t vsip_l3  = {
+		.tun_idr = pkt->agent_ep_tunid,
+		.sip = pkt->inner_ip->saddr,
+		.proto = 0,
+		.port = 0,
+	};
+	__u64 *policies_dip = bpf_map_lookup_elem(&vsip_dip_prim_map, &vsip_dip_cidr);
+	__u64 *policies_ppo = bpf_map_lookup_elem(&vsip_proto_port_map, &vsip_ppo);
+	__u64 *policies_l3  = bpf_map_lookup_elem(&vsip_proto_port_map, &vsip_l3);
+
+	__u64 policies_l3l4 = 0;
+	if (policies_l3)  policies_l3l4 |= *policies_l3;
+	if (policies_ppo) policies_l3l4 |= *policies_ppo;
+
+	// todo: add troubleshooting info
+
+	if (policies_dip)
+	{
+		if (*policies_dip & policies_l3l4)
+		{
+			// some (primary) policy explicitly allows it
+			return 0;
+		}
+	}
+
+	// todo: look up vsip_dip_supp_map & except data
+
 	return -EPERM;
 }
 
@@ -353,6 +395,8 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 			bpf_ntohl(pkt->agent_ep_ipv4));
 		return XDP_ABORTED;
 	}
+
+	// todo: ensure this flow is inserted as known flow to allow
 
 	/* Check if we need to apply a forward flow update */
 

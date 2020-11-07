@@ -154,3 +154,16 @@ struct enforced_src_ip_t {
 	__be32 ip_addr;
 } __attribute__((packed));
 
+struct vsip_dip_cidr_t {
+	__u32 prefixlen;
+	__be64 tun_idr;
+	__be32 sip;
+	__be32 dip;
+} __attribute__((packed));
+
+struct vsip_ppo_t {
+	__be64 tun_idr;
+	__be32 sip;
+	__u8   proto;
+	__be16 port;
+} __attribute__((packed));

@@ -102,12 +102,32 @@ struct bpf_map_def SEC("maps") ep_host_cache_ref = {
 };
 BPF_ANNOTATE_KV_PAIR(ep_host_cache_ref, int, __u32);
 
-// pinned map
+// pinned maps
+
+// todo: consider to reuse endpoints_map, if applicable?
 struct bpf_map_def SEC("maps") vsip_enforce_map = {
 	.type = BPF_MAP_TYPE_HASH,
 	.key_size = sizeof(struct enforced_src_ip_t),
 	.value_size = sizeof(__u8),
-	.max_entries = 1024 * 1024,
+	.max_entries = 1024,
 	.map_flags = 0,
 };
 BPF_ANNOTATE_KV_PAIR(vsip_enforce_map, struct enforced_src_ip_t, __u8);
+
+struct bpf_map_def SEC("maps") vsip_dip_prim_map = {
+	.type = BPF_MAP_TYPE_LPM_TRIE,
+	.key_size = sizeof(struct vsip_dip_cidr_t),
+	.value_size = sizeof(__u64),
+	.max_entries = 1024 * 1024,
+	.map_flags = 1,
+};
+BPF_ANNOTATE_KV_PAIR(vsip_dip_prim_map, struct vsip_dip_cidr_t, __u64);
+
+struct bpf_map_def SEC("maps") vsip_proto_port_map = {
+	.type = BPF_MAP_TYPE_HASH,
+	.key_size = sizeof(struct vsip_ppo_t),
+	.value_size = sizeof(__u64),
+	.max_entries = 1024 * 1024,
+	.map_flags = 0,
+};
+BPF_ANNOTATE_KV_PAIR(vsip_proto_port_map, struct vsip_ppo_t, __u64);
