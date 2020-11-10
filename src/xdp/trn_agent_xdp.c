@@ -278,6 +278,664 @@ static __inline int trn_redirect(struct transit_packet *pkt, __u32 inner_src_ip,
 	return trn_encapsulate(pkt, md, tunnel_id, inner_src_ip, inner_dst_ip);
 }
 
+static __inline int _trn_policy_lookup_excpet(struct vsip_cidr_except_t *cidr_except)
+{
+	__u8 *v = bpf_map_lookup_elem(&vsip_supp_except_map, cidr_except);
+        if (!v || !*v) {
+		bpf_debug("[Agent] : supplementary policy %lx allow %x\n", cidr_except->policy_id, cidr_except->dip);
+	}
+	return (v && *v) ? -EPERM : 0;
+}
+
+static __inline int _trn_policy_search_except(struct vsip_cidr_except_t *cidr_except, __u64 policies)
+{
+	__u64 mask = 0x01;
+	__u64 policy;
+
+	policy = policies & (mask << 0);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 1);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 2);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 3);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 4);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 5);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 6);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 7);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 8);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 9);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 10);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 11);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 12);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 13);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 14);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 15);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 16);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 17);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 18);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 19);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 20);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 21);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 22);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 23);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 24);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 25);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 26);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 27);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 28);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 29);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 30);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 31);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 32);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 33);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 34);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 35);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 36);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 37);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 38);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 39);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 40);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 41);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 42);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 43);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 44);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 45);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 46);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 47);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 48);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 49);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 50);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 51);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 52);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 53);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 54);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 55);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 56);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 57);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 58);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 59);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 60);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 61);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 62);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	policy = policies & (mask << 63);
+	if (policy)
+	{
+		cidr_except->policy_id = policy;
+		if (0 == _trn_policy_lookup_excpet(cidr_except))
+		{
+			return 0;
+		}
+	}
+
+	// sofar, all applicable supplementary policy explicitly except this ip
+	return -EPERM;
+}
+
 static __inline int enforece_egress_policy(struct transit_packet *pkt) {
 	struct enforced_src_ip_t vsip = {.tun_id = pkt->agent_ep_tunid, .ip_addr = pkt->inner_ip->saddr};
 	__u8 *v = bpf_map_lookup_elem(&vsip_enforce_map, &vsip);
@@ -327,7 +985,22 @@ static __inline int enforece_egress_policy(struct transit_packet *pkt) {
 		}
 	}
 
-	// todo: look up vsip_dip_supp_map & except data
+	// look up vsip_dip_supp_map & except entries
+	policies_dip = bpf_map_lookup_elem(&vsip_dip_supp_map, &vsip_dip_cidr);
+	if (policies_dip)
+	{
+		if (*policies_dip & policies_l3l4)
+		{
+			// need to further look at except entries
+			struct vsip_cidr_except_t cidr_except = {
+				.prefixlen = (sizeof(struct vsip_cidr_except_t) - sizeof(__u32)) * 8,
+				.tun_id = pkt->agent_ep_tunid,
+				.sip = pkt->inner_ip->saddr,
+				.dip = pkt->inner_ip->daddr,
+			};
+			return _trn_policy_search_except(&cidr_except, *policies_dip & policies_l3l4);
+		}
+	}
 
 	return -EPERM;
 }
