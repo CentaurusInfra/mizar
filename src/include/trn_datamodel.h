@@ -149,21 +149,21 @@ struct scaled_endpoint_remote_t {
 	unsigned char h_dest[6];
 } __attribute__((packed));
 
-struct enforced_src_ip_t {
+struct enforced_ip_t {
 	__be64 tun_id;
 	__be32 ip_addr;
 } __attribute__((packed));
 
-struct vsip_dip_cidr_t {
+struct vsip_ip_cidr_t {
 	__u32 prefixlen;
 	__be64 tun_id;
-	__be32 sip;
-	__be32 dip;
+	__be32 local_ip;
+	__be32 remote_ip;
 } __attribute__((packed));
 
 struct vsip_ppo_t {
 	__be64 tun_id;
-	__be32 sip;
+	__be32 local_ip;
 	__u8   proto;
 	__be16 port;
 } __attribute__((packed));
@@ -171,7 +171,7 @@ struct vsip_ppo_t {
 struct vsip_cidr_except_t {
 	__u32  prefixlen;
 	__be64 tun_id;
-	__be32 sip;
+	__be32 local_ip;
 	__u64  policy_id;
-	__be32 dip;
+	__be32 remote_ip;
 } __attribute__((packed));

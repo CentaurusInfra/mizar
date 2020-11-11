@@ -69,10 +69,10 @@ struct agent_user_metadata_t {
 	int ep_flow_host_cache_ref_fd;
 	int ep_host_cache_ref_fd;
 	int vsip_enforce_map_fd;
-	int vsip_dip_prim_map_fd;
-	int vsip_proto_port_map_fd;
-	int vsip_dip_supp_map_fd;
-	int vsip_supp_except_map_fd;
+	int eg_vsip_prim_map_fd;
+	int eg_vsip_ppo_map_fd;
+	int eg_vsip_supp_map_fd;
+	int eg_vsip_except_map_fd;
 
 	int fwd_flow_mod_cache_map_fd;
 	int rev_flow_mod_cache_map_fd;
@@ -89,10 +89,10 @@ struct agent_user_metadata_t {
 	struct bpf_map *ep_host_cache_ref;
 	struct bpf_map *xdpcap_hook_map;
 	struct bpf_map *vsip_enforce_map;
-	struct bpf_map *vsip_dip_prim_map;
-	struct bpf_map *vsip_proto_port_map;
-	struct bpf_map *vsip_dip_supp_map;
-	struct bpf_map *vsip_supp_except_map;
+	struct bpf_map *eg_vsip_prim_map;
+	struct bpf_map *eg_vsip_ppo_map;
+	struct bpf_map *eg_vsip_supp_map;
+	struct bpf_map *eg_vsip_except_map;
 
 	struct bpf_prog_info info;
 	struct bpf_object *obj;

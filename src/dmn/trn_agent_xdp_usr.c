@@ -34,10 +34,10 @@ static int def_ep_host_cache_map_fd = -1;
 
 // global pinned map file paths
 const char *vsip_enforce_map_path = "/sys/fs/bpf/vsip_enforce_map";
-const char *vsip_dip_prim_map_path = "/sys/fs/bpf/vsip_dip_prim_map";
-const char *vsip_proto_port_map_path = "/sys/fs/bpf/vsip_proto_port_map";
-const char *vsip_dip_supp_map_path = "/sys/fs/bpf/vsip_dip_supp_map";
-const char *vsip_supp_except_map_path = "/sys/fs/bpf/vsip_supp_except_map";
+const char *eg_vsip_prim_map_path = "/sys/fs/bpf/eg_vsip_prim_map";
+const char *eg_vsip_ppo_map_path = "/sys/fs/bpf/eg_vsip_ppo_map";
+const char *eg_vsip_supp_map_path = "/sys/fs/bpf/eg_vsip_supp_map";
+const char *eg_vsip_except_map_path = "/sys/fs/bpf/eg_vsip_except_map";
 
 int trn_agent_user_metadata_free(struct agent_user_metadata_t *md)
 {
@@ -262,10 +262,10 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 		bpf_map__next(md->ep_flow_host_cache_ref, md->obj);
 	md->vsip_enforce_map =
 		bpf_map__next(md->ep_host_cache_ref, md->obj);
-	md->vsip_dip_prim_map = bpf_map__next(md->vsip_enforce_map, md->obj);
-	md->vsip_proto_port_map = bpf_map__next(md->vsip_dip_prim_map, md->obj);
-	md->vsip_dip_supp_map = bpf_map__next(md->vsip_proto_port_map, md->obj);
-	md->vsip_supp_except_map = bpf_map__next(md->vsip_dip_supp_map, md->obj);
+	md->eg_vsip_prim_map = bpf_map__next(md->vsip_enforce_map, md->obj);
+	md->eg_vsip_ppo_map = bpf_map__next(md->eg_vsip_prim_map, md->obj);
+	md->eg_vsip_supp_map = bpf_map__next(md->eg_vsip_ppo_map, md->obj);
+	md->eg_vsip_except_map = bpf_map__next(md->eg_vsip_supp_map, md->obj);
 
 	if (!md->jmp_table_map || !md->agentmetadata_map ||
 	    !md->endpoints_map | !md->xdpcap_hook_map ||
@@ -286,17 +286,17 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 	md->ep_flow_host_cache_ref_fd = bpf_map__fd(md->ep_flow_host_cache_ref);
 	md->ep_host_cache_ref_fd = bpf_map__fd(md->ep_host_cache_ref);
 	md->vsip_enforce_map_fd = bpf_map__fd(md->vsip_enforce_map);
-	md->vsip_dip_prim_map_fd = bpf_map__fd(md->vsip_dip_prim_map);
-	md->vsip_proto_port_map_fd = bpf_map__fd(md->vsip_proto_port_map);
-	md->vsip_dip_supp_map_fd = bpf_map__fd(md->vsip_dip_supp_map);
-	md->vsip_supp_except_map_fd = bpf_map__fd(md->vsip_supp_except_map);
+	md->eg_vsip_prim_map_fd = bpf_map__fd(md->eg_vsip_prim_map);
+	md->eg_vsip_ppo_map_fd = bpf_map__fd(md->eg_vsip_ppo_map);
+	md->eg_vsip_supp_map_fd = bpf_map__fd(md->eg_vsip_supp_map);
+	md->eg_vsip_except_map_fd = bpf_map__fd(md->eg_vsip_except_map);
 
 	// todo: consider to create & pin map to where node is initializing
 	bpf_map__pin(md->vsip_enforce_map, vsip_enforce_map_path);
-	bpf_map__pin(md->vsip_dip_prim_map, vsip_dip_prim_map_path);
-	bpf_map__pin(md->vsip_proto_port_map, vsip_proto_port_map_path);
-	bpf_map__pin(md->vsip_dip_supp_map, vsip_dip_supp_map_path);
-	bpf_map__pin(md->vsip_supp_except_map, vsip_supp_except_map_path);
+	bpf_map__pin(md->eg_vsip_prim_map, eg_vsip_prim_map_path);
+	bpf_map__pin(md->eg_vsip_ppo_map, eg_vsip_ppo_map_path);
+	bpf_map__pin(md->eg_vsip_supp_map, eg_vsip_supp_map_path);
+	bpf_map__pin(md->eg_vsip_except_map, eg_vsip_except_map_path);
 
 	if (bpf_map__unpin(md->xdpcap_hook_map, md->pcapfile) == 0) {
 		TRN_LOG_INFO("unpin exiting pcap map file: %s", md->pcapfile);
@@ -449,23 +449,23 @@ static int _trn_bpf_agent_prog_load_xattr(struct agent_user_metadata_t *md,
 		goto error;
 	}
 
-	if (_trn_bpf_agent_reuse_shared_map_if_exists(*pobj, "vsip_dip_prim_map", vsip_dip_prim_map_path)) {
-		TRN_LOG_INFO("failed to reuse shared map at %s\n", vsip_dip_prim_map_path);
+	if (_trn_bpf_agent_reuse_shared_map_if_exists(*pobj, "eg_vsip_prim_map", eg_vsip_prim_map_path)) {
+		TRN_LOG_INFO("failed to reuse shared map at %s\n", eg_vsip_prim_map_path);
 		goto error;
 	}
 
-	if (_trn_bpf_agent_reuse_shared_map_if_exists(*pobj, "vsip_proto_port_map", vsip_proto_port_map_path)) {
-		TRN_LOG_INFO("failed to reuse shared map at %s\n", vsip_proto_port_map_path);
+	if (_trn_bpf_agent_reuse_shared_map_if_exists(*pobj, "eg_vsip_ppo_map", eg_vsip_ppo_map_path)) {
+		TRN_LOG_INFO("failed to reuse shared map at %s\n", eg_vsip_ppo_map_path);
 		goto error;
 	}
 
-	if (_trn_bpf_agent_reuse_shared_map_if_exists(*pobj, "vsip_dip_supp_map", vsip_dip_supp_map_path)) {
-		TRN_LOG_INFO("failed to reuse shared map at %s\n", vsip_dip_supp_map_path);
+	if (_trn_bpf_agent_reuse_shared_map_if_exists(*pobj, "eg_vsip_supp_map", eg_vsip_supp_map_path)) {
+		TRN_LOG_INFO("failed to reuse shared map at %s\n", eg_vsip_supp_map_path);
 		goto error;
 	}
 
-	if (_trn_bpf_agent_reuse_shared_map_if_exists(*pobj, "vsip_supp_except_map", vsip_supp_except_map_path)) {
-		TRN_LOG_INFO("failed to reuse shared map at %s\n", vsip_supp_except_map_path);
+	if (_trn_bpf_agent_reuse_shared_map_if_exists(*pobj, "eg_vsip_except_map", eg_vsip_except_map_path)) {
+		TRN_LOG_INFO("failed to reuse shared map at %s\n", eg_vsip_except_map_path);
 		goto error;
 	}
 
