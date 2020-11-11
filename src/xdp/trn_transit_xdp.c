@@ -38,6 +38,7 @@
 #include <linux/udp.h>
 #include <stddef.h>
 #include <string.h>
+#include <errno.h>
 
 #include "extern/bpf_endian.h"
 #include "extern/bpf_helpers.h"
@@ -445,6 +446,19 @@ static __inline int trn_handle_scaled_ep_modify(struct transit_packet *pkt)
 	return XDP_TX;
 }
 
+static inline int trn_ingress_policy_check(__be64 tun_id, struct ipv4_tuple_t *ipv4_tuple)
+{
+	// if local pod is not having policy check enabled yet, allow the traffic
+	struct enforced_ip_t vsip = {.tun_id = tun_id, .ip_addr = ipv4_tuple->daddr};
+	__u8 *v = bpf_map_lookup_elem(&vsip_enforce_map, &vsip);
+	if (!v || !*v) {
+		return 0 ;
+	}
+
+	// todo: add logic to enforce ingress policies
+	return -EPERM;
+}
+
 static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 {
 	pkt->inner_ip = (void *)pkt->inner_eth + pkt->inner_eth_off;
@@ -495,7 +509,6 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 		pkt->inner_ipv4_tuple.dport = pkt->inner_udp->dest;
 	}
 
-	/* Lookup the source endpoint*/
 	__be64 tunnel_id = trn_vni_to_tunnel_id(pkt->geneve->vni);
 	bpf_debug("[TRN_PROCESS_INNER_IP] saddr: 0x%x, daddr: 0x%x \n",
 			bpf_ntohl(pkt->inner_ipv4_tuple.saddr), bpf_ntohl(pkt->inner_ipv4_tuple.daddr));
@@ -505,6 +518,17 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 				bpf_ntohl(pkt->inner_ipv4_tuple.saddr), bpf_ntohl(pkt->inner_ipv4_tuple.daddr));
 	}
 
+
+	// ingress policy check
+	if (trn_ingress_policy_check(tunnel_id, &pkt->inner_ipv4_tuple)) {
+		bpf_debug("[Transit] ingress policy denied: proto: 0x%x, local 0x%x \n",
+			pkt->inner_ipv4_tuple.protocol,
+			bpf_ntohl(pkt->inner_ipv4_tuple.daddr));
+
+		return XDP_ABORTED;
+	}
+
+	/* Lookup the source endpoint*/
 	struct endpoint_t *src_ep;
 	struct endpoint_key_t src_epkey;
 

@@ -53,6 +53,9 @@
 			goto error;                                            \
 	} while (0)
 
+// global pinned map file paths
+extern char *vsip_enforce_map_path;
+
 int trn_user_metadata_free(struct user_metadata_t *md)
 {
 	__u32 curr_prog_id = 0;
@@ -104,7 +107,7 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	md->ep_host_cache = bpf_map__next(md->ep_flow_host_cache, md->obj);
 	md->conn_track_cache = bpf_map__next(md->ep_host_cache, md->obj);
 	md->xdpcap_hook_map = bpf_map__next(md->conn_track_cache, md->obj);
-
+	md->vsip_enforce_map = bpf_map__next(md->xdpcap_hook_map, md->obj);
 	if (!md->networks_map || !md->vpc_map || !md->endpoints_map ||
 	    !md->port_map || !md->hosted_endpoints_iface_map ||
 	    !md->interface_config_map || !md->interfaces_map ||
@@ -130,6 +133,7 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	md->ep_flow_host_cache_fd = bpf_map__fd(md->ep_flow_host_cache);
 	md->ep_host_cache_fd = bpf_map__fd(md->ep_host_cache);
 	md->conn_track_cache_fd = bpf_map__fd(md->conn_track_cache);
+	md->vsip_enforce_map_fd = bpf_map__fd(md->vsip_enforce_map);
 
 	if (bpf_map__unpin(md->xdpcap_hook_map, md->pcapfile) == 0) {
 		TRN_LOG_INFO("unpin exiting pcap map file: %s", md->pcapfile);
@@ -141,6 +145,9 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 		TRN_LOG_ERROR("Failed to pin xdpcap map to %s", md->pcapfile);
 		return 1;
 	}
+
+	// todo: add proper error handling
+	bpf_map__pin(md->vsip_enforce_map, vsip_enforce_map_path);
 
 	return 0;
 }
@@ -322,6 +329,7 @@ int trn_add_prog(struct user_metadata_t *md, unsigned int prog_idx,
 	_SET_INNER_MAP(ep_flow_host_cache);
 	_SET_INNER_MAP(ep_host_cache);
 	_SET_INNER_MAP(conn_track_cache);
+	_SET_INNER_MAP(vsip_enforce_map);
 
 	/* Only one prog is supported */
 	bpf_object__for_each_program(prog, stage->obj)
@@ -359,6 +367,7 @@ int trn_add_prog(struct user_metadata_t *md, unsigned int prog_idx,
 	_UPDATE_INNER_MAP(ep_flow_host_cache);
 	_UPDATE_INNER_MAP(ep_host_cache);
 	_UPDATE_INNER_MAP(conn_track_cache);
+	_UPDATE_INNER_MAP(vsip_enforce_map);
 
 	return 0;
 error:
@@ -437,6 +446,26 @@ int trn_delete_vpc(struct user_metadata_t *md, struct vpc_key_t *vpckey)
 	return 0;
 }
 
+static int _trn_bpf_agent_reuse_shared_map_if_exists(struct bpf_object *pobj, const char *map_name, const char *pinned_file)
+{
+	int fd_map_pinned = bpf_obj_get(pinned_file);
+	if (fd_map_pinned >= 0)
+	{
+		struct bpf_map *pmap = bpf_object__find_map_by_name(pobj, map_name);
+		if (!pmap)
+		{
+			return -ENOENT;
+		}
+
+		if (bpf_map__reuse_fd(pmap, fd_map_pinned))
+		{
+			return -EBADF;
+		}
+	}
+
+	return 0;
+}
+
 int trn_user_metadata_init(struct user_metadata_t *md, char *itf,
 			   char *kern_path, int xdp_flags)
 {
@@ -464,6 +493,12 @@ int trn_user_metadata_init(struct user_metadata_t *md, char *itf,
 
 	md->eth.ip = trn_get_interface_ipv4(md->ifindex);
 	md->eth.iface_index = md->ifindex;
+
+	// reuse the pinned maps, if any
+	if (_trn_bpf_agent_reuse_shared_map_if_exists(md->obj, "vsip_enforce_map", vsip_enforce_map_path)) {
+		TRN_LOG_INFO("failed to reuse shared map at %s\n", vsip_enforce_map_path);
+		return 1;
+	}
 
 	if (bpf_prog_load_xattr(&prog_load_attr, &md->obj, &md->prog_fd)) {
 		TRN_LOG_ERROR("Error loading bpf: %s", kern_path);
