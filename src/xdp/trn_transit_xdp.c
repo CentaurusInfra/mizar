@@ -101,6 +101,58 @@ static __inline void trn_update_ep_host_cache(struct transit_packet *pkt,
 	}
 }
 
+static __inline void trn_update_conn_track_cache(struct transit_packet *pkt,
+						 __be64 tunnel_id)
+{
+	/*
+	*   Add/Update new connection entry to connection tracking cache map
+	*/
+	struct ipv4_ct_tuple_t ct_ipv4_tuple;
+	struct vpc_key_t vpckey;
+	struct ct_entry_t entry;
+	vpckey.tunnel_id = tunnel_id;
+
+	__builtin_memcpy(&ct_ipv4_tuple.vpc, &vpckey,
+				sizeof(struct vpc_key_t));
+	__builtin_memcpy(&ct_ipv4_tuple.tuple, &pkt->inner_ipv4_tuple,
+				sizeof(struct ipv4_tuple_t));
+
+	__builtin_memcpy(&entry.remote_addr, &pkt->inner_ipv4_tuple.saddr,
+				sizeof(__u32));
+
+	bpf_map_update_elem(&conn_track_cache, &ct_ipv4_tuple, &entry, 0);
+}
+
+static __inline int trn_is_reply_conn_track(struct transit_packet *pkt,
+					    __be64 tunnel_id)
+{
+	/*
+	*   Check if the connection entry is a reply
+	*/
+
+	struct ipv4_ct_tuple_t ct_ipv4_tuple;
+	struct vpc_key_t vpckey;
+	struct ct_entry_t *entry;
+	vpckey.tunnel_id = tunnel_id;
+
+	struct ipv4_tuple_t rev_ipv4_tuple = {.saddr = pkt->inner_ipv4_tuple.daddr,
+					      .daddr = pkt->inner_ipv4_tuple.saddr,
+					      .sport = pkt->inner_ipv4_tuple.dport,
+					      .dport = pkt->inner_ipv4_tuple.sport,
+					      .protocol = pkt->inner_ipv4_tuple.protocol};
+
+	__builtin_memcpy(&ct_ipv4_tuple.vpc, &vpckey,
+				sizeof(struct vpc_key_t));
+	__builtin_memcpy(&ct_ipv4_tuple.tuple, &rev_ipv4_tuple,
+				sizeof(struct ipv4_tuple_t));
+
+	entry = bpf_map_lookup_elem(&conn_track_cache, &ct_ipv4_tuple);
+	if (!entry) {
+		return -1;
+	}
+	return 1;
+}
+
 static __inline int trn_decapsulate_and_redirect(struct transit_packet *pkt,
 						 int ifindex)
 {
@@ -445,6 +497,14 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 
 	/* Lookup the source endpoint*/
 	__be64 tunnel_id = trn_vni_to_tunnel_id(pkt->geneve->vni);
+	bpf_debug("[TRN_PROCESS_INNER_IP] saddr: 0x%x, daddr: 0x%x \n",
+			bpf_ntohl(pkt->inner_ipv4_tuple.saddr), bpf_ntohl(pkt->inner_ipv4_tuple.daddr));
+	trn_update_conn_track_cache(pkt, tunnel_id);
+	if (trn_is_reply_conn_track(pkt, tunnel_id) == 1) {
+		bpf_debug("[TRN_PROCESS_INNER_IP] entry is found saddr: 0x%x, daddr: 0x%x \n",
+				bpf_ntohl(pkt->inner_ipv4_tuple.saddr), bpf_ntohl(pkt->inner_ipv4_tuple.daddr));
+	}
+
 	struct endpoint_t *src_ep;
 	struct endpoint_key_t src_epkey;
 

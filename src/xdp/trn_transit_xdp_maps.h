@@ -141,4 +141,13 @@ struct bpf_map_def SEC("maps") ep_host_cache = {
 BPF_ANNOTATE_KV_PAIR(ep_host_cache, struct endpoint_key_t,
 		     struct remote_endpoint_t);
 
+struct bpf_map_def SEC("maps") conn_track_cache = {
+	.type = BPF_MAP_TYPE_LRU_HASH,
+	.key_size = sizeof(struct ipv4_ct_tuple_t),
+	.value_size = sizeof(struct ct_entry_t),
+	.max_entries = TRAN_MAX_CACHE_SIZE,
+};
+BPF_ANNOTATE_KV_PAIR(conn_track_cache, struct ipv4_ct_tuple_t,
+		     struct ct_entry_t);
+
 struct bpf_map_def SEC("maps") xdpcap_hook = XDPCAP_HOOK();

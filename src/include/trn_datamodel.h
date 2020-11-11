@@ -136,6 +136,15 @@ struct remote_endpoint_t {
 	unsigned char mac[6];
 } __attribute__((packed));
 
+struct ipv4_ct_tuple_t {
+	struct vpc_key_t vpc;
+	struct ipv4_tuple_t tuple;
+} __attribute__((packed));
+
+struct ct_entry_t {
+	__u32 remote_addr;
+} __attribute__((packed));
+
 struct scaled_endpoint_remote_t {
 	/* Addresses */
 	__u32 saddr;
