@@ -71,6 +71,6 @@ function environment_adaptor:deploy_mizar {
     source install/create_testimage.sh $cwd $user $docker_account
 
     echo "Waiting for Mizar to be up and running."
-    local timeout=120
+    local timeout=360
     common:execute_and_retry "common:check_mizar_ready" 1 "Mizar is now ready!" "ERROR: Mizar setup timed out after $timeout seconds!" $timeout 1
 }

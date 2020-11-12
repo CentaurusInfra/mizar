@@ -283,6 +283,14 @@ class InterfaceServer(InterfaceServiceServicer):
             "Disabled rx tx offload for host ep rc: {} text: {}".format(rc, text))
         return interface
 
+    def SendNetworkPolicyPerEndpoint(self, request, context):
+        """
+        Send Network Policy per Endpoint
+        """
+        networkPolicyPerEndpoint = request
+        logger.info("Send Network Policy per Endpoint {}".format(networkPolicyPerEndpoint.networkpolicy_name))
+        return empty_pb2.Empty()
+
 
 class InterfaceServiceClient():
     def __init__(self, ip):
@@ -307,6 +315,10 @@ class InterfaceServiceClient():
 
     def ActivateHostInterface(self, interface):
         resp = self.stub.ActivateHostInterface(interface)
+        return resp
+
+    def SendNetworkPolicyPerEndpoint(self, networkPolicyPerEndpoint):
+        resp = self.stub.SendNetworkPolicyPerEndpoint(networkPolicyPerEndpoint)
         return resp
 
 

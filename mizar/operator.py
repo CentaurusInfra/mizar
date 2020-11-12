@@ -38,6 +38,8 @@ from mizar.dp.mizar.workflows.endpoints.triggers import *
 from mizar.dp.mizar.workflows.builtins.services.triggers import *
 from mizar.dp.mizar.workflows.builtins.nodes.triggers import *
 from mizar.dp.mizar.workflows.builtins.pods.triggers import *
+from mizar.dp.mizar.workflows.builtins.networkpolicies.triggers import *
+
 import grpc
 import threading
 from google.protobuf import empty_pb2

@@ -133,3 +133,8 @@ spec:
       priority: 0
       JSONPath: .spec.pod
       description: The pod associated with the endpoint
+    - name: NetworkPolicies
+      type: string
+      priority: 0
+      JSONPath: .spec.networkpolicies
+      description: The Network Policies associated with the endpoint

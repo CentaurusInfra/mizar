@@ -64,6 +64,7 @@ class Endpoint:
         self.pod = ""
         self.deleted = False
         self.interface = None
+        self.networkpolicies = []
         if spec is not None:
             self.set_obj_spec(spec)
 
@@ -106,7 +107,8 @@ class Endpoint:
             "hostmac": self.droplet_mac,
             "cnidelay": self.cnidelay,
             "provisiondelay": self.provisiondelay,
-            "pod": self.pod
+            "pod": self.pod,
+            "networkpolicies": self.networkpolicies
         }
 
         return self.obj
@@ -130,6 +132,7 @@ class Endpoint:
         self.cnidelay = get_spec_val('cnidelay', spec)
         self.provisiondelay = get_spec_val('provisiondelay', spec)
         self.pod = get_spec_val('pod', spec)
+        self.networkpolicies = get_spec_val('networkpolicies', spec)
 
     def set_interface(self, interface):
         self.interface = interface
@@ -147,7 +150,7 @@ class Endpoint:
         return "endpoints"
 
     def get_kind(self):
-        return "Endpoint"
+        return "Endpoint"    
 
     def store_update_obj(self):
         if self.store is None:
@@ -244,6 +247,9 @@ class Endpoint:
     def set_pod(self, pod):
         self.pod = pod
 
+    def set_networkpolicies(self, networkpolicies):
+        self.networkpolicies = networkpolicies
+
     def update_bouncers(self, bouncers, add=True):
         for bouncer in bouncers.values():
             if add:
@@ -321,6 +327,14 @@ class Endpoint:
 
     def get_droplet_mac(self):
         return self.droplet_mac
+
+    def get_networkpolicies(self):
+        return self.networkpolicies
+
+    def add_networkpolicy(self, networkpolicy_name):
+        self.networkpolicies.append(networkpolicy_name)
+        self.networkpolicies.sort()
+        self.store.update_ep(self)
 
     def load_transit_agent(self):
         self.rpc.load_transit_agent_xdp(self.veth_peer)

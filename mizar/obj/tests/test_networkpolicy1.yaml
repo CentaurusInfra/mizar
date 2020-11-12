@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020 The Authors.
 
-# Authors: Sherif Abdelwahab <@zasherif>
-#          Phu Tran          <@phudtran>
+# Authors: Hong Chang   <@Hong-Chang>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -19,10 +18,52 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-FROM fwnetworking/python_base:latest
-COPY . /var/mizar/
-RUN pip3 install /var/mizar/
-RUN pip3 install epdb
-RUN ln -snf /var/mizar/build/bin /trn_bin
-COPY etc/luigi.cfg /etc/luigi/luigi.cfg
-CMD kopf run --standalone /var/mizar/mizar/operator.py
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: atest-network-policy
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      run: pod0
+      #role: testRole
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - ipBlock:
+        cidr: 172.17.1.0/24
+        except:
+        - 172.17.1.0/32
+    - namespaceSelector:
+        matchLabels:
+          project: myproject
+    - podSelector:
+        matchLabels:
+          run: pod1
+    ports:
+    - protocol: TCP
+      port: 6379
+  - from:
+    - ipBlock:
+        cidr: 192.17.1.0/24
+        except:
+        - 192.17.1.0/32
+    - namespaceSelector:
+        matchLabels:
+          project: myproject
+    - podSelector:
+        matchLabels:
+          run: pod2
+    ports:
+    - protocol: TCP
+      port: 6380
+  egress:
+  - to:
+    - ipBlock:
+        cidr: 10.0.0.0/24
+    ports:
+    - protocol: TCP
+      port: 5978
