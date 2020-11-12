@@ -66,6 +66,8 @@ struct ebpf_prog_stage_t {
 	int rev_flow_mod_cache_ref_fd;
 	int ep_flow_host_cache_ref_fd;
 	int ep_host_cache_ref_fd;
+	int conn_track_cache_ref_fd;
+	int vsip_enforce_map_ref_fd;
 
 	struct bpf_map *networks_map_ref;
 	struct bpf_map *vpc_map_ref;
@@ -79,6 +81,8 @@ struct ebpf_prog_stage_t {
 	struct bpf_map *rev_flow_mod_cache_ref;
 	struct bpf_map *ep_flow_host_cache_ref;
 	struct bpf_map *ep_host_cache_ref;
+	struct bpf_map *conn_track_cache_ref;
+	struct bpf_map *vsip_enforce_map_ref;
 };
 
 struct user_metadata_t {
@@ -103,6 +107,8 @@ struct user_metadata_t {
 	int rev_flow_mod_cache_fd;
 	int ep_flow_host_cache_fd;
 	int ep_host_cache_fd;
+	int conn_track_cache_fd;
+	int vsip_enforce_map_fd;
 
 	struct bpf_map *jmp_table_map;
 	struct bpf_map *networks_map;
@@ -116,7 +122,9 @@ struct user_metadata_t {
 	struct bpf_map *rev_flow_mod_cache;
 	struct bpf_map *ep_flow_host_cache;
 	struct bpf_map *ep_host_cache;
+	struct bpf_map *conn_track_cache;
 	struct bpf_map *xdpcap_hook_map;
+	struct bpf_map *vsip_enforce_map;
 
 	struct bpf_prog_info info;
 	struct bpf_object *obj;

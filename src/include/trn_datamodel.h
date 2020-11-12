@@ -136,6 +136,15 @@ struct remote_endpoint_t {
 	unsigned char mac[6];
 } __attribute__((packed));
 
+struct ipv4_ct_tuple_t {
+	struct vpc_key_t vpc;
+	struct ipv4_tuple_t tuple;
+} __attribute__((packed));
+
+struct ct_entry_t {
+	__u32 remote_addr;
+} __attribute__((packed));
+
 struct scaled_endpoint_remote_t {
 	/* Addresses */
 	__u32 saddr;
@@ -147,4 +156,31 @@ struct scaled_endpoint_remote_t {
 
 	unsigned char h_source[6];
 	unsigned char h_dest[6];
+} __attribute__((packed));
+
+struct enforced_ip_t {
+	__be64 tun_id;
+	__be32 ip_addr;
+} __attribute__((packed));
+
+struct vsip_ip_cidr_t {
+	__u32 prefixlen;
+	__be64 tun_id;
+	__be32 local_ip;
+	__be32 remote_ip;
+} __attribute__((packed));
+
+struct vsip_ppo_t {
+	__be64 tun_id;
+	__be32 local_ip;
+	__u8   proto;
+	__be16 port;
+} __attribute__((packed));
+
+struct vsip_cidr_except_t {
+	__u32  prefixlen;
+	__be64 tun_id;
+	__be32 local_ip;
+	__u64  policy_id;
+	__be32 remote_ip;
 } __attribute__((packed));

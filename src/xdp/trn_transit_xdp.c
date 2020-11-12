@@ -38,6 +38,7 @@
 #include <linux/udp.h>
 #include <stddef.h>
 #include <string.h>
+#include <errno.h>
 
 #include "extern/bpf_endian.h"
 #include "extern/bpf_helpers.h"
@@ -99,6 +100,58 @@ static __inline void trn_update_ep_host_cache(struct transit_packet *pkt,
 					    &pkt->rts_opt->rts_data.host, 0);
 		}
 	}
+}
+
+static __inline void trn_update_conn_track_cache(struct transit_packet *pkt,
+						 __be64 tunnel_id)
+{
+	/*
+	*   Add/Update new connection entry to connection tracking cache map
+	*/
+	struct ipv4_ct_tuple_t ct_ipv4_tuple;
+	struct vpc_key_t vpckey;
+	struct ct_entry_t entry;
+	vpckey.tunnel_id = tunnel_id;
+
+	__builtin_memcpy(&ct_ipv4_tuple.vpc, &vpckey,
+				sizeof(struct vpc_key_t));
+	__builtin_memcpy(&ct_ipv4_tuple.tuple, &pkt->inner_ipv4_tuple,
+				sizeof(struct ipv4_tuple_t));
+
+	__builtin_memcpy(&entry.remote_addr, &pkt->inner_ipv4_tuple.saddr,
+				sizeof(__u32));
+
+	bpf_map_update_elem(&conn_track_cache, &ct_ipv4_tuple, &entry, 0);
+}
+
+static __inline int trn_is_reply_conn_track(struct transit_packet *pkt,
+					    __be64 tunnel_id)
+{
+	/*
+	*   Check if the connection entry is a reply
+	*/
+
+	struct ipv4_ct_tuple_t ct_ipv4_tuple;
+	struct vpc_key_t vpckey;
+	struct ct_entry_t *entry;
+	vpckey.tunnel_id = tunnel_id;
+
+	struct ipv4_tuple_t rev_ipv4_tuple = {.saddr = pkt->inner_ipv4_tuple.daddr,
+					      .daddr = pkt->inner_ipv4_tuple.saddr,
+					      .sport = pkt->inner_ipv4_tuple.dport,
+					      .dport = pkt->inner_ipv4_tuple.sport,
+					      .protocol = pkt->inner_ipv4_tuple.protocol};
+
+	__builtin_memcpy(&ct_ipv4_tuple.vpc, &vpckey,
+				sizeof(struct vpc_key_t));
+	__builtin_memcpy(&ct_ipv4_tuple.tuple, &rev_ipv4_tuple,
+				sizeof(struct ipv4_tuple_t));
+
+	entry = bpf_map_lookup_elem(&conn_track_cache, &ct_ipv4_tuple);
+	if (!entry) {
+		return -1;
+	}
+	return 1;
 }
 
 static __inline int trn_decapsulate_and_redirect(struct transit_packet *pkt,
@@ -393,6 +446,19 @@ static __inline int trn_handle_scaled_ep_modify(struct transit_packet *pkt)
 	return XDP_TX;
 }
 
+static inline int trn_ingress_policy_check(__be64 tun_id, struct ipv4_tuple_t *ipv4_tuple)
+{
+	// if local pod is not having policy check enabled yet, allow the traffic
+	struct enforced_ip_t vsip = {.tun_id = tun_id, .ip_addr = ipv4_tuple->daddr};
+	__u8 *v = bpf_map_lookup_elem(&vsip_enforce_map, &vsip);
+	if (!v || !*v) {
+		return 0 ;
+	}
+
+	// todo: add logic to enforce ingress policies
+	return -EPERM;
+}
+
 static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 {
 	pkt->inner_ip = (void *)pkt->inner_eth + pkt->inner_eth_off;
@@ -443,8 +509,26 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 		pkt->inner_ipv4_tuple.dport = pkt->inner_udp->dest;
 	}
 
-	/* Lookup the source endpoint*/
 	__be64 tunnel_id = trn_vni_to_tunnel_id(pkt->geneve->vni);
+	bpf_debug("[TRN_PROCESS_INNER_IP] saddr: 0x%x, daddr: 0x%x \n",
+			bpf_ntohl(pkt->inner_ipv4_tuple.saddr), bpf_ntohl(pkt->inner_ipv4_tuple.daddr));
+	trn_update_conn_track_cache(pkt, tunnel_id);
+	if (trn_is_reply_conn_track(pkt, tunnel_id) == 1) {
+		bpf_debug("[TRN_PROCESS_INNER_IP] entry is found saddr: 0x%x, daddr: 0x%x \n",
+				bpf_ntohl(pkt->inner_ipv4_tuple.saddr), bpf_ntohl(pkt->inner_ipv4_tuple.daddr));
+	}
+
+
+	// ingress policy check
+	if (trn_ingress_policy_check(tunnel_id, &pkt->inner_ipv4_tuple)) {
+		bpf_debug("[Transit] ingress policy denied: proto: 0x%x, local 0x%x \n",
+			pkt->inner_ipv4_tuple.protocol,
+			bpf_ntohl(pkt->inner_ipv4_tuple.daddr));
+
+		return XDP_ABORTED;
+	}
+
+	/* Lookup the source endpoint*/
 	struct endpoint_t *src_ep;
 	struct endpoint_key_t src_epkey;
 
