@@ -329,7 +329,7 @@ static __inline int enforece_egress_policy(struct transit_packet *pkt) {
 		if (policies_dip_except) {
 			excepts = *policies_dip_except;
 		}
-		if (*policies_dip_supp & ~excepts) {
+		if ((*policies_dip_supp & ~excepts) & policies_l3l4)  {
 			return 0;
 		}
 	}
