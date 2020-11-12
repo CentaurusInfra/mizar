@@ -183,6 +183,7 @@ pip3 install netaddr
 pip3 install kopf
 pip3 install PyYAML
 pip3 install netifaces
+pip3 install inquirer
 
 ####################
 
