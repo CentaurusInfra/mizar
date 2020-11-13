@@ -176,11 +176,3 @@ struct vsip_ppo_t {
 	__u8   proto;
 	__be16 port;
 } __attribute__((packed));
-
-struct vsip_cidr_except_t {
-	__u32  prefixlen;
-	__be64 tun_id;
-	__be32 local_ip;
-	__u64  policy_id;
-	__be32 remote_ip;
-} __attribute__((packed));
