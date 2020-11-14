@@ -24,6 +24,7 @@ import ipaddress
 from mizar.common.rpc import TrnRpc
 from mizar.common.constants import *
 from mizar.common.common import *
+from mizar.obj.data_networkpolicy import *
 
 logger = logging.getLogger()
 
@@ -65,6 +66,7 @@ class Endpoint:
         self.deleted = False
         self.interface = None
         self.networkpolicies = []
+        self.dataForNetworkPolicy = {}
         if spec is not None:
             self.set_obj_spec(spec)
 
@@ -108,7 +110,8 @@ class Endpoint:
             "cnidelay": self.cnidelay,
             "provisiondelay": self.provisiondelay,
             "pod": self.pod,
-            "networkpolicies": self.networkpolicies
+            "networkpolicies": self.networkpolicies,
+            "dataForNetworkPolicy": self.dataForNetworkPolicy,
         }
 
         return self.obj
@@ -133,6 +136,7 @@ class Endpoint:
         self.provisiondelay = get_spec_val('provisiondelay', spec)
         self.pod = get_spec_val('pod', spec)
         self.networkpolicies = get_spec_val('networkpolicies', spec)
+        self.dataForNetworkPolicy = get_spec_val('dataForNetworkPolicy', spec)
 
     def set_interface(self, interface):
         self.interface = interface
@@ -150,7 +154,7 @@ class Endpoint:
         return "endpoints"
 
     def get_kind(self):
-        return "Endpoint"    
+        return "Endpoint"
 
     def store_update_obj(self):
         if self.store is None:
@@ -250,6 +254,9 @@ class Endpoint:
     def set_networkpolicies(self, networkpolicies):
         self.networkpolicies = networkpolicies
 
+    def set_dataForNetworkPolicy(self, dataForNetworkPolicy):
+        self.dataForNetworkPolicy = dataForNetworkPolicy
+
     def update_bouncers(self, bouncers, add=True):
         for bouncer in bouncers.values():
             if add:
@@ -302,6 +309,9 @@ class Endpoint:
     def get_mac(self):
         return str(self.mac)
 
+    def get_vni(self):
+        return str(self.vni)
+
     def get_remote_ips(self):
         if self.type == OBJ_DEFAULTS.ep_type_simple or self.type == OBJ_DEFAULTS.ep_type_host:
             remote_ips = [self.droplet_ip]
@@ -347,3 +357,41 @@ class Endpoint:
 
     def delete_agent_substrate(self, ep, bouncer):
         self.rpc.delete_agent_substrate_ep(ep, bouncer.ip)
+
+    def update_networkpolicy_per_endpoint(self, data):
+        if len(data["old"]) > 0:
+            self.update_networkpolicy_cidr(True, "NoExcept", data["old"]["ingress"]["cidrTable_NoExcept"], "delete")
+            self.update_networkpolicy_cidr(True, "WithExcept", data["old"]["ingress"]["cidrTable_WithExcept"], "delete")
+            self.update_networkpolicy_cidr(True, "Except", data["old"]["ingress"]["cidrTable_Except"], "delete")
+            self.update_networkpolicy_cidr(False, "NoExcept", data["old"]["egress"]["cidrTable_NoExcept"], "delete")
+            self.update_networkpolicy_cidr(False, "WithExcept", data["old"]["egress"]["cidrTable_WithExcept"], "delete")
+            self.update_networkpolicy_cidr(False, "Except", data["old"]["egress"]["cidrTable_Except"], "delete")
+
+            self.update_networkpolicy_port(True, data["old"]["ingress"]["portTable"], "delete")
+            self.update_networkpolicy_port(False, data["old"]["egress"]["portTable"], "delete")
+
+        self.update_networkpolicy_cidr(True, "NoExcept", data["ingress"]["cidrTable_NoExcept"], "insert")
+        self.update_networkpolicy_cidr(True, "WithExcept", data["ingress"]["cidrTable_WithExcept"], "insert")
+        self.update_networkpolicy_cidr(True, "Except", data["ingress"]["cidrTable_Except"], "insert")
+        self.update_networkpolicy_cidr(False, "NoExcept", data["egress"]["cidrTable_NoExcept"], "insert")
+        self.update_networkpolicy_cidr(False, "WithExcept", data["egress"]["cidrTable_WithExcept"], "insert")
+        self.update_networkpolicy_cidr(False, "Except", data["egress"]["cidrTable_Except"], "insert")
+
+        self.update_networkpolicy_port(True, data["ingress"]["portTable"], "insert")
+        self.update_networkpolicy_port(False, data["egress"]["portTable"], "insert")
+
+    def update_networkpolicy_cidr(self, isIngress, cidrType, cidrTable, operationType):
+        for item in cidrTable:
+            cidrNetworkPolicy = CidrNetworkPolicy(
+                isIngress,
+                item["vni"], item["localIP"], item["cidr"], item["cidrLength"], item["policyBitValue"],
+                cidrType, operationType)
+            self.rpc.update_cidr_networkpolicy(cidrNetworkPolicy)
+
+    def update_networkpolicy_port(self, isIngress, portTable, operationType):
+        for item in portTable:
+            cidrNetworkPolicy = PortNetworkPolicy(
+                isIngress,
+                item["vni"], item["localIP"], item["protocol"], item["port"], item["policyBitValue"],
+                operationType)
+            self.rpc.update_port_networkpolicy(cidrNetworkPolicy)

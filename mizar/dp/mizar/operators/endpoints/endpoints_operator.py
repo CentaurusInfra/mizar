@@ -261,8 +261,8 @@ class EndpointOperator(object):
             if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
                 ep.update_bouncers({bouncer.name: bouncer}, False)
 
-    def send_networkpolicy_per_endpoint(self, networkpolicyName, ep):        
-        InterfaceServiceClient(ep.get_droplet_ip()).SendNetworkPolicyPerEndpoint(NetworkPolicyPerEndpoint(endpoint_name=ep.name, networkpolicy_name=networkpolicyName, action_type=NetworkPolicyActionType.create))
+    def update_networkpolicy_per_endpoint(self, ep, dataForNetworkPolicy):
+        ep.update_networkpolicy_per_endpoint(dataForNetworkPolicy)
 
     def produce_simple_endpoint_interface(self, ep):
         """

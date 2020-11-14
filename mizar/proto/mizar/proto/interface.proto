@@ -9,7 +9,6 @@ service InterfaceService {
   rpc ConsumeInterfaces(CniParameters) returns (InterfacesList) {}
   rpc ActivateHostInterface(Interface) returns (Interface) {}
   rpc DeleteInterface(CniParameters) returns (google.protobuf.Empty) {}
-  rpc SendNetworkPolicyPerEndpoint(NetworkPolicyPerEndpoint) returns (google.protobuf.Empty) {}
 }
 
 message PodId {
@@ -80,16 +79,3 @@ message Interface {
 message InterfacesList {
   repeated Interface interfaces = 1;
 }
-
-enum NetworkPolicyActionType {
-  create = 0;
-  delete = 1;
-}
-
-message NetworkPolicyPerEndpoint {
-  string endpoint_name = 1;
-  string networkpolicy_name = 2;
-  NetworkPolicyActionType action_type = 3;
-}
-
-

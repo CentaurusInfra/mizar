@@ -48,6 +48,8 @@ class TrnRpc:
         self.trn_cli_update_port = f'''{self.trn_cli} update-port -i {self.phy_itf} -j'''
         self.trn_cli_load_pipeline_stage = f'''{self.trn_cli} load-pipeline-stage -i {self.phy_itf} -j'''
         self.trn_cli_unload_pipeline_stage = f'''{self.trn_cli} unload-pipeline-stage -i {self.phy_itf} -j'''
+        self.trn_cli_update_cidr_networkpolicy = f'''{self.trn_cli} update-cidr-networkpolicy -i {self.phy_itf} -j'''
+        self.trn_cli_update_port_networkpolicy = f'''{self.trn_cli} update-port-networkpolicy -i {self.phy_itf} -j'''
 
         self.trn_cli_load_transit_agent_xdp = f'''{self.trn_cli} load-agent-xdp'''
         self.trn_cli_unload_transit_agent_xdp = f'''{self.trn_cli} unload-agent-xdp'''
@@ -301,3 +303,36 @@ class TrnRpc:
         logger.info("delete_net: {}".format(cmd))
         returncode, text = run_cmd(cmd)
         logger.info("delete_net returns {} {}".format(returncode, text))
+
+    def update_cidr_networkpolicy(self, cidrNetworkPolicy):
+        jsonconf = {
+            "isIngress": cidrNetworkPolicy.isIngress,
+            "vni": cidrNetworkPolicy.vni,
+            "localIP": cidrNetworkPolicy.localIP,
+            "cidr": cidrNetworkPolicy.cidr,
+            "cidrLength": cidrNetworkPolicy.cidrLength,
+            "policyBitValue": cidrNetworkPolicy.policyBitValue,
+            "cidrType": cidrNetworkPolicy.cidrType,
+            "operationType": cidrNetworkPolicy.operationType,
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_update_cidr_networkpolicy} \'{jsonconf}\''''
+        logger.info("update_cidr_networkpolicy: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("update_cidr_networkpolicy returns {} {}".format(returncode, text))
+
+    def update_port_networkpolicy(self, portNetworkPolicy):
+        jsonconf = {
+            "isIngress": portNetworkPolicy.isIngress,
+            "vni": portNetworkPolicy.vni,
+            "localIP": portNetworkPolicy.localIP,
+            "protocol": portNetworkPolicy.protocol,
+            "port": portNetworkPolicy.port,
+            "policyBitValue": portNetworkPolicy.policyBitValue,
+            "operationType": portNetworkPolicy.operationType,
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_update_port_networkpolicy} \'{jsonconf}\''''
+        logger.info("update_port_networkpolicy: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("update_port_networkpolicy returns {} {}".format(returncode, text))

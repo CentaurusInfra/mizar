@@ -34,7 +34,7 @@ logger = logging.getLogger()
 @kopf.on.update('networking.k8s.io', 'v1', 'networkpolicies', retries=OBJ_DEFAULTS.kopf_max_retries, when=LAMBDAS.k8s_provider_vanilla)
 @kopf.on.create('networking.k8s.io', 'v1', 'networkpolicies', retries=OBJ_DEFAULTS.kopf_max_retries, when=LAMBDAS.k8s_provider_vanilla)
 async def builtins_on_networkpolicy(body, spec, **kwargs):
-    epdb.serve(port=8888)
+    #epdb.serve(port=8888)
     param = HandlerParam()
     param.name = "{}:{}".format(kwargs['namespace'],kwargs['name'])
     param.body = body
