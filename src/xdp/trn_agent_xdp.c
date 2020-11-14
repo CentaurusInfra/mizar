@@ -278,37 +278,6 @@ static __inline int trn_redirect(struct transit_packet *pkt, __u32 inner_src_ip,
 	return trn_encapsulate(pkt, md, tunnel_id, inner_src_ip, inner_dst_ip);
 }
 
-static __inline int _trn_policy_lookup_excpet(struct vsip_cidr_except_t *cidr_except)
-{
-	__u8 *v = bpf_map_lookup_elem(&eg_vsip_except_map, cidr_except);
-        if (!v || !*v) {
-		bpf_debug("[Agent] : supplementary policy %lx allow %x\n", cidr_except->policy_id, cidr_except->remote_ip);
-	}
-	return (v && *v) ? -EPERM : 0;
-}
-
-static __inline int _trn_policy_search_except(struct vsip_cidr_except_t *cidr_except, __u64 policies)
-{
-	__u64 mask = 0x01;
-	__u64 policy;
-
-	for (int i = 0; i < 64; i++)
-	{
-		policy = policies & (mask << i);
-		if (policy)
-		{
-			cidr_except->policy_id = policy;
-			if (0 == _trn_policy_lookup_excpet(cidr_except))
-			{
-				return 0;
-			}
-		}
-	}
-
-	// sofar, all applicable supplementary policy explicitly except this ip
-	return -EPERM;
-}
-
 static __inline int enforece_egress_policy(struct transit_packet *pkt) {
 	struct enforced_ip_t vsip = {.tun_id = pkt->agent_ep_tunid, .ip_addr = pkt->inner_ip->saddr};
 	__u8 *v = bpf_map_lookup_elem(&vsip_enforce_map, &vsip);
@@ -339,7 +308,9 @@ static __inline int enforece_egress_policy(struct transit_packet *pkt) {
 		.proto = 0,
 		.port = 0,
 	};
-	__u64 *policies_dip = bpf_map_lookup_elem(&eg_vsip_prim_map, &vsip_dip_cidr);
+	__u64 *policies_dip_prim = bpf_map_lookup_elem(&eg_vsip_prim_map, &vsip_dip_cidr);
+	__u64 *policies_dip_supp = bpf_map_lookup_elem(&eg_vsip_supp_map, &vsip_dip_cidr);
+	__u64 *policies_dip_except = bpf_map_lookup_elem(&eg_vsip_except_map, &vsip_dip_cidr);
 	__u64 *policies_ppo = bpf_map_lookup_elem(&eg_vsip_ppo_map, &vsip_ppo);
 	__u64 *policies_l3  = bpf_map_lookup_elem(&eg_vsip_ppo_map, &vsip_l3);
 
@@ -349,29 +320,17 @@ static __inline int enforece_egress_policy(struct transit_packet *pkt) {
 
 	// todo: add troubleshooting info
 
-	if (policies_dip)
-	{
-		if (*policies_dip & policies_l3l4)
-		{
-			// some (primary) policy explicitly allows it
-			return 0;
-		}
+	if (policies_dip_prim && (policies_l3l4 & *policies_dip_prim)) {
+		return 0;
 	}
 
-	// look up eg_vsip_supp_map & except entries
-	policies_dip = bpf_map_lookup_elem(&eg_vsip_supp_map, &vsip_dip_cidr);
-	if (policies_dip)
-	{
-		if (*policies_dip & policies_l3l4)
-		{
-			// need to further look at except entries
-			struct vsip_cidr_except_t cidr_except = {
-				.prefixlen = (sizeof(struct vsip_cidr_except_t) - sizeof(__u32)) * 8,
-				.tun_id = pkt->agent_ep_tunid,
-				.local_ip = pkt->inner_ip->saddr,
-				.remote_ip = pkt->inner_ip->daddr,
-			};
-			return _trn_policy_search_except(&cidr_except, *policies_dip & policies_l3l4);
+	if (policies_dip_supp) {
+		__u64 excepts = 0;
+		if (policies_dip_except) {
+			excepts = *policies_dip_except;
+		}
+		if ((*policies_dip_supp & ~excepts) & policies_l3l4)  {
+			return 0;
 		}
 	}
 

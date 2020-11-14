@@ -143,9 +143,9 @@ BPF_ANNOTATE_KV_PAIR(eg_vsip_supp_map, struct vsip_ip_cidr_t, __u64);
 
 struct bpf_map_def SEC("maps") eg_vsip_except_map = {
 	.type = BPF_MAP_TYPE_LPM_TRIE,
-	.key_size = sizeof(struct vsip_cidr_except_t),
-	.value_size = sizeof(__u8),
+	.key_size = sizeof(struct vsip_ip_cidr_t),
+	.value_size = sizeof(__u64),
 	.max_entries = 1024 * 1024,
 	.map_flags = 1,
 };
-BPF_ANNOTATE_KV_PAIR(eg_vsip_except_map, struct vsip_cidr_except_t, __u8);
+BPF_ANNOTATE_KV_PAIR(eg_vsip_except_map, struct vsip_ip_cidr_t, __u64);

@@ -455,7 +455,62 @@ static inline int trn_ingress_policy_check(__be64 tun_id, struct ipv4_tuple_t *i
 		return 0 ;
 	}
 
-	// todo: add logic to enforce ingress policies
+	// todo: call is_reply() to allow reply packets
+	// trn_is_reply_conn_track() ?
+
+	// todo: icmp (ping) - enforce or not???
+
+	struct vsip_ip_cidr_t ing_ip_cidr = {
+		.prefixlen = (sizeof(struct vsip_ip_cidr_t) - sizeof(__u32))*8,
+		.tun_id = tun_id,
+		.local_ip = ipv4_tuple->daddr,
+		.remote_ip = ipv4_tuple->saddr,
+	};
+
+	struct vsip_ppo_t ing_ppo = {
+		.tun_id = tun_id,
+		.local_ip = ipv4_tuple->daddr,
+		.proto = ipv4_tuple->protocol,
+		.port = ipv4_tuple->dport,
+	};
+
+	struct vsip_ppo_t ing_l3_ppo  = {
+		.tun_id = tun_id,
+		.local_ip = ipv4_tuple->daddr,
+		.proto = 0,
+		.port = 0,
+	};
+
+	__u64 *policies_ppo = bpf_map_lookup_elem(&ing_vsip_ppo_map, &ing_ppo);
+	__u64 *policies_l3  = bpf_map_lookup_elem(&ing_vsip_ppo_map, &ing_l3_ppo);
+	__u64 policies_l3l4 = 0;
+	if (policies_l3)  policies_l3l4 |= *policies_l3;
+	if (policies_ppo) policies_l3l4 |= *policies_ppo;
+
+	__u64 *policies_ip = bpf_map_lookup_elem(&ing_vsip_prim_map, &ing_ip_cidr);
+	if (policies_ip) {
+		if (*policies_ip & policies_l3l4) {
+			// some (primary) policy explicitly allow the packet
+			return 0;
+		}
+	}
+
+	policies_ip = bpf_map_lookup_elem(&ing_vsip_supp_map, &ing_ip_cidr);
+	if (policies_ip) {
+		__u64 excepts = 0;
+		__u64 *policies_except = bpf_map_lookup_elem(&ing_vsip_except_map, &ing_ip_cidr);
+		if (policies_except) {
+			excepts = *policies_except;
+		}
+		if ((*policies_ip & ~excepts) & policies_l3l4)  {
+			bpf_debug("[Agent] : ingress supplementary policy %lx allow %x from %x\n",
+				(*policies_ip & ~excepts) & policies_l3l4,
+				ing_ip_cidr.local_ip,
+				ing_ip_cidr.remote_ip);
+			return 0;
+		}
+	}
+
 	return -EPERM;
 }
 
@@ -527,6 +582,9 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 
 		return XDP_ABORTED;
 	}
+
+	// todo: call trn_update_conn_track_cache(...)
+	// to ensure its corresponding reply flow can be decided afterwards
 
 	/* Lookup the source endpoint*/
 	struct endpoint_t *src_ep;
