@@ -151,7 +151,7 @@ static __inline int trn_is_reply_conn_track(struct transit_packet *pkt,
 	if (!entry) {
 		return -1;
 	}
-	return 1;
+	return 0;
 }
 
 static __inline int trn_decapsulate_and_redirect(struct transit_packet *pkt,
@@ -567,8 +567,8 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 	__be64 tunnel_id = trn_vni_to_tunnel_id(pkt->geneve->vni);
 	bpf_debug("[TRN_PROCESS_INNER_IP] saddr: 0x%x, daddr: 0x%x \n",
 			bpf_ntohl(pkt->inner_ipv4_tuple.saddr), bpf_ntohl(pkt->inner_ipv4_tuple.daddr));
-	trn_update_conn_track_cache(pkt, tunnel_id);
-	if (trn_is_reply_conn_track(pkt, tunnel_id) == 1) {
+	//trn_update_conn_track_cache(pkt, tunnel_id);
+	if (trn_is_reply_conn_track(pkt, tunnel_id) == 0) {
 		bpf_debug("[TRN_PROCESS_INNER_IP] entry is found saddr: 0x%x, daddr: 0x%x \n",
 				bpf_ntohl(pkt->inner_ipv4_tuple.saddr), bpf_ntohl(pkt->inner_ipv4_tuple.daddr));
 	}

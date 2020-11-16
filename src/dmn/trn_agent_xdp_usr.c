@@ -38,6 +38,7 @@ const char *eg_vsip_prim_map_path = "/sys/fs/bpf/eg_vsip_prim_map";
 const char *eg_vsip_ppo_map_path = "/sys/fs/bpf/eg_vsip_ppo_map";
 const char *eg_vsip_supp_map_path = "/sys/fs/bpf/eg_vsip_supp_map";
 const char *eg_vsip_except_map_path = "/sys/fs/bpf/eg_vsip_except_map";
+const char *conn_track_cache_path = "/sys/fs/bpf/conn_track_cache";
 
 int trn_agent_user_metadata_free(struct agent_user_metadata_t *md)
 {
@@ -260,8 +261,10 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 		bpf_map__next(md->rev_flow_mod_cache_ref, md->obj);
 	md->ep_host_cache_ref =
 		bpf_map__next(md->ep_flow_host_cache_ref, md->obj);
-	md->vsip_enforce_map =
+	md->conn_track_cache =
 		bpf_map__next(md->ep_host_cache_ref, md->obj);
+	md->vsip_enforce_map =
+		bpf_map__next(md->conn_track_cache, md->obj);
 	md->eg_vsip_prim_map = bpf_map__next(md->vsip_enforce_map, md->obj);
 	md->eg_vsip_ppo_map = bpf_map__next(md->eg_vsip_prim_map, md->obj);
 	md->eg_vsip_supp_map = bpf_map__next(md->eg_vsip_ppo_map, md->obj);
@@ -271,7 +274,7 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 	    !md->endpoints_map | !md->xdpcap_hook_map ||
 	    !md->fwd_flow_mod_cache_ref || !md->rev_flow_mod_cache_ref ||
 	    !md->ep_flow_host_cache_ref || !md->ep_host_cache_ref ||
-	    !md->vsip_enforce_map)
+	    !md->vsip_enforce_map || !md->conn_track_cache)
 	{
 		TRN_LOG_ERROR("Failure finding maps objects.");
 		return 1;
@@ -290,6 +293,7 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 	md->eg_vsip_ppo_map_fd = bpf_map__fd(md->eg_vsip_ppo_map);
 	md->eg_vsip_supp_map_fd = bpf_map__fd(md->eg_vsip_supp_map);
 	md->eg_vsip_except_map_fd = bpf_map__fd(md->eg_vsip_except_map);
+	md->conn_track_cache_fd = bpf_map__fd(md->conn_track_cache);
 
 	// todo: consider to create & pin map to where node is initializing
 	bpf_map__pin(md->vsip_enforce_map, vsip_enforce_map_path);
@@ -297,6 +301,7 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 	bpf_map__pin(md->eg_vsip_ppo_map, eg_vsip_ppo_map_path);
 	bpf_map__pin(md->eg_vsip_supp_map, eg_vsip_supp_map_path);
 	bpf_map__pin(md->eg_vsip_except_map, eg_vsip_except_map_path);
+	bpf_map__pin(md->conn_track_cache, conn_track_cache_path);
 
 	if (bpf_map__unpin(md->xdpcap_hook_map, md->pcapfile) == 0) {
 		TRN_LOG_INFO("unpin exiting pcap map file: %s", md->pcapfile);
@@ -368,7 +373,6 @@ static void _trn_refresh_default_maps(void)
 				       sizeof(struct remote_endpoint_t),
 				       TRAN_MAX_CACHE_SIZE, 0);
 }
-
 
 // to share the pinned vsip_enforce_map if already exist
 static int _trn_bpf_agent_reuse_shared_map_if_exists(struct bpf_object *pobj, const char *map_name, const char *pinned_file)
@@ -468,6 +472,11 @@ static int _trn_bpf_agent_prog_load_xattr(struct agent_user_metadata_t *md,
 		TRN_LOG_INFO("failed to reuse shared map at %s\n", eg_vsip_except_map_path);
 		goto error;
 	}
+
+        if (_trn_bpf_agent_reuse_shared_map_if_exists(*pobj, "conn_track_cache", conn_track_cache_path)) {
+               TRN_LOG_INFO("failed to reuse shared map at %s\n", conn_track_cache_path);
+               goto error;
+       }
 
 	/* Only one prog is supported */
 	bpf_object__for_each_program(prog, *pobj)

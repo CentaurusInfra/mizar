@@ -55,6 +55,7 @@
 
 // global pinned map file paths
 extern char *vsip_enforce_map_path;
+extern char *conn_track_cache_path;
 
 int trn_user_metadata_free(struct user_metadata_t *md)
 {
@@ -151,6 +152,7 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 
 	// todo: add proper error handling
 	bpf_map__pin(md->vsip_enforce_map, vsip_enforce_map_path);
+	bpf_map__pin(md->conn_track_cache, conn_track_cache_path);
 
 	return 0;
 }
@@ -510,6 +512,11 @@ int trn_user_metadata_init(struct user_metadata_t *md, char *itf,
 		TRN_LOG_INFO("failed to reuse shared map at %s\n", vsip_enforce_map_path);
 		return 1;
 	}
+
+        if (_trn_bpf_agent_reuse_shared_map_if_exists(md->obj, "conn_track_cache", conn_track_cache_path)) {
+                TRN_LOG_INFO("failed to reuse shared map at %s\n", conn_track_cache_path);
+                return 1;
+        }
 
 	if (bpf_prog_load_xattr(&prog_load_attr, &md->obj, &md->prog_fd)) {
 		TRN_LOG_ERROR("Error loading bpf: %s", kern_path);
