@@ -286,7 +286,7 @@ static __inline int enforece_egress_policy(struct transit_packet *pkt) {
 		return 0 ;
 	}
 
-	// todo: allow reply packet
+	// todo: allow reply packet - iff packet is reply of a valid session
 
 	// given tuple of vni, sip, sport, dip, dport, proto
 	// lookup eg_vsip_prim_map & eg_vsip_ppo_map; if there is policy allows it, does so
@@ -453,12 +453,14 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 		pkt->inner_ipv4_tuple.dport = pkt->inner_udp->dest;
 	}
 
-	/* to enforce network policy */
-	if (enforece_egress_policy(pkt)) {
-		bpf_debug("[Agent:%ld.0x%x] ABORTED: egress policy denied \n",
-			pkt->agent_ep_tunid,
-			bpf_ntohl(pkt->agent_ep_ipv4));
-		return XDP_ABORTED;
+	/* to enforce network policy - with tcp/udp packets only */
+	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_TCP || pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
+		if (enforece_egress_policy(pkt)) {
+			bpf_debug("[Agent:%ld.0x%x] ABORTED: egress policy denied \n",
+				pkt->agent_ep_tunid,
+				bpf_ntohl(pkt->agent_ep_ipv4));
+			return XDP_ABORTED;
+		}
 	}
 
 	// todo: ensure this flow is inserted as known flow to allow

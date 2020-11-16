@@ -574,13 +574,15 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 	}
 
 
-	// ingress policy check
-	if (trn_ingress_policy_check(tunnel_id, &pkt->inner_ipv4_tuple)) {
-		bpf_debug("[Transit] ingress policy denied: proto: 0x%x, local 0x%x \n",
-			pkt->inner_ipv4_tuple.protocol,
-			bpf_ntohl(pkt->inner_ipv4_tuple.daddr));
+	// ingress policy check - with tcp/udp packets only
+	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_TCP || pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
+		if (trn_ingress_policy_check(tunnel_id, &pkt->inner_ipv4_tuple)) {
+			bpf_debug("[Transit] ingress policy denied: proto: 0x%x, local 0x%x \n",
+				pkt->inner_ipv4_tuple.protocol,
+				bpf_ntohl(pkt->inner_ipv4_tuple.daddr));
 
-		return XDP_ABORTED;
+			return XDP_ABORTED;
+		}
 	}
 
 	// todo: call trn_update_conn_track_cache(...)
