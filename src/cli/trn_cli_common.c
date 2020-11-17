@@ -441,6 +441,7 @@ int trn_cli_parse_network_policy_cidr(const cJSON *jsonobj,
 	cJSON *tunnel_id = cJSON_GetObjectItem(jsonobj, "tunnel_id");
 	cJSON *local_ip = cJSON_GetObjectItem(jsonobj, "local_ip");
 	cJSON *remote_ip = cJSON_GetObjectItem(jsonobj, "cidr_ip");
+	cJSON *cidr_type = cJSON_GetObjectItem(jsonobj, "cidr_type");
 	cJSON *bit_val = cJSON_GetObjectItem(jsonobj, "bit_value");
 
 	if (tunnel_id == NULL) {
@@ -474,6 +475,13 @@ int trn_cli_parse_network_policy_cidr(const cJSON *jsonobj,
 		cidrval->remote_ip = sa.sin_addr.s_addr;
 	} else {
 		print_err("Error: Network policy remote IP is missing or non-string\n");
+		return -EINVAL;
+	}
+
+	if (cJSON_IsString(cidr_type)) {
+		cidrval->type = atoi(cidr_type->valuestring);
+	} else {
+		print_err("Error: Network Policy cidr type Error\n");
 		return -EINVAL;
 	}
 
