@@ -186,11 +186,14 @@ int trn_cli_delete_network_policy_egress_subcmd(CLIENT *clnt, int argc, char *ar
 	print_msg(
 		"delete_network_policy_1 successfully deleted network policy with cidr %d with prefix length %d on pod with address %ld.\n",
 		cidrval.remote_ip, cidrval.prefixlen, cidrval.local_ip); */
+	if (cidrval.type == 0) {
+		print_err("Update primary policy table");
+	}
 
 	if (clnt == NULL) {
 		print_err("Error: cannot connect to server.\n");
 	}
-	
+
 	return 0;
 }
 

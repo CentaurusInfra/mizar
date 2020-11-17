@@ -124,7 +124,7 @@ struct rpc_trn_vsip_ip_cidr_t {
        uint64_t tun_id;
        uint32_t local_ip;
        uint32_t remote_ip;
-       uint32_t type;
+       int type;
        uint64_t bit_val;
 };
 
