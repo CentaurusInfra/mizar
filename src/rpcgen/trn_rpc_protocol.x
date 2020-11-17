@@ -112,29 +112,31 @@ struct rpc_trn_vpc_key_t {
 };
 
 /* Defines a network policy enforcement table entry */
-struct rpc_trn_network_policy_enforce_t {
+struct rpc_trn_enforced_ip_t {
        uint64_t tun_id;
        uint32_t ip_addr;
        uint8_t is_enforced;
 };
 
 /* Defines a network policy table entry */
-struct rpc_vsip_ip_cidr_t {
+struct rpc_trn_vsip_ip_cidr_t {
        uint32_t prefixlen;
        uint64_t tun_id;
        uint32_t local_ip;
        uint64_t  policy_id;
        uint32_t remote_ip;
+       uint64_t bit_val;
 };
 
 /* Defines a network policy proto-port table entry */
-struct rpc_trn_network_policy_ppo_t {
+struct rpc_trn_vsip_ppo_t {
        uint64_t tun_id;
        uint32_t local_ip;
        uint8_t proto;
        uint16_t port;
+       uint64_t bit_val;
 };
-
+ 
 /* Defines an interface and a path for xdp prog to load on the interface */
 struct rpc_trn_xdp_intf_t {
        string interface<20>;

@@ -434,6 +434,145 @@ int trn_cli_parse_ep_key(const cJSON *jsonobj,
 	return 0;
 }
 
+int trn_cli_parse_network_policy_cidr(const cJSON *jsonobj, 
+				      struct rpc_trn_vsip_ip_cidr_t *cidrval)
+{
+	cJSON *prefixlen = cJSON_GetObjectItem(jsonobj, "prefixlen");
+	cJSON *tunnel_id = cJSON_GetObjectItem(jsonobj, "tunnel_id");
+	cJSON *local_ip = cJSON_GetObjectItem(jsonobj, "local_ip");
+	cJSON *remote_ip = cJSON_GetObjectItem(jsonobj, "cidr_ip");
+	cJSON *bit_val = cJSON_GetObjectItem(jsonobj, "bit_value");
+
+	if (tunnel_id == NULL) {
+		cidrval->tun_id = 0;
+	} else if (cJSON_IsString(tunnel_id)) {
+		cidrval->tun_id = atoi(tunnel_id->valuestring);
+	} else {
+		print_err("Error: Network policy tunnel_id is non-string.\n");
+		return -EINVAL;
+	}
+
+	if (cJSON_IsString(prefixlen)) {
+		cidrval->prefixlen = atoi(prefixlen->valuestring);
+	} else {
+		print_err("Error: Network policy prefixlen Error\n");
+		return -EINVAL;
+	}
+
+	if (local_ip != NULL && cJSON_IsString(local_ip)) {
+		struct sockaddr_in sa;
+		inet_pton(AF_INET, local_ip->valuestring, &(sa.sin_addr));
+		cidrval->local_ip = sa.sin_addr.s_addr;
+	} else {
+		print_err("Error: Network policy local IP is missing or non-string\n");
+		return -EINVAL;
+	}
+
+	if (remote_ip != NULL && cJSON_IsString(remote_ip)) {
+		struct sockaddr_in sa;
+		inet_pton(AF_INET, remote_ip->valuestring, &(sa.sin_addr));
+		cidrval->remote_ip = sa.sin_addr.s_addr;
+	} else {
+		print_err("Error: Network policy remote IP is missing or non-string\n");
+		return -EINVAL;
+	}
+
+	if (cJSON_IsString(bit_val)) {
+		cidrval->bit_val = atoi(bit_val->valuestring);
+	} else {
+		print_err("Error: Network policy bit map Error\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int trn_cli_parse_network_policy_ppo(const cJSON *jsonobj, 
+				     struct rpc_trn_vsip_ppo_t *ppo)
+{
+	cJSON *tunnel_id = cJSON_GetObjectItem(jsonobj, "tunnel_id");
+	cJSON *local_ip = cJSON_GetObjectItem(jsonobj, "local_ip");
+	cJSON *protocol = cJSON_GetObjectItem(jsonobj, "protocol");
+	cJSON *port = cJSON_GetObjectItem(jsonobj, "port");
+	cJSON *bit_val = cJSON_GetObjectItem(jsonobj, "bit_value");
+
+	if (tunnel_id == NULL) {
+		ppo->tun_id = 0;
+	} else if (cJSON_IsString(tunnel_id)) {
+		ppo->tun_id = atoi(tunnel_id->valuestring);
+	} else {
+		print_err("Error: Network policy tunnel_id is non-string.\n");
+		return -EINVAL;
+	}
+
+	if (local_ip != NULL && cJSON_IsString(local_ip)) {
+		struct sockaddr_in sa;
+		inet_pton(AF_INET, local_ip->valuestring, &(sa.sin_addr));
+		ppo->local_ip = sa.sin_addr.s_addr;
+	} else {
+		print_err("Error: Network policy local IP is missing or non-string\n");
+		return -EINVAL;
+	}
+
+	if (protocol != NULL && cJSON_IsString(protocol)) {
+		ppo->proto = htons(atoi(protocol->valuestring));
+	} else {
+		print_err("Error: Port is missing or non-string\n");
+		return -EINVAL;
+	}
+
+	if (port != NULL && cJSON_IsString(port)) {
+		ppo->port = htons(atoi(port->valuestring));
+	} else {
+		print_err("Error: Port is missing or non-string\n");
+		return -EINVAL;
+	}
+
+	if (cJSON_IsString(bit_val)) {
+		ppo->bit_val = atoi(bit_val->valuestring);
+	} else {
+		print_err("Error: Network policy bit map Error\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int trn_cli_parse_network_policy_enforce(const cJSON *jsonobj, 
+					 struct rpc_trn_enforced_ip_t *enforce)
+{
+	cJSON *tunnel_id = cJSON_GetObjectItem(jsonobj, "tunnel_id");
+	cJSON *ip = cJSON_GetObjectItem(jsonobj, "ip");
+	cJSON *is_enforced = cJSON_GetObjectItem(jsonobj, "is_enforced");
+
+	if (tunnel_id == NULL) {
+		enforce->tun_id = 0;
+	} else if (cJSON_IsString(tunnel_id)) {
+		enforce->tun_id = atoi(tunnel_id->valuestring);
+	} else {
+		print_err("Error: Network policy tunnel_id is non-string.\n");
+		return -EINVAL;
+	}
+
+	if (ip != NULL && cJSON_IsString(ip)) {
+		struct sockaddr_in sa;
+		inet_pton(AF_INET, ip->valuestring, &(sa.sin_addr));
+		enforce->ip_addr = sa.sin_addr.s_addr;
+	} else {
+		print_err("Error: Network policy local IP is missing or non-string\n");
+		return -EINVAL;
+	}
+
+	if (is_enforced != NULL && cJSON_IsString(is_enforced)) {
+		enforce->is_enforced = htons(atoi(is_enforced->valuestring));
+	} else {
+		print_err("Error: isEnforced is missing or non-string\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 int trn_cli_parse_tun_intf(const cJSON *jsonobj, rpc_trn_tun_intf_t *itf)
 {
 	cJSON *ip = cJSON_GetObjectItem(jsonobj, "ip");
