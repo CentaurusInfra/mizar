@@ -52,19 +52,42 @@ class k8sNetworkPolicyCreate(WorkflowTask):
         v1 = client.CoreV1Api()
         pods = v1.list_pod_for_all_namespaces(watch=False, label_selector=labelFilter)
 
+        policyTypes = self.param.spec["policyTypes"]
+        hasIngress = "Ingress" in policyTypes
+        hasEgress = "Egress" in policyTypes
+
+        if not hasIngress and not hasEgress:
+            self.finalize()
+            return
+
         #endpointSet = set()
         for pod in pods.items:
             podName = pod.metadata.name
             eps = endpoint_opr.store.get_eps_in_pod(podName)
             for ep in eps.values():
-                #endpointSet.add(ep.name)
-                if networkPolicyName not in ep.networkpolicies:
-                    ep.add_networkpolicy(networkPolicyName)
-                dataForNetworkPolicy = self.generateDataForNetworkPolicy(ep)
+                # endpointSet.add(ep.name)
+
+                if hasIngress:
+                    if networkPolicyName not in ep.ingressNetworkpolicies:
+                        ep.add_ingress_networkpolicy(networkPolicyName)
+                    dataForNetworkPolicyIngress = self.generateDataForNetworkPolicyIngress(ep)
+                if hasEgress:
+                    if networkPolicyName not in ep.egressNetworkpolicies:
+                        ep.add_egress_networkpolicy(networkPolicyName)
+                    dataForNetworkPolicyEgress = self.generateDataForNetworkPolicyEgress(ep)
+                dataForNetworkPolicy = {
+                    "old": {},
+                    "ingress": dataForNetworkPolicyIngress,
+                    "egress": dataForNetworkPolicyEgress,
+                }
+                # if networkPolicyName not in ep.networkpolicies:
+                #     ep.add_networkpolicy(networkPolicyName)
+                # dataForNetworkPolicy = self.generateDataForNetworkPolicy(ep)
                 olddataForNetworkPolicy = ep.dataForNetworkPolicy
                 if len(olddataForNetworkPolicy) > 0:
-                    if olddataForNetworkPolicy["old"] == dataForNetworkPolicy:
+                    if len(olddataForNetworkPolicy["old"]) > 0 and olddataForNetworkPolicy["old"]["ingress"] == dataForNetworkPolicyIngress and olddataForNetworkPolicy["old"]["egress"] == dataForNetworkPolicyEgress:
                         continue
+
                     olddataForNetworkPolicy["old"] = {}
                     dataForNetworkPolicy["old"] = olddataForNetworkPolicy
 
@@ -88,72 +111,68 @@ class k8sNetworkPolicyCreate(WorkflowTask):
             strList.pop()
         return "".join(strList)
 
-    def generateDataForNetworkPolicy(self, ep):
+    def generateDataForNetworkPolicyIngress(self, ep):
         data = {
-            "old": {},
-            "ingress": {
-                "indexedPolicyCount": 0,
-                "networkPolicyMap": {},
-                "cidrsMap_NoExcept": {},
-                "cidrsMap_WithExcept": {},
-                "cidrsMap_Except": {},
-                "portsMap": {},
-                "cidrAndPoliciesMap_NoExcept": {},
-                "cidrAndPoliciesMap_WithExcept": {},
-                "cidrAndPoliciesMap_Except": {},
-                "portAndPoliciesMap": {},
-                "indexedPolicyMap": {},
-                "cidrTable_NoExcept": [],
-                "cidrTable_WithExcept": [],
-                "cidrTable_Except": [],
-                "portTable": [],
-            },
-            "egress": {
-                "indexedPolicyCount": 0,
-                "networkPolicyMap": {},
-                "cidrsMap_NoExcept": {},
-                "cidrsMap_WithExcept": {},
-                "cidrsMap_Except": {},
-                "portsMap": {},
-                "cidrAndPoliciesMap_NoExcept": {},
-                "cidrAndPoliciesMap_WithExcept": {},
-                "cidrAndPoliciesMap_Except": {},
-                "portAndPoliciesMap": {},
-                "indexedPolicyMap": {},
-                "cidrTable_NoExcept": [],
-                "cidrTable_WithExcept": [],
-                "cidrTable_Except": [],
-                "portTable": [],
-            },
+            "indexedPolicyCount": 0,
+            "networkPolicyMap": {},
+            "cidrsMap_NoExcept": {},
+            "cidrsMap_WithExcept": {},
+            "cidrsMap_Except": {},
+            "portsMap": {},
+            "cidrAndPoliciesMap_NoExcept": {},
+            "cidrAndPoliciesMap_WithExcept": {},
+            "cidrAndPoliciesMap_Except": {},
+            "portAndPoliciesMap": {},
+            "indexedPolicyMap": {},
+            "cidrTable_NoExcept": [],
+            "cidrTable_WithExcept": [],
+            "cidrTable_Except": [],
+            "portTable": [],
         }
+        gressType = "ingress"
 
-        for networkPolicyName in ep.networkpolicies:
+        for networkPolicyName in ep.ingressNetworkpolicies:
             networkPolicy = networkpolicy_opr.get_networkpolicy(networkPolicyName)
-            self.fillDataByNetworkPolicy(data, networkPolicy)
-        self.buildGressData(data, ep)
+            self.fillDataFromOneGress(data, gressType, networkPolicy)
+        self.buildGressData(data, ep, gressType)
         return data
 
-    def buildGressData(self, data, ep):
-        if "ingress" in data:
-            self.buildCidrAndPoliciesMap(data["ingress"], "NoExcept")
-            self.buildCidrAndPoliciesMap(data["ingress"], "WithExcept")
-            self.buildCidrAndPoliciesMap(data["ingress"], "Except")
-            self.buildPortAndPoliciesMap(data["ingress"])
-            self.buildIndexedPolicyMap(data["ingress"])
-            self.buildCidrTable(data["ingress"], ep, "NoExcept")
-            self.buildCidrTable(data["ingress"], ep, "WithExcept")
-            self.buildCidrTable(data["ingress"], ep, "Except")
-            self.buildPortTable(data["ingress"], ep)
-        if "egress" in data:
-            self.buildCidrAndPoliciesMap(data["egress"], "NoExcept")
-            self.buildCidrAndPoliciesMap(data["egress"], "WithExcept")
-            self.buildCidrAndPoliciesMap(data["egress"], "Except")
-            self.buildPortAndPoliciesMap(data["egress"])
-            self.buildIndexedPolicyMap(data["egress"])
-            self.buildCidrTable(data["egress"], ep, "NoExcept")
-            self.buildCidrTable(data["egress"], ep, "WithExcept")
-            self.buildCidrTable(data["egress"], ep, "Except")
-            self.buildPortTable(data["egress"], ep)
+    def generateDataForNetworkPolicyEgress(self, ep):
+        data = {
+            "indexedPolicyCount": 0,
+            "networkPolicyMap": {},
+            "cidrsMap_NoExcept": {},
+            "cidrsMap_WithExcept": {},
+            "cidrsMap_Except": {},
+            "portsMap": {},
+            "cidrAndPoliciesMap_NoExcept": {},
+            "cidrAndPoliciesMap_WithExcept": {},
+            "cidrAndPoliciesMap_Except": {},
+            "portAndPoliciesMap": {},
+            "indexedPolicyMap": {},
+            "cidrTable_NoExcept": [],
+            "cidrTable_WithExcept": [],
+            "cidrTable_Except": [],
+            "portTable": [],
+        }
+        gressType = "egress"
+
+        for networkPolicyName in ep.egressNetworkpolicies:
+            networkPolicy = networkpolicy_opr.get_networkpolicy(networkPolicyName)
+            self.fillDataFromOneGress(data, gressType, networkPolicy)
+        self.buildGressData(data, ep, gressType)
+        return data
+
+    def buildGressData(self, data, ep, gressType):
+        self.buildCidrAndPoliciesMap(data, "NoExcept")
+        self.buildCidrAndPoliciesMap(data, "WithExcept")
+        self.buildCidrAndPoliciesMap(data, "Except")
+        self.buildPortAndPoliciesMap(data)
+        self.buildIndexedPolicyMap(data)
+        self.buildCidrTable(data, ep, "NoExcept")
+        self.buildCidrTable(data, ep, "WithExcept")
+        self.buildCidrTable(data, ep, "Except")
+        self.buildPortTable(data, ep)
 
     def buildPortTable(self, gressData, ep):
         for port, indexedPolicyNames in gressData["portAndPoliciesMap"].items():
@@ -235,34 +254,34 @@ class k8sNetworkPolicyCreate(WorkflowTask):
         networkPolicyName = networkPolicy["metadata"]["name"]
         for index, onegress in enumerate(networkPolicy["spec"][gressType]):
             indexedPolicyName = "{}_{}_{}".format(networkPolicyName, gressType, index)
-            if networkPolicyName not in data[gressType]["networkPolicyMap"]:
-                data[gressType]["networkPolicyMap"][networkPolicyName] = set()
-            if indexedPolicyName not in data[gressType]["networkPolicyMap"][networkPolicyName]:
-                data[gressType]["networkPolicyMap"][networkPolicyName].add(indexedPolicyName)
-                data[gressType]["indexedPolicyCount"] += 1
+            if networkPolicyName not in data["networkPolicyMap"]:
+                data["networkPolicyMap"][networkPolicyName] = set()
+            if indexedPolicyName not in data["networkPolicyMap"][networkPolicyName]:
+                data["networkPolicyMap"][networkPolicyName].add(indexedPolicyName)
+                data["indexedPolicyCount"] += 1
 
             self.getCidrsFromOnegress(data, indexedPolicyName, gressType, onegress)
 
     def getCidrsFromOnegress(self, data, indexedPolicyName, gressType, onegress):
-        if indexedPolicyName not in data[gressType]["portsMap"]:
-            data[gressType]["portsMap"][indexedPolicyName] = []
+        if indexedPolicyName not in data["portsMap"]:
+            data["portsMap"][indexedPolicyName] = []
         for port in onegress["ports"]:
-            data[gressType]["portsMap"][indexedPolicyName].append("{}:{}".format(port["protocol"], port["port"]))
+            data["portsMap"][indexedPolicyName].append("{}:{}".format(port["protocol"], port["port"]))
 
-        if indexedPolicyName not in data[gressType]["cidrsMap_NoExcept"]:
-            data[gressType]["cidrsMap_NoExcept"][indexedPolicyName] = []
-        if indexedPolicyName not in data[gressType]["cidrsMap_WithExcept"]:
-            data[gressType]["cidrsMap_WithExcept"][indexedPolicyName] = []
-        if indexedPolicyName not in data[gressType]["cidrsMap_Except"]:
-            data[gressType]["cidrsMap_Except"][indexedPolicyName] = []
+        if indexedPolicyName not in data["cidrsMap_NoExcept"]:
+            data["cidrsMap_NoExcept"][indexedPolicyName] = []
+        if indexedPolicyName not in data["cidrsMap_WithExcept"]:
+            data["cidrsMap_WithExcept"][indexedPolicyName] = []
+        if indexedPolicyName not in data["cidrsMap_Except"]:
+            data["cidrsMap_Except"][indexedPolicyName] = []
         for gressItem in onegress["from" if gressType == "ingress" else "to"]:
             if "ipBlock" in gressItem:
                 if "except" in gressItem["ipBlock"]:
-                    data[gressType]["cidrsMap_WithExcept"][indexedPolicyName].append(gressItem["ipBlock"]["cidr"])
+                    data["cidrsMap_WithExcept"][indexedPolicyName].append(gressItem["ipBlock"]["cidr"])
                     for exceptCidr in gressItem["ipBlock"]["except"]:
-                        data[gressType]["cidrsMap_Except"][indexedPolicyName].append(exceptCidr)
+                        data["cidrsMap_Except"][indexedPolicyName].append(exceptCidr)
                 else:
-                    data[gressType]["cidrsMap_NoExcept"][
+                    data["cidrsMap_NoExcept"][
                         indexedPolicyName].append(gressItem["ipBlock"]["cidr"])
             elif "namespaceSelector" in gressItem and "podSelector" in gressItem:
                 logger.info("Not implemented")
@@ -273,6 +292,6 @@ class k8sNetworkPolicyCreate(WorkflowTask):
                 v1 = client.CoreV1Api()
                 pods = v1.list_pod_for_all_namespaces(watch=False, label_selector=labelFilter)
                 for pod in pods.items:
-                    data[gressType]["cidrsMap_NoExcept"][indexedPolicyName].append("{}/32".format(pod.status.host_ip))
+                    data["cidrsMap_NoExcept"][indexedPolicyName].append("{}/32".format(pod.status.host_ip))
             else:
                 raise NotImplementedError("Not implemented for {}".format(gressItem))

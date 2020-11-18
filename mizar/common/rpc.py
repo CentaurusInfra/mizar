@@ -59,6 +59,10 @@ class TrnRpc:
         self.trn_cli_delete_network_policy_egress = f'''{self.trn_cli} delete-network-policy-egress -i {self.phy_itf} -j'''
         self.trn_cli_delete_network_policy_protocol_port_ingress = f'''{self.trn_cli} delete-network-policy-protocol-port-ingress -i {self.phy_itf} -j'''
         self.trn_cli_delete_network_policy_protocol_port_egress = f'''{self.trn_cli} delete-network-policy-protocol-port-egress -i {self.phy_itf} -j'''
+        self.trn_cli_update_network_policy_enforcement_map_ingress = f'''{self.trn_cli} update-network-policy-enforcement-map-ingress -i {self.phy_itf} -j'''
+        self.trn_cli_update_network_policy_enforcement_map_egress = f'''{self.trn_cli} update-network-policy-enforcement-map-egress -i {self.phy_itf} -j'''
+        self.trn_cli_delete_network_policy_enforcement_map_ingress = f'''{self.trn_cli} delete-network-policy-enforcement-map-ingress -i {self.phy_itf} -j'''
+        self.trn_cli_delete_network_policy_enforcement_map_egress = f'''{self.trn_cli} delete-network-policy-enforcement-map-egress -i {self.phy_itf} -j'''
 
         self.trn_cli_load_transit_agent_xdp = f'''{self.trn_cli} load-agent-xdp'''
         self.trn_cli_unload_transit_agent_xdp = f'''{self.trn_cli} unload-agent-xdp'''
@@ -461,3 +465,47 @@ class TrnRpc:
         logger.info("delete_network_policy_protocol_port_egress: {}".format(cmd))
         returncode, text = run_cmd(cmd)
         logger.info("delete_network_policy_protocol_port_egress returns {} {}".format(returncode, text))
+
+    def update_network_policy_enforcement_map_ingress(self, endpointEnforced):
+        jsonconf = {
+            "tun_id": endpointEnforced.vni,
+            "ip_addr": int(IPv4Address(endpointEnforced.ip)),
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_update_network_policy_enforcement_map_ingress} \'{jsonconf}\''''
+        logger.info("update_network_policy_enforcement_map_ingress: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("update_network_policy_enforcement_map_ingress returns {} {}".format(returncode, text))
+
+    def update_network_policy_enforcement_map_egress(self, endpointEnforced):
+        jsonconf = {
+            "tun_id": endpointEnforced.vni,
+            "ip_addr": int(IPv4Address(endpointEnforced.ip)),
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_update_network_policy_enforcement_map_egress} \'{jsonconf}\''''
+        logger.info("update_network_policy_enforcement_map_egress: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("update_network_policy_enforcement_map_egress returns {} {}".format(returncode, text))
+
+    def delete_network_policy_enforcement_map_ingress(self, endpointEnforced):
+        jsonconf = {
+            "tun_id": endpointEnforced.vni,
+            "ip_addr": int(IPv4Address(endpointEnforced.ip)),
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_delete_network_policy_enforcement_map_ingress} \'{jsonconf}\''''
+        logger.info("delete_network_policy_enforcement_map_ingress: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("delete_network_policy_enforcement_map_ingress returns {} {}".format(returncode, text))
+
+    def delete_network_policy_enforcement_map_egress(self, endpointEnforced):
+        jsonconf = {
+            "tun_id": endpointEnforced.vni,
+            "ip_addr": int(IPv4Address(endpointEnforced.ip)),
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_delete_network_policy_enforcement_map_egress} \'{jsonconf}\''''
+        logger.info("delete_network_policy_enforcement_map_egress: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("delete_network_policy_enforcement_map_egress returns {} {}".format(returncode, text))
