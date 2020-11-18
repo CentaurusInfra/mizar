@@ -22,7 +22,6 @@
 import logging
 import json
 from mizar.common.common import run_cmd
-from ipaddress import IPv4Address
 
 logger = logging.getLogger()
 
@@ -317,47 +316,14 @@ class TrnRpc:
         returncode, text = run_cmd(cmd)
         logger.info("delete_net returns {} {}".format(returncode, text))
 
-    def update_cidr_networkpolicy(self, cidrNetworkPolicy):
-        jsonconf = {
-            "isIngress": cidrNetworkPolicy.isIngress,
-            "vni": cidrNetworkPolicy.vni,
-            "localIP": cidrNetworkPolicy.localIP,
-            "cidr": cidrNetworkPolicy.cidr,
-            "cidrLength": cidrNetworkPolicy.cidrLength,
-            "policyBitValue": cidrNetworkPolicy.policyBitValue,
-            "cidrType": cidrNetworkPolicy.cidrType,
-            "operationType": cidrNetworkPolicy.operationType,
-        }
-        jsonconf = json.dumps(jsonconf)
-        cmd = f'''{self.trn_cli_update_cidr_networkpolicy} \'{jsonconf}\''''
-        logger.info("update_cidr_networkpolicy: {}".format(cmd))
-        returncode, text = run_cmd(cmd)
-        logger.info("update_cidr_networkpolicy returns {} {}".format(returncode, text))
-
-    def update_port_networkpolicy(self, portNetworkPolicy):
-        jsonconf = {
-            "isIngress": portNetworkPolicy.isIngress,
-            "vni": portNetworkPolicy.vni,
-            "localIP": portNetworkPolicy.localIP,
-            "protocol": portNetworkPolicy.protocol,
-            "port": portNetworkPolicy.port,
-            "policyBitValue": portNetworkPolicy.policyBitValue,
-            "operationType": portNetworkPolicy.operationType,
-        }
-        jsonconf = json.dumps(jsonconf)
-        cmd = f'''{self.trn_cli_update_port_networkpolicy} \'{jsonconf}\''''
-        logger.info("update_port_networkpolicy: {}".format(cmd))
-        returncode, text = run_cmd(cmd)
-        logger.info("update_port_networkpolicy returns {} {}".format(returncode, text))
-
     def update_network_policy_ingress(self, cidrNetworkPolicy):
         jsonconf = {
-            "prefixlen": cidrNetworkPolicy.cidrLength,
-            "tun_id": cidrNetworkPolicy.vni,
-            "local_ip": int(IPv4Address(cidrNetworkPolicy.localIP)),
-            "remote_ip": int(IPv4Address(cidrNetworkPolicy.cidr)),
-            "type": cidrNetworkPolicy.getCidrTypeInt(),
-            "bit_val": cidrNetworkPolicy.policyBitValue,
+            "prefixlen": str(cidrNetworkPolicy.cidrLength),
+            "tunnel_id": cidrNetworkPolicy.vni,
+            "local_ip": cidrNetworkPolicy.localIP,
+            "cidr_ip": cidrNetworkPolicy.cidr,
+            "cidr_type": cidrNetworkPolicy.getCidrTypeInt(),
+            "bit_value": str(cidrNetworkPolicy.policyBitValue),
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_update_network_policy_ingress} \'{jsonconf}\''''
@@ -367,12 +333,12 @@ class TrnRpc:
 
     def update_network_policy_egress(self, cidrNetworkPolicy):
         jsonconf = {
-            "prefixlen": cidrNetworkPolicy.cidrLength,
-            "tun_id": cidrNetworkPolicy.vni,
-            "local_ip": int(IPv4Address(cidrNetworkPolicy.localIP)),
-            "remote_ip": int(IPv4Address(cidrNetworkPolicy.cidr)),
-            "type": cidrNetworkPolicy.getCidrTypeInt(),
-            "bit_val": cidrNetworkPolicy.policyBitValue,
+            "prefixlen": str(cidrNetworkPolicy.cidrLength),
+            "tunnel_id": cidrNetworkPolicy.vni,
+            "local_ip": cidrNetworkPolicy.localIP,
+            "cidr_ip": cidrNetworkPolicy.cidr,
+            "cidr_type": cidrNetworkPolicy.getCidrTypeInt(),
+            "bit_value": str(cidrNetworkPolicy.policyBitValue),
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_update_network_policy_egress} \'{jsonconf}\''''
@@ -380,42 +346,14 @@ class TrnRpc:
         returncode, text = run_cmd(cmd)
         logger.info("update_network_policy_egress returns {} {}".format(returncode, text))
 
-    def update_network_policy_protocol_port_ingress(self, portNetworkPolicy):
-        jsonconf = {
-            "tun_id": portNetworkPolicy.vni,
-            "local_ip": int(IPv4Address(portNetworkPolicy.localIP)),
-            "proto": portNetworkPolicy.getProtocolInt(),
-            "port": int(portNetworkPolicy.port),
-            "bit_val": portNetworkPolicy.policyBitValue,
-        }
-        jsonconf = json.dumps(jsonconf)
-        cmd = f'''{self.trn_cli_update_network_policy_protocol_port_ingress} \'{jsonconf}\''''
-        logger.info("update_network_policy_protocol_port_ingress: {}".format(cmd))
-        returncode, text = run_cmd(cmd)
-        logger.info("update_network_policy_protocol_port_ingress returns {} {}".format(returncode, text))
-
-    def update_network_policy_protocol_port_egress(self, portNetworkPolicy):
-        jsonconf = {
-            "tun_id": portNetworkPolicy.vni,
-            "local_ip": int(IPv4Address(portNetworkPolicy.localIP)),
-            "proto": portNetworkPolicy.getProtocolInt(),
-            "port": int(portNetworkPolicy.port),
-            "bit_val": portNetworkPolicy.policyBitValue,
-        }
-        jsonconf = json.dumps(jsonconf)
-        cmd = f'''{self.trn_cli_update_network_policy_protocol_port_egress} \'{jsonconf}\''''
-        logger.info("update_network_policy_protocol_port_egress: {}".format(cmd))
-        returncode, text = run_cmd(cmd)
-        logger.info("update_network_policy_protocol_port_egress returns {} {}".format(returncode, text))
-
     def delete_network_policy_ingress(self, cidrNetworkPolicy):
         jsonconf = {
-            "prefixlen": cidrNetworkPolicy.cidrLength,
-            "tun_id": cidrNetworkPolicy.vni,
-            "local_ip": int(IPv4Address(cidrNetworkPolicy.localIP)),
-            "remote_ip": int(IPv4Address(cidrNetworkPolicy.cidr)),
-            "type": cidrNetworkPolicy.getCidrTypeInt(),
-            "bit_val": cidrNetworkPolicy.policyBitValue,
+            "prefixlen": str(cidrNetworkPolicy.cidrLength),
+            "tunnel_id": cidrNetworkPolicy.vni,
+            "local_ip": cidrNetworkPolicy.localIP,
+            "cidr_ip": cidrNetworkPolicy.cidr,
+            "cidr_type": cidrNetworkPolicy.getCidrTypeInt(),
+            "bit_value": str(cidrNetworkPolicy.policyBitValue),
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_delete_network_policy_ingress} \'{jsonconf}\''''
@@ -425,12 +363,12 @@ class TrnRpc:
 
     def delete_network_policy_egress(self, cidrNetworkPolicy):
         jsonconf = {
-            "prefixlen": cidrNetworkPolicy.cidrLength,
-            "tun_id": cidrNetworkPolicy.vni,
-            "local_ip": int(IPv4Address(cidrNetworkPolicy.localIP)),
-            "remote_ip": int(IPv4Address(cidrNetworkPolicy.cidr)),
-            "type": cidrNetworkPolicy.getCidrTypeInt(),
-            "bit_val": cidrNetworkPolicy.policyBitValue,
+            "prefixlen": str(cidrNetworkPolicy.cidrLength),
+            "tunnel_id": cidrNetworkPolicy.vni,
+            "local_ip": cidrNetworkPolicy.localIP,
+            "cidr_ip": cidrNetworkPolicy.cidr,
+            "cidr_type": cidrNetworkPolicy.getCidrTypeInt(),
+            "bit_value": str(cidrNetworkPolicy.policyBitValue),
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_delete_network_policy_egress} \'{jsonconf}\''''
@@ -438,13 +376,41 @@ class TrnRpc:
         returncode, text = run_cmd(cmd)
         logger.info("delete_network_policy_egress returns {} {}".format(returncode, text))
 
+    def update_network_policy_protocol_port_ingress(self, portNetworkPolicy):
+        jsonconf = {
+            "tunnel_id": portNetworkPolicy.vni,
+            "local_ip": portNetworkPolicy.localIP,
+            "protocol": portNetworkPolicy.getProtocolInt(),
+            "port": portNetworkPolicy.port,
+            "bit_value": str(portNetworkPolicy.policyBitValue),
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_update_network_policy_protocol_port_ingress} \'{jsonconf}\''''
+        logger.info("update_network_policy_protocol_port_ingress: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("update_network_policy_protocol_port_ingress returns {} {}".format(returncode, text))
+
+    def update_network_policy_protocol_port_egress(self, portNetworkPolicy):
+        jsonconf = {
+            "tunnel_id": portNetworkPolicy.vni,
+            "local_ip": portNetworkPolicy.localIP,
+            "protocol": portNetworkPolicy.getProtocolInt(),
+            "port": portNetworkPolicy.port,
+            "bit_value": str(portNetworkPolicy.policyBitValue),
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_update_network_policy_protocol_port_egress} \'{jsonconf}\''''
+        logger.info("update_network_policy_protocol_port_egress: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("update_network_policy_protocol_port_egress returns {} {}".format(returncode, text))
+
     def delete_network_policy_protocol_port_ingress(self, portNetworkPolicy):
         jsonconf = {
-            "tun_id": portNetworkPolicy.vni,
-            "local_ip": int(IPv4Address(portNetworkPolicy.localIP)),
-            "proto": portNetworkPolicy.getProtocolInt(),
-            "port": int(portNetworkPolicy.port),
-            "bit_val": portNetworkPolicy.policyBitValue,
+            "tunnel_id": portNetworkPolicy.vni,
+            "local_ip": portNetworkPolicy.localIP,
+            "protocol": portNetworkPolicy.getProtocolInt(),
+            "port": portNetworkPolicy.port,
+            "bit_value": str(portNetworkPolicy.policyBitValue),
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_delete_network_policy_protocol_port_ingress} \'{jsonconf}\''''
@@ -454,11 +420,11 @@ class TrnRpc:
 
     def delete_network_policy_protocol_port_egress(self, portNetworkPolicy):
         jsonconf = {
-            "tun_id": portNetworkPolicy.vni,
-            "local_ip": int(IPv4Address(portNetworkPolicy.localIP)),
-            "proto": portNetworkPolicy.getProtocolInt(),
-            "port": int(portNetworkPolicy.port),
-            "bit_val": portNetworkPolicy.policyBitValue,
+            "tunnel_id": portNetworkPolicy.vni,
+            "local_ip": portNetworkPolicy.localIP,
+            "protocol": portNetworkPolicy.getProtocolInt(),
+            "port": portNetworkPolicy.port,
+            "bit_value": str(portNetworkPolicy.policyBitValue),
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_delete_network_policy_protocol_port_egress} \'{jsonconf}\''''
@@ -468,8 +434,8 @@ class TrnRpc:
 
     def update_network_policy_enforcement_map_ingress(self, endpointEnforced):
         jsonconf = {
-            "tun_id": endpointEnforced.vni,
-            "ip_addr": int(IPv4Address(endpointEnforced.ip)),
+            "tunnel_id": endpointEnforced.vni,
+            "ip": endpointEnforced.ip,
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_update_network_policy_enforcement_map_ingress} \'{jsonconf}\''''
@@ -479,8 +445,8 @@ class TrnRpc:
 
     def update_network_policy_enforcement_map_egress(self, endpointEnforced):
         jsonconf = {
-            "tun_id": endpointEnforced.vni,
-            "ip_addr": int(IPv4Address(endpointEnforced.ip)),
+            "tunnel_id": endpointEnforced.vni,
+            "ip": endpointEnforced.ip,
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_update_network_policy_enforcement_map_egress} \'{jsonconf}\''''
@@ -490,8 +456,8 @@ class TrnRpc:
 
     def delete_network_policy_enforcement_map_ingress(self, endpointEnforced):
         jsonconf = {
-            "tun_id": endpointEnforced.vni,
-            "ip_addr": int(IPv4Address(endpointEnforced.ip)),
+            "tunnel_id": endpointEnforced.vni,
+            "ip": endpointEnforced.ip,
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_delete_network_policy_enforcement_map_ingress} \'{jsonconf}\''''
@@ -501,8 +467,8 @@ class TrnRpc:
 
     def delete_network_policy_enforcement_map_egress(self, endpointEnforced):
         jsonconf = {
-            "tun_id": endpointEnforced.vni,
-            "ip_addr": int(IPv4Address(endpointEnforced.ip)),
+            "tunnel_id": endpointEnforced.vni,
+            "ip": endpointEnforced.ip,
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_delete_network_policy_enforcement_map_egress} \'{jsonconf}\''''

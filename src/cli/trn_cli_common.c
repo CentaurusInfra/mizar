@@ -606,7 +606,6 @@ int trn_cli_parse_network_policy_ppo_key(const cJSON *jsonobj,
 	cJSON *local_ip = cJSON_GetObjectItem(jsonobj, "local_ip");
 	cJSON *protocol = cJSON_GetObjectItem(jsonobj, "protocol");
 	cJSON *port = cJSON_GetObjectItem(jsonobj, "port");
-	cJSON *bit_val = cJSON_GetObjectItem(jsonobj, "bit_value");
 
 	if (tunnel_id == NULL) {
 		ppo->tun_id = 0;

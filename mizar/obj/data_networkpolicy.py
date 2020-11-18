@@ -28,11 +28,11 @@ class CidrNetworkPolicy:
         self.cidrType = cidrType
     def getCidrTypeInt(self):
         if self.cidrType == "NoExcept":
-            return 0
+            return "0"
         elif self.cidrType == "WithExcept":
-            return 1
+            return "1"
         else:
-            return 2
+            return "2"
 
 
 class PortNetworkPolicy:
@@ -45,11 +45,13 @@ class PortNetworkPolicy:
 
     def getProtocolInt(self):
         if self.protocol == "TCP":
-            return 0
+            return "6"
         elif self.protocol == "UDP":
-            return 1
+            return "17"
+        elif self.protocol == "SCTP":
+            return "132"
         else:
-            return 2
+            return "-1"
 
 class EndpointEnforced:
     def __init__(self, vni, ip):
