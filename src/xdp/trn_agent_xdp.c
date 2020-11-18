@@ -516,6 +516,7 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 		// 4. track the connection, for now
 		// todo: consider to track ALL connections
 		// ... call trn_update_conn_track(...)
+		trn_update_conn_track_cache(pkt, pkt->agent_ep_tunid);
 	}
 
 	/* Check if we need to apply a forward flow update */
