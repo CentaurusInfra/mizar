@@ -469,6 +469,13 @@ static __inline int trn_handle_scaled_ep_modify(struct transit_packet *pkt)
 	return XDP_TX;
 }
 
+static inline int trn_ingress_policy_to_enforce(__be64 tun_id, struct ipv4_tuple_t *ipv4_tuple)
+{
+	struct enforced_ip_t vsip = {.tun_id = tun_id, .ip_addr = ipv4_tuple->daddr};
+	__u8 *v = bpf_map_lookup_elem(&vsip_enforce_map, &vsip);
+	return (!v || !*v) ? 0 : 1;
+}
+
 static inline int trn_ingress_policy_check(__be64 tun_id, struct ipv4_tuple_t *ipv4_tuple)
 {
 	// if local pod is not having policy check enabled yet, allow the traffic
@@ -605,6 +612,19 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 
 	// ingress policy check - with tcp/udp packets only
 	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_TCP || pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
+		// if ingress policy not in place, simply allow it
+		if (0 == trn_ingress_policy_to_enforce(tunnel_id, &pkt->inner_ipv4_tuple)) {
+			goto packet_allow_by_policy;
+		}
+
+		// allow reply packets
+        	if (0 == trn_packet_is_reply(tunnel_id, &pkt->inner_ipv4_tuple)) {
+                	bpf_debug("[Transit is_reply] ingress policy: pachet from 0x%x to 0x%x is reply packet; allow it. \n",
+                        	bpf_ntohl(pkt->inner_ipv4_tuple.saddr),
+    				bpf_ntohl(pkt->inner_ipv4_tuple.daddr));
+			goto packet_allow_by_policy;
+		}
+		
 		if (trn_ingress_policy_check(tunnel_id, &pkt->inner_ipv4_tuple)) {
 			bpf_debug("[Transit] ingress policy denied: proto: 0x%x, local 0x%x \n",
 				pkt->inner_ipv4_tuple.protocol,
@@ -612,15 +632,18 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 
 			return XDP_ABORTED;
 		}
+
+		// todo: consider keep track of ALL connctions regardless of policy enforeced or not
+		// for now, only keep track of connections being policy enforced?
+		trn_update_conn_track_cache(pkt, tunnel_id);
 	}
 
-	// todo: call trn_update_conn_track_cache(...)
-	// to ensure its corresponding reply flow can be decided afterwards
 
 	/* Lookup the source endpoint*/
 	struct endpoint_t *src_ep;
 	struct endpoint_key_t src_epkey;
 
+packet_allow_by_policy:
 	__builtin_memcpy(&src_epkey.tunip[0], &tunnel_id, sizeof(tunnel_id));
 	src_epkey.tunip[2] = pkt->inner_ip->saddr;
 	src_ep = bpf_map_lookup_elem(&endpoints_map, &src_epkey);
