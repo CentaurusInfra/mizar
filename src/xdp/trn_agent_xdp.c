@@ -310,17 +310,19 @@ static __inline int trn_is_reply_conn_track(struct transit_packet *pkt,
 	return 0;
 }
 
+// 0 - no egress policy enforcement
+// 1 - need to check egress policy
 static __inline int trn_egress_policy_to_enforce(struct transit_packet *pkt)
 {
 	struct enforced_ip_t vsip = {.tun_id = pkt->agent_ep_tunid, .ip_addr = pkt->inner_ip->saddr};
 	__u8 *v = bpf_map_lookup_elem(&vsip_enforce_map, &vsip);
-	return (!v || !*v) ? 0 : 1;
+	return (!v || !(*v & 0x01)) ? 0 : 1;
 }
 
 static __inline int enforece_egress_policy(struct transit_packet *pkt) {
 	struct enforced_ip_t vsip = {.tun_id = pkt->agent_ep_tunid, .ip_addr = pkt->inner_ip->saddr};
 	__u8 *v = bpf_map_lookup_elem(&vsip_enforce_map, &vsip);
-	if (!v || !*v){
+	if (!v || !(*v & 0x01)){
 		// source is not isolated; allow it.
 		return 0 ;
 	}

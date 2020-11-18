@@ -469,11 +469,13 @@ static __inline int trn_handle_scaled_ep_modify(struct transit_packet *pkt)
 	return XDP_TX;
 }
 
+// 0 - no ingress policy enforcement
+// 1 - need to enforece ingress policy
 static inline int trn_ingress_policy_to_enforce(__be64 tun_id, struct ipv4_tuple_t *ipv4_tuple)
 {
 	struct enforced_ip_t vsip = {.tun_id = tun_id, .ip_addr = ipv4_tuple->daddr};
 	__u8 *v = bpf_map_lookup_elem(&vsip_enforce_map, &vsip);
-	return (!v || !*v) ? 0 : 1;
+	return (!v || !(*v & 0x02)) ? 0 : 1;
 }
 
 static inline int trn_ingress_policy_check(__be64 tun_id, struct ipv4_tuple_t *ipv4_tuple)
@@ -481,7 +483,7 @@ static inline int trn_ingress_policy_check(__be64 tun_id, struct ipv4_tuple_t *i
 	// if local pod is not having policy check enabled yet, allow the traffic
 	struct enforced_ip_t vsip = {.tun_id = tun_id, .ip_addr = ipv4_tuple->daddr};
 	__u8 *v = bpf_map_lookup_elem(&vsip_enforce_map, &vsip);
-	if (!v || !*v) {
+	if (!v || !(*v & 0x02)) {
 		return 0 ;
 	}
 
