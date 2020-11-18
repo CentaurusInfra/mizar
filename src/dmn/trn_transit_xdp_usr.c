@@ -35,6 +35,8 @@
 #include "trn_transit_xdp_usr.h"
 #include "trn_log.h"
 
+#define INGRESS 0x02
+#define EGRESS 0x01
 #define _SET_INNER_MAP(map)                                                    \
 	do {                                                                   \
 		if (_trn_set_inner_map(stage, &stage->map##_ref, #map "_ref",  \
@@ -264,12 +266,42 @@ int trn_get_endpoint(struct user_metadata_t *md, struct endpoint_key_t *epkey,
 	return 0;
 }
 
-int trn_update_enforce_map(struct user_metadata_t *md, struct enforced_ip_t *srcip,
+int trn_update_ingress_enforce_map(struct user_metadata_t *md, struct enforced_ip_t *srcip,
 		     		   __u8 isenforce)
 {
-	int err = bpf_map_update_elem(md->vsip_enforce_map_fd, srcip, &isenforce, 0);
+	int err = bpf_map_lookup_elem(md->vsip_enforce_map_fd, srcip, &isenforce);
+
+	if (err) {
+		TRN_LOG_ERROR("Failed: key not found in enforcement ingress map.");
+		return 1;
+	}
+
+	__u8 enf = isenforce | INGRESS;
+
+	err = bpf_map_update_elem(md->vsip_enforce_map_fd, srcip, &enf, 0);
 	if (err) {
 		TRN_LOG_ERROR("Store Enforcement ingress map failed (err:%d).",
+			      err);
+		return 1;
+	}
+	return 0;
+}
+
+int trn_update_egress_enforce_map(struct user_metadata_t *md, struct enforced_ip_t *srcip,
+		     		   __u8 isenforce)
+{
+	int err = bpf_map_lookup_elem(md->vsip_enforce_map_fd, srcip, &isenforce);
+
+	if (err) {
+		TRN_LOG_ERROR("Failed: key not found in enforcement egress map.");
+		return 1;
+	}
+
+	__u8 enf = isenforce | EGRESS;
+
+	err = bpf_map_update_elem(md->vsip_enforce_map_fd, srcip, &enf, 0);
+	if (err) {
+		TRN_LOG_ERROR("Store Enforcement egress map failed (err:%d).",
 			      err);
 		return 1;
 	}
@@ -324,11 +356,40 @@ int trn_update_ingress_except_map(struct user_metadata_t *md, struct vsip_ip_cid
 	return 0;
 }
 
-int trn_delete_enforce_map(struct user_metadata_t *md, struct enforced_ip_t *srcip)
+int trn_delete_ingress_enforce_map(struct user_metadata_t *md, struct enforced_ip_t *srcip,
+				__u8 isenforce)
 {
-	int err = bpf_map_delete_elem(md->vsip_enforce_map_fd, srcip);
+	int err = bpf_map_lookup_elem(md->vsip_enforce_map_fd, srcip, &isenforce);
+	if (err) {
+		TRN_LOG_ERROR("Failed: key not found in enforcement ingress map.");
+		return 1;
+	}
+
+	__u8 enf = ~INGRESS & isenforce;
+
+	err = bpf_map_update_elem(md->vsip_enforce_map_fd, srcip, &enf, 0);
 	if (err) {
 		TRN_LOG_ERROR("Delete Enforcement ingress map failed (err:%d).",
+			      err);
+		return 1;
+	}
+	return 0;
+}
+
+int trn_delete_egress_enforce_map(struct user_metadata_t *md, struct enforced_ip_t *srcip,
+				__u8 isenforce)
+{
+	int err = bpf_map_lookup_elem(md->vsip_enforce_map_fd, srcip, &isenforce);
+	if (err) {
+		TRN_LOG_ERROR("Failed: key not found in enforcement ingress map.");
+		return 1;
+	}
+
+	__u8 enf = ~EGRESS & isenforce;
+
+	err = bpf_map_update_elem(md->vsip_enforce_map_fd, srcip, &enf, 0);
+	if (err) {
+		TRN_LOG_ERROR("Delete Enforcement egress map failed (err:%d).",
 			      err);
 		return 1;
 	}

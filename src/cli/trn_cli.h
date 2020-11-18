@@ -92,7 +92,8 @@ int trn_cli_update_network_policy_ingress_subcmd(CLIENT *clnt, int argc, char *a
 int trn_cli_update_network_policy_egress_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_update_network_policy_protocol_port_ingress_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_update_network_policy_protocol_port_egress_subcmd(CLIENT *clnt, int argc, char *argv[]);
-int trn_cli_update_network_policy_enforcement_map_subcmd(CLIENT *clnt, int argc, char *argv[]);
+int trn_cli_update_network_policy_enforcement_map_ingress_subcmd(CLIENT *clnt, int argc, char *argv[]);
+int trn_cli_update_network_policy_enforcement_map_egress_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_delete_vpc_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_delete_net_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_delete_ep_subcmd(CLIENT *clnt, int argc, char *argv[]);
@@ -100,7 +101,8 @@ int trn_cli_delete_network_policy_ingress_subcmd(CLIENT *clnt, int argc, char *a
 int trn_cli_delete_network_policy_egress_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_delete_network_policy_protocol_port_ingress_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_delete_network_policy_protocol_port_egress_subcmd(CLIENT *clnt, int argc, char *argv[]);
-int trn_cli_delete_network_policy_enforcement_map_subcmd(CLIENT *clnt, int argc, char *argv[]);
+int trn_cli_delete_network_policy_enforcement_map_ingress_subcmd(CLIENT *clnt, int argc, char *argv[]);
+int trn_cli_delete_network_policy_enforcement_map_egress_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_get_vpc_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_get_net_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_get_ep_subcmd(CLIENT *clnt, int argc, char *argv[]);

@@ -399,7 +399,7 @@ int trn_cli_delete_network_policy_protocol_port_egress_subcmd(CLIENT *clnt, int 
 	return 0;
 }
 
-int trn_cli_update_network_policy_enforcement_map_subcmd(CLIENT *clnt, int argc, char *argv[])
+int trn_cli_update_network_policy_enforcement_map_ingress_subcmd(CLIENT *clnt, int argc, char *argv[])
 {
 	ketopt_t om = KETOPT_INIT;
 	struct cli_conf_data_t conf;
@@ -418,7 +418,7 @@ int trn_cli_update_network_policy_enforcement_map_subcmd(CLIENT *clnt, int argc,
 
 	int *rc;
 	struct rpc_trn_enforced_ip_t enforcement;
-	char rpc[] = "update_network_policy_enforcement_map_1";
+	char rpc[] = "update_network_policy_enforcement_map_ingress_1";
 
 	int err = trn_cli_parse_network_policy_enforce(json_str, &enforcement);
 	cJSON_Delete(json_str);
@@ -428,9 +428,9 @@ int trn_cli_update_network_policy_enforcement_map_subcmd(CLIENT *clnt, int argc,
 		return -EINVAL;
 	}
  
-	rc = update_network_policy_enforcement_map_1(&enforcement, clnt);
+	rc = update_network_policy_enforcement_map_ingress_1(&enforcement, clnt);
 	if (rc == (int *)NULL) {
-		print_err("RPC Error: client call failed: update_network_policy_enforcement_map_1.\n");
+		print_err("RPC Error: client call failed: update_network_policy_enforcement_map_ingress_1.\n");
 		return -EINVAL;
 	}
 
@@ -441,12 +441,12 @@ int trn_cli_update_network_policy_enforcement_map_subcmd(CLIENT *clnt, int argc,
 		return -EINVAL;
 	}
 
-	print_msg("update_network_policy_enforcement_map_1 successfully updated network policy\n");
+	print_msg("update_network_policy_enforcement_map_ingress_1 successfully updated network policy\n");
 	
 	return 0;
 }
 
-int trn_cli_delete_network_policy_enforcement_map_subcmd(CLIENT *clnt, int argc, char *argv[])
+int trn_cli_update_network_policy_enforcement_map_egress_subcmd(CLIENT *clnt, int argc, char *argv[])
 {
 	ketopt_t om = KETOPT_INIT;
 	struct cli_conf_data_t conf;
@@ -465,7 +465,7 @@ int trn_cli_delete_network_policy_enforcement_map_subcmd(CLIENT *clnt, int argc,
 
 	int *rc;
 	struct rpc_trn_enforced_ip_t enforcement;
-	char rpc[] = "delete_network_policy_enforcement_map_1";
+	char rpc[] = "update_network_policy_enforcement_map_egress_1";
 
 	int err = trn_cli_parse_network_policy_enforce(json_str, &enforcement);
 	cJSON_Delete(json_str);
@@ -475,9 +475,9 @@ int trn_cli_delete_network_policy_enforcement_map_subcmd(CLIENT *clnt, int argc,
 		return -EINVAL;
 	}
  
-	rc = delete_network_policy_enforcement_map_1(&enforcement, clnt);
+	rc = update_network_policy_enforcement_map_egress_1(&enforcement, clnt);
 	if (rc == (int *)NULL) {
-		print_err("RPC Error: client call failed: delete_network_policy_enforcement_map_1.\n");
+		print_err("RPC Error: client call failed: update_network_policy_enforcement_map_egress_1.\n");
 		return -EINVAL;
 	}
 
@@ -488,7 +488,101 @@ int trn_cli_delete_network_policy_enforcement_map_subcmd(CLIENT *clnt, int argc,
 		return -EINVAL;
 	}
 
-	print_msg("delete_network_policy_enforcement_map_1 successfully deleted network policy\n");
+	print_msg("update_network_policy_enforcement_map_egress_1 successfully updated network policy\n");
+	
+	return 0;
+}
+
+int trn_cli_delete_network_policy_enforcement_map_ingress_subcmd(CLIENT *clnt, int argc, char *argv[])
+{
+	ketopt_t om = KETOPT_INIT;
+	struct cli_conf_data_t conf;
+	cJSON *json_str = NULL;
+
+	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
+		return -EINVAL;
+	}
+
+	char *buf = conf.conf_str;
+	json_str = trn_cli_parse_json(buf);
+
+	if (json_str == NULL) {
+		return -EINVAL;
+	}
+
+	int *rc;
+	struct rpc_trn_enforced_ip_t enforcement;
+	char rpc[] = "delete_network_policy_enforcement_map_ingress_1";
+
+	int err = trn_cli_parse_network_policy_enforce(json_str, &enforcement);
+	cJSON_Delete(json_str);
+
+	if (err != 0) {
+		print_err("Error: parsing network policy enforcement map config.\n");
+		return -EINVAL;
+	}
+ 
+	rc = delete_network_policy_enforcement_map_ingress_1(&enforcement, clnt);
+	if (rc == (int *)NULL) {
+		print_err("RPC Error: client call failed: delete_network_policy_enforcement_map_ingress_1.\n");
+		return -EINVAL;
+	}
+
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal daemon error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
+	}
+
+	print_msg("delete_network_policy_enforcement_map_ingress_1 successfully deleted network policy\n");
+	
+	return 0;
+}
+
+int trn_cli_delete_network_policy_enforcement_map_egress_subcmd(CLIENT *clnt, int argc, char *argv[])
+{
+	ketopt_t om = KETOPT_INIT;
+	struct cli_conf_data_t conf;
+	cJSON *json_str = NULL;
+
+	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
+		return -EINVAL;
+	}
+
+	char *buf = conf.conf_str;
+	json_str = trn_cli_parse_json(buf);
+
+	if (json_str == NULL) {
+		return -EINVAL;
+	}
+
+	int *rc;
+	struct rpc_trn_enforced_ip_t enforcement;
+	char rpc[] = "delete_network_policy_enforcement_map_egress_1";
+
+	int err = trn_cli_parse_network_policy_enforce(json_str, &enforcement);
+	cJSON_Delete(json_str);
+
+	if (err != 0) {
+		print_err("Error: parsing network policy enforcement map config.\n");
+		return -EINVAL;
+	}
+ 
+	rc = delete_network_policy_enforcement_map_egress_1(&enforcement, clnt);
+	if (rc == (int *)NULL) {
+		print_err("RPC Error: client call failed: delete_network_policy_enforcement_map_egress_1.\n");
+		return -EINVAL;
+	}
+
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal daemon error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
+	}
+
+	print_msg("delete_network_policy_enforcement_map_egress_1 successfully deleted network policy\n");
 	
 	return 0;
 }

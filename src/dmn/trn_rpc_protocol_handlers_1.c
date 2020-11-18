@@ -47,7 +47,6 @@
 #define TRN_MAX_VETH 2048
 #define SUPPLEMENTARY 1
 #define EXCEPTION 2
-#define ENFORCED 1
 
 void rpc_transit_remote_protocol_1(struct svc_req *rqstp,
 				   register SVCXPRT *transp);
@@ -692,7 +691,7 @@ error:
 	return &result;
 }
 
-int *update_network_policy_enforcement_map_1_svc(rpc_trn_enforced_ip_t *enforce, struct svc_req *rqstp)
+int *update_network_policy_enforcement_map_ingress_1_svc(rpc_trn_enforced_ip_t *enforce, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
 	static int result;
@@ -700,8 +699,9 @@ int *update_network_policy_enforcement_map_1_svc(rpc_trn_enforced_ip_t *enforce,
 	int rc;
 	char *itf = enforce->interface;
 	struct enforced_ip_t enf;
+	__u8 val = 0;
 
-	TRN_LOG_DEBUG("update_network_policy_enforcement_map_1 service");
+	TRN_LOG_DEBUG("update_network_policy_enforcement_map_ingress_1 service");
 
 	struct user_metadata_t *md = trn_itf_table_find(itf);
 
@@ -714,7 +714,7 @@ int *update_network_policy_enforcement_map_1_svc(rpc_trn_enforced_ip_t *enforce,
 	enf.tun_id = enforce->tun_id;
 	enf.ip_addr = enforce->ip_addr;
 
-	rc = trn_update_enforce_map(md, &enf, ENFORCED);
+	rc = trn_update_ingress_enforce_map(md, &enf, val);
 
 	if (rc != 0) {
 		TRN_LOG_ERROR("Failure updating network policy enforcement map");
@@ -728,7 +728,7 @@ error:
 	return &result;
 }
 
-int *delete_network_policy_enforcement_map_1_svc(rpc_trn_enforced_ip_t *enforce, struct svc_req *rqstp)
+int *update_network_policy_enforcement_map_egress_1_svc(rpc_trn_enforced_ip_t *enforce, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
 	static int result;
@@ -736,8 +736,9 @@ int *delete_network_policy_enforcement_map_1_svc(rpc_trn_enforced_ip_t *enforce,
 	int rc;
 	char *itf = enforce->interface;
 	struct enforced_ip_t enf;
+	__u8 val = 0;
 
-	TRN_LOG_DEBUG("delete_network_policy_enforcement_map_1 service");
+	TRN_LOG_DEBUG("update_network_policy_enforcement_map_egress_1 service");
 
 	struct user_metadata_t *md = trn_itf_table_find(itf);
 
@@ -750,7 +751,81 @@ int *delete_network_policy_enforcement_map_1_svc(rpc_trn_enforced_ip_t *enforce,
 	enf.tun_id = enforce->tun_id;
 	enf.ip_addr = enforce->ip_addr;
 
-	rc = trn_delete_enforce_map(md, &enf);
+	rc = trn_update_egress_enforce_map(md, &enf, val);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure updating network policy enforcement map");
+		result = RPC_TRN_FATAL;
+		goto error;
+	} 
+
+	return &result;
+
+error:
+	return &result;
+}
+
+int *delete_network_policy_enforcement_map_ingress_1_svc(rpc_trn_enforced_ip_t *enforce, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result;
+	result = 0;
+	int rc;
+	char *itf = enforce->interface;
+	struct enforced_ip_t enf;
+	__u8 val = 0;
+
+	TRN_LOG_DEBUG("delete_network_policy_enforcement_map_ingress_1 service");
+
+	struct user_metadata_t *md = trn_itf_table_find(itf);
+
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	enf.tun_id = enforce->tun_id;
+	enf.ip_addr = enforce->ip_addr;
+
+	rc = trn_delete_ingress_enforce_map(md, &enf, val);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure deleting network policy enforcement map");
+		result = RPC_TRN_FATAL;
+		goto error;
+	} 
+
+	return &result;
+
+error:
+	return &result;
+}
+
+int *delete_network_policy_enforcement_map_egress_1_svc(rpc_trn_enforced_ip_t *enforce, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result;
+	result = 0;
+	int rc;
+	char *itf = enforce->interface;
+	struct enforced_ip_t enf;
+	__u8 val = 0;
+
+	TRN_LOG_DEBUG("delete_network_policy_enforcement_map_egress_1 service");
+
+	struct user_metadata_t *md = trn_itf_table_find(itf);
+
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	enf.tun_id = enforce->tun_id;
+	enf.ip_addr = enforce->ip_addr;
+
+	rc = trn_delete_egress_enforce_map(md, &enf, val);
 
 	if (rc != 0) {
 		TRN_LOG_ERROR("Failure deleting network policy enforcement map");

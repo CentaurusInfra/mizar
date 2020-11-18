@@ -247,8 +247,10 @@ program RPC_TRANSIT_REMOTE_PROTOCOL {
                 int UPDATE_NETWORK_POLICY_PROTOCOL_PORT_EGRESS(rpc_trn_vsip_ppo_t) = 28;
                 int DELETE_NETWORK_POLICY_PROTOCOL_PORT_INGRESS(rpc_trn_vsip_ppo_key_t) = 29;
                 int DELETE_NETWORK_POLICY_PROTOCOL_PORT_EGRESS(rpc_trn_vsip_ppo_key_t) = 30;
-                int UPDATE_NETWORK_POLICY_ENFORCEMENT_MAP(rpc_trn_enforced_ip_t) = 31;
-                int DELETE_NETWORK_POLICY_ENFORCEMENT_MAP(rpc_trn_enforced_ip_t) = 32;
+                int UPDATE_NETWORK_POLICY_ENFORCEMENT_MAP_INGRESS(rpc_trn_enforced_ip_t) = 31;
+                int UPDATE_NETWORK_POLICY_ENFORCEMENT_MAP_EGRESS(rpc_trn_enforced_ip_t) = 32;
+                int DELETE_NETWORK_POLICY_ENFORCEMENT_MAP_INGRESS(rpc_trn_enforced_ip_t) = 33;
+                int DELETE_NETWORK_POLICY_ENFORCEMENT_MAP_EGRESS(rpc_trn_enforced_ip_t) = 34;
           } = 1;
 
 } =  0x20009051;
