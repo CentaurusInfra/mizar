@@ -121,6 +121,34 @@ int trn_agent_get_endpoint(struct agent_user_metadata_t *umd,
 int trn_agent_delete_endpoint(struct agent_user_metadata_t *umd,
 			      struct endpoint_key_t *epkey);
 
+int trn_update_egress_primary_map(struct agent_user_metadata_t *md, 
+				  struct vsip_ip_cidr_t *ipcidr,
+		        	  __u64 bitmap);
+
+int trn_update_egress_supp_map(struct agent_user_metadata_t *md, 
+			       struct vsip_ip_cidr_t *ipcidr,
+			       __u64 bitmap);
+
+int trn_update_egress_ppo_map(struct agent_user_metadata_t *md, 
+			      struct vsip_ppo_t *ppo,
+			      __u64 bitmap);
+
+int trn_update_egress_except_map(struct agent_user_metadata_t *md, 
+ 				 struct vsip_ip_cidr_t *ipcidr,
+				 __u64 bitmap);
+
+int trn_delete_egress_primary_map(struct agent_user_metadata_t *md, 
+				  struct vsip_ip_cidr_t *ipcidr);
+
+int trn_delete_egress_supp_map(struct agent_user_metadata_t *md, 
+			       struct vsip_ip_cidr_t *ipcidr);
+
+int trn_delete_egress_ppo_map(struct agent_user_metadata_t *md, 
+			      struct vsip_ppo_t *ppo);
+
+int trn_delete_egress_except_map(struct agent_user_metadata_t *md, 
+ 				 struct vsip_ip_cidr_t *ipcidr);
+
 int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md);
 
 int trn_agent_metadata_init(struct agent_user_metadata_t *md, char *itf,

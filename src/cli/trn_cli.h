@@ -66,8 +66,12 @@ int trn_cli_parse_port(const cJSON *jsonobj, struct rpc_trn_port_t *ep);
 int trn_cli_parse_port_key(const cJSON *jsonobj, struct rpc_trn_port_key_t *ep);
 int trn_cli_parse_network_policy_cidr(const cJSON *jsonobj, 
 				      struct rpc_trn_vsip_ip_cidr_t *cidrval);
+int trn_cli_parse_network_policy_cidr_key(const cJSON *jsonobj, 
+				          struct rpc_trn_vsip_ip_cidr_key_t *cidrkey);
 int trn_cli_parse_network_policy_ppo(const cJSON *jsonobj, 
 			  	     struct rpc_trn_vsip_ppo_t *ppo);
+int trn_cli_parse_network_policy_ppo_key(const cJSON *jsonobj, 
+			  	         struct rpc_trn_vsip_ppo_key_t *ppo);
 int trn_cli_parse_network_policy_enforce(const cJSON *jsonobj, 
 					 struct rpc_trn_enforced_ip_t *enforce);
 int trn_cli_parse_xdp(const cJSON *jsonobj,

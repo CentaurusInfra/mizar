@@ -278,15 +278,62 @@ static __inline int trn_redirect(struct transit_packet *pkt, __u32 inner_src_ip,
 	return trn_encapsulate(pkt, md, tunnel_id, inner_src_ip, inner_dst_ip);
 }
 
+
+static __inline int trn_is_reply_conn_track(struct transit_packet *pkt,
+					    __be64 tunnel_id)
+{
+	struct ipv4_ct_tuple_t ct_ipv4_tuple;
+	struct vpc_key_t vpckey;
+	struct ct_entry_t *entry;
+	vpckey.tunnel_id = tunnel_id;
+
+	struct ipv4_tuple_t rev_ipv4_tuple = {.saddr = pkt->inner_ipv4_tuple.daddr,
+					      .daddr = pkt->inner_ipv4_tuple.saddr,
+					      .sport = pkt->inner_ipv4_tuple.dport,
+					      .dport = pkt->inner_ipv4_tuple.sport,
+					      .protocol = pkt->inner_ipv4_tuple.protocol};
+
+	__builtin_memcpy(&ct_ipv4_tuple.vpc, &vpckey,
+				sizeof(struct vpc_key_t));
+	__builtin_memcpy(&ct_ipv4_tuple.tuple, &rev_ipv4_tuple,
+				sizeof(struct ipv4_tuple_t));
+
+	entry = bpf_map_lookup_elem(&conn_track_cache, &ct_ipv4_tuple);
+	if (!entry) {
+		bpf_debug(
+			"[Agent TRN_PROCESS_INNER_IP] It's not a reply: {in.src=0x%x, in.dst=0x%x} \n",
+			bpf_ntohl(pkt->inner_ipv4_tuple.saddr), bpf_ntohl(pkt->inner_ipv4_tuple.daddr));
+		return -1;
+	}
+	bpf_debug("[Agent TRN_PROCESS_INNER_IP] Reply is found remote addr: 0x%x \n",
+			bpf_ntohl(entry->remote_addr));
+	return 0;
+}
+
+// 0 - no egress policy enforcement
+// 1 - need to check egress policy
+static __inline int trn_egress_policy_to_enforce(struct transit_packet *pkt)
+{
+	struct enforced_ip_t vsip = {.tun_id = pkt->agent_ep_tunid, .ip_addr = pkt->inner_ip->saddr};
+	__u8 *v = bpf_map_lookup_elem(&vsip_enforce_map, &vsip);
+	return (!v || !(*v & 0x01)) ? 0 : 1;
+}
+
 static __inline int enforece_egress_policy(struct transit_packet *pkt) {
 	struct enforced_ip_t vsip = {.tun_id = pkt->agent_ep_tunid, .ip_addr = pkt->inner_ip->saddr};
 	__u8 *v = bpf_map_lookup_elem(&vsip_enforce_map, &vsip);
-	if (!v || !*v){
+	if (!v || !(*v & 0x01)){
 		// source is not isolated; allow it.
 		return 0 ;
 	}
 
-	// todo: allow reply packet
+	// todo: allow reply packet - iff packet is reply of a valid session
+        if (0 == trn_is_reply_conn_track(pkt, pkt->agent_ep_tunid)) {
+                bpf_debug("[Agent is_reply] egress policy:  packet from saddr: 0x%x, to daddr: 0x%x is found as reply one. allow it. \n",
+                        bpf_ntohl(pkt->inner_ipv4_tuple.saddr), bpf_ntohl(pkt->inner_ipv4_tuple.daddr));
+		return 0;
+        }
+
 
 	// given tuple of vni, sip, sport, dip, dport, proto
 	// lookup eg_vsip_prim_map & eg_vsip_ppo_map; if there is policy allows it, does so
@@ -337,6 +384,28 @@ static __inline int enforece_egress_policy(struct transit_packet *pkt) {
 	return -EPERM;
 }
 
+static __inline void trn_update_conn_track_cache(struct transit_packet *pkt,
+						 __be64 tunnel_id)
+{
+	/*
+	*   Add/Update new connection entry to connection tracking cache map
+	*/
+	struct ipv4_ct_tuple_t ct_ipv4_tuple;
+	struct vpc_key_t vpckey;
+	struct ct_entry_t entry;
+	vpckey.tunnel_id = tunnel_id;
+
+	__builtin_memcpy(&ct_ipv4_tuple.vpc, &vpckey,
+				sizeof(struct vpc_key_t));
+	__builtin_memcpy(&ct_ipv4_tuple.tuple, &pkt->inner_ipv4_tuple,
+				sizeof(struct ipv4_tuple_t));
+
+	__builtin_memcpy(&entry.remote_addr, &pkt->inner_ipv4_tuple.saddr,
+				sizeof(__u32));
+
+	bpf_map_update_elem(&conn_track_cache, &ct_ipv4_tuple, &entry, 0);
+}
+/*
 static __inline int trn_is_reply_conn_track(struct transit_packet *pkt,
 					    __be64 tunnel_id)
 {
@@ -367,7 +436,7 @@ static __inline int trn_is_reply_conn_track(struct transit_packet *pkt,
 			bpf_ntohl(entry->remote_addr));
 	return 0;
 }
-
+*/
 static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 {
 	pkt->inner_ip = (void *)pkt->inner_eth + pkt->inner_eth_off;
@@ -408,13 +477,6 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 
 		pkt->inner_ipv4_tuple.sport = pkt->inner_tcp->source;
 		pkt->inner_ipv4_tuple.dport = pkt->inner_tcp->dest;
-
-		__be64 tunnel_id = pkt->agent_ep_tunid;
-		if (trn_is_reply_conn_track(pkt, tunnel_id) == 0) {
-			bpf_debug("[Agent TRN_PROCESS_INNER_IP] Entry is found saddr: 0x%x, daddr: 0x%x \n",
-					bpf_ntohl(pkt->inner_ipv4_tuple.saddr), bpf_ntohl(pkt->inner_ipv4_tuple.daddr));
-		}
-
 	}
 
 	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
@@ -431,20 +493,39 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 		pkt->inner_ipv4_tuple.dport = pkt->inner_udp->dest;
 	}
 
-	/* to enforce network policy */
-	if (enforece_egress_policy(pkt)) {
-		bpf_debug("[Agent:%ld.0x%x] ABORTED: egress policy denied \n",
-			pkt->agent_ep_tunid,
-			bpf_ntohl(pkt->agent_ep_ipv4));
-		return XDP_ABORTED;
-	}
+	/* to enforce network policy - with tcp/udp packets only */
+	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_TCP || pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
+		// 1. if egress policy not enrforced, simply alllow it
+		if (0 == trn_egress_policy_to_enforce(pkt)) {
+			goto packet_allow_by_policy;
+		}
 
-	// todo: ensure this flow is inserted as known flow to allow
+		// 2. if packet is reply of a tracked connection, allow it
+    		if (0 == trn_is_reply_conn_track(pkt, pkt->agent_ep_tunid)) {
+                     	bpf_debug("[Agent is_reply] egress policy:  packet from saddr: 0x%x, to daddr: 0x%x is found as reply one. allow it. \n",
+                             bpf_ntohl(pkt->inner_ipv4_tuple.saddr), bpf_ntohl(pkt->inner_ipv4_tuple.daddr));
+			goto packet_allow_by_policy;
+         	}
+
+		// 3. check the policy
+		if (enforece_egress_policy(pkt)) {
+			bpf_debug("[Agent:%ld.0x%x] ABORTED: egress policy denied \n",
+				pkt->agent_ep_tunid,
+				bpf_ntohl(pkt->agent_ep_ipv4));
+			return XDP_ABORTED;
+		}
+
+		// 4. track the connection, for now
+		// todo: consider to track ALL connections
+		// ... call trn_update_conn_track(...)
+		trn_update_conn_track_cache(pkt, pkt->agent_ep_tunid);
+	}
 
 	/* Check if we need to apply a forward flow update */
 
 	struct ipv4_tuple_t in_tuple;
 	struct scaled_endpoint_remote_t *out_tuple;
+packet_allow_by_policy:
 	__builtin_memcpy(&in_tuple, &pkt->inner_ipv4_tuple,
 			 sizeof(struct ipv4_tuple_t));
 

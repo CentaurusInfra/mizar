@@ -113,13 +113,14 @@ struct rpc_trn_vpc_key_t {
 
 /* Defines a network policy enforcement table entry */
 struct rpc_trn_enforced_ip_t {
+       string interface<20>;
        uint64_t tun_id;
        uint32_t ip_addr;
-       uint8_t is_enforced;
 };
 
 /* Defines a network policy table entry */
 struct rpc_trn_vsip_ip_cidr_t {
+       string interface<20>;
        uint32_t prefixlen;
        uint64_t tun_id;
        uint32_t local_ip;
@@ -128,15 +129,35 @@ struct rpc_trn_vsip_ip_cidr_t {
        uint64_t bit_val;
 };
 
+/* Defines a unique key to get/delete network policy entry */
+struct rpc_trn_vsip_ip_cidr_key_t {
+       string interface<20>;
+       uint32_t prefixlen;
+       uint64_t tun_id;
+       uint32_t local_ip;
+       uint32_t remote_ip;
+       int type;
+};
+
 /* Defines a network policy proto-port table entry */
 struct rpc_trn_vsip_ppo_t {
+       string interface<20>;
        uint64_t tun_id;
        uint32_t local_ip;
        uint8_t proto;
        uint16_t port;
        uint64_t bit_val;
 };
- 
+
+/* Defines a unique key to get/delete network policy proto-port table entry */
+struct rpc_trn_vsip_ppo_key_t {
+       string interface<20>;
+       uint64_t tun_id;
+       uint32_t local_ip;
+       uint8_t proto;
+       uint16_t port;
+};
+
 /* Defines an interface and a path for xdp prog to load on the interface */
 struct rpc_trn_xdp_intf_t {
        string interface<20>;
@@ -217,6 +238,19 @@ program RPC_TRANSIT_REMOTE_PROTOCOL {
 
                 int LOAD_TRANSIT_XDP_PIPELINE_STAGE(rpc_trn_ebpf_prog_t) = 21;
                 int UNLOAD_TRANSIT_XDP_PIPELINE_STAGE(rpc_trn_ebpf_prog_stage_t) = 22;
+
+                int UPDATE_NETWORK_POLICY_INGRESS(rpc_trn_vsip_ip_cidr_t) = 23;
+                int UPDATE_NETWORK_POLICY_EGRESS(rpc_trn_vsip_ip_cidr_t) = 24;
+                int DELETE_NETWORK_POLICY_INGRESS(rpc_trn_vsip_ip_cidr_key_t) = 25;
+                int DELETE_NETWORK_POLICY_EGRESS(rpc_trn_vsip_ip_cidr_key_t) = 26;
+                int UPDATE_NETWORK_POLICY_PROTOCOL_PORT_INGRESS(rpc_trn_vsip_ppo_t) = 27;
+                int UPDATE_NETWORK_POLICY_PROTOCOL_PORT_EGRESS(rpc_trn_vsip_ppo_t) = 28;
+                int DELETE_NETWORK_POLICY_PROTOCOL_PORT_INGRESS(rpc_trn_vsip_ppo_key_t) = 29;
+                int DELETE_NETWORK_POLICY_PROTOCOL_PORT_EGRESS(rpc_trn_vsip_ppo_key_t) = 30;
+                int UPDATE_NETWORK_POLICY_ENFORCEMENT_MAP_INGRESS(rpc_trn_enforced_ip_t) = 31;
+                int UPDATE_NETWORK_POLICY_ENFORCEMENT_MAP_EGRESS(rpc_trn_enforced_ip_t) = 32;
+                int DELETE_NETWORK_POLICY_ENFORCEMENT_MAP_INGRESS(rpc_trn_enforced_ip_t) = 33;
+                int DELETE_NETWORK_POLICY_ENFORCEMENT_MAP_EGRESS(rpc_trn_enforced_ip_t) = 34;
           } = 1;
 
 } =  0x20009051;

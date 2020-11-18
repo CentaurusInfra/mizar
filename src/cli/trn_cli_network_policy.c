@@ -40,9 +40,9 @@ int trn_cli_update_network_policy_ingress_subcmd(CLIENT *clnt, int argc, char *a
 		return -EINVAL;
 	}
 
-//	int *rc;
+	int *rc;
 	struct rpc_trn_vsip_ip_cidr_t cidrval;
-//	char rpc[] = "update_network_policy_1";
+	char rpc[] = "update_network_policy_ingress_1";
 
 	int err = trn_cli_parse_network_policy_cidr(json_str, &cidrval);
 	cJSON_Delete(json_str);
@@ -51,10 +51,10 @@ int trn_cli_update_network_policy_ingress_subcmd(CLIENT *clnt, int argc, char *a
 		print_err("Error: parsing network policy config.\n");
 		return -EINVAL;
 	}
-/* 
-	rc = update_network_policy_1(&cidrval, clnt);
+ 
+	rc = update_network_policy_ingress_1(&cidrval, clnt);
 	if (rc == (int *)NULL) {
-		print_err("RPC Error: client call failed: update_netowrk_policy_1.\n");
+		print_err("RPC Error: client call failed: update_network_policy_ingress_1.\n");
 		return -EINVAL;
 	}
 
@@ -64,11 +64,8 @@ int trn_cli_update_network_policy_ingress_subcmd(CLIENT *clnt, int argc, char *a
 			rpc);
 		return -EINVAL;
 	}
- */
 
-	if (clnt == NULL) {
-		print_err("Error: cannot connect to server.\n");
-	}
+	print_msg("update_network_policy_ingress_1 successfully updated network policy\n");
 	
 	return 0;
 }
@@ -90,7 +87,9 @@ int trn_cli_update_network_policy_egress_subcmd(CLIENT *clnt, int argc, char *ar
 		return -EINVAL;
 	}
 
+	int *rc;
 	struct rpc_trn_vsip_ip_cidr_t cidrval;
+	char rpc[] = "update_network_policy_egress_1";
 
 	int err = trn_cli_parse_network_policy_cidr(json_str, &cidrval);
 	cJSON_Delete(json_str);
@@ -99,10 +98,21 @@ int trn_cli_update_network_policy_egress_subcmd(CLIENT *clnt, int argc, char *ar
 		print_err("Error: parsing network policy config.\n");
 		return -EINVAL;
 	}
-
-	if (clnt == NULL) {
-		print_err("Error: cannot connect to server.\n");
+ 
+	rc = update_network_policy_egress_1(&cidrval, clnt);
+	if (rc == (int *)NULL) {
+		print_err("RPC Error: client call failed: update_network_policy_egress_1.\n");
+		return -EINVAL;
 	}
+
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal daemon error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
+	}
+
+	print_msg("update_network_policy_egress_1 successfully updated network policy\n");
 	
 	return 0;
 }
@@ -124,19 +134,32 @@ int trn_cli_delete_network_policy_ingress_subcmd(CLIENT *clnt, int argc, char *a
 		return -EINVAL;
 	}
 
-	struct rpc_trn_vsip_ip_cidr_t cidrval;
+	int *rc;
+	struct rpc_trn_vsip_ip_cidr_key_t cidrkey;
+	char rpc[] ="delete_network_policy_ingress_1";
 
-	int err = trn_cli_parse_network_policy_cidr(json_str, &cidrval);
+	int err = trn_cli_parse_network_policy_cidr_key(json_str, &cidrkey);
 	cJSON_Delete(json_str);
 
 	if (err != 0) {
 		print_err("Error: parsing network policy config.\n");
 		return -EINVAL;
 	}
-
-	if (clnt == NULL) {
-		print_err("Error: cannot connect to server.\n");
+ 
+	rc = delete_network_policy_ingress_1(&cidrkey, clnt);
+	if (rc == (int *)NULL) {
+		print_err("RPC Error: client call failed: delete_network_policy_ingress_1.\n");
+		return -EINVAL;
 	}
+
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal daemon error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
+	}
+
+	print_msg("delete_network_policy_ingress_1 successfully deleted network policy\n");
 	
 	return 0;
 }
@@ -158,21 +181,21 @@ int trn_cli_delete_network_policy_egress_subcmd(CLIENT *clnt, int argc, char *ar
 		return -EINVAL;
 	}
 
-//	int *rc;
-	struct rpc_trn_vsip_ip_cidr_t cidrval;
-//	char rpc[] = "delete_network_policy_1";
+	int *rc;
+	struct rpc_trn_vsip_ip_cidr_key_t cidrkey;
+	char rpc[] ="delete_network_policy_egress_1";
 
-	int err = trn_cli_parse_network_policy_cidr(json_str, &cidrval);
+	int err = trn_cli_parse_network_policy_cidr_key(json_str, &cidrkey);
 	cJSON_Delete(json_str);
 
 	if (err != 0) {
 		print_err("Error: parsing network policy config.\n");
 		return -EINVAL;
 	}
-
-/* 	rc = delete_network_policy_1(&cidrval, clnt);
+ 
+	rc = delete_network_policy_egress_1(&cidrkey, clnt);
 	if (rc == (int *)NULL) {
-		print_err("RPC Error: client call failed: delete_network_policy_1.\n");
+		print_err("RPC Error: client call failed: delete_network_policy_egress_1.\n");
 		return -EINVAL;
 	}
 
@@ -183,17 +206,8 @@ int trn_cli_delete_network_policy_egress_subcmd(CLIENT *clnt, int argc, char *ar
 		return -EINVAL;
 	}
 
-	print_msg(
-		"delete_network_policy_1 successfully deleted network policy with cidr %d with prefix length %d on pod with address %ld.\n",
-		cidrval.remote_ip, cidrval.prefixlen, cidrval.local_ip); */
-	if (cidrval.type == 0) {
-		print_err("Update primary policy table");
-	}
-
-	if (clnt == NULL) {
-		print_err("Error: cannot connect to server.\n");
-	}
-
+	print_msg("delete_network_policy_egress_1 successfully deleted network policy\n");
+	
 	return 0;
 }
 
@@ -214,19 +228,32 @@ int trn_cli_update_network_policy_protocol_port_ingress_subcmd(CLIENT *clnt, int
 		return -EINVAL;
 	}
 
+	int *rc;
 	struct rpc_trn_vsip_ppo_t ppo;
+	char rpc[] = "update_network_policy_protocol_port_ingress_1";
 
 	int err = trn_cli_parse_network_policy_ppo(json_str, &ppo);
 	cJSON_Delete(json_str);
 
 	if (err != 0) {
-		print_err("Error: parsing network policy config.\n");
+		print_err("Error: parsing network policy protocol port config.\n");
+		return -EINVAL;
+	}
+ 
+	rc = update_network_policy_protocol_port_ingress_1(&ppo, clnt);
+	if (rc == (int *)NULL) {
+		print_err("RPC Error: client call failed: update_network_policy_protocol_port_ingress_1.\n");
 		return -EINVAL;
 	}
 
-	if (clnt == NULL) {
-		print_err("Error: cannot connect to server.\n");
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal daemon error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
 	}
+
+	print_msg("update_network_policy_protocol_port_ingress_1 successfully updated network policy\n");
 	
 	return 0;
 }
@@ -248,19 +275,32 @@ int trn_cli_update_network_policy_protocol_port_egress_subcmd(CLIENT *clnt, int 
 		return -EINVAL;
 	}
 
+	int *rc;
 	struct rpc_trn_vsip_ppo_t ppo;
+	char rpc[] = "update_network_policy_protocol_port_egress_1";
 
 	int err = trn_cli_parse_network_policy_ppo(json_str, &ppo);
 	cJSON_Delete(json_str);
 
 	if (err != 0) {
-		print_err("Error: parsing network policy config.\n");
+		print_err("Error: parsing network policy protocol port config.\n");
+		return -EINVAL;
+	}
+ 
+	rc = update_network_policy_protocol_port_egress_1(&ppo, clnt);
+	if (rc == (int *)NULL) {
+		print_err("RPC Error: client call failed: update_network_policy_protocol_port_egress_1.\n");
 		return -EINVAL;
 	}
 
-	if (clnt == NULL) {
-		print_err("Error: cannot connect to server.\n");
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal daemon error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
 	}
+
+	print_msg("update_network_policy_protocol_port_egress_1 successfully updated network policy\n");
 	
 	return 0;
 }
@@ -282,19 +322,32 @@ int trn_cli_delete_network_policy_protocol_port_ingress_subcmd(CLIENT *clnt, int
 		return -EINVAL;
 	}
 
-	struct rpc_trn_vsip_ppo_t ppo;
+	int *rc;
+	struct rpc_trn_vsip_ppo_key_t ppokey;
+	char rpc[] = "delete_network_policy_protocol_port_ingress_1";
 
-	int err = trn_cli_parse_network_policy_ppo(json_str, &ppo);
+	int err = trn_cli_parse_network_policy_ppo_key(json_str, &ppokey);
 	cJSON_Delete(json_str);
 
 	if (err != 0) {
-		print_err("Error: parsing network policy config.\n");
+		print_err("Error: parsing network policy protocol port config.\n");
+		return -EINVAL;
+	}
+ 
+	rc = delete_network_policy_protocol_port_ingress_1(&ppokey, clnt);
+	if (rc == (int *)NULL) {
+		print_err("RPC Error: client call failed: delete_network_policy_protocol_port_ingress_1.\n");
 		return -EINVAL;
 	}
 
-	if (clnt == NULL) {
-		print_err("Error: cannot connect to server.\n");
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal daemon error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
 	}
+
+	print_msg("delete_network_policy_protocol_port_ingress_1 successfully deleted network policy\n");
 	
 	return 0;
 }
@@ -316,19 +369,32 @@ int trn_cli_delete_network_policy_protocol_port_egress_subcmd(CLIENT *clnt, int 
 		return -EINVAL;
 	}
 
-	struct rpc_trn_vsip_ppo_t ppo;
+	int *rc;
+	struct rpc_trn_vsip_ppo_key_t ppokey;
+	char rpc[] = "delete_network_policy_protocol_port_egress_1";
 
-	int err = trn_cli_parse_network_policy_ppo(json_str, &ppo);
+	int err = trn_cli_parse_network_policy_ppo_key(json_str, &ppokey);
 	cJSON_Delete(json_str);
 
 	if (err != 0) {
-		print_err("Error: parsing network policy config.\n");
+		print_err("Error: parsing network policy protocol port config.\n");
+		return -EINVAL;
+	}
+ 
+	rc = delete_network_policy_protocol_port_egress_1(&ppokey, clnt);
+	if (rc == (int *)NULL) {
+		print_err("RPC Error: client call failed: delete_network_policy_protocol_port_egress_1.\n");
 		return -EINVAL;
 	}
 
-	if (clnt == NULL) {
-		print_err("Error: cannot connect to server.\n");
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal daemon error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
 	}
+
+	print_msg("delete_network_policy_protocol_port_egress_1 successfully deleted network policy\n");
 	
 	return 0;
 }
@@ -350,19 +416,32 @@ int trn_cli_update_network_policy_enforcement_map_ingress_subcmd(CLIENT *clnt, i
 		return -EINVAL;
 	}
 
-	struct rpc_trn_enforced_ip_t enforce;
+	int *rc;
+	struct rpc_trn_enforced_ip_t enforcement;
+	char rpc[] = "update_network_policy_enforcement_map_ingress_1";
 
-	int err = trn_cli_parse_network_policy_enforce(json_str, &enforce);
+	int err = trn_cli_parse_network_policy_enforce(json_str, &enforcement);
 	cJSON_Delete(json_str);
 
 	if (err != 0) {
-		print_err("Error: parsing network policy config.\n");
+		print_err("Error: parsing network policy enforcement map config.\n");
+		return -EINVAL;
+	}
+ 
+	rc = update_network_policy_enforcement_map_ingress_1(&enforcement, clnt);
+	if (rc == (int *)NULL) {
+		print_err("RPC Error: client call failed: update_network_policy_enforcement_map_ingress_1.\n");
 		return -EINVAL;
 	}
 
-	if (clnt == NULL) {
-		print_err("Error: cannot connect to server.\n");
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal daemon error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
 	}
+
+	print_msg("update_network_policy_enforcement_map_ingress_1 successfully updated network policy\n");
 	
 	return 0;
 }
@@ -384,19 +463,32 @@ int trn_cli_update_network_policy_enforcement_map_egress_subcmd(CLIENT *clnt, in
 		return -EINVAL;
 	}
 
-	struct rpc_trn_enforced_ip_t enforce;
+	int *rc;
+	struct rpc_trn_enforced_ip_t enforcement;
+	char rpc[] = "update_network_policy_enforcement_map_egress_1";
 
-	int err = trn_cli_parse_network_policy_enforce(json_str, &enforce);
+	int err = trn_cli_parse_network_policy_enforce(json_str, &enforcement);
 	cJSON_Delete(json_str);
 
 	if (err != 0) {
-		print_err("Error: parsing network policy config.\n");
+		print_err("Error: parsing network policy enforcement map config.\n");
+		return -EINVAL;
+	}
+ 
+	rc = update_network_policy_enforcement_map_egress_1(&enforcement, clnt);
+	if (rc == (int *)NULL) {
+		print_err("RPC Error: client call failed: update_network_policy_enforcement_map_egress_1.\n");
 		return -EINVAL;
 	}
 
-	if (clnt == NULL) {
-		print_err("Error: cannot connect to server.\n");
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal daemon error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
 	}
+
+	print_msg("update_network_policy_enforcement_map_egress_1 successfully updated network policy\n");
 	
 	return 0;
 }
@@ -418,20 +510,33 @@ int trn_cli_delete_network_policy_enforcement_map_ingress_subcmd(CLIENT *clnt, i
 		return -EINVAL;
 	}
 
-	struct rpc_trn_enforced_ip_t enforce;
+	int *rc;
+	struct rpc_trn_enforced_ip_t enforcement;
+	char rpc[] = "delete_network_policy_enforcement_map_ingress_1";
 
-	int err = trn_cli_parse_network_policy_enforce(json_str, &enforce);
+	int err = trn_cli_parse_network_policy_enforce(json_str, &enforcement);
 	cJSON_Delete(json_str);
 
 	if (err != 0) {
-		print_err("Error: parsing network policy config.\n");
+		print_err("Error: parsing network policy enforcement map config.\n");
+		return -EINVAL;
+	}
+ 
+	rc = delete_network_policy_enforcement_map_ingress_1(&enforcement, clnt);
+	if (rc == (int *)NULL) {
+		print_err("RPC Error: client call failed: delete_network_policy_enforcement_map_ingress_1.\n");
 		return -EINVAL;
 	}
 
-	if (clnt == NULL) {
-		print_err("Error: cannot connect to server.\n");
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal daemon error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
 	}
 
+	print_msg("delete_network_policy_enforcement_map_ingress_1 successfully deleted network policy\n");
+	
 	return 0;
 }
 
@@ -452,19 +557,32 @@ int trn_cli_delete_network_policy_enforcement_map_egress_subcmd(CLIENT *clnt, in
 		return -EINVAL;
 	}
 
-	struct rpc_trn_enforced_ip_t enforce;
+	int *rc;
+	struct rpc_trn_enforced_ip_t enforcement;
+	char rpc[] = "delete_network_policy_enforcement_map_egress_1";
 
-	int err = trn_cli_parse_network_policy_enforce(json_str, &enforce);
+	int err = trn_cli_parse_network_policy_enforce(json_str, &enforcement);
 	cJSON_Delete(json_str);
 
 	if (err != 0) {
-		print_err("Error: parsing network policy config.\n");
+		print_err("Error: parsing network policy enforcement map config.\n");
+		return -EINVAL;
+	}
+ 
+	rc = delete_network_policy_enforcement_map_egress_1(&enforcement, clnt);
+	if (rc == (int *)NULL) {
+		print_err("RPC Error: client call failed: delete_network_policy_enforcement_map_egress_1.\n");
 		return -EINVAL;
 	}
 
-	if (clnt == NULL) {
-		print_err("Error: cannot connect to server.\n");
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal daemon error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
 	}
 
+	print_msg("delete_network_policy_enforcement_map_egress_1 successfully deleted network policy\n");
+	
 	return 0;
 }
