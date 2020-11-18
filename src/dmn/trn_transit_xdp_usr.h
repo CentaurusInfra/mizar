@@ -182,6 +182,41 @@ int trn_delete_endpoint(struct user_metadata_t *md,
 int trn_delete_network(struct user_metadata_t *md,
 		       struct network_key_t *netkey);
 
+int trn_update_enforce_map(struct user_metadata_t *md, 
+				   struct enforced_ip_t *srcip,
+		     		   __u8 isenforce);
+
+int trn_update_ingress_primary_map(struct user_metadata_t *md, 
+				   struct vsip_ip_cidr_t *ipcidr,
+				   __u64 bitmap);
+
+int trn_update_ingress_supp_map(struct user_metadata_t *md, 
+				struct vsip_ip_cidr_t *ipcidr,
+				__u64 bitmap);
+
+int trn_update_ingress_ppo_map(struct user_metadata_t *md, 
+			       struct vsip_ppo_t *ppo,
+			       __u64 bitmap);
+
+int trn_update_ingress_except_map(struct user_metadata_t *md, 
+				  struct vsip_ip_cidr_t *ipcidr,
+				  __u64 bitmap);
+
+int trn_delete_enforce_map(struct user_metadata_t *md, 
+				   struct enforced_ip_t *srcip);
+
+int trn_delete_ingress_primary_map(struct user_metadata_t *md, 
+				   struct vsip_ip_cidr_t *ipcidr);
+
+int trn_delete_ingress_supp_map(struct user_metadata_t *md, 
+				struct vsip_ip_cidr_t *ipcidr);
+
+int trn_delete_ingress_ppo_map(struct user_metadata_t *md, 
+			       struct vsip_ppo_t *ppo);
+
+int trn_delete_ingress_except_map(struct user_metadata_t *md, 
+				  struct vsip_ip_cidr_t *ipcidr);
+
 int trn_user_metadata_init(struct user_metadata_t *md, char *itf,
 			   char *kern_path, int xdp_flags);
 

@@ -45,6 +45,9 @@
 #define TRANSITLOGNAME "transit"
 #define TRN_MAX_ITF 265
 #define TRN_MAX_VETH 2048
+#define SUPPLEMENTARY 1
+#define EXCEPTION 2
+#define ENFORCED 1
 
 void rpc_transit_remote_protocol_1(struct svc_req *rqstp,
 				   register SVCXPRT *transp);
@@ -318,6 +321,442 @@ int *update_port_1_svc(rpc_trn_port_t *port, struct svc_req *rqstp)
 		result = RPC_TRN_FATAL;
 		goto error;
 	}
+
+	return &result;
+
+error:
+	return &result;
+}
+
+int *update_network_policy_ingress_1_svc(rpc_trn_vsip_ip_cidr_t *policy, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result;
+	result = 0;
+	int rc;
+	char *itf = policy->interface;
+	struct vsip_ip_cidr_t cidr;
+
+	TRN_LOG_DEBUG("update_network_policy_ingress_1 service");
+
+	struct user_metadata_t *md = trn_itf_table_find(itf);
+
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	cidr.tun_id = policy->tun_id;
+	cidr.prefixlen = policy->prefixlen;
+	cidr.local_ip = policy->local_ip;
+	cidr.remote_ip = policy->remote_ip;
+	__u64 bitmap = policy->bit_val;
+
+	if (policy->type == SUPPLEMENTARY) {
+		rc = trn_update_ingress_supp_map(md, &cidr, bitmap);
+		if (rc != 0) {
+			TRN_LOG_ERROR("Failure updating ingress supplementary network policy map");
+			result = RPC_TRN_FATAL;
+			goto error;
+		}
+	} else if (policy->type == EXCEPTION) {
+		rc = trn_update_ingress_except_map(md, &cidr, bitmap);
+		if (rc != 0) {
+			TRN_LOG_ERROR("Failure updating ingress exception network policy map");
+			result = RPC_TRN_FATAL;
+			goto error;
+		}
+	} else {
+		rc = trn_update_ingress_primary_map(md, &cidr, bitmap);
+		if (rc != 0) {
+			TRN_LOG_ERROR("Failure updating ingress primary network policy map");
+			result = RPC_TRN_FATAL;
+			goto error;
+		}
+	}
+
+	return &result;
+
+error:
+	return &result;
+}
+
+int *update_network_policy_egress_1_svc(rpc_trn_vsip_ip_cidr_t *policy, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result;
+	result = 0;
+	int rc;
+	char *itf = policy->interface;
+	struct vsip_ip_cidr_t cidr;
+
+	TRN_LOG_DEBUG("update_network_policy_egress_1 service");
+
+	struct agent_user_metadata_t *md = trn_vif_table_find(itf);
+
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	cidr.tun_id = policy->tun_id;
+	cidr.prefixlen = policy->prefixlen;
+	cidr.local_ip = policy->local_ip;
+	cidr.remote_ip = policy->remote_ip;
+	__u64 bitmap = policy->bit_val;
+
+	if (policy->type == SUPPLEMENTARY) {
+		rc = trn_update_egress_supp_map(md, &cidr, bitmap);
+		if (rc != 0) {
+			TRN_LOG_ERROR("Failure updating egress supplementary network policy map");
+			result = RPC_TRN_FATAL;
+			goto error;
+		}
+	} else if (policy->type == EXCEPTION) {
+		rc = trn_update_egress_except_map(md, &cidr, bitmap);
+		if (rc != 0) {
+			TRN_LOG_ERROR("Failure updating egress exception network policy map");
+			result = RPC_TRN_FATAL;
+			goto error;
+		}
+	} else {
+		rc = trn_update_egress_primary_map(md, &cidr, bitmap);
+		if (rc != 0) {
+			TRN_LOG_ERROR("Failure updating egress primary network policy map");
+			result = RPC_TRN_FATAL;
+			goto error;
+		}
+	}
+
+	return &result;
+
+error:
+	return &result;
+}
+
+int *delete_network_policy_ingress_1_svc(rpc_trn_vsip_ip_cidr_key_t *policykey, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result;
+	result = 0;
+	int rc;
+	char *itf = policykey->interface;
+	struct vsip_ip_cidr_t cidr;
+
+	TRN_LOG_DEBUG("delete_network_policy_ingress_1 service");
+
+	struct user_metadata_t *md = trn_itf_table_find(itf);
+
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	cidr.tun_id = policykey->tun_id;
+	cidr.prefixlen = policykey->prefixlen;
+	cidr.local_ip = policykey->local_ip;
+	cidr.remote_ip = policykey->remote_ip;
+
+	if (policykey->type == SUPPLEMENTARY) {
+		rc = trn_delete_ingress_supp_map(md, &cidr);
+		if (rc != 0) {
+			TRN_LOG_ERROR("Failure deleting ingress supplementary network policy map");
+			result = RPC_TRN_FATAL;
+			goto error;
+		}
+	} else if (policykey->type == EXCEPTION) {
+		rc = trn_delete_ingress_except_map(md, &cidr);
+		if (rc != 0) {
+			TRN_LOG_ERROR("Failure deleting ingress exception network policy map");
+			result = RPC_TRN_FATAL;
+			goto error;
+		}
+	} else {
+		rc = trn_delete_ingress_primary_map(md, &cidr);
+		if (rc != 0) {
+			TRN_LOG_ERROR("Failure deleting ingress primary network policy map");
+			result = RPC_TRN_FATAL;
+			goto error;
+		}
+	}
+
+	return &result;
+
+error:
+	return &result;
+}
+
+int *delete_network_policy_egress_1_svc(rpc_trn_vsip_ip_cidr_key_t *policykey, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result;
+	result = 0;
+	int rc;
+	char *itf = policykey->interface;
+	struct vsip_ip_cidr_t cidr;
+
+	TRN_LOG_DEBUG("delete_network_policy_egress_1 service");
+
+	struct agent_user_metadata_t *md = trn_vif_table_find(itf);
+
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	cidr.tun_id = policykey->tun_id;
+	cidr.prefixlen = policykey->prefixlen;
+	cidr.local_ip = policykey->local_ip;
+	cidr.remote_ip = policykey->remote_ip;
+
+	if (policykey->type == SUPPLEMENTARY) {
+		rc = trn_delete_egress_supp_map(md, &cidr);
+		if (rc != 0) {
+			TRN_LOG_ERROR("Failure deleting egress supplementary network policy map");
+			result = RPC_TRN_FATAL;
+			goto error;
+		}
+	} else if (policykey->type == EXCEPTION) {
+		rc = trn_delete_egress_except_map(md, &cidr);
+		if (rc != 0) {
+			TRN_LOG_ERROR("Failure deleting egress exception network policy map");
+			result = RPC_TRN_FATAL;
+			goto error;
+		}
+	} else {
+		rc = trn_delete_egress_primary_map(md, &cidr);
+		if (rc != 0) {
+			TRN_LOG_ERROR("Failure deleting egress primary network policy map");
+			result = RPC_TRN_FATAL;
+			goto error;
+		}
+	}
+
+	return &result;
+
+error:
+	return &result;
+}
+
+int *update_network_policy_protocol_port_ingress_1_svc(rpc_trn_vsip_ppo_t *ppo, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result;
+	result = 0;
+	int rc;
+	char *itf = ppo->interface;
+	struct vsip_ppo_t ppokey;
+
+	TRN_LOG_DEBUG("update_network_policy_protocol_port_ingress_1 service");
+
+	struct user_metadata_t *md = trn_itf_table_find(itf);
+
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	ppokey.tun_id = ppo->tun_id;
+	ppokey.local_ip = ppo->local_ip;
+	ppokey.proto = ppo->proto;
+	__u64 bitmap = ppo->bit_val;
+
+	rc = trn_update_ingress_ppo_map(md, &ppokey, bitmap);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure updating ingress network policy protocol port map");
+		result = RPC_TRN_FATAL;
+		goto error;
+	} 
+
+	return &result;
+
+error:
+	return &result;
+}
+
+int *update_network_policy_protocol_port_egress_1_svc(rpc_trn_vsip_ppo_t *ppo, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result;
+	result = 0;
+	int rc;
+	char *itf = ppo->interface;
+	struct vsip_ppo_t ppokey;
+
+	TRN_LOG_DEBUG("update_network_policy_protocol_port_egress_1 service");
+
+	struct agent_user_metadata_t *md = trn_vif_table_find(itf);
+
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	ppokey.tun_id = ppo->tun_id;
+	ppokey.local_ip = ppo->local_ip;
+	ppokey.proto = ppo->proto;
+	__u64 bitmap = ppo->bit_val;
+
+	rc = trn_update_egress_ppo_map(md, &ppokey, bitmap);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure updating egress network policy protocol port map");
+		result = RPC_TRN_FATAL;
+		goto error;
+	} 
+
+	return &result;
+
+error:
+	return &result;
+}
+
+int *delete_network_policy_protocol_port_ingress_1_svc(rpc_trn_vsip_ppo_key_t *port, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result;
+	result = 0;
+	int rc;
+	char *itf = port->interface;
+	struct vsip_ppo_t ppokey;
+
+	TRN_LOG_DEBUG("deleting_network_policy_protocol_port_ingress_1 service");
+
+	struct user_metadata_t *md = trn_itf_table_find(itf);
+
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	ppokey.tun_id = port->tun_id;
+	ppokey.local_ip = port->local_ip;
+	ppokey.proto = port->proto;
+
+	rc = trn_delete_ingress_ppo_map(md, &ppokey);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure deleting ingress network policy protocol port map");
+		result = RPC_TRN_FATAL;
+		goto error;
+	} 
+
+	return &result;
+
+error:
+	return &result;
+}
+
+int *delete_network_policy_protocol_port_egress_1_svc(rpc_trn_vsip_ppo_key_t *port, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result;
+	result = 0;
+	int rc;
+	char *itf = port->interface;
+	struct vsip_ppo_t ppokey;
+
+	TRN_LOG_DEBUG("deleting_network_policy_protocol_port_egress_1 service");
+
+	struct agent_user_metadata_t *md = trn_vif_table_find(itf);
+
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	ppokey.tun_id = port->tun_id;
+	ppokey.local_ip = port->local_ip;
+	ppokey.proto = port->proto;
+
+	rc = trn_delete_egress_ppo_map(md, &ppokey);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure deleting egress network policy protocol port map");
+		result = RPC_TRN_FATAL;
+		goto error;
+	} 
+
+	return &result;
+
+error:
+	return &result;
+}
+
+int *update_network_policy_enforcement_map_1_svc(rpc_trn_enforced_ip_t *enforce, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result;
+	result = 0;
+	int rc;
+	char *itf = enforce->interface;
+	struct enforced_ip_t enf;
+
+	TRN_LOG_DEBUG("update_network_policy_enforcement_map_1 service");
+
+	struct user_metadata_t *md = trn_itf_table_find(itf);
+
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	enf.tun_id = enforce->tun_id;
+	enf.ip_addr = enforce->ip_addr;
+
+	rc = trn_update_enforce_map(md, &enf, ENFORCED);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure updating network policy enforcement map");
+		result = RPC_TRN_FATAL;
+		goto error;
+	} 
+
+	return &result;
+
+error:
+	return &result;
+}
+
+int *delete_network_policy_enforcement_map_1_svc(rpc_trn_enforced_ip_t *enforce, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result;
+	result = 0;
+	int rc;
+	char *itf = enforce->interface;
+	struct enforced_ip_t enf;
+
+	TRN_LOG_DEBUG("delete_network_policy_enforcement_map_1 service");
+
+	struct user_metadata_t *md = trn_itf_table_find(itf);
+
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	enf.tun_id = enforce->tun_id;
+	enf.ip_addr = enforce->ip_addr;
+
+	rc = trn_delete_enforce_map(md, &enf);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure deleting network policy enforcement map");
+		result = RPC_TRN_FATAL;
+		goto error;
+	} 
 
 	return &result;
 

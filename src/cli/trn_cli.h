@@ -66,8 +66,12 @@ int trn_cli_parse_port(const cJSON *jsonobj, struct rpc_trn_port_t *ep);
 int trn_cli_parse_port_key(const cJSON *jsonobj, struct rpc_trn_port_key_t *ep);
 int trn_cli_parse_network_policy_cidr(const cJSON *jsonobj, 
 				      struct rpc_trn_vsip_ip_cidr_t *cidrval);
+int trn_cli_parse_network_policy_cidr_key(const cJSON *jsonobj, 
+				          struct rpc_trn_vsip_ip_cidr_key_t *cidrkey);
 int trn_cli_parse_network_policy_ppo(const cJSON *jsonobj, 
 			  	     struct rpc_trn_vsip_ppo_t *ppo);
+int trn_cli_parse_network_policy_ppo_key(const cJSON *jsonobj, 
+			  	         struct rpc_trn_vsip_ppo_key_t *ppo);
 int trn_cli_parse_network_policy_enforce(const cJSON *jsonobj, 
 					 struct rpc_trn_enforced_ip_t *enforce);
 int trn_cli_parse_xdp(const cJSON *jsonobj,
@@ -88,8 +92,7 @@ int trn_cli_update_network_policy_ingress_subcmd(CLIENT *clnt, int argc, char *a
 int trn_cli_update_network_policy_egress_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_update_network_policy_protocol_port_ingress_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_update_network_policy_protocol_port_egress_subcmd(CLIENT *clnt, int argc, char *argv[]);
-int trn_cli_update_network_policy_enforcement_map_ingress_subcmd(CLIENT *clnt, int argc, char *argv[]);
-int trn_cli_update_network_policy_enforcement_map_egress_subcmd(CLIENT *clnt, int argc, char *argv[]);
+int trn_cli_update_network_policy_enforcement_map_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_delete_vpc_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_delete_net_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_delete_ep_subcmd(CLIENT *clnt, int argc, char *argv[]);
@@ -97,8 +100,7 @@ int trn_cli_delete_network_policy_ingress_subcmd(CLIENT *clnt, int argc, char *a
 int trn_cli_delete_network_policy_egress_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_delete_network_policy_protocol_port_ingress_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_delete_network_policy_protocol_port_egress_subcmd(CLIENT *clnt, int argc, char *argv[]);
-int trn_cli_delete_network_policy_enforcement_map_ingress_subcmd(CLIENT *clnt, int argc, char *argv[]);
-int trn_cli_delete_network_policy_enforcement_map_egress_subcmd(CLIENT *clnt, int argc, char *argv[]);
+int trn_cli_delete_network_policy_enforcement_map_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_get_vpc_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_get_net_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_get_ep_subcmd(CLIENT *clnt, int argc, char *argv[]);

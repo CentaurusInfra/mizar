@@ -264,6 +264,121 @@ int trn_get_endpoint(struct user_metadata_t *md, struct endpoint_key_t *epkey,
 	return 0;
 }
 
+int trn_update_enforce_map(struct user_metadata_t *md, struct enforced_ip_t *srcip,
+		     		   __u8 isenforce)
+{
+	int err = bpf_map_update_elem(md->vsip_enforce_map_fd, srcip, &isenforce, 0);
+	if (err) {
+		TRN_LOG_ERROR("Store Enforcement ingress map failed (err:%d).",
+			      err);
+		return 1;
+	}
+	return 0;
+}
+
+int trn_update_ingress_primary_map(struct user_metadata_t *md, struct vsip_ip_cidr_t *ipcidr,
+				   __u64 bitmap)
+{
+	int err = bpf_map_update_elem(md->ing_vsip_prim_map_fd, ipcidr, &bitmap, 0);
+	if (err) {
+		TRN_LOG_ERROR("Store Primary ingress map failed (err:%d).",
+			      err);
+		return 1;
+	}
+	return 0;
+}
+
+int trn_update_ingress_supp_map(struct user_metadata_t *md, struct vsip_ip_cidr_t *ipcidr,
+				__u64 bitmap)
+{
+	int err = bpf_map_update_elem(md->ing_vsip_supp_map_fd, ipcidr, &bitmap, 0);
+	if (err) {
+		TRN_LOG_ERROR("Store Supplementary ingress map failed (err:%d).",
+			      err);
+		return 1;
+	}
+	return 0;
+}
+
+int trn_update_ingress_ppo_map(struct user_metadata_t *md, struct vsip_ppo_t *ppo,
+			       __u64 bitmap)
+{
+	int err = bpf_map_update_elem(md->ing_vsip_ppo_map_fd, ppo, &bitmap, 0);
+	if (err) {
+		TRN_LOG_ERROR("Store Proto-port ingress map failed (err:%d).",
+			      err);
+		return 1;
+	}
+	return 0;
+}
+
+int trn_update_ingress_except_map(struct user_metadata_t *md, struct vsip_ip_cidr_t *ipcidr,
+				  __u64 bitmap)
+{
+	int err = bpf_map_update_elem(md->ing_vsip_except_map_fd, ipcidr, &bitmap, 0);
+	if (err) {
+		TRN_LOG_ERROR("Store Except ingress map failed (err:%d).",
+			      err);
+		return 1;
+	}
+	return 0;
+}
+
+int trn_delete_enforce_map(struct user_metadata_t *md, struct enforced_ip_t *srcip)
+{
+	int err = bpf_map_delete_elem(md->vsip_enforce_map_fd, srcip);
+	if (err) {
+		TRN_LOG_ERROR("Delete Enforcement ingress map failed (err:%d).",
+			      err);
+		return 1;
+	}
+	return 0;
+}
+
+int trn_delete_ingress_primary_map(struct user_metadata_t *md, struct vsip_ip_cidr_t *ipcidr)
+{
+	int err = bpf_map_delete_elem(md->ing_vsip_prim_map_fd, ipcidr);
+	if (err) {
+		TRN_LOG_ERROR("Delete Primary ingress map failed (err:%d).",
+			      err);
+		return 1;
+	}
+	return 0;
+}
+
+int trn_delete_ingress_supp_map(struct user_metadata_t *md, struct vsip_ip_cidr_t *ipcidr)
+{
+	int err = bpf_map_delete_elem(md->ing_vsip_supp_map_fd, ipcidr);
+	if (err) {
+		TRN_LOG_ERROR("Delete Supplementary ingress map failed (err:%d).",
+			      err);
+		return 1;
+	}
+	return 0;
+}
+
+int trn_delete_ingress_ppo_map(struct user_metadata_t *md, struct vsip_ppo_t *ppo)
+{
+	int err = bpf_map_delete_elem(md->ing_vsip_ppo_map_fd, ppo);
+	if (err) {
+		TRN_LOG_ERROR("Delete Proto-port ingress map failed (err:%d).",
+			      err);
+		return 1;
+	}
+	return 0;
+}
+
+int trn_delete_ingress_except_map(struct user_metadata_t *md, struct vsip_ip_cidr_t *ipcidr)
+{
+	int err = bpf_map_delete_elem(md->ing_vsip_except_map_fd, ipcidr);
+	if (err) {
+		TRN_LOG_ERROR("Dellete Except ingress map failed (err:%d).",
+			      err);
+		return 1;
+	}
+	return 0;
+}
+
 static int _trn_set_inner_map(struct ebpf_prog_stage_t *stage,
 			      struct bpf_map **map, const char *outer_map_name,
 			      int inner_map_fd)
