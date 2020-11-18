@@ -154,6 +154,29 @@ static __inline int trn_is_reply_conn_track(struct transit_packet *pkt,
 	return 0;
 }
 
+static __inline int trn_packet_is_reply(__be64 tun_id, struct ipv4_tuple_t *ipv4_tuple)
+{
+	struct ipv4_ct_tuple_t ct_ipv4_tuple;
+	struct vpc_key_t vpckey;
+	struct ct_entry_t *entry;
+	vpckey.tunnel_id = tun_id;
+
+	struct ipv4_tuple_t rev_ipv4_tuple = {.saddr = ipv4_tuple->daddr,
+		.daddr = ipv4_tuple->saddr,
+		.sport = ipv4_tuple->dport,
+		.dport = ipv4_tuple->sport,
+		.protocol = ipv4_tuple->protocol};
+
+	__builtin_memcpy(&ct_ipv4_tuple.vpc, &vpckey, sizeof(struct vpc_key_t));
+	__builtin_memcpy(&ct_ipv4_tuple.tuple, &rev_ipv4_tuple, sizeof(struct ipv4_tuple_t));
+
+	entry = bpf_map_lookup_elem(&conn_track_cache, &ct_ipv4_tuple);
+	if (!entry) {
+		return -1;
+	}
+	return 0;
+}
+
 static __inline int trn_decapsulate_and_redirect(struct transit_packet *pkt,
 						 int ifindex)
 {
@@ -456,7 +479,13 @@ static inline int trn_ingress_policy_check(__be64 tun_id, struct ipv4_tuple_t *i
 	}
 
 	// todo: call is_reply() to allow reply packets
-	// trn_is_reply_conn_track() ?
+	// trn_is_reply._conn_track() ?
+	if (0 == trn_packet_is_reply(tun_id, ipv4_tuple)) {
+		bpf_debug("[Transit is_reply] ingress policy: pachet from 0x%x to 0x%x is reply packet; allow it. \n",
+			bpf_ntohl(ipv4_tuple->saddr),
+			bpf_ntohl(ipv4_tuple->daddr));
+		return 0;
+	}
 
 	// todo: icmp (ping) - enforce or not???
 
@@ -567,12 +596,12 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 	__be64 tunnel_id = trn_vni_to_tunnel_id(pkt->geneve->vni);
 	bpf_debug("[TRN_PROCESS_INNER_IP] saddr: 0x%x, daddr: 0x%x \n",
 			bpf_ntohl(pkt->inner_ipv4_tuple.saddr), bpf_ntohl(pkt->inner_ipv4_tuple.daddr));
-	//trn_update_conn_track_cache(pkt, tunnel_id);
+/*	//trn_update_conn_track_cache(pkt, tunnel_id);
 	if (trn_is_reply_conn_track(pkt, tunnel_id) == 0) {
 		bpf_debug("[TRN_PROCESS_INNER_IP] entry is found saddr: 0x%x, daddr: 0x%x \n",
 				bpf_ntohl(pkt->inner_ipv4_tuple.saddr), bpf_ntohl(pkt->inner_ipv4_tuple.daddr));
 	}
-
+*/
 
 	// ingress policy check - with tcp/udp packets only
 	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_TCP || pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
