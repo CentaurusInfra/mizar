@@ -337,6 +337,28 @@ static __inline int enforece_egress_policy(struct transit_packet *pkt) {
 	return -EPERM;
 }
 
+static __inline void trn_update_conn_track_cache(struct transit_packet *pkt,
+						 __be64 tunnel_id)
+{
+	/*
+	*   Add/Update new connection entry to connection tracking cache map
+	*/
+	struct ipv4_ct_tuple_t ct_ipv4_tuple;
+	struct vpc_key_t vpckey;
+	struct ct_entry_t entry;
+	vpckey.tunnel_id = tunnel_id;
+
+	__builtin_memcpy(&ct_ipv4_tuple.vpc, &vpckey,
+				sizeof(struct vpc_key_t));
+	__builtin_memcpy(&ct_ipv4_tuple.tuple, &pkt->inner_ipv4_tuple,
+				sizeof(struct ipv4_tuple_t));
+
+	__builtin_memcpy(&entry.remote_addr, &pkt->inner_ipv4_tuple.saddr,
+				sizeof(__u32));
+
+	bpf_map_update_elem(&conn_track_cache, &ct_ipv4_tuple, &entry, 0);
+}
+
 static __inline int trn_is_reply_conn_track(struct transit_packet *pkt,
 					    __be64 tunnel_id)
 {
