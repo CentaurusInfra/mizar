@@ -22,6 +22,7 @@
 import logging
 import json
 from mizar.common.common import run_cmd
+from ipaddress import IPv4Address
 
 logger = logging.getLogger()
 
@@ -50,6 +51,14 @@ class TrnRpc:
         self.trn_cli_unload_pipeline_stage = f'''{self.trn_cli} unload-pipeline-stage -i {self.phy_itf} -j'''
         self.trn_cli_update_cidr_networkpolicy = f'''{self.trn_cli} update-cidr-networkpolicy -i {self.phy_itf} -j'''
         self.trn_cli_update_port_networkpolicy = f'''{self.trn_cli} update-port-networkpolicy -i {self.phy_itf} -j'''
+        self.trn_cli_update_network_policy_ingress = f'''{self.trn_cli} update-network-policy-ingress -i {self.phy_itf} -j'''
+        self.trn_cli_update_network_policy_egress = f'''{self.trn_cli} update-network-policy-egress -i {self.phy_itf} -j'''
+        self.trn_cli_update_network_policy_protocol_port_ingress = f'''{self.trn_cli} update-network-policy-protocol-port-ingress -i {self.phy_itf} -j'''
+        self.trn_cli_update_network_policy_protocol_port_egress = f'''{self.trn_cli} update-network-policy-protocol-port-egress -i {self.phy_itf} -j'''
+        self.trn_cli_delete_network_policy_ingress = f'''{self.trn_cli} delete-network-policy-ingress -i {self.phy_itf} -j'''
+        self.trn_cli_delete_network_policy_egress = f'''{self.trn_cli} delete-network-policy-egress -i {self.phy_itf} -j'''
+        self.trn_cli_delete_network_policy_protocol_port_ingress = f'''{self.trn_cli} delete-network-policy-protocol-port-ingress -i {self.phy_itf} -j'''
+        self.trn_cli_delete_network_policy_protocol_port_egress = f'''{self.trn_cli} delete-network-policy-protocol-port-egress -i {self.phy_itf} -j'''
 
         self.trn_cli_load_transit_agent_xdp = f'''{self.trn_cli} load-agent-xdp'''
         self.trn_cli_unload_transit_agent_xdp = f'''{self.trn_cli} unload-agent-xdp'''
@@ -336,3 +345,119 @@ class TrnRpc:
         logger.info("update_port_networkpolicy: {}".format(cmd))
         returncode, text = run_cmd(cmd)
         logger.info("update_port_networkpolicy returns {} {}".format(returncode, text))
+
+    def update_network_policy_ingress(self, cidrNetworkPolicy):
+        jsonconf = {
+            "prefixlen": cidrNetworkPolicy.cidrLength,
+            "tun_id": cidrNetworkPolicy.vni,
+            "local_ip": int(IPv4Address(cidrNetworkPolicy.localIP)),
+            "remote_ip": int(IPv4Address(cidrNetworkPolicy.cidr)),
+            "type": cidrNetworkPolicy.getCidrTypeInt(),
+            "bit_val": cidrNetworkPolicy.policyBitValue,
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_update_network_policy_ingress} \'{jsonconf}\''''
+        logger.info("update_network_policy_ingress: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("update_network_policy_ingress returns {} {}".format(returncode, text))
+
+    def update_network_policy_egress(self, cidrNetworkPolicy):
+        jsonconf = {
+            "prefixlen": cidrNetworkPolicy.cidrLength,
+            "tun_id": cidrNetworkPolicy.vni,
+            "local_ip": int(IPv4Address(cidrNetworkPolicy.localIP)),
+            "remote_ip": int(IPv4Address(cidrNetworkPolicy.cidr)),
+            "type": cidrNetworkPolicy.getCidrTypeInt(),
+            "bit_val": cidrNetworkPolicy.policyBitValue,
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_update_network_policy_egress} \'{jsonconf}\''''
+        logger.info("update_network_policy_egress: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("update_network_policy_egress returns {} {}".format(returncode, text))
+
+    def update_network_policy_protocol_port_ingress(self, portNetworkPolicy):
+        jsonconf = {
+            "tun_id": portNetworkPolicy.vni,
+            "local_ip": int(IPv4Address(portNetworkPolicy.localIP)),
+            "proto": portNetworkPolicy.getProtocolInt(),
+            "port": int(portNetworkPolicy.port),
+            "bit_val": portNetworkPolicy.policyBitValue,
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_update_network_policy_protocol_port_ingress} \'{jsonconf}\''''
+        logger.info("update_network_policy_protocol_port_ingress: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("update_network_policy_protocol_port_ingress returns {} {}".format(returncode, text))
+
+    def update_network_policy_protocol_port_egress(self, portNetworkPolicy):
+        jsonconf = {
+            "tun_id": portNetworkPolicy.vni,
+            "local_ip": int(IPv4Address(portNetworkPolicy.localIP)),
+            "proto": portNetworkPolicy.getProtocolInt(),
+            "port": int(portNetworkPolicy.port),
+            "bit_val": portNetworkPolicy.policyBitValue,
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_update_network_policy_protocol_port_egress} \'{jsonconf}\''''
+        logger.info("update_network_policy_protocol_port_egress: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("update_network_policy_protocol_port_egress returns {} {}".format(returncode, text))
+
+    def delete_network_policy_ingress(self, cidrNetworkPolicy):
+        jsonconf = {
+            "prefixlen": cidrNetworkPolicy.cidrLength,
+            "tun_id": cidrNetworkPolicy.vni,
+            "local_ip": int(IPv4Address(cidrNetworkPolicy.localIP)),
+            "remote_ip": int(IPv4Address(cidrNetworkPolicy.cidr)),
+            "type": cidrNetworkPolicy.getCidrTypeInt(),
+            "bit_val": cidrNetworkPolicy.policyBitValue,
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_delete_network_policy_ingress} \'{jsonconf}\''''
+        logger.info("delete_network_policy_ingress: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("delete_network_policy_ingress returns {} {}".format(returncode, text))
+
+    def delete_network_policy_egress(self, cidrNetworkPolicy):
+        jsonconf = {
+            "prefixlen": cidrNetworkPolicy.cidrLength,
+            "tun_id": cidrNetworkPolicy.vni,
+            "local_ip": int(IPv4Address(cidrNetworkPolicy.localIP)),
+            "remote_ip": int(IPv4Address(cidrNetworkPolicy.cidr)),
+            "type": cidrNetworkPolicy.getCidrTypeInt(),
+            "bit_val": cidrNetworkPolicy.policyBitValue,
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_delete_network_policy_egress} \'{jsonconf}\''''
+        logger.info("delete_network_policy_egress: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("delete_network_policy_egress returns {} {}".format(returncode, text))
+
+    def delete_network_policy_protocol_port_ingress(self, portNetworkPolicy):
+        jsonconf = {
+            "tun_id": portNetworkPolicy.vni,
+            "local_ip": int(IPv4Address(portNetworkPolicy.localIP)),
+            "proto": portNetworkPolicy.getProtocolInt(),
+            "port": int(portNetworkPolicy.port),
+            "bit_val": portNetworkPolicy.policyBitValue,
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_delete_network_policy_protocol_port_ingress} \'{jsonconf}\''''
+        logger.info("delete_network_policy_protocol_port_ingress: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("delete_network_policy_protocol_port_ingress returns {} {}".format(returncode, text))
+
+    def delete_network_policy_protocol_port_egress(self, portNetworkPolicy):
+        jsonconf = {
+            "tun_id": portNetworkPolicy.vni,
+            "local_ip": int(IPv4Address(portNetworkPolicy.localIP)),
+            "proto": portNetworkPolicy.getProtocolInt(),
+            "port": int(portNetworkPolicy.port),
+            "bit_val": portNetworkPolicy.policyBitValue,
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_delete_network_policy_protocol_port_egress} \'{jsonconf}\''''
+        logger.info("delete_network_policy_protocol_port_egress: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("delete_network_policy_protocol_port_egress returns {} {}".format(returncode, text))

@@ -52,18 +52,28 @@ class k8sNetworkPolicyCreate(WorkflowTask):
         v1 = client.CoreV1Api()
         pods = v1.list_pod_for_all_namespaces(watch=False, label_selector=labelFilter)
 
+        #endpointSet = set()
         for pod in pods.items:
             podName = pod.metadata.name
             eps = endpoint_opr.store.get_eps_in_pod(podName)
             for ep in eps.values():
+                #endpointSet.add(ep.name)
                 if networkPolicyName not in ep.networkpolicies:
                     ep.add_networkpolicy(networkPolicyName)
-                    dataForNetworkPolicy = self.generateDataForNetworkPolicy(ep)
-                    olddataForNetworkPolicy = ep.dataForNetworkPolicy
-                    if len(olddataForNetworkPolicy) > 0:
-                        dataForNetworkPolicy["old"] = olddataForNetworkPolicy
-                    ep.set_dataForNetworkPolicy(dataForNetworkPolicy)
-                    endpoint_opr.update_networkpolicy_per_endpoint(ep, dataForNetworkPolicy)
+                dataForNetworkPolicy = self.generateDataForNetworkPolicy(ep)
+                olddataForNetworkPolicy = ep.dataForNetworkPolicy
+                if len(olddataForNetworkPolicy) > 0:
+                    if olddataForNetworkPolicy["old"] == dataForNetworkPolicy:
+                        continue
+                    olddataForNetworkPolicy["old"] = {}
+                    dataForNetworkPolicy["old"] = olddataForNetworkPolicy
+
+                ep.set_dataForNetworkPolicy(dataForNetworkPolicy)
+                endpoint_opr.update_networkpolicy_per_endpoint(ep, dataForNetworkPolicy)
+
+        # for ep in endpoint_opr.store.eps_store.values():
+        #     if ep.name not in endpointSet and networkPolicyName in ep.networkpolicies:
+        #         ep.remove_networkpolicy(networkPolicyName)
 
         self.finalize()
 

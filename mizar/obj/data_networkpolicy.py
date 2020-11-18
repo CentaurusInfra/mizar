@@ -19,22 +19,39 @@
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 class CidrNetworkPolicy:
-    def __init__(self, isIngress, vni, localIP, cidr, cidrLength, policyBitValue, cidrType, operationType):
-        self.isIngress = isIngress
+    def __init__(self, vni, localIP, cidr, cidrLength, policyBitValue, cidrType):
         self.vni = vni
         self.localIP = localIP
         self.cidr = cidr
         self.cidrLength = cidrLength
         self.policyBitValue = policyBitValue
         self.cidrType = cidrType
-        self.operationType = operationType
+    def getCidrTypeInt(self):
+        if self.cidrType == "NoExcept":
+            return 0
+        elif self.cidrType == "WithExcept":
+            return 1
+        else:
+            return 2
+
 
 class PortNetworkPolicy:
-    def __init__(self, isIngress, vni, localIP, protocol, port, policyBitValue, operationType):
-        self.isIngress = isIngress
+    def __init__(self, vni, localIP, protocol, port, policyBitValue):
         self.vni = vni
         self.localIP = localIP
         self.protocol = protocol
         self.port = port
         self.policyBitValue = policyBitValue
-        self.operationType = operationType
+
+    def getProtocolInt(self):
+        if self.protocol == "TCP":
+            return 0
+        elif self.protocol == "UDP":
+            return 1
+        else:
+            return 2
+
+class EndpointEnforced:
+    def __init__(self, vni, ip):
+        self.vni = vni
+        self.ip = ip
