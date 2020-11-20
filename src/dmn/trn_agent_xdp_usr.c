@@ -395,10 +395,10 @@ static int _trn_bpf_agent_reuse_shared_map_if_exists(struct bpf_object *pobj, co
 	return 0;
 }
 
-int trn_update_egress_primary_map(struct agent_user_metadata_t *md, struct vsip_ip_cidr_t *ipcidr,
+int trn_update_egress_primary_map(struct agent_user_metadata_t *umd, struct vsip_ip_cidr_t *ipcidr,
 		        	  __u64 bitmap)
 {
-	int err = bpf_map_update_elem(md->eg_vsip_prim_map_fd, ipcidr, &bitmap, 0);
+	int err = bpf_map_update_elem(umd->eg_vsip_prim_map_fd, ipcidr, &bitmap, 0);
 	if (err) {
 		TRN_LOG_ERROR("Store Primary egress map failed (err:%d).",
 			      err);
@@ -407,10 +407,10 @@ int trn_update_egress_primary_map(struct agent_user_metadata_t *md, struct vsip_
 	return 0;
 }
 
-int trn_update_egress_supp_map(struct agent_user_metadata_t *md, struct vsip_ip_cidr_t *ipcidr,
+int trn_update_egress_supp_map(struct agent_user_metadata_t *umd, struct vsip_ip_cidr_t *ipcidr,
 			       __u64 bitmap)
 {
-	int err = bpf_map_update_elem(md->eg_vsip_supp_map_fd, ipcidr, &bitmap, 0);
+	int err = bpf_map_update_elem(umd->eg_vsip_supp_map_fd, ipcidr, &bitmap, 0);
 	if (err) {
 		TRN_LOG_ERROR("Store Supplementary egress map failed (err:%d).",
 			      err);
@@ -419,10 +419,10 @@ int trn_update_egress_supp_map(struct agent_user_metadata_t *md, struct vsip_ip_
 	return 0;
 }
 
-int trn_update_egress_ppo_map(struct agent_user_metadata_t *md, struct vsip_ppo_t *ppo,
+int trn_update_egress_ppo_map(struct agent_user_metadata_t *umd, struct vsip_ppo_t *ppo,
 			      __u64 bitmap)
 {
-	int err = bpf_map_update_elem(md->eg_vsip_ppo_map_fd, ppo, &bitmap, 0);
+	int err = bpf_map_update_elem(umd->eg_vsip_ppo_map_fd, ppo, &bitmap, 0);
 	if (err) {
 		TRN_LOG_ERROR("Store Proto-port egress map failed (err:%d).",
 			      err);
@@ -431,10 +431,10 @@ int trn_update_egress_ppo_map(struct agent_user_metadata_t *md, struct vsip_ppo_
 	return 0;
 }
 
-int trn_update_egress_except_map(struct agent_user_metadata_t *md, struct vsip_ip_cidr_t *ipcidr,
+int trn_update_egress_except_map(struct agent_user_metadata_t *umd, struct vsip_ip_cidr_t *ipcidr,
 				 __u64 bitmap)
 {
-	int err = bpf_map_update_elem(md->eg_vsip_except_map_fd, ipcidr, &bitmap, 0);
+	int err = bpf_map_update_elem(umd->eg_vsip_except_map_fd, ipcidr, &bitmap, 0);
 	if (err) {
 		TRN_LOG_ERROR("Store Except egress map failed (err:%d).",
 			      err);
@@ -443,9 +443,9 @@ int trn_update_egress_except_map(struct agent_user_metadata_t *md, struct vsip_i
 	return 0;
 }
 
-int trn_delete_egress_primary_map(struct agent_user_metadata_t *md, struct vsip_ip_cidr_t *ipcidr)
+int trn_delete_egress_primary_map(struct agent_user_metadata_t *umd, struct vsip_ip_cidr_t *ipcidr)
 {
-	int err = bpf_map_delete_elem(md->eg_vsip_prim_map_fd, ipcidr);
+	int err = bpf_map_delete_elem(umd->eg_vsip_prim_map_fd, ipcidr);
 	if (err) {
 		TRN_LOG_ERROR("Delete Primary egress map failed (err:%d).",
 			      err);

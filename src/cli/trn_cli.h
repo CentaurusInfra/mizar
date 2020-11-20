@@ -126,3 +126,6 @@ void dump_net(struct rpc_trn_network_t *net);
 void dump_ep(struct rpc_trn_endpoint_t *ep);
 void dump_port(struct rpc_trn_port_t *port);
 void dump_agent_md(struct rpc_trn_agent_metadata_t *agent_md);
+void dump_network_policy(struct rpc_trn_vsip_ip_cidr_t *policy);
+void dump_policy_port(struct rpc_trn_vsip_ppo_t *ppo);
+void dump_enforced_policy(struct rpc_trn_enforced_ip_t *enforce);

@@ -43,6 +43,7 @@ int trn_cli_update_network_policy_ingress_subcmd(CLIENT *clnt, int argc, char *a
 	int *rc;
 	struct rpc_trn_vsip_ip_cidr_t cidrval;
 	char rpc[] = "update_network_policy_ingress_1";
+	cidrval.interface = conf.intf;
 
 	int err = trn_cli_parse_network_policy_cidr(json_str, &cidrval);
 	cJSON_Delete(json_str);
@@ -51,7 +52,7 @@ int trn_cli_update_network_policy_ingress_subcmd(CLIENT *clnt, int argc, char *a
 		print_err("Error: parsing network policy config.\n");
 		return -EINVAL;
 	}
- 
+
 	rc = update_network_policy_ingress_1(&cidrval, clnt);
 	if (rc == (int *)NULL) {
 		print_err("RPC Error: client call failed: update_network_policy_ingress_1.\n");
@@ -65,6 +66,7 @@ int trn_cli_update_network_policy_ingress_subcmd(CLIENT *clnt, int argc, char *a
 		return -EINVAL;
 	}
 
+	dump_network_policy(&cidrval);
 	print_msg("update_network_policy_ingress_1 successfully updated network policy\n");
 	
 	return 0;
@@ -90,6 +92,7 @@ int trn_cli_update_network_policy_egress_subcmd(CLIENT *clnt, int argc, char *ar
 	int *rc;
 	struct rpc_trn_vsip_ip_cidr_t cidrval;
 	char rpc[] = "update_network_policy_egress_1";
+	cidrval.interface = conf.intf;
 
 	int err = trn_cli_parse_network_policy_cidr(json_str, &cidrval);
 	cJSON_Delete(json_str);
@@ -98,7 +101,7 @@ int trn_cli_update_network_policy_egress_subcmd(CLIENT *clnt, int argc, char *ar
 		print_err("Error: parsing network policy config.\n");
 		return -EINVAL;
 	}
- 
+
 	rc = update_network_policy_egress_1(&cidrval, clnt);
 	if (rc == (int *)NULL) {
 		print_err("RPC Error: client call failed: update_network_policy_egress_1.\n");
@@ -112,6 +115,7 @@ int trn_cli_update_network_policy_egress_subcmd(CLIENT *clnt, int argc, char *ar
 		return -EINVAL;
 	}
 
+	dump_network_policy(&cidrval);
 	print_msg("update_network_policy_egress_1 successfully updated network policy\n");
 	
 	return 0;
@@ -137,6 +141,7 @@ int trn_cli_delete_network_policy_ingress_subcmd(CLIENT *clnt, int argc, char *a
 	int *rc;
 	struct rpc_trn_vsip_ip_cidr_key_t cidrkey;
 	char rpc[] ="delete_network_policy_ingress_1";
+	cidrkey.interface = conf.intf;
 
 	int err = trn_cli_parse_network_policy_cidr_key(json_str, &cidrkey);
 	cJSON_Delete(json_str);
@@ -184,6 +189,7 @@ int trn_cli_delete_network_policy_egress_subcmd(CLIENT *clnt, int argc, char *ar
 	int *rc;
 	struct rpc_trn_vsip_ip_cidr_key_t cidrkey;
 	char rpc[] ="delete_network_policy_egress_1";
+	cidrkey.interface = conf.intf;
 
 	int err = trn_cli_parse_network_policy_cidr_key(json_str, &cidrkey);
 	cJSON_Delete(json_str);
@@ -231,6 +237,7 @@ int trn_cli_update_network_policy_protocol_port_ingress_subcmd(CLIENT *clnt, int
 	int *rc;
 	struct rpc_trn_vsip_ppo_t ppo;
 	char rpc[] = "update_network_policy_protocol_port_ingress_1";
+	ppo.interface = conf.intf;
 
 	int err = trn_cli_parse_network_policy_ppo(json_str, &ppo);
 	cJSON_Delete(json_str);
@@ -239,7 +246,7 @@ int trn_cli_update_network_policy_protocol_port_ingress_subcmd(CLIENT *clnt, int
 		print_err("Error: parsing network policy protocol port config.\n");
 		return -EINVAL;
 	}
- 
+
 	rc = update_network_policy_protocol_port_ingress_1(&ppo, clnt);
 	if (rc == (int *)NULL) {
 		print_err("RPC Error: client call failed: update_network_policy_protocol_port_ingress_1.\n");
@@ -253,6 +260,7 @@ int trn_cli_update_network_policy_protocol_port_ingress_subcmd(CLIENT *clnt, int
 		return -EINVAL;
 	}
 
+	dump_policy_port(&ppo);
 	print_msg("update_network_policy_protocol_port_ingress_1 successfully updated network policy\n");
 	
 	return 0;
@@ -278,6 +286,7 @@ int trn_cli_update_network_policy_protocol_port_egress_subcmd(CLIENT *clnt, int 
 	int *rc;
 	struct rpc_trn_vsip_ppo_t ppo;
 	char rpc[] = "update_network_policy_protocol_port_egress_1";
+	ppo.interface = conf.intf;
 
 	int err = trn_cli_parse_network_policy_ppo(json_str, &ppo);
 	cJSON_Delete(json_str);
@@ -300,6 +309,7 @@ int trn_cli_update_network_policy_protocol_port_egress_subcmd(CLIENT *clnt, int 
 		return -EINVAL;
 	}
 
+	dump_policy_port(&ppo);
 	print_msg("update_network_policy_protocol_port_egress_1 successfully updated network policy\n");
 	
 	return 0;
@@ -324,6 +334,8 @@ int trn_cli_delete_network_policy_protocol_port_ingress_subcmd(CLIENT *clnt, int
 
 	int *rc;
 	struct rpc_trn_vsip_ppo_key_t ppokey;
+	ppokey.interface = conf.intf;
+
 	char rpc[] = "delete_network_policy_protocol_port_ingress_1";
 
 	int err = trn_cli_parse_network_policy_ppo_key(json_str, &ppokey);
@@ -371,6 +383,8 @@ int trn_cli_delete_network_policy_protocol_port_egress_subcmd(CLIENT *clnt, int 
 
 	int *rc;
 	struct rpc_trn_vsip_ppo_key_t ppokey;
+	ppokey.interface = conf.intf;
+
 	char rpc[] = "delete_network_policy_protocol_port_egress_1";
 
 	int err = trn_cli_parse_network_policy_ppo_key(json_str, &ppokey);
@@ -418,6 +432,8 @@ int trn_cli_update_network_policy_enforcement_map_ingress_subcmd(CLIENT *clnt, i
 
 	int *rc;
 	struct rpc_trn_enforced_ip_t enforcement;
+	enforcement.interface = conf.intf;
+
 	char rpc[] = "update_network_policy_enforcement_map_ingress_1";
 
 	int err = trn_cli_parse_network_policy_enforce(json_str, &enforcement);
@@ -427,7 +443,7 @@ int trn_cli_update_network_policy_enforcement_map_ingress_subcmd(CLIENT *clnt, i
 		print_err("Error: parsing network policy enforcement map config.\n");
 		return -EINVAL;
 	}
- 
+
 	rc = update_network_policy_enforcement_map_ingress_1(&enforcement, clnt);
 	if (rc == (int *)NULL) {
 		print_err("RPC Error: client call failed: update_network_policy_enforcement_map_ingress_1.\n");
@@ -441,6 +457,7 @@ int trn_cli_update_network_policy_enforcement_map_ingress_subcmd(CLIENT *clnt, i
 		return -EINVAL;
 	}
 
+	dump_enforced_policy(&enforcement);
 	print_msg("update_network_policy_enforcement_map_ingress_1 successfully updated network policy\n");
 	
 	return 0;
@@ -465,6 +482,8 @@ int trn_cli_update_network_policy_enforcement_map_egress_subcmd(CLIENT *clnt, in
 
 	int *rc;
 	struct rpc_trn_enforced_ip_t enforcement;
+	enforcement.interface = conf.intf;
+
 	char rpc[] = "update_network_policy_enforcement_map_egress_1";
 
 	int err = trn_cli_parse_network_policy_enforce(json_str, &enforcement);
@@ -488,6 +507,7 @@ int trn_cli_update_network_policy_enforcement_map_egress_subcmd(CLIENT *clnt, in
 		return -EINVAL;
 	}
 
+	dump_enforced_policy(&enforcement);
 	print_msg("update_network_policy_enforcement_map_egress_1 successfully updated network policy\n");
 	
 	return 0;
@@ -513,6 +533,7 @@ int trn_cli_delete_network_policy_enforcement_map_ingress_subcmd(CLIENT *clnt, i
 	int *rc;
 	struct rpc_trn_enforced_ip_t enforcement;
 	char rpc[] = "delete_network_policy_enforcement_map_ingress_1";
+	enforcement.interface = conf.intf;
 
 	int err = trn_cli_parse_network_policy_enforce(json_str, &enforcement);
 	cJSON_Delete(json_str);
@@ -559,6 +580,8 @@ int trn_cli_delete_network_policy_enforcement_map_egress_subcmd(CLIENT *clnt, in
 
 	int *rc;
 	struct rpc_trn_enforced_ip_t enforcement;
+	enforcement.interface = conf.intf;
+
 	char rpc[] = "delete_network_policy_enforcement_map_egress_1";
 
 	int err = trn_cli_parse_network_policy_enforce(json_str, &enforcement);
@@ -585,4 +608,31 @@ int trn_cli_delete_network_policy_enforcement_map_egress_subcmd(CLIENT *clnt, in
 	print_msg("delete_network_policy_enforcement_map_egress_1 successfully deleted network policy\n");
 	
 	return 0;
+}
+
+void dump_network_policy(struct rpc_trn_vsip_ip_cidr_t *policy)
+{
+	print_msg("Interface: %s\n", policy->interface);
+	print_msg("Tunnel ID: %ld\n", policy->tun_id);
+	print_msg("Local IP: %x\n", policy->local_ip);
+	print_msg("Remote IP: %x\n", policy->remote_ip);
+	print_msg("Type: %d\n", policy->type);
+	print_msg("bit value: %ld\n", policy->bit_val);
+}
+
+void dump_policy_port(struct rpc_trn_vsip_ppo_t *ppo)
+{
+	print_msg("Interface: %s\n", ppo->interface);
+	print_msg("Tunnel ID: %ld\n", ppo->tun_id);
+	print_msg("Local IP: %x\n", ppo->local_ip);
+	print_msg("Protocol: %d\n", ppo->proto);
+	print_msg("Port: %d\n", ppo->port);
+	print_msg("bit value: %ld\n", ppo->bit_val);
+}
+
+void dump_enforced_policy(struct rpc_trn_enforced_ip_t *enforce)
+{
+	print_msg("Interface: %s\n", enforce->interface);
+	print_msg("Tunnel ID: %ld\n", enforce->tun_id);
+	print_msg("Local IP: %x\n", enforce->ip_addr);
 }

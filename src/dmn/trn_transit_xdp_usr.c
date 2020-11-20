@@ -112,6 +112,9 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	md->xdpcap_hook_map = bpf_map__next(md->conn_track_cache, md->obj);
 	md->vsip_enforce_map = bpf_map__next(md->xdpcap_hook_map, md->obj);
 	md->ing_vsip_prim_map = bpf_map__next(md->vsip_enforce_map, md->obj);
+	md->ing_vsip_ppo_map = bpf_map__next(md->ing_vsip_prim_map, md->obj);
+	md->ing_vsip_supp_map = bpf_map__next(md->ing_vsip_ppo_map, md->obj);
+	md->ing_vsip_except_map = bpf_map__next(md->ing_vsip_supp_map, md->obj);
 
 	if (!md->networks_map || !md->vpc_map || !md->endpoints_map ||
 	    !md->port_map || !md->hosted_endpoints_iface_map ||
@@ -140,6 +143,9 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	md->conn_track_cache_fd = bpf_map__fd(md->conn_track_cache);
 	md->vsip_enforce_map_fd = bpf_map__fd(md->vsip_enforce_map);
 	md->ing_vsip_prim_map_fd = bpf_map__fd(md->ing_vsip_prim_map);
+	md->ing_vsip_ppo_map_fd = bpf_map__fd(md->ing_vsip_ppo_map);
+	md->ing_vsip_supp_map_fd = bpf_map__fd(md->ing_vsip_supp_map);
+	md->ing_vsip_except_map_fd = bpf_map__fd(md->ing_vsip_except_map);
 
 	if (bpf_map__unpin(md->xdpcap_hook_map, md->pcapfile) == 0) {
 		TRN_LOG_INFO("unpin exiting pcap map file: %s", md->pcapfile);
@@ -273,7 +279,6 @@ int trn_update_ingress_enforce_map(struct user_metadata_t *md, struct enforced_i
 
 	if (err) {
 		TRN_LOG_ERROR("Failed: key not found in enforcement ingress map.");
-		return 1;
 	}
 
 	__u8 enf = isenforce | INGRESS;
@@ -294,7 +299,6 @@ int trn_update_egress_enforce_map(struct user_metadata_t *md, struct enforced_ip
 
 	if (err) {
 		TRN_LOG_ERROR("Failed: key not found in enforcement egress map.");
-		return 1;
 	}
 
 	__u8 enf = isenforce | EGRESS;

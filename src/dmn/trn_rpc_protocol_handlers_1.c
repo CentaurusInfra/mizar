@@ -336,10 +336,9 @@ int *update_network_policy_ingress_1_svc(rpc_trn_vsip_ip_cidr_t *policy, struct 
 	char *itf = policy->interface;
 	struct vsip_ip_cidr_t cidr;
 
-	TRN_LOG_DEBUG("update_network_policy_ingress_1 service");
+	TRN_LOG_INFO("update_network_policy_ingress_1 service");
 
 	struct user_metadata_t *md = trn_itf_table_find(itf);
-
 	if (!md) {
 		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
 		result = RPC_TRN_ERROR;
@@ -390,12 +389,11 @@ int *update_network_policy_egress_1_svc(rpc_trn_vsip_ip_cidr_t *policy, struct s
 	char *itf = policy->interface;
 	struct vsip_ip_cidr_t cidr;
 
-	TRN_LOG_DEBUG("update_network_policy_egress_1 service");
+	TRN_LOG_INFO("update_network_policy_egress_1 service");
 
 	struct agent_user_metadata_t *md = trn_vif_table_find(itf);
-
 	if (!md) {
-		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		TRN_LOG_ERROR("Cannot find interface metadata for [%s]", itf);
 		result = RPC_TRN_ERROR;
 		goto error;
 	}
