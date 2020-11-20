@@ -51,13 +51,13 @@ class TrnRpc:
         self.trn_cli_update_cidr_networkpolicy = f'''{self.trn_cli} update-cidr-networkpolicy -i {self.phy_itf} -j'''
         self.trn_cli_update_port_networkpolicy = f'''{self.trn_cli} update-port-networkpolicy -i {self.phy_itf} -j'''
         self.trn_cli_update_network_policy_ingress = f'''{self.trn_cli} update-network-policy-ingress -i {self.phy_itf} -j'''
-        self.trn_cli_update_network_policy_egress = f'''{self.trn_cli} update-network-policy-egress -i {self.phy_itf} -j'''
+        self.trn_cli_update_network_policy_egress = f'''{self.trn_cli} update-network-policy-egress -j'''
         self.trn_cli_update_network_policy_protocol_port_ingress = f'''{self.trn_cli} update-network-policy-protocol-port-ingress -i {self.phy_itf} -j'''
-        self.trn_cli_update_network_policy_protocol_port_egress = f'''{self.trn_cli} update-network-policy-protocol-port-egress -i {self.phy_itf} -j'''
+        self.trn_cli_update_network_policy_protocol_port_egress = f'''{self.trn_cli} update-network-policy-protocol-port-egress -j'''
         self.trn_cli_delete_network_policy_ingress = f'''{self.trn_cli} delete-network-policy-ingress -i {self.phy_itf} -j'''
-        self.trn_cli_delete_network_policy_egress = f'''{self.trn_cli} delete-network-policy-egress -i {self.phy_itf} -j'''
+        self.trn_cli_delete_network_policy_egress = f'''{self.trn_cli} delete-network-policy-egress -j'''
         self.trn_cli_delete_network_policy_protocol_port_ingress = f'''{self.trn_cli} delete-network-policy-protocol-port-ingress -i {self.phy_itf} -j'''
-        self.trn_cli_delete_network_policy_protocol_port_egress = f'''{self.trn_cli} delete-network-policy-protocol-port-egress -i {self.phy_itf} -j'''
+        self.trn_cli_delete_network_policy_protocol_port_egress = f'''{self.trn_cli} delete-network-policy-protocol-port-egress -j'''
         self.trn_cli_update_network_policy_enforcement_map_ingress = f'''{self.trn_cli} update-network-policy-enforcement-map-ingress -i {self.phy_itf} -j'''
         self.trn_cli_update_network_policy_enforcement_map_egress = f'''{self.trn_cli} update-network-policy-enforcement-map-egress -i {self.phy_itf} -j'''
         self.trn_cli_delete_network_policy_enforcement_map_ingress = f'''{self.trn_cli} delete-network-policy-enforcement-map-ingress -i {self.phy_itf} -j'''
@@ -331,7 +331,8 @@ class TrnRpc:
         returncode, text = run_cmd(cmd)
         logger.info("update_network_policy_ingress returns {} {}".format(returncode, text))
 
-    def update_network_policy_egress(self, cidrNetworkPolicy):
+    def update_network_policy_egress(self, ep, cidrNetworkPolicy):
+        itf = ep.get_veth_peer()
         jsonconf = {
             "prefixlen": str(cidrNetworkPolicy.cidrLength),
             "tunnel_id": cidrNetworkPolicy.vni,
@@ -341,7 +342,7 @@ class TrnRpc:
             "bit_value": str(cidrNetworkPolicy.policyBitValue),
         }
         jsonconf = json.dumps(jsonconf)
-        cmd = f'''{self.trn_cli_update_network_policy_egress} \'{jsonconf}\''''
+        cmd = f'''{self.trn_cli_update_network_policy_egress} \'{jsonconf}\' -i \'{itf}\''''
         logger.info("update_network_policy_egress: {}".format(cmd))
         returncode, text = run_cmd(cmd)
         logger.info("update_network_policy_egress returns {} {}".format(returncode, text))
@@ -361,7 +362,8 @@ class TrnRpc:
         returncode, text = run_cmd(cmd)
         logger.info("delete_network_policy_ingress returns {} {}".format(returncode, text))
 
-    def delete_network_policy_egress(self, cidrNetworkPolicy):
+    def delete_network_policy_egress(self, ep, cidrNetworkPolicy):
+        itf = ep.get_veth_peer()
         jsonconf = {
             "prefixlen": str(cidrNetworkPolicy.cidrLength),
             "tunnel_id": cidrNetworkPolicy.vni,
@@ -371,7 +373,7 @@ class TrnRpc:
             "bit_value": str(cidrNetworkPolicy.policyBitValue),
         }
         jsonconf = json.dumps(jsonconf)
-        cmd = f'''{self.trn_cli_delete_network_policy_egress} \'{jsonconf}\''''
+        cmd = f'''{self.trn_cli_delete_network_policy_egress} \'{jsonconf}\' -i \'{itf}\''''
         logger.info("delete_network_policy_egress: {}".format(cmd))
         returncode, text = run_cmd(cmd)
         logger.info("delete_network_policy_egress returns {} {}".format(returncode, text))
@@ -390,7 +392,8 @@ class TrnRpc:
         returncode, text = run_cmd(cmd)
         logger.info("update_network_policy_protocol_port_ingress returns {} {}".format(returncode, text))
 
-    def update_network_policy_protocol_port_egress(self, portNetworkPolicy):
+    def update_network_policy_protocol_port_egress(self, ep, portNetworkPolicy):
+        itf = ep.get_veth_peer()
         jsonconf = {
             "tunnel_id": portNetworkPolicy.vni,
             "local_ip": portNetworkPolicy.localIP,
@@ -399,7 +402,7 @@ class TrnRpc:
             "bit_value": str(portNetworkPolicy.policyBitValue),
         }
         jsonconf = json.dumps(jsonconf)
-        cmd = f'''{self.trn_cli_update_network_policy_protocol_port_egress} \'{jsonconf}\''''
+        cmd = f'''{self.trn_cli_update_network_policy_protocol_port_egress} \'{jsonconf}\' -i \'{itf}\''''
         logger.info("update_network_policy_protocol_port_egress: {}".format(cmd))
         returncode, text = run_cmd(cmd)
         logger.info("update_network_policy_protocol_port_egress returns {} {}".format(returncode, text))
@@ -418,7 +421,8 @@ class TrnRpc:
         returncode, text = run_cmd(cmd)
         logger.info("delete_network_policy_protocol_port_ingress returns {} {}".format(returncode, text))
 
-    def delete_network_policy_protocol_port_egress(self, portNetworkPolicy):
+    def delete_network_policy_protocol_port_egress(self, ep, portNetworkPolicy):
+        itf = ep.get_veth_peer()
         jsonconf = {
             "tunnel_id": portNetworkPolicy.vni,
             "local_ip": portNetworkPolicy.localIP,
@@ -427,7 +431,7 @@ class TrnRpc:
             "bit_value": str(portNetworkPolicy.policyBitValue),
         }
         jsonconf = json.dumps(jsonconf)
-        cmd = f'''{self.trn_cli_delete_network_policy_protocol_port_egress} \'{jsonconf}\''''
+        cmd = f'''{self.trn_cli_delete_network_policy_protocol_port_egress} \'{jsonconf}\' -i \'{itf}\''''
         logger.info("delete_network_policy_protocol_port_egress: {}".format(cmd))
         returncode, text = run_cmd(cmd)
         logger.info("delete_network_policy_protocol_port_egress returns {} {}".format(returncode, text))

@@ -422,7 +422,7 @@ class Endpoint:
             cidrNetworkPolicy = CidrNetworkPolicy(
                 item["vni"], item["localIP"], item["cidr"], item["cidrLength"], item["policyBitValue"],
                 cidrType)
-            self.rpc.update_network_policy_egress(cidrNetworkPolicy)
+            self.rpc.update_network_policy_egress(self, cidrNetworkPolicy)
 
     def update_network_policy_protocol_port_ingress(self, portTable):
         for item in portTable:
@@ -434,7 +434,7 @@ class Endpoint:
         for item in portTable:
             cidrNetworkPolicy = PortNetworkPolicy(
                 item["vni"], item["localIP"], item["protocol"], item["port"], item["policyBitValue"])
-            self.rpc.update_network_policy_protocol_port_egress(cidrNetworkPolicy)
+            self.rpc.update_network_policy_protocol_port_egress(self, cidrNetworkPolicy)
 
     def delete_network_policy_ingress(self, cidrType, cidrTable):
         for item in cidrTable:
@@ -448,7 +448,7 @@ class Endpoint:
             cidrNetworkPolicy = CidrNetworkPolicy(
                 item["vni"], item["localIP"], item["cidr"], item["cidrLength"], item["policyBitValue"],
                 cidrType)
-            self.rpc.delete_network_policy_egress(cidrNetworkPolicy)
+            self.rpc.delete_network_policy_egress(self, cidrNetworkPolicy)
 
     def delete_network_policy_protocol_port_ingress(self, portTable):
         for item in portTable:
@@ -460,7 +460,7 @@ class Endpoint:
         for item in portTable:
             cidrNetworkPolicy = PortNetworkPolicy(
                 item["vni"], item["localIP"], item["protocol"], item["port"], item["policyBitValue"])
-            self.rpc.delete_network_policy_protocol_port_egress(cidrNetworkPolicy)
+            self.rpc.delete_network_policy_protocol_port_egress(self, cidrNetworkPolicy)
 
     def update_network_policy_enforcement_map_ingress(self):
         endpointEnforced = EndpointEnforced(self.vni, self.ip)
