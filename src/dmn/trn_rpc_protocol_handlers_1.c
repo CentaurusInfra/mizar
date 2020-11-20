@@ -562,6 +562,7 @@ int *update_network_policy_protocol_port_ingress_1_svc(rpc_trn_vsip_ppo_t *ppo, 
 	ppokey.local_ip = ppo->local_ip;
 	ppokey.proto = ppo->proto;
 	__u64 bitmap = ppo->bit_val;
+	ppokey.port = ppo->port;
 
 	rc = trn_update_ingress_ppo_map(md, &ppokey, bitmap);
 
@@ -600,6 +601,7 @@ int *update_network_policy_protocol_port_egress_1_svc(rpc_trn_vsip_ppo_t *ppo, s
 	ppokey.local_ip = ppo->local_ip;
 	ppokey.proto = ppo->proto;
 	__u64 bitmap = ppo->bit_val;
+	ppokey.port = ppo->port;
 
 	rc = trn_update_egress_ppo_map(md, &ppokey, bitmap);
 
@@ -637,6 +639,7 @@ int *delete_network_policy_protocol_port_ingress_1_svc(rpc_trn_vsip_ppo_key_t *p
 	ppokey.tun_id = port->tun_id;
 	ppokey.local_ip = port->local_ip;
 	ppokey.proto = port->proto;
+	ppokey.port = port->port;
 
 	rc = trn_delete_ingress_ppo_map(md, &ppokey);
 
@@ -674,6 +677,7 @@ int *delete_network_policy_protocol_port_egress_1_svc(rpc_trn_vsip_ppo_key_t *po
 	ppokey.tun_id = port->tun_id;
 	ppokey.local_ip = port->local_ip;
 	ppokey.proto = port->proto;
+	ppokey.port = port->port;
 
 	rc = trn_delete_egress_ppo_map(md, &ppokey);
 

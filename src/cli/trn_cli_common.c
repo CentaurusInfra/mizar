@@ -583,7 +583,7 @@ int trn_cli_parse_network_policy_ppo(const cJSON *jsonobj,
 	}
 
 	if (port != NULL && cJSON_IsString(port)) {
-		ppo->port = atoi(port->valuestring);
+		ppo->port = htons(atoi(port->valuestring));
 	} else {
 		print_err("Error: Port is missing or non-string\n");
 		return -EINVAL;
@@ -633,7 +633,7 @@ int trn_cli_parse_network_policy_ppo_key(const cJSON *jsonobj,
 	}
 
 	if (port != NULL && cJSON_IsString(port)) {
-		ppo->port = atoi(port->valuestring);
+		ppo->port = htons(atoi(port->valuestring));
 	} else {
 		print_err("Error: Port is missing or non-string\n");
 		return -EINVAL;

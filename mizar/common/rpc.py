@@ -318,7 +318,8 @@ class TrnRpc:
 
     def update_network_policy_ingress(self, cidrNetworkPolicy):
         jsonconf = {
-            "prefixlen": str(cidrNetworkPolicy.cidrLength),
+            # TODO add comments why adding 96. Change it to constant.
+            "prefixlen": str(cidrNetworkPolicy.cidrLength + 96),
             "tunnel_id": cidrNetworkPolicy.vni,
             "local_ip": cidrNetworkPolicy.localIP,
             "cidr_ip": cidrNetworkPolicy.cidr,
@@ -334,7 +335,7 @@ class TrnRpc:
     def update_network_policy_egress(self, ep, cidrNetworkPolicy):
         itf = ep.get_veth_peer()
         jsonconf = {
-            "prefixlen": str(cidrNetworkPolicy.cidrLength),
+            "prefixlen": str(cidrNetworkPolicy.cidrLength + 96),
             "tunnel_id": cidrNetworkPolicy.vni,
             "local_ip": cidrNetworkPolicy.localIP,
             "cidr_ip": cidrNetworkPolicy.cidr,
@@ -349,7 +350,7 @@ class TrnRpc:
 
     def delete_network_policy_ingress(self, cidrNetworkPolicy):
         jsonconf = {
-            "prefixlen": str(cidrNetworkPolicy.cidrLength),
+            "prefixlen": str(cidrNetworkPolicy.cidrLength + 96),
             "tunnel_id": cidrNetworkPolicy.vni,
             "local_ip": cidrNetworkPolicy.localIP,
             "cidr_ip": cidrNetworkPolicy.cidr,
@@ -365,7 +366,7 @@ class TrnRpc:
     def delete_network_policy_egress(self, ep, cidrNetworkPolicy):
         itf = ep.get_veth_peer()
         jsonconf = {
-            "prefixlen": str(cidrNetworkPolicy.cidrLength),
+            "prefixlen": str(cidrNetworkPolicy.cidrLength + 96),
             "tunnel_id": cidrNetworkPolicy.vni,
             "local_ip": cidrNetworkPolicy.localIP,
             "cidr_ip": cidrNetworkPolicy.cidr,

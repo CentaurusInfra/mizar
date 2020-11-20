@@ -33,20 +33,6 @@ spec:
   - Egress
   ingress:
   - from:
-    - ipBlock:
-        cidr: 172.17.0.0/16
-        except:
-        - 172.17.1.0/32
-        - 172.17.5.0/24
-    - namespaceSelector:
-        matchLabels:
-          user: alice
-      podSelector:
-        matchLabels:
-          role: client
-    - namespaceSelector:
-        matchLabels:
-          project: myproject
     - podSelector:
         matchLabels:
           run: pod1
@@ -54,12 +40,13 @@ spec:
     ports:
     - protocol: TCP
       port: 8000
-    - protocol: UDP
-      port: 8000
+    - protocol: TCP
+      port: 5976
   egress:
   - to:
-    - ipBlock:
-        cidr: 10.0.0.0/24
+    - podSelector:
+        matchLabels:
+          run: pod2
     ports:
     - protocol: TCP
-      port: 5978
+      port: 8000
