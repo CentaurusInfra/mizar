@@ -92,6 +92,7 @@ class k8sNetworkPolicyCreate(WorkflowTask):
                     dataForNetworkPolicy["old"] = olddataForNetworkPolicy
 
                 ep.set_dataForNetworkPolicy(dataForNetworkPolicy)
+                logger.info("dataForNetworkPolicy:{}".format(dataForNetworkPolicy))
                 endpoint_opr.update_networkpolicy_per_endpoint(ep, dataForNetworkPolicy)
 
         # for ep in endpoint_opr.store.eps_store.values():
@@ -292,6 +293,6 @@ class k8sNetworkPolicyCreate(WorkflowTask):
                 v1 = client.CoreV1Api()
                 pods = v1.list_pod_for_all_namespaces(watch=False, label_selector=labelFilter)
                 for pod in pods.items:
-                    data["cidrsMap_NoExcept"][indexedPolicyName].append("{}/32".format(pod.status.host_ip))
+                    data["cidrsMap_NoExcept"][indexedPolicyName].append("{}/32".format(pod.status.pod_ip))
             else:
                 raise NotImplementedError("Not implemented for {}".format(gressItem))
