@@ -62,6 +62,8 @@ int trn_cli_parse_net_key(const cJSON *jsonobj,
 int trn_cli_parse_ep(const cJSON *jsonobj, struct rpc_trn_endpoint_t *ep);
 int trn_cli_parse_ep_key(const cJSON *jsonobj,
 			 struct rpc_trn_endpoint_key_t *ep);
+int trn_cli_parse_port(const cJSON *jsonobj, struct rpc_trn_port_t *ep);
+int trn_cli_parse_port_key(const cJSON *jsonobj, struct rpc_trn_port_key_t *ep);
 int trn_cli_parse_xdp(const cJSON *jsonobj,
 		      struct rpc_trn_xdp_intf_t *xdp_intf);
 int trn_cli_parse_tun_intf(const cJSON *jsonobj,
@@ -72,6 +74,7 @@ int trn_cli_parse_ebpf_prog(const cJSON *jsonobj, rpc_trn_ebpf_prog_t *prog);
 int trn_cli_parse_ebpf_prog_stage(const cJSON *jsonobj,
 				  rpc_trn_ebpf_prog_stage_t *stage);
 
+int trn_cli_update_port_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_update_vpc_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_update_net_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_update_ep_subcmd(CLIENT *clnt, int argc, char *argv[]);
@@ -99,4 +102,5 @@ int trn_cli_unload_pipeline_stage_subcmd(CLIENT *clnt, int argc, char *argv[]);
 void dump_vpc(struct rpc_trn_vpc_t *vpc);
 void dump_net(struct rpc_trn_network_t *net);
 void dump_ep(struct rpc_trn_endpoint_t *ep);
+void dump_port(struct rpc_trn_port_t *port);
 void dump_agent_md(struct rpc_trn_agent_metadata_t *agent_md);

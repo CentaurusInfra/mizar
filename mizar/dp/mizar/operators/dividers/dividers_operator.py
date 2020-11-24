@@ -56,7 +56,7 @@ class DividerOperator(object):
             if d.status == OBJ_STATUS.divider_status_provisioned:
                 self.store_update(d)
 
-        kube_list_obj(self.obj_api, RESOURCES.droplets, list_dividers_obj_fn)
+        kube_list_obj(self.obj_api, RESOURCES.dividers, list_dividers_obj_fn)
 
     def get_divider_tmp_obj(self, name, spec):
         return Divider(name, self.obj_api, None, spec)

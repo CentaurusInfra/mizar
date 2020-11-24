@@ -23,12 +23,15 @@ import subprocess
 import ctypes
 import logging
 import luigi
+import kopf
 import datetime
 import dateutil.parser
 from kubernetes import watch, client
 from ctypes.util import find_library
 from mizar.common.constants import *
 from pathlib import Path
+from luigi.execution_summary import LuigiStatusCode
+from mizar.proto.builtins_pb2 import *
 _libc = ctypes.CDLL(find_library('c'), use_errno=True)
 
 logger = logging.getLogger()
@@ -65,7 +68,7 @@ def host_nsenter(pid=1):
     _host_nsenter('ipc', pid)
     _host_nsenter('net', pid)
     _host_nsenter('pid', pid)
-    #_host_nsenter('user', pid)
+    # _host_nsenter('user', pid)
     _host_nsenter('uts', pid)
 
 
@@ -210,12 +213,115 @@ def kube_list_obj(obj_api, plurals, list_callback):
         list_callback(name, spec, plurals)
 
 
+def kube_get_endpoints(core_api, service_name, service_namespace):
+    response = None
+    try:
+        response = core_api.read_namespaced_endpoints(
+            name=service_name,
+            namespace=service_namespace)
+        return response
+    except:
+        logger.debug("Failed to get endpoints for service {} in namespace {}".format(
+            service_name, service_namespace))
+    finally:
+        return response
+
+
+def kube_get_service(core_api, service_name, service_namespace):
+    response = None
+    try:
+        response = core_api.read_namespaced_service(
+            name=service_name,
+            namespace=service_namespace)
+        return response
+    except:
+        logger.debug("Failed to get service {} in namespace {}".format(
+            service_name, service_namespace))
+    finally:
+        return response
+
+
+def kube_patch_service(core_api, service_name, service_body, service_namespace='default'):
+    response = None
+    try:
+        response = core_api.patch_namespaced_service(
+            name=service_name,
+            namespace=service_namespace,
+            body=service_body)
+        return response
+    except:
+        logger.debug("Failed to update service {} in namespace {}".format(
+            service_name, service_namespace))
+    finally:
+        return response
+
+
+def kube_create_config_map(core_api, namespace, configmap):
+    try:
+        response = core_api.create_namespaced_config_map(
+            namespace=namespace,
+            body=configmap
+        )
+        print(response)
+    except:
+        print("Exception when calling CoreV1Api -> create_namespaced_config_map")
+
+
+def kube_read_config_map(core_api, name, namespace):
+    try:
+        response = core_api.read_namespaced_config_map(
+            name=name,
+            namespace=namespace
+        )
+        return response
+    except:
+        return None
+
+
 def get_spec_val(key, spec, default=""):
     return default if key not in spec else spec[key]
 
 
 def run_workflow(task):
-    luigi.build([task], detailed_summary=False)
+    results = luigi.build([task], detailed_summary=True)
+    if task.temporary_error:
+        raise kopf.TemporaryError(
+            "Temporary Error: {}".format(task.error), delay=task.retry_delay)
+    elif task.permanent_error:
+        raise kopf.PermanentError(
+            "Permanent Error: {}".format(task.error))
+    elif results.status == LuigiStatusCode.FAILED:
+        raise kopf.PermanentError(
+            "Unknown Error: {}".format(results.summary_text))
+
+
+def run_arktos_workflow(task):
+    results = luigi.build([task], detailed_summary=True)
+    if task.param.return_message:
+        code = CodeType.OK
+        return_message = task.param.return_message
+    else:
+        code = CodeType.OK
+        return_message = "OK"
+
+    if task.temporary_error:
+        logger.info("Temporary Error: {}".format(task.error))
+        code = CodeType.TEMP_ERROR
+        return_message = task.error
+    elif task.permanent_error:
+        logger.info("Permanent Error: {}".format(task.error))
+        code = CodeType.PERM_ERROR
+        return_message = task.error
+    elif results.status == LuigiStatusCode.FAILED:
+        logger.info("Unknown Error: {}".format(results.summary_text))
+        code = CodeType.PERM_ERROR
+        return_message = results.summary_text
+    logger.info("TaskName: {} Name: {} Return code is: {} Return message is: {}".format(
+        task.__class__.__name__, task.param.name, code, return_message))
+    return ReturnCode(
+        code=code,
+        message=return_message
+    )
 
 
 def get_pod_name(pod_id):
@@ -224,3 +330,13 @@ def get_pod_name(pod_id):
 
 def get_itf_name(itf):
     return get_pod_name(itf.pod_id) + '-' + itf.interface
+
+
+def reset_param(param):
+    param.name = ''
+    param.body = {}
+    param.spec = {}
+    param.diff = {}
+    param.extra = None
+    param.return_message = None
+    return param

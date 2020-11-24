@@ -40,6 +40,7 @@
 #define TRAN_SUBSTRT_EP 0
 #define TRAN_SIMPLE_EP 1
 #define TRAN_SCALED_EP 2
+#define TRAN_GATEWAY_EP 3
 
 #define TRAN_MAX_PROG 100
 /* XDP programs keys in transit agent */
@@ -56,6 +57,16 @@ enum trn_xdp_stage_t {
 	XDP_DROP_PROC,
 	XDP_SCALED_EP_PROC
 };
+
+struct port_key_t {
+	__u32 tunip[3];
+	__u16 port;
+	__u8 protocol;
+} __attribute__((packed));
+
+struct port_t {
+	__u16 target_port;
+} __attribute__((packed, aligned(4)));
 
 struct endpoint_key_t {
 	__u32 tunip[3];

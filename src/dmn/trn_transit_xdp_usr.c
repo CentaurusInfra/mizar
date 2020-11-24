@@ -93,8 +93,8 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	md->networks_map = bpf_map__next(md->jmp_table_map, md->obj);
 	md->vpc_map = bpf_map__next(md->networks_map, md->obj);
 	md->endpoints_map = bpf_map__next(md->vpc_map, md->obj);
-	md->hosted_endpoints_iface_map =
-		bpf_map__next(md->endpoints_map, md->obj);
+	md->port_map = bpf_map__next(md->endpoints_map, md->obj);
+	md->hosted_endpoints_iface_map = bpf_map__next(md->port_map, md->obj);
 	md->interface_config_map =
 		bpf_map__next(md->hosted_endpoints_iface_map, md->obj);
 	md->interfaces_map = bpf_map__next(md->interface_config_map, md->obj);
@@ -106,7 +106,7 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	md->metrics_table_map = bpf_map__next(md->xdpcap_hook_map, md->obj);
 
 	if (!md->networks_map || !md->vpc_map || !md->endpoints_map ||
-	    !md->hosted_endpoints_iface_map || !md->interface_config_map ||
+	    !md->port_map || !md->hosted_endpoints_iface_map || !md->interface_config_map ||
 	    !md->interfaces_map || !md->fwd_flow_mod_cache ||
 	    !md->rev_flow_mod_cache || !md->ep_flow_host_cache ||
 	    !md->ep_host_cache || !md->xdpcap_hook_map || !md->jmp_table_map ||
@@ -119,6 +119,7 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	md->networks_map_fd = bpf_map__fd(md->networks_map);
 	md->vpc_map_fd = bpf_map__fd(md->vpc_map);
 	md->endpoints_map_fd = bpf_map__fd(md->endpoints_map);
+	md->port_map_fd = bpf_map__fd(md->port_map);
 	md->interface_config_map_fd = bpf_map__fd(md->interface_config_map);
 	md->hosted_endpoints_iface_map_fd =
 		bpf_map__fd(md->hosted_endpoints_iface_map);
@@ -164,6 +165,17 @@ static int get_unused_itf_index(struct user_metadata_t *md)
 			return i;
 	}
 	return -1;
+}
+
+int trn_update_port(struct user_metadata_t *md, struct port_key_t *portkey,
+		    struct port_t *port)
+{
+	int err = bpf_map_update_elem(md->port_map_fd, portkey, port, 0);
+	if (err) {
+		TRN_LOG_ERROR("Store Port mapping failed (err:%d).", err);
+		return 1;
+	}
+	return 0;
 }
 
 int trn_update_endpoint(struct user_metadata_t *md,
@@ -300,6 +312,7 @@ int trn_add_prog(struct user_metadata_t *md, unsigned int prog_idx,
 	_SET_INNER_MAP(networks_map);
 	_SET_INNER_MAP(vpc_map);
 	_SET_INNER_MAP(endpoints_map);
+	_SET_INNER_MAP(port_map);
 	_SET_INNER_MAP(hosted_endpoints_iface_map);
 	_SET_INNER_MAP(interface_config_map);
 	_SET_INNER_MAP(interfaces_map);
@@ -336,6 +349,7 @@ int trn_add_prog(struct user_metadata_t *md, unsigned int prog_idx,
 	_UPDATE_INNER_MAP(networks_map);
 	_UPDATE_INNER_MAP(vpc_map);
 	_UPDATE_INNER_MAP(endpoints_map);
+	_UPDATE_INNER_MAP(port_map);
 	_UPDATE_INNER_MAP(hosted_endpoints_iface_map);
 	_UPDATE_INNER_MAP(interface_config_map);
 	_UPDATE_INNER_MAP(interfaces_map);

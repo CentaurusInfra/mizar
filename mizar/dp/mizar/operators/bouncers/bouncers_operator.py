@@ -74,7 +74,6 @@ class BouncerOperator(object):
     def update_bouncers_with_divider(self, div):
         bouncers = self.store.get_bouncers_of_vpc(div.vpc)
         for b in bouncers.values():
-            logger.info("BB {}".format(b.name))
             b.update_vpc(set([div]))
 
     def delete_divider_from_bouncers(self, div):
@@ -88,7 +87,7 @@ class BouncerOperator(object):
         for key in bouncers:
             bouncers[key].update_eps(eps)
 
-        if ep.type == OBJ_DEFAULTS.ep_type_simple:
+        if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
             ep.update_bouncers_list(bouncers)
 
     def delete_endpoint_from_bouncers(self, ep):

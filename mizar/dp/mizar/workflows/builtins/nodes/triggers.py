@@ -26,16 +26,24 @@ from mizar.common.common import *
 from mizar.common.constants import *
 from mizar.common.wf_factory import *
 from mizar.common.wf_param import *
-
 logger = logging.getLogger()
 
 
-@kopf.on.resume('', 'v1', 'nodes')
-@kopf.on.update('', 'v1', 'nodes')
-@kopf.on.create('', 'v1', 'nodes')
+@kopf.on.resume('', 'v1', 'nodes', retries=OBJ_DEFAULTS.kopf_max_retries, when=LAMBDAS.k8s_provider_vanilla)
+@kopf.on.update('', 'v1', 'nodes', retries=OBJ_DEFAULTS.kopf_max_retries, when=LAMBDAS.k8s_provider_vanilla)
+@kopf.on.create('', 'v1', 'nodes', retries=OBJ_DEFAULTS.kopf_max_retries, when=LAMBDAS.k8s_provider_vanilla)
 async def droplet_opr_on_node(body, spec, **kwargs):
     param = HandlerParam()
     param.name = kwargs['name']
     param.body = body
     param.spec = spec
     run_workflow(wffactory().k8sDropletCreate(param=param))
+
+
+@kopf.on.delete('', 'v1', 'nodes', retries=OBJ_DEFAULTS.kopf_max_retries, when=LAMBDAS.k8s_provider_vanilla)
+async def droplet_opr_on_node_delete(body, spec, **kwargs):
+    param = HandlerParam()
+    param.name = kwargs['name']
+    param.body = body
+    param.spec = spec
+    run_workflow(wffactory().k8sDropletDelete(param=param))

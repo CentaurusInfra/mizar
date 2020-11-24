@@ -38,9 +38,19 @@ from mizar.dp.mizar.workflows.endpoints.triggers import *
 from mizar.dp.mizar.workflows.builtins.services.triggers import *
 from mizar.dp.mizar.workflows.builtins.nodes.triggers import *
 from mizar.dp.mizar.workflows.builtins.pods.triggers import *
+import grpc
+import threading
+from google.protobuf import empty_pb2
+from concurrent import futures
+from mizar.proto import builtins_pb2_grpc as builtins_pb2_grpc
+from mizar.arktos.arktos_service import ArktosService
+from kubernetes import client, config
+import socket
+from mizar.common.constants import *
 
 logger = logging.getLogger()
 LOCK: asyncio.Lock
+POOL_WORKERS = 10
 
 
 @kopf.on.startup()
@@ -49,7 +59,7 @@ async def on_startup(logger, **kwargs):
     global LOCK
     LOCK = asyncio.Lock()
     param = HandlerParam()
-
+    config.load_incluster_config()
     sched = 'luigid --background --port 8082 --pidfile /var/run/luigi/luigi.pid --logdir /var/log/luigi --state-path /var/lib/luigi/luigi.state'
     subprocess.call(sched, shell=True)
     while not os.path.exists("/var/run/luigi/luigi.pid"):
@@ -61,6 +71,13 @@ async def on_startup(logger, **kwargs):
         pass
     logger.info("Running luigid central scheduler pid={}!".format(pid))
 
+    threading.Thread(target=grpc_server).start()
+    create_config_map()
+    configmap = read_config_map()
+    if configmap:
+        if read_config_map().data["name"] == "arktos":
+            logger.info("Found config map, disabling builtin kopf triggers!")
+            COMPUTE_PROVIDER.k8s = False
     start_time = time.time()
 
     run_workflow(wffactory().DropletOperatorStart(param=param))
@@ -74,3 +91,35 @@ async def on_startup(logger, **kwargs):
     run_workflow(wffactory().EndpointOperatorStart(param=param))
 
     logger.info("Bootstrap time:  %s seconds ---" % (time.time() - start_time))
+
+
+def grpc_server():
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=POOL_WORKERS))
+
+    builtins_pb2_grpc.add_BuiltinsServiceServicer_to_server(
+        ArktosService(), server
+    )
+    server.add_insecure_port('[::]:50052')
+    server.start()
+    logger.info("Running gRPC server for Network Controller!")
+    server.wait_for_termination()
+
+
+def create_config_map():
+    metadata = metadata = client.V1ObjectMeta(
+        name="mizar-grpc-service",
+        namespace="default",
+        labels=dict(service="mizar")
+    )
+    data = dict(host=socket.gethostbyname(socket.gethostname()))
+    configmap = client.V1ConfigMap(
+        api_version="v1",
+        kind="ConfigMap",
+        data=data,
+        metadata=metadata
+    )
+    kube_create_config_map(client.CoreV1Api(), "default", configmap)
+
+
+def read_config_map():
+    return kube_read_config_map(client.CoreV1Api(), "system-source", "kube-system")

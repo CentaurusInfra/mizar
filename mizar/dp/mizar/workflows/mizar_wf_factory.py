@@ -102,6 +102,9 @@ class MizarWorkflowFactory():
     def DropletProvisioned(self, param):
         return DropletProvisioned(param=param)
 
+    def DropletDelete(self, param):
+        return DropletDelete(param=param)
+
     def NetOperatorStart(self, param):
         return NetOperatorStart(param=param)
 
@@ -150,5 +153,11 @@ class MizarWorkflowFactory():
     def k8sDropletCreate(self, param):
         return k8sDropletCreate(param=param)
 
+    def k8sDropletDelete(self, param):
+        return k8sDropletDelete(param=param)
+
     def k8sPodCreate(self, param):
         return k8sPodCreate(param=param)
+
+    def k8sPodDelete(self, param):
+        return k8sPodDelete(param=param)

@@ -85,23 +85,21 @@ class DropletOperator(object):
         d = Droplet(name, self.obj_api, self.store, spec)
         self.store.update_droplet(d)
 
-    def on_bouncer_init(self, body, spec, **kwargs):
-        name = kwargs['name']
-        logger.info("Droplet place bouncer {} with spec: {}".format(name, spec))
-        b = Bouncer(name, self.obj_api, None, spec)
-        self.assign_bouncer_droplet(b)
-        b.set_status(OBJ_STATUS.bouncer_status_placed)
-        b.update_obj()
-
     def assign_bouncer_droplet(self, bouncer):
         droplets = set(self.store.get_all_droplets())
+        if len(droplets) == 0:
+            return False
         d = random.sample(droplets, 1)[0]
         bouncer.set_droplet(d)
+        return True
 
     def assign_divider_droplet(self, divider):
         droplets = set(self.store.get_all_droplets())
+        if len(droplets) == 0:
+            return False
         d = random.sample(droplets, 1)[0]
         divider.set_droplet(d)
+        return True
 
     def on_delete(self, body, spec, **kwargs):
         name = kwargs['name']

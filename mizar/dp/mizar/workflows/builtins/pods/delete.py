@@ -21,6 +21,24 @@
 
 import logging
 from mizar.common.workflow import *
-from mizar.dp.mizar.operators.bouncers.bouncers_operator import *
 from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
 logger = logging.getLogger()
+
+endpoints_opr = EndpointOperator()
+
+
+class k8sPodDelete(WorkflowTask):
+
+    def requires(self):
+        logger.info("Requires {task}".format(task=self.__class__.__name__))
+        return []
+
+    def run(self):
+        logger.info("Run {task}".format(task=self.__class__.__name__))
+        eps = endpoints_opr.store.get_eps_in_pod(self.param.name)
+        logger.info("Deleting Pod {}".format(self.param.name))
+
+        for ep in eps.values():
+            endpoints_opr.delete_simple_endpoint(ep)
+
+        self.finalize()

@@ -234,7 +234,6 @@ int *update_ep_1_svc(rpc_trn_endpoint_t *ep, struct svc_req *rqstp)
 	epval.eptype = ep->eptype;
 
 	epval.nremote_ips = ep->remote_ips.remote_ips_len;
-
 	if (epval.nremote_ips > TRAN_MAX_REMOTES) {
 		TRN_LOG_WARN("Number of maximum remote IPs exceeded,"
 			     " configuring only the first %d remote IPs.",
@@ -243,9 +242,10 @@ int *update_ep_1_svc(rpc_trn_endpoint_t *ep, struct svc_req *rqstp)
 		goto error;
 	}
 
-	memcpy(epval.remote_ips, ep->remote_ips.remote_ips_val,
-	       epval.nremote_ips * sizeof(epval.remote_ips[0]));
-
+	if (epval.nremote_ips > 0) {
+		memcpy(epval.remote_ips, ep->remote_ips.remote_ips_val,
+		       epval.nremote_ips * sizeof(epval.remote_ips[0]));
+	}
 	memcpy(epval.mac, ep->mac, 6 * sizeof(epval.mac[0]));
 
 	if (strcmp(ep->hosted_interface, "") != 0) {
@@ -272,6 +272,50 @@ int *update_ep_1_svc(rpc_trn_endpoint_t *ep, struct svc_req *rqstp)
 			"Cannot update transit XDP with ep %d on interface %s",
 			epkey.tunip[2], itf);
 		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	return &result;
+
+error:
+	return &result;
+}
+
+int *update_port_1_svc(rpc_trn_port_t *port, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result;
+	result = 0;
+	int rc;
+	char *itf = port->interface;
+	struct port_key_t portkey;
+	struct port_t portval;
+
+	TRN_LOG_DEBUG(
+		"update_port_1 Port tunid: %ld IP: 0x%x, with %u port for target_port: %u and protocol: %u",
+		port->tunid, port->ip, port->port, port->target_port,
+		port->protocol);
+
+	struct user_metadata_t *md = trn_itf_table_find(itf);
+
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	memcpy(portkey.tunip, &port->tunid, sizeof(port->tunid));
+	portkey.tunip[2] = port->ip;
+	portkey.port = port->port;
+	portkey.protocol = port->protocol;
+
+	portval.target_port = port->target_port;
+	rc = trn_update_port(md, &portkey, &portval);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure updating port %ld data on interface: %s",
+			      port->tunid, port->interface);
+		result = RPC_TRN_FATAL;
 		goto error;
 	}
 
@@ -801,8 +845,10 @@ int *update_agent_ep_1_svc(rpc_trn_endpoint_t *ep, struct svc_req *rqstp)
 		goto error;
 	}
 
-	memcpy(epval.remote_ips, ep->remote_ips.remote_ips_val,
-	       epval.nremote_ips * sizeof(epval.remote_ips[0]));
+	if (epval.nremote_ips > 0) {
+		memcpy(epval.remote_ips, ep->remote_ips.remote_ips_val,
+		       epval.nremote_ips * sizeof(epval.remote_ips[0]));
+	}
 
 	memcpy(epval.mac, ep->mac, 6 * sizeof(epval.mac[0]));
 
@@ -992,8 +1038,12 @@ int *update_agent_md_1_svc(rpc_trn_agent_metadata_t *agent_md,
 
 	amd.ep.eptype = agent_md->ep.eptype;
 	amd.ep.nremote_ips = agent_md->ep.remote_ips.remote_ips_len;
-	memcpy(amd.ep.remote_ips, agent_md->ep.remote_ips.remote_ips_val,
-	       sizeof(uint32_t) * amd.ep.nremote_ips);
+	if (amd.ep.nremote_ips > 0) {
+		memcpy(amd.ep.remote_ips,
+		       agent_md->ep.remote_ips.remote_ips_val,
+		       sizeof(uint32_t) * amd.ep.nremote_ips);
+	}
+
 	amd.ep.hosted_iface = amd.eth.iface_index;
 	memcpy(amd.ep.mac, agent_md->ep.mac, 6 * sizeof(amd.ep.mac[0]));
 

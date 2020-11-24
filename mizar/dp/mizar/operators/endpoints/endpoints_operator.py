@@ -21,6 +21,7 @@
 
 import logging
 import random
+import json
 from kubernetes import client, config
 from mizar.obj.endpoint import Endpoint
 from mizar.obj.bouncer import Bouncer
@@ -88,36 +89,61 @@ class EndpointOperator(object):
         self.store.update_ep(ep)
 
     def update_bouncer_with_endpoints(self, bouncer):
-        eps = self.store.get_eps_in_net(bouncer.net).values()
+        eps = list(self.store.get_eps_in_net(bouncer.net).values())
         bouncer.update_eps(eps)
 
     def update_endpoints_with_bouncers(self, bouncer):
-        eps = self.store.get_eps_in_net(bouncer.net).values()
+        eps = list(self.store.get_eps_in_net(bouncer.net).values())
         for ep in eps:
-            ep.update_bouncers(set([bouncer]))
+            logger.info("EP {} update agent with bouncer {}".format(
+                bouncer.name, ep.name))
+            if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
+                ep.update_bouncers({bouncer.name: bouncer})
 
-    def create_scaled_endpoint(self, name, spec):
+    def create_scaled_endpoint(self, name, ep_name, spec, net, extra, namespace="default"):
         logger.info("Create scaled endpoint {} spec {}".format(name, spec))
-        ep = Endpoint(name, self.obj_api, self.store)
-        ip = spec['clusterIP']
+        ep = Endpoint(ep_name, self.obj_api, self.store)
+        ip = ''
+        if spec['clusterIP'] != "":
+            ip = spec['clusterIP']
+            logger.info("Service {} already has IP {}".format(name, ip))
+        else:
+            logger.info("Allocating IP {} for service {}".format(ip, name))
+            ip = net.allocate_ip()
+        net.mark_ip_as_allocated(ip)
         # If not provided in Pod, use defaults
         # TODO: have it pod :)
-        ep.set_vni(OBJ_DEFAULTS.default_vpc_vni)
-        ep.set_vpc(OBJ_DEFAULTS.default_ep_vpc)
-        ep.set_net(OBJ_DEFAULTS.default_ep_net)
+        ep.set_vni(net.vni)
+        ep.set_vpc(net.vpc)
+        ep.set_net(net.name)
         ep.set_ip(ip)
         ep.set_mac(self.rand_mac())
         ep.set_type(OBJ_DEFAULTS.ep_type_scaled)
         ep.set_status(OBJ_STATUS.ep_status_init)
         ep.create_obj()
-        self.annotate_builtin_endpoints(name)
+        if not extra:
+            logger.info("Annotating endpoint!")
+            self.annotate_builtin_endpoints(name, namespace)
+        return ep
+
+    def create_gw_endpoint(self, name, ip, vni, vpc, net):
+        logger.info("Create gw endpoint")
+        ep = Endpoint(name, self.obj_api, self.store)
+        ep.set_vni(vni)
+        ep.set_vpc(vpc)
+        ep.set_net(net)
+        ep.set_mac(self.rand_mac())
+        ep.set_ip(ip)
+        ep.set_type(OBJ_DEFAULTS.ep_type_gateway)
+        ep.set_status(OBJ_STATUS.ep_status_init)
+        return ep
 
     def annotate_builtin_endpoints(self, name, namespace='default'):
         get_body = True
         while get_body:
-            endpoint = self.core_api.read_namespaced_endpoints(
-                name=name,
-                namespace=namespace)
+            endpoint = kube_get_endpoints(self.core_api, name, namespace)
+            if not endpoint or not endpoint.metadata or not endpoint.metadata.annotations:
+                return
             endpoint.metadata.annotations[OBJ_DEFAULTS.mizar_service_annotation_key] = OBJ_DEFAULTS.mizar_service_annotation_val
             try:
                 self.core_api.patch_namespaced_endpoints(
@@ -141,19 +167,89 @@ class EndpointOperator(object):
             random.randint(0, 255),
         )
 
-    def update_scaled_endpoint_backend(self, name, spec):
-        ep = self.store.get_ep(name)
+    def update_scaled_endpoint_backend(self, name, ep_name, namespace, spec):
+        ep = self.store.get_ep(ep_name)
         if ep is None:
             return None
         backends = set()
         for s in spec:
-            for a in s['addresses']:
-                backends.add(a['ip'])
-        ep.set_backends(backends)
+            if "addresses" in s:
+                for a in s['addresses']:
+                    backends.add(a['ip'])
+        ep.set_backends(list(backends))
+        ports = {}
+        service = kube_get_service(self.core_api, name, namespace)
+        if not service:
+            logger.info("Service not found!")
+            return
+        # ports = {"frontend_port, protocol"]: [backend_port]}
+        for service_ports in service.spec.ports:
+            frontend_port = service_ports.port
+            backend_port = service_ports.target_port
+            proto = service_ports.protocol
+            if service_ports.protocol == "TCP":
+                proto = CONSTANTS.IPPROTO_TCP
+            if service_ports.protocol == "UDP":
+                proto = CONSTANTS.IPROTO_UDP
+            ports["{},{}".format(frontend_port, proto)] = backend_port
+        logger.info("Mizar service ports {}".format(ports))
+        ep.set_ports(ports)
         self.store_update(ep)
         logger.info(
-            "Update scaled endpoint {} with backends: {}".format(name, backends))
-        return self.store.get_ep(name)
+            "Update scaled endpoint {} with backends: {}".format(ep_name, backends))
+        return self.store.get_ep(ep_name)
+
+    def update_scaled_endpoint_backend_service(self, name, ep_name, namespace, ports, backend_ips):
+        ep = self.store.get_ep(ep_name)
+        if ep is None:
+            return None
+        backends = set()
+        for b in backend_ips:
+            logger.info("Service update scaled endpoint add ip {}".format(b))
+            backends.add(b)
+        ports_map = {}
+        for port in ports:
+            frontend_port = port.frontend_port
+            backend_port = port.backend_port
+            proto = port.proto
+            if port.proto == "TCP":
+                proto = CONSTANTS.IPPROTO_TCP
+            if port.proto == "UDP":
+                proto = CONSTANTS.IPROTO_UDP
+            ports_map["{},{}".format(frontend_port, proto)] = backend_port
+        logger.info("Arktos service ports {}".format(ports_map))
+        ep.set_backends(list(backends))
+        ep.set_ports(ports_map)
+        self.store_update(ep)
+        logger.info(
+            "Service update scaled endpoint {} with backends: {}".format(ep_name, backends))
+        return self.store.get_ep(ep_name)
+
+    def update_scaled_endpoint_backend_service_json(self, name, ep_name, namespace, ports, backend_ips):
+        ep = self.store.get_ep(ep_name)
+        if ep is None:
+            return None
+        backends = set()
+        for b in backend_ips:
+            logger.info("Service update scaled endpoint add ip {}".format(b))
+            backends.add(b)
+        ports_map = {}
+        for port in ports:
+            frontend_port = port["frontend_port"]
+            backend_port = port["backend_port"]
+            proto = port["protocol"]
+            if port["protocol"] == "TCP":
+                proto = CONSTANTS.IPPROTO_TCP
+            if port["protocol"] == "UDP":
+                proto = CONSTANTS.IPROTO_UDP
+            ports_map["{},{}".format(frontend_port, proto)] = backend_port
+        logger.info("Arktos service ports {}".format(ports_map))
+        ep.set_backends(list(backends))
+        ep.set_ports(ports_map)
+        self.store_update(ep)
+        logger.info(
+            "Service update scaled endpoint {} with backends: {}".format(ep_name, backends))
+        return self.store.get_ep(ep_name)
 
     def delete_endpoints_from_bouncers(self, bouncer):
         eps = self.store.get_eps_in_net(bouncer.net).values()
@@ -162,7 +258,8 @@ class EndpointOperator(object):
     def delete_bouncer_from_endpoints(self, bouncer):
         eps = self.store.get_eps_in_net(bouncer.net).values()
         for ep in eps:
-            ep.update_bouncers(set([bouncer]), False)
+            if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
+                ep.update_bouncers({bouncer.name: bouncer}, False)
 
     def produce_simple_endpoint_interface(self, ep):
         """
@@ -199,29 +296,42 @@ class EndpointOperator(object):
             status=interface.status
         )]
 
-        interfaces = InterfaceServiceClient(
-            ep.get_droplet_ip()).ProduceInterfaces(InterfacesList(interfaces=interfaces_list))
+        if ep.type == OBJ_DEFAULTS.ep_type_host:
+            interfaces_list[0].status = InterfaceStatus.consumed
+            interfaces = InterfaceServiceClient(
+                ep.get_droplet_ip()).ActivateHostInterface(interfaces_list[0])
+        else:
+            interfaces = InterfaceServiceClient(
+                ep.get_droplet_ip()).ProduceInterfaces(InterfacesList(interfaces=interfaces_list))
 
-        # At this point Mizar has provisioned the network
-        # TODO (cathy): mark the pod network as ready! Shall it be here or in
-        # the pod builtin wf.
         logger.info("Produced {}".format(interfaces))
 
     def create_simple_endpoints(self, interfaces, spec):
         """
         Create a simple endpoint object (calling the API operator)
         """
-        for interface in interfaces.interfaces:
+        for interface, net_info in zip(interfaces.interfaces, spec['interfaces']):
             logger.info("Create simple endpoint {}".format(interface))
             name = get_itf_name(interface.interface_id)
+            if self.store.get_ep(name):
+                logger.info("EP already exists!")
+                return
             ep = Endpoint(name, self.obj_api, self.store)
-
+            ep.set_pod(spec["name"])
             ep.set_type(OBJ_DEFAULTS.ep_type_simple)
             ep.set_status(OBJ_STATUS.ep_status_init)
 
             ep.set_vni(spec['vni'])
             ep.set_vpc(spec['vpc'])
-            ep.set_net(spec['net'])
+            """
+            'subnet' is an optional field for arktos
+            'ip' is also an optional field, and needs to fall within subnet's CIDR
+            since both fields are optional, we need force subnet to have the same
+            CIDR range as vpc,
+            OR arktos needs check wheter the ip and subnet is valid
+            """
+            ep.set_net(net_info.get('subnet', spec['subnet']))
+            ep.set_ip(net_info.get('ip', ''))
 
             ep.set_mac(interface.address.mac)
             ep.set_veth_name(interface.veth.name)
@@ -232,11 +342,38 @@ class EndpointOperator(object):
             ep.set_droplet_mac(spec['droplet'].mac)
             ep.set_interface(interface)
             ep.create_obj()
-            self.store_update(ep)
+
+    def create_host_endpoint(self, ip, droplet, interfaces):
+        for interface in interfaces.interfaces:
+            logger.info("Create host endpoint {}".format(interface))
+            name = get_itf_name(interface.interface_id)
+            ep = Endpoint(name, self.obj_api, self.store)
+
+            ep.set_type(OBJ_DEFAULTS.ep_type_host)
+            ep.set_status(OBJ_STATUS.ep_status_init)
+
+            ep.set_vni(OBJ_DEFAULTS.default_vpc_vni)
+            ep.set_vpc(OBJ_DEFAULTS.default_ep_vpc)
+            ep.set_net(OBJ_DEFAULTS.default_ep_net)
+            ep.set_gw(OBJ_DEFAULTS.default_net_gw)
+
+            ep.set_mac(interface.address.mac)
+            ep.set_veth_name(interface.veth.name)
+            ep.set_veth_peer(interface.veth.peer)
+            ep.set_droplet(droplet.name)
+            ep.droplet_obj = droplet
+            ep.set_ip(ip)
+            ep.set_prefix(OBJ_DEFAULTS.default_host_ep_prefix)
+
+            ep.set_droplet_ip(droplet.ip)
+            ep.set_droplet_mac(droplet.mac)
+            ep.set_interface(interface)
+            ep.create_obj()
+            return ep
 
     def init_simple_endpoint_interfaces(self, worker_ip, spec):
         """
-        Constuct the interface message and call the InitializeInterfaces gRPC on
+        Construct the interface message and call the InitializeInterfaces gRPC on
         the hostIP
         """
         logger.info("init_simple_endpoint_interface {}".format(worker_ip))
@@ -256,16 +393,46 @@ class EndpointOperator(object):
             veth_peer = "veth-" + local_id
             veth = VethInterface(name=veth_name, peer=veth_peer)
 
+            pod_provider = PodProvider.K8S
+            if spec['type'] == 'arktos':
+                pod_provider = PodProvider.ARKTOS
             interfaces_list.append(Interface(
                 interface_id=interface_id,
                 interface_type=InterfaceType.veth,
-                pod_provider=PodProvider.K8S,
+                pod_provider=pod_provider,
                 veth=veth,
                 status=InterfaceStatus.init
             ))
+        if len(interfaces_list) > 0:
+            interfaces = InterfacesList(interfaces=interfaces_list)
 
+            # The Interface service will create the veth peers for the interface and
+            # allocate the mac addresses for us.
+            return InterfaceServiceClient(worker_ip).InitializeInterfaces(interfaces)
+        return None
+
+    def init_host_endpoint_interfaces(self, droplet):
+        interfaces_list = []
+        pod_id = PodId(k8s_pod_name=droplet.name,
+                       k8s_namespace="default",
+                       k8s_pod_tenant="")
+        interface_id = InterfaceId(
+            pod_id=pod_id, interface="hostep")
+        veth_name = "eth-hostep"
+        veth_peer = "veth-hostep"
+        veth = VethInterface(name=veth_name, peer=veth_peer)
+
+        interfaces_list.append(Interface(
+            interface_id=interface_id,
+            interface_type=InterfaceType.veth,
+            pod_provider=PodProvider.K8S,
+            veth=veth,
+            status=InterfaceStatus.init
+        ))
         interfaces = InterfacesList(interfaces=interfaces_list)
+        return InterfaceServiceClient(droplet.ip).InitializeInterfaces(interfaces)
 
-        # The Interface service will create the veth peers for the interface and
-        # allocate the mac addresses for us.
-        return InterfaceServiceClient(worker_ip).InitializeInterfaces(interfaces)
+    def delete_simple_endpoint(self, ep):
+        logger.info(
+            "Delete endpoint object assicated with interface {}".format(ep.name))
+        ep.delete_obj()

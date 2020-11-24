@@ -19,30 +19,11 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-FROM kindest/node:v1.18.2
-RUN apt-get update -y
-RUN apt-get install -y apt-utils
-RUN apt-get install -y sudo
-RUN apt-get install -y vim
-RUN apt-get install -y rpcbind
-RUN apt-get install -y rsyslog
-RUN apt-get install -y libelf-dev
-RUN apt-get install -y iproute2
-RUN apt-get install -y net-tools
-RUN apt-get install -y iputils-ping
-RUN apt-get install -y ethtool
-RUN apt-get install -y curl
-RUN apt-get install -y python3
-RUN apt-get install -y python3-pip
-RUN mkdir -p /var/mizar/
-RUN mkdir -p /opt/cni/bin
-RUN mkdir -p /etc/cni/net.d
+FROM fwnetworking/kindnode:latest
 COPY . /var/mizar/
 RUN pip3 install /var/mizar/
-RUN ln -snf /sys/fs/bpf /bpffs
 RUN ln -snf /var/mizar/build/bin /trn_bin
 RUN ln -snf /var/mizar/build/xdp /trn_xdp
 RUN ln -snf /var/mizar/etc/cni/10-mizarcni.conf /etc/cni/net.d/10-mizarcni.conf
 RUN ln -snf /var/mizar/mizar/cni.py /opt/cni/bin/mizarcni
 RUN ln -snf /var/mizar/build/tests/mizarcni.config /etc/mizarcni.config
-

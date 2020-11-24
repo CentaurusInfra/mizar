@@ -28,11 +28,14 @@ class CONSTANTS:
     TRAN_SUBSTRT_EP = 0
     TRAN_SIMPLE_EP = 1
     TRAN_SCALED_EP = 2
+    TRAN_GATEWAY_EP = 3
     ON_XDP_TX = "ON_XDP_TX"
     ON_XDP_PASS = "ON_XDP_PASS"
     ON_XDP_REDIRECT = "ON_XDP_REDIRECT"
     ON_XDP_DROP = "ON_XDP_DROP"
     ON_XDP_SCALED_EP = "ON_XDP_SCALED_EP"
+    IPPROTO_TCP = "6"
+    IPROTO_UDP = "17"
 
 
 class OBJ_STATUS:
@@ -78,25 +81,41 @@ class OBJ_DEFAULTS:
     default_ep_net = 'net0'
     default_ep_type = 'simple'
     default_vpc_vni = '1'
-    default_net_ip = '10.0.0.0'
+    default_vpc_ip = '20.0.0.0'
+    default_vpc_prefix = '8'
+    default_net_ip = '20.0.0.0'
+    default_net_gw = '20.0.0.1'
     default_net_prefix = '8'
     default_n_bouncers = 1
     default_n_dividers = 1
-
+    default_host_ep_prefix = "32"
     ep_type_simple = 'simple'
     ep_type_scaled = 'scaled'
+    ep_type_host = 'host'
+    ep_type_gateway = 'gateway'
+    droplet_eps = [ep_type_simple, ep_type_host]
 
     mizar_service_annotation_key = "service.beta.kubernetes.io/mizar-scaled-endpoint-type"
     mizar_service_annotation_val = "scaled-endpoint"
 
+    arktos_pod_label = "arktos.futurewei.com/network"
+    arktos_pod_annotation = "arktos.futurewei.com/nic"
+    kopf_max_retries = 10
+
 
 class RESOURCES:
     endpoints = "endpoints"
-    nets = "nets"
+    nets = "subnets"
     vpcs = "vpcs"
     droplets = "droplets"
     bouncers = "bouncers"
     dividers = "dividers"
+
+
+class COMPUTE_PROVIDER:
+    kubernetes = "kubernetes"
+    k8s = True
+    arktos = "arktos"
 
 
 class LAMBDAS:
@@ -157,3 +176,4 @@ class LAMBDAS:
         'status', '') == OBJ_STATUS.divider_status_provisioned
     divider_status_placed = lambda body, **_: body.get('spec', {}).get(
         'status', '') == OBJ_STATUS.divider_status_placed
+    k8s_provider_vanilla = lambda **_: COMPUTE_PROVIDER.k8s == True

@@ -22,7 +22,6 @@
 import logging
 from mizar.common.workflow import *
 from mizar.dp.mizar.operators.droplets.droplets_operator import *
-
 logger = logging.getLogger()
 
 droplet_opr = DropletOperator()
@@ -42,7 +41,4 @@ class k8sDropletCreate(WorkflowTask):
                 continue
             ip = addr['address']
             droplet_opr.create_droplet(ip)
-            # TODO (Phu): provision the host simple endpoint in the default
-            # VPC/default network
-
         self.finalize()

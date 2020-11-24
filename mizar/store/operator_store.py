@@ -20,6 +20,7 @@
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import logging
+import inspect
 
 logger = logging.getLogger()
 
@@ -38,11 +39,13 @@ class OprStore(object):
         self.droplets_store = {}
 
         self.vpcs_store = {}
+        self.arktosnet_vpc_store = {}
         self.nets_vpc_store = {}
         self.nets_store = {}
 
         self.eps_store = {}
         self.eps_net_store = {}
+        self.eps_pod_store = {}
 
         self.dividers_store = {}
         self.dividers_vpc_store = {}
@@ -61,6 +64,15 @@ class OprStore(object):
     def get_vpc(self, name):
         if name in self.vpcs_store:
             return self.vpcs_store[name]
+        return None
+
+    def update_arktosnet_vpc(self, a, v):
+        if v in self.vpcs_store:
+            self.arktosnet_vpc_store[a] = v
+
+    def get_vpc_in_arktosnet(self, name):
+        if name in self.arktosnet_vpc_store:
+            return self.arktosnet_vpc_store[name]
         return None
 
     def contains_vpc(self, name):
@@ -112,10 +124,15 @@ class OprStore(object):
             logger.info("Net: {}, Spec: {}".format(n.name, n.get_obj_spec()))
 
     def update_ep(self, ep):
+        logger.info("Store update ep {}".format(ep.name))
+        # logger.info('caller name:{}'.format(inspect.stack()[1][3]))
         self.eps_store[ep.name] = ep
         if ep.net not in self.eps_net_store:
             self.eps_net_store[ep.net] = {}
         self.eps_net_store[ep.net][ep.name] = ep
+        if ep.pod not in self.eps_pod_store:
+            self.eps_pod_store[ep.pod] = {}
+        self.eps_pod_store[ep.pod][ep.name] = ep
 
     def delete_ep(self, name):
         if name not in self.eps_store:
@@ -128,6 +145,12 @@ class OprStore(object):
         l = len(self.eps_net_store[ep.net])
         if l == 0:
             del self.eps_net_store[ep.net]
+        if name not in self.eps_pod_store[ep.pod]:
+            return ep
+        self.eps_pod_store[ep.pod].pop(name)
+        l = len(self.eps_pod_store[ep.pod])
+        if l == 0:
+            del self.eps_pod_store[ep.pod]
         return ep
 
     def get_ep(self, name):
@@ -138,6 +161,11 @@ class OprStore(object):
     def get_eps_in_net(self, net):
         if net in self.eps_net_store:
             return self.eps_net_store[net]
+        return {}
+
+    def get_eps_in_pod(self, pod):
+        if pod in self.eps_pod_store:
+            return self.eps_pod_store[pod]
         return {}
 
     def contains_ep(self, name):
