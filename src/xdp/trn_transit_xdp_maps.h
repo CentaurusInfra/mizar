@@ -142,3 +142,50 @@ BPF_ANNOTATE_KV_PAIR(ep_host_cache, struct endpoint_key_t,
 		     struct remote_endpoint_t);
 
 struct bpf_map_def SEC("maps") xdpcap_hook = XDPCAP_HOOK();
+
+// maps for ingress policy checks (used by transit xdp prog)
+
+struct bpf_map_def SEC("maps") ing_vsip_enforce_map = {
+	.type = BPF_MAP_TYPE_HASH,
+	.key_size = sizeof(struct vsip_enforce_t),
+	.value_size = sizeof(__u8),
+	.max_entries = 1024,
+	.map_flags = 0,
+};
+BPF_ANNOTATE_KV_PAIR(ing_vsip_enforce_map, struct vsip_enforce_t, __u8);
+
+struct bpf_map_def SEC("maps") ing_vsip_prim_map = {
+	.type = BPF_MAP_TYPE_LPM_TRIE,
+	.key_size = sizeof(struct vsip_cidr_t),
+	.value_size = sizeof(__u64),
+	.max_entries = 1024 * 1024,
+	.map_flags = 1,
+};
+BPF_ANNOTATE_KV_PAIR(ing_vsip_prim_map, struct vsip_cidr_t, __u64);
+
+struct bpf_map_def SEC("maps") ing_vsip_ppo_map = {
+	.type = BPF_MAP_TYPE_HASH,
+	.key_size = sizeof(struct vsip_ppo_t),
+	.value_size = sizeof(__u64),
+	.max_entries = 1024 * 1024,
+	.map_flags = 0,
+};
+BPF_ANNOTATE_KV_PAIR(ing_vsip_ppo_map, struct vsip_ppo_t, __u64);
+
+struct bpf_map_def SEC("maps") ing_vsip_supp_map = {
+	.type = BPF_MAP_TYPE_LPM_TRIE,
+	.key_size = sizeof(struct vsip_cidr_t),
+	.value_size = sizeof(__u64),
+	.max_entries = 1024 * 1024,
+	.map_flags = 1,
+};
+BPF_ANNOTATE_KV_PAIR(ing_vsip_supp_map, struct vsip_cidr_t, __u64);
+
+struct bpf_map_def SEC("maps") ing_vsip_except_map = {
+	.type = BPF_MAP_TYPE_LPM_TRIE,
+	.key_size = sizeof(struct vsip_cidr_t),
+	.value_size = sizeof(__u64),
+	.max_entries = 1024 * 1024,
+	.map_flags = 1,
+};
+BPF_ANNOTATE_KV_PAIR(ing_vsip_except_map, struct vsip_cidr_t, __u64);

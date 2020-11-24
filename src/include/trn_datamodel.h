@@ -148,3 +148,22 @@ struct scaled_endpoint_remote_t {
 	unsigned char h_source[6];
 	unsigned char h_dest[6];
 } __attribute__((packed));
+
+struct vsip_enforce_t {
+	__u64 tunnel_id;
+	__be32 local_ip;
+} __attribute__((packed));
+
+struct vsip_cidr_t {
+	__u32 prefixlen;
+	__u64 tunnel_id;
+	__be32 local_ip;
+	__be32 remote_ip;
+} __attribute__((packed));
+
+struct vsip_ppo_t {
+	__u64 tunnel_id;
+	__be32 local_ip;
+	__u8 proto;
+	__be16 port;
+} __attribute__((packed));
