@@ -141,8 +141,18 @@ class k8sApi:
             },
             'spec': {
                 'ports': [
-                    {'port': 80,
-                     'protocol': 'TCP'}],
+                    {'name': 'http',
+                     'port': 8000,
+                     'targetPort': 7000,
+                     'protocol': 'TCP'},
+                    {'name': 'tcp',
+                     'port': 8001,
+                     'targetPort': 9001,
+                     'protocol': 'TCP'},
+                    {'name': 'udp',
+                     'port': 8002,
+                     'targetPort': 5001,
+                     'protocol': 'UDP'}],
                 'selector': {'scaledep': name}
             }
         }

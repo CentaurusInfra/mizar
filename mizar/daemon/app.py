@@ -26,6 +26,7 @@ def init():
     nsenter -t 1 -m -u -n -i ls -1 /etc/cni/net.d/*conf* | grep -v '10-mizarcni.conf$' | xargs rm -rf && \
     nsenter -t 1 -m -u -n -i /etc/init.d/rpcbind restart && \
     nsenter -t 1 -m -u -n -i /etc/init.d/rsyslog restart && \
+    nsenter -t 1 -m -u -n -i sysctl -w net.ipv4.tcp_mtu_probing=2 && \
     nsenter -t 1 -m -u -n -i ip link set dev eth0 up mtu 9000' ''')
     r = subprocess.Popen(script, shell=True, stdout=subprocess.PIPE)
     output = r.stdout.read().decode().strip()

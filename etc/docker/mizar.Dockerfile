@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020 The Authors.
 
-# Authors: Sherif Abdelwahab <@zasherif>
-#          Phu Tran          <@phudtran>
+# Authors: Catherine Lu      <@clu2xlu>
+#          Hong Chang        <@Hong-Chang>
+#          Sherif Abdelwahab <@zasherif>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -19,12 +20,7 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-apiVersion: "mizar.com/v1"
-kind: Vpc
-metadata:
-  name: vpc0
-spec:
-  ip: "10.0.0.0"
-  spec: "16"
-  status: "Init"
-  dividers: 2
+FROM debian
+COPY etc/docker/node-init.sh /
+COPY . /var/mizar
+RUN chmod u+x node-init.sh

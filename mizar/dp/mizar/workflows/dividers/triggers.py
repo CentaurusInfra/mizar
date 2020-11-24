@@ -28,9 +28,9 @@ from mizar.common.wf_factory import *
 from mizar.common.wf_param import *
 
 
-@kopf.on.resume(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_init)
-@kopf.on.update(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_init)
-@kopf.on.create(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_init)
+@kopf.on.resume(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_init, retries=OBJ_DEFAULTS.kopf_max_retries)
+@kopf.on.update(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_init, retries=OBJ_DEFAULTS.kopf_max_retries)
+@kopf.on.create(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_init, retries=OBJ_DEFAULTS.kopf_max_retries)
 def divider_opr_on_divider_init(body, spec, **kwargs):
     param = HandlerParam()
     param.name = kwargs['name']
@@ -39,9 +39,9 @@ def divider_opr_on_divider_init(body, spec, **kwargs):
     run_workflow(wffactory().DividerCreate(param=param))
 
 
-@kopf.on.resume(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_provisioned)
-@kopf.on.update(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_provisioned)
-@kopf.on.create(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_provisioned)
+@kopf.on.resume(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_provisioned, retries=OBJ_DEFAULTS.kopf_max_retries)
+@kopf.on.update(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_provisioned, retries=OBJ_DEFAULTS.kopf_max_retries)
+@kopf.on.create(group, version, RESOURCES.dividers, when=LAMBDAS.divider_status_provisioned, retries=OBJ_DEFAULTS.kopf_max_retries)
 def divider_opr_on_divider_provisioned(body, spec, **kwargs):
     param = HandlerParam()
     param.name = kwargs['name']
@@ -50,7 +50,7 @@ def divider_opr_on_divider_provisioned(body, spec, **kwargs):
     run_workflow(wffactory().DividerProvisioned(param=param))
 
 
-@kopf.on.delete(group, version, RESOURCES.dividers)
+@kopf.on.delete(group, version, RESOURCES.dividers, retries=OBJ_DEFAULTS.kopf_max_retries)
 def divider_opr_on_divider_delete(body, spec, **kwargs):
     param = HandlerParam()
     param.name = kwargs['name']

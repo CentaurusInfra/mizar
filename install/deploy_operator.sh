@@ -25,7 +25,7 @@ DIR=${1:-.}
 USER=${2:-dev}
 DOCKER_ACC=${3:-"localhost:5000"}
 YAML_FILE="dev.operator.deploy.yaml"
-. $(dirname "$0")/common.sh
+. install/common.sh
 
 if [[ "$USER" == "user" || "$USER" == "final" ]]; then
     DOCKER_ACC="fwnetworking"

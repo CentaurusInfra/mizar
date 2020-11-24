@@ -18,6 +18,7 @@ from mizar.common.rpc import TrnRpc
 from mizar.common.constants import *
 from pyroute2 import IPRoute, NetNS
 import queue
+import ipaddress
 
 logger = logging.getLogger('mizar_interface_service')
 handler = SysLogHandler(address='/dev/log')
@@ -78,7 +79,6 @@ class InterfaceServer(InterfaceServiceServicer):
         """
         veth_name = interface.veth.name
         veth_peer = interface.veth.peer
-
         veth_index = get_iface_index(veth_name, self.iproute)
 
         if veth_index == -1:
@@ -175,7 +175,6 @@ class InterfaceServer(InterfaceServiceServicer):
         for bouncer in interface.bouncers:
             self.rpc.update_agent_substrate_ep(
                 interface.veth.peer, bouncer.ip_address, bouncer.mac)
-
         self.rpc.update_agent_metadata(interface)
         self.rpc.update_ep(interface)
 
@@ -219,9 +218,70 @@ class InterfaceServer(InterfaceServiceServicer):
         logger.error("Timeout, no new interface to consume!")
         return self._ConsumeInterfaces(requested_pod_name, cni_params)
 
+    def _DeleteVethInterface(self, interface):
+        """
+        Delete a veth interface
+        """
+        veth_peer_index = get_iface_index(interface.veth.peer, self.iproute)
+        self.rpc.unload_transit_agent_xdp(interface)
+        self.iproute.link('del', index=veth_peer_index)
+
     def DeleteInterface(self, request, context):
-        # TODO (Cathy): implement the reverse logic
+        """
+        Delete network interfaces for a pod
+        """
+        cni_params = request
+        pod_name = get_pod_name(cni_params.pod_id)
+        pod_interfaces = self.interfaces.get(pod_name, [])
+        iface = cni_params.interface
+        logger.info("Deleting interfaces for pod {} with interfaces {}".format(
+            pod_name, pod_interfaces))
+
+        for interface in pod_interfaces:
+            self.interfaces[pod_name].remove(interface)
+            if iface == interface and interface.interface_type == InterfaceType.veth:
+                logger.info("Deleting interface: {}".format(iface))
+                self._DeleteVethInterface(interface)
+                logger.info("Removed {}".format(interface))
         return empty_pb2.Empty()
+
+    def ActivateHostInterface(self, request, context):
+        interface = request
+
+        # Provision host veth interface and load transit xdp agent.
+        veth_peer_index = get_iface_index(interface.veth.peer, self.iproute)
+        self.iproute.link('set', index=veth_peer_index, state='up', mtu=9000)
+        self.rpc.load_transit_agent_xdp(interface)
+
+        veth_index = get_iface_index(interface.veth.name, self.iproute)
+        # configure and activate interfaces
+        self.iproute.link('set', index=veth_index,
+                          ifname=interface.veth.name)
+        self.iproute.link('set', index=veth_index, state='up')
+
+        # Setting the prefix length of the veth device to a large range adds a route to
+        # the host. Since this device has the same IP address as the host's main
+        # interface, this will affect the host network causing host traffic to be routed
+        # to the wrong interface. Here we set the prefix length to 32.
+        self.iproute.addr('add', index=veth_index, address=interface.address.ip_address,
+                          prefixlen=int(interface.address.ip_prefix))
+
+        self.iproute.route('add', dst=OBJ_DEFAULTS.default_net_ip,
+                           mask=int(OBJ_DEFAULTS.default_net_prefix), oif=veth_index)
+
+        # Disable TSO and checksum offload as xdp currently does not support
+        logger.info("Disable tso for host ep")
+        cmd = "nsenter -t 1 -m -u -n -i ethtool -K {} tso off gso off ufo off".format(
+            interface.veth.name)
+        rc, text = run_cmd(cmd)
+        logger.info("Disabled tso rc:{} text{}".format(rc, text))
+        logger.info("Disable rx tx offload for host ep")
+        cmd = "nsenter -t 1 -m -u -n -i ethtool --offload {} rx off tx off".format(
+            interface.veth.name)
+        rc, text = run_cmd(cmd)
+        logger.info(
+            "Disabled rx tx offload for host ep rc: {} text: {}".format(rc, text))
+        return interface
 
 
 class InterfaceServiceClient():
@@ -241,8 +301,12 @@ class InterfaceServiceClient():
         resp = self.stub.ConsumeInterfaces(pod_id)
         return resp
 
-    def DeleteInterface(self, interface_id):
-        resp = self.stub.DeleteInterface(interface_id)
+    def DeleteInterface(self, interfaces_list):
+        resp = self.stub.DeleteInterface(interfaces_list)
+        return resp
+
+    def ActivateHostInterface(self, interface):
+        resp = self.stub.ActivateHostInterface(interface)
         return resp
 
 
@@ -311,6 +375,15 @@ class LocalTransitRpc:
         logger.info(
             "load_transit_agent_xdp returns {} {}".format(returncode, text))
 
+    def unload_transit_agent_xdp(self, interface):
+        itf = interface.veth.peer
+        jsonconf = '\'{}\''
+        cmd = f'''{self.trn_cli_unload_transit_agent_xdp} -i \'{itf}\' -j {jsonconf} '''
+        logger.info("unload_transit_agent_xdp: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info(
+            "unload_transit_agent_xdp returns {} {}".format(returncode, text))
+
     def update_ep(self, interface):
         peer = interface.veth.peer
         droplet_ip = interface.droplet.ip_address
@@ -340,6 +413,8 @@ class LocalTransitRpc:
 
     def update_agent_metadata(self, interface):
         itf = interface.veth.peer
+        netip = str(ipaddress.ip_interface(
+            interface.address.ip_address + '/' + interface.address.ip_prefix).network.network_address)
         bouncers = []
         for bouncer in interface.bouncers:
             bouncers.append(bouncer.ip_address)
@@ -355,7 +430,7 @@ class LocalTransitRpc:
             },
             "net": {
                 "tunnel_id": interface.address.tunnel_id,
-                "nip":  interface.address.gateway_ip,
+                "nip":  netip,
                 "prefixlen":  interface.address.ip_prefix,
                 "switches_ips": bouncers
             },

@@ -45,6 +45,7 @@ class TrnRpc:
         self.trn_cli_update_ep = f'''{self.trn_cli} update-ep -i {self.phy_itf} -j'''
         self.trn_cli_get_ep = f'''{self.trn_cli} get-ep -i {self.phy_itf} -j'''
         self.trn_cli_delete_ep = f'''{self.trn_cli} delete-ep -i {self.phy_itf} -j'''
+        self.trn_cli_update_port = f'''{self.trn_cli} update-port -i {self.phy_itf} -j'''
         self.trn_cli_load_pipeline_stage = f'''{self.trn_cli} load-pipeline-stage -i {self.phy_itf} -j'''
         self.trn_cli_unload_pipeline_stage = f'''{self.trn_cli} unload-pipeline-stage -i {self.phy_itf} -j'''
 
@@ -125,6 +126,26 @@ class TrnRpc:
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_update_ep} \'{jsonconf}\''''
         logger.info("update_ep: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("returns {} {}".format(returncode, text))
+        remote_ports = ep.get_remote_ports()
+        frontend_ports = ep.get_frontend_ports()
+        protocols = ep.get_port_protocols()
+        for i in range(len(remote_ports)):
+            self.update_port(ep.get_tunnel_id(), ep.get_ip(),
+                             frontend_ports[i], remote_ports[i], protocols[i])
+
+    def update_port(self, tunid, ip, port, target_port, protocol):
+        jsonconf = {
+            "tunnel_id": tunid,
+            "ip": ip,
+            "port": port,
+            "target_port": target_port,
+            "protocol": protocol,
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_update_port} \'{jsonconf}\''''
+        logger.info("update_port: {}".format(cmd))
         returncode, text = run_cmd(cmd)
         logger.info("returns {} {}".format(returncode, text))
 

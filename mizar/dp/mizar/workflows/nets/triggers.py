@@ -32,9 +32,9 @@ from mizar.common.wf_param import *
 #     vpc_operator.on_vpc_delete(body, **kwargs)
 
 
-@kopf.on.resume(group, version, RESOURCES.nets, when=LAMBDAS.net_status_init)
-@kopf.on.update(group, version, RESOURCES.nets, when=LAMBDAS.net_status_init)
-@kopf.on.create(group, version, RESOURCES.nets, when=LAMBDAS.net_status_init)
+@kopf.on.resume(group, version, RESOURCES.nets, when=LAMBDAS.net_status_init, retries=OBJ_DEFAULTS.kopf_max_retries)
+@kopf.on.update(group, version, RESOURCES.nets, when=LAMBDAS.net_status_init, retries=OBJ_DEFAULTS.kopf_max_retries)
+@kopf.on.create(group, version, RESOURCES.nets, when=LAMBDAS.net_status_init, retries=OBJ_DEFAULTS.kopf_max_retries)
 def net_opr_on_net_init(body, spec, **kwargs):
     param = HandlerParam()
     param.name = kwargs['name']
@@ -55,7 +55,7 @@ def net_opr_on_net_provisioned(body, spec, **kwargs):
     run_workflow(wffactory().NetProvisioned(param=param))
 
 
-@kopf.on.delete(group, version, RESOURCES.nets)
+@kopf.on.delete(group, version, RESOURCES.nets, retries=OBJ_DEFAULTS.kopf_max_retries)
 def net_opr_on_net_delete(body, spec, **kwargs):
     param = HandlerParam()
     param.name = kwargs['name']

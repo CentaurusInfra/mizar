@@ -135,18 +135,28 @@ class Bouncer(object):
     def update_eps(self, eps):
         for ep in eps:
             self.eps[ep.name] = ep
-            if ep.type == OBJ_DEFAULTS.ep_type_simple:
+            if ep.type in OBJ_DEFAULTS.droplet_eps:
                 self._update_simple_ep(ep)
             if ep.type == OBJ_DEFAULTS.ep_type_scaled:
                 self._update_scaled_ep(ep)
+            if ep.type == OBJ_DEFAULTS.ep_type_gateway:
+                self.update_gw_ep(ep)
+
+    def update_gw_ep(self, ep):
+        logger.info("Update gateway endpoint")
+        ep.set_backends([self.ip])
+        self.droplet_obj.update_ep(self.name, ep)
 
     def _update_simple_ep(self, ep):
+        logger.info(
+            "Update Bouncer with Simple EP:{}, type:{}".format(ep.name, ep.type))
         logger.info("self ip {} epfuncip {}, field ip {}".format(
             self.ip, ep.get_droplet_ip(), ep.droplet_obj.ip))
         self.droplet_obj.update_ep(self.name, ep)
         self.droplet_obj.update_substrate(ep)
 
     def _update_scaled_ep(self, ep):
+        logger.info("Bouncer update scaled ep. {}".format(ep.backends))
         if ep.backends:
             self.droplet_obj.update_ep(self.name, ep)
 

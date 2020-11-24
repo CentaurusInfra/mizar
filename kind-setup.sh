@@ -39,7 +39,7 @@ function get_status() {
 
 # Checks for status Provisioned of array of objects
 function check_ready() {
-    objects=("droplets" "vpcs" "nets" "dividers" "bouncers")
+    objects=("droplets" "vpcs" "subnets" "dividers" "bouncers")
     sum=0
     for i in "${objects[@]}"
     do
@@ -64,6 +64,16 @@ NODES=${2:-3}
 timeout=120
 
 kind delete cluster
+docker network rm kind 2> /dev/null
+# All interfaces in the network have an MTU of 9000 to
+# simulate a real datacenter. Since all container traffic
+# goes through the docker bridge, we must ensure the bridge
+# interfaces also has the same MTU to prevent ip fragmentation.
+docker network create -d bridge \
+  --subnet=172.18.0.0/16 \
+  --gateway=172.18.0.1 \
+  --opt com.docker.network.driver.mtu=9000 \
+  kind
 
 if [[ "$USER" == "dev" ]]; then
     DOCKER_ACC="localhost:5000"
@@ -78,7 +88,7 @@ api_ip=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{en
 sed "s/server: https:\/\/127.0.0.1:[[:digit:]]\+/server: https:\/\/$api_ip:6443/" $KINDCONF > $MIZARCONF
 ln -snf $KINDCONF $KINDHOME
 
-source install/create_crds.sh $CWD $USER
+source install/create_crds.sh $CWD
 source install/create_service_account.sh $CWD $USER
 
 source install/deploy_daemon.sh $CWD $USER $DOCKER_ACC

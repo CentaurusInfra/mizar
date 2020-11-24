@@ -22,9 +22,11 @@
 import logging
 from mizar.common.workflow import *
 from mizar.dp.mizar.operators.droplets.droplets_operator import *
+from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
 logger = logging.getLogger()
 
 droplets_opr = DropletOperator()
+endpoint_opr = EndpointOperator()
 
 
 class DropletProvisioned(WorkflowTask):
@@ -38,4 +40,9 @@ class DropletProvisioned(WorkflowTask):
         droplet = droplets_opr.get_droplet_stored_obj(
             self.param.name, self.param.spec)
         droplets_opr.store_update(droplet)
+        interfaces = endpoint_opr.init_host_endpoint_interfaces(
+            droplet)
+        # TODO: Create host endpoint in seperate network.
+        ep = endpoint_opr.create_host_endpoint(droplet.ip, droplet, interfaces)
+        endpoint_opr.produce_simple_endpoint_interface(ep)
         self.finalize()

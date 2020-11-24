@@ -1,7 +1,7 @@
 site_name: Mizar Project
 docs_dir: 'docs'
 site_dir: '.tmp/documentation'
-repo_url: https://github.com/futurewei-cloud/mizar
+repo_url: https://github.com/CentaurusInfra/mizar
 theme:
     name: readthedocs
     highlightjs: true

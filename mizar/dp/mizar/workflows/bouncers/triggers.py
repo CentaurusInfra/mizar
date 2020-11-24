@@ -28,9 +28,9 @@ from mizar.common.wf_factory import *
 from mizar.common.wf_param import *
 
 
-@kopf.on.resume(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_init)
-@kopf.on.update(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_init)
-@kopf.on.create(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_init)
+@kopf.on.resume(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_init, retries=OBJ_DEFAULTS.kopf_max_retries)
+@kopf.on.update(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_init, retries=OBJ_DEFAULTS.kopf_max_retries)
+@kopf.on.create(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_init, retries=OBJ_DEFAULTS.kopf_max_retries)
 def bouncer_opr_on_bouncer_init(body, spec, **kwargs):
     param = HandlerParam()
     param.name = kwargs['name']
@@ -39,9 +39,9 @@ def bouncer_opr_on_bouncer_init(body, spec, **kwargs):
     run_workflow(wffactory().BouncerCreate(param=param))
 
 
-@kopf.on.resume(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_provisioned)
-@kopf.on.update(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_provisioned)
-@kopf.on.create(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_provisioned)
+@kopf.on.resume(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_provisioned, retries=OBJ_DEFAULTS.kopf_max_retries)
+@kopf.on.update(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_provisioned, retries=OBJ_DEFAULTS.kopf_max_retries)
+@kopf.on.create(group, version, RESOURCES.bouncers, when=LAMBDAS.bouncer_status_provisioned, retries=OBJ_DEFAULTS.kopf_max_retries)
 def bouncer_opr_on_bouncer_provisioned(body, spec, **kwargs):
     param = HandlerParam()
     param.name = kwargs['name']
@@ -50,7 +50,7 @@ def bouncer_opr_on_bouncer_provisioned(body, spec, **kwargs):
     run_workflow(wffactory().BouncerProvisioned(param=param))
 
 
-@kopf.on.delete(group, version, RESOURCES.bouncers)
+@kopf.on.delete(group, version, RESOURCES.bouncers, retries=OBJ_DEFAULTS.kopf_max_retries)
 def bouncer_opr_on_bouncer_delete(body, spec, **kwargs):
     param = HandlerParam()
     param.name = kwargs['name']

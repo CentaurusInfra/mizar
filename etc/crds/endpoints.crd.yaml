@@ -128,4 +128,8 @@ spec:
       priority: 0
       JSONPath: .spec.cnidelay
       description: Time to setup endpoint on droplet
-
+    - name: Pod
+      type: string
+      priority: 0
+      JSONPath: .spec.pod
+      description: The pod associated with the endpoint

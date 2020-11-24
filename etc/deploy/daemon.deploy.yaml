@@ -34,7 +34,12 @@ spec:
       labels:
         job: mizar-daemon
     spec:
+      tolerations:
+        # The daemon shall run on the master node
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
       serviceAccountName: mizar-operator
+      terminationGracePeriodSeconds: 0
       hostNetwork: true
       hostPID: true
       containers:
