@@ -167,3 +167,8 @@ struct vsip_ppo_t {
 	__u8 proto;
 	__be16 port;
 } __attribute__((packed));
+
+struct ipv4_ct_tuple_t {
+	struct vpc_key_t vpc;
+	struct ipv4_tuple_t tuple;
+} __attribute__((packed));
