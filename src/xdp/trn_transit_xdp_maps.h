@@ -189,3 +189,11 @@ struct bpf_map_def SEC("maps") ing_vsip_except_map = {
 	.map_flags = 1,
 };
 BPF_ANNOTATE_KV_PAIR(ing_vsip_except_map, struct vsip_cidr_t, __u64);
+
+struct bpf_map_def SEC("maps") conn_track_cache = {
+	.type = BPF_MAP_TYPE_LRU_HASH,
+	.key_size = sizeof(struct ipv4_ct_tuple_t),
+	.value_size = sizeof(__u8),
+	.max_entries = TRAN_MAX_CACHE_SIZE,
+};
+BPF_ANNOTATE_KV_PAIR(conn_track_cache, struct ipv4_ct_tuple_t, __u8);
