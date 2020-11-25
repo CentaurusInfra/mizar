@@ -23,15 +23,9 @@
  */
 
 #include <linux/bpf.h>
-//#include <bpf/bpf_helpers.h>
-
-// #include "bpf_legacy.h"
-
 #include "trn_datamodel.h"
 #include "trn_transit_xdp_maps.h"
 #include "trn_kern.h"
-
-//int _version SEC("version") = 1;
 
 static __inline void trace_metrics_per_packet(int *act, struct transit_packet *pkt)
 {
@@ -53,5 +47,3 @@ static __inline void trace_metrics_per_packet(int *act, struct transit_packet *p
 		pkt->rec->n_redirect++;
 
 }
-
-//char _license[] SEC("license") = "GPL";
