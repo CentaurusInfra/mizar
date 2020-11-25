@@ -32,6 +32,13 @@ static int def_rev_flow_mod_cache_map_fd = -1;
 static int def_ep_flow_host_cache_map_fd = -1;
 static int def_ep_host_cache_map_fd = -1;
 
+// global pinned map file paths
+const char *eg_vsip_enforce_map_path	= "/sys/fs/bpf/eg_vsip_enforce_map";
+const char *eg_vsip_prim_map_path	= "/sys/fs/bpf/eg_vsip_prim_map";
+const char *eg_vsip_ppo_map_path	= "/sys/fs/bpf/eg_vsip_ppo_map";
+const char *eg_vsip_supp_map_path	= "/sys/fs/bpf/eg_vsip_supp_map";
+const char *eg_vsip_except_map_path	= "/sys/fs/bpf/eg_vsip_except_map";
+
 int trn_agent_user_metadata_free(struct agent_user_metadata_t *md)
 {
 	__u32 curr_prog_id = 0;
@@ -253,11 +260,19 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 		bpf_map__next(md->rev_flow_mod_cache_ref, md->obj);
 	md->ep_host_cache_ref =
 		bpf_map__next(md->ep_flow_host_cache_ref, md->obj);
+	md->eg_vsip_enforce_map	= bpf_map__next(md->ep_host_cache_ref, md->obj);
+	md->eg_vsip_prim_map 	= bpf_map__next(md->eg_vsip_enforce_map, md->obj);
+	md->eg_vsip_ppo_map 	= bpf_map__next(md->eg_vsip_prim_map, md->obj);
+	md->eg_vsip_supp_map 	= bpf_map__next(md->eg_vsip_ppo_map, md->obj);
+	md->eg_vsip_except_map 	= bpf_map__next(md->eg_vsip_supp_map, md->obj);
 
 	if (!md->jmp_table_map || !md->agentmetadata_map ||
-	    !md->endpoints_map | !md->xdpcap_hook_map ||
+	    !md->endpoints_map || !md->xdpcap_hook_map ||
 	    !md->fwd_flow_mod_cache_ref || !md->rev_flow_mod_cache_ref ||
-	    !md->ep_flow_host_cache_ref || !md->ep_host_cache_ref) {
+	    !md->ep_flow_host_cache_ref || !md->ep_host_cache_ref ||
+	    !md->eg_vsip_enforce_map || !md->eg_vsip_prim_map ||
+	    !md->eg_vsip_ppo_map || !md->eg_vsip_supp_map ||
+	    !md->eg_vsip_except_map) {
 		TRN_LOG_ERROR("Failure finding maps objects.");
 		return 1;
 	}
@@ -270,6 +285,11 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 	md->rev_flow_mod_cache_ref_fd = bpf_map__fd(md->rev_flow_mod_cache_ref);
 	md->ep_flow_host_cache_ref_fd = bpf_map__fd(md->ep_flow_host_cache_ref);
 	md->ep_host_cache_ref_fd = bpf_map__fd(md->ep_host_cache_ref);
+	md->eg_vsip_enforce_map_fd	= bpf_map__fd(md->eg_vsip_enforce_map);
+	md->eg_vsip_prim_map_fd		= bpf_map__fd(md->eg_vsip_prim_map);
+	md->eg_vsip_ppo_map_fd		= bpf_map__fd(md->eg_vsip_ppo_map);
+	md->eg_vsip_supp_map_fd		= bpf_map__fd(md->eg_vsip_supp_map);
+	md->eg_vsip_except_map_fd	= bpf_map__fd(md->eg_vsip_except_map);
 
 	if (bpf_map__unpin(md->xdpcap_hook_map, md->pcapfile) == 0) {
 		TRN_LOG_INFO("unpin exiting pcap map file: %s", md->pcapfile);
@@ -281,6 +301,13 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 		TRN_LOG_ERROR("Failed to pin xdpcap map [%s].", strerror(rc));
 		return 1;
 	}
+
+	// pins the egress policy maps if not yet
+	bpf_map__pin(md->eg_vsip_enforce_map, eg_vsip_enforce_map_path);
+	bpf_map__pin(md->eg_vsip_prim_map, eg_vsip_prim_map_path);
+	bpf_map__pin(md->eg_vsip_ppo_map, eg_vsip_ppo_map_path);
+	bpf_map__pin(md->eg_vsip_supp_map, eg_vsip_supp_map_path);
+	bpf_map__pin(md->eg_vsip_except_map, eg_vsip_except_map_path);
 
 	return 0;
 }
@@ -342,6 +369,23 @@ static void _trn_refresh_default_maps(void)
 				       TRAN_MAX_CACHE_SIZE, 0);
 }
 
+static int _reuse_pinned_map_if_exists(struct bpf_object *pobj, const char *map_name, const char *pinned_file)
+{
+	int fd_pinned_map = bpf_obj_get(pinned_file);
+	if (fd_pinned_map >= 0) {
+		struct bpf_map *map = bpf_object__find_map_by_name(pobj, map_name);
+		if (!map) {
+			return -ENOENT;
+		}
+
+		if (0 != bpf_map__reuse_fd(map, fd_pinned_map)) {
+			return -EBADF;
+		}
+	}
+
+	return 0;
+}
+
 static int _trn_bpf_agent_prog_load_xattr(struct agent_user_metadata_t *md,
 					  const struct bpf_prog_load_attr *attr,
 					  struct bpf_object **pobj,
@@ -391,6 +435,29 @@ static int _trn_bpf_agent_prog_load_xattr(struct agent_user_metadata_t *md,
 				     md->ep_host_cache_map_fd)) {
 		md->ep_flow_host_cache_ref = NULL;
 		TRN_LOG_INFO("ep_flow_host_cache_ref inner fd is not set!\n");
+		goto error;
+	}
+
+	// to share the pinned egress policy maps, if applicable
+	int err_code;
+	if (0 != (err_code = _reuse_pinned_map_if_exists(*pobj, "eg_vsip_enforce_map", eg_vsip_enforce_map_path))) {
+		TRN_LOG_INFO("failed to reuse shared map at %s, error code: %d\n", eg_vsip_enforce_map_path, err_code);
+		goto error;
+	}
+	if (0 != (err_code = _reuse_pinned_map_if_exists(*pobj, "eg_vsip_prim_map", eg_vsip_prim_map_path))) {
+		TRN_LOG_INFO("failed to reuse shared map at %s, error code: %d\n", eg_vsip_prim_map_path, err_code);
+		goto error;
+	}
+	if (0 != (err_code = _reuse_pinned_map_if_exists(*pobj, "eg_vsip_ppo_map", eg_vsip_ppo_map_path))) {
+		TRN_LOG_INFO("failed to reuse shared map at %s, error code: %d\n", eg_vsip_ppo_map_path, err_code);
+		goto error;
+	}
+	if (0 != (err_code = _reuse_pinned_map_if_exists(*pobj, "eg_vsip_supp_map", eg_vsip_supp_map_path))) {
+		TRN_LOG_INFO("failed to reuse shared map at %s, error code: %d\n", eg_vsip_supp_map_path, err_code);
+		goto error;
+	}
+	if (0 != (err_code = _reuse_pinned_map_if_exists(*pobj, "eg_vsip_except_map", eg_vsip_except_map_path))) {
+		TRN_LOG_INFO("failed to reuse shared map at %s, error code: %d\n", eg_vsip_except_map_path, err_code);
 		goto error;
 	}
 
