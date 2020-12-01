@@ -579,3 +579,40 @@ uint32_t trn_get_interface_ipv4(int itf_idx)
 
 	return ((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr;
 }
+
+int trn_update_transit_primary_map(struct user_metadata_t *md, struct vsip_cidr_t *ipcidr,
+				   __u64 bitmap)
+{
+	int err = bpf_map_update_elem(md->ing_vsip_prim_map_fd, ipcidr, &bitmap, 0);
+	if (err) {
+		TRN_LOG_ERROR("Store Primary ingress map failed (err:%d).",
+			      err);
+		return 1;
+	}
+	return 0;
+}
+
+int trn_update_transit_supp_map(struct user_metadata_t *md, struct vsip_cidr_t *ipcidr,
+				__u64 bitmap)
+{
+	int err = bpf_map_update_elem(md->ing_vsip_supp_map_fd, ipcidr, &bitmap, 0);
+	if (err) {
+		TRN_LOG_ERROR("Store Supplementary ingress map failed (err:%d).",
+			      err);
+		return 1;
+	}
+	return 0;
+}
+
+int trn_update_transit_except_map(struct user_metadata_t *md, struct vsip_cidr_t *ipcidr,
+				  __u64 bitmap)
+{
+	int err = bpf_map_update_elem(md->ing_vsip_except_map_fd, ipcidr, &bitmap, 0);
+	if (err) {
+		TRN_LOG_ERROR("Store Except ingress map failed (err:%d).",
+			      err);
+		return 1;
+	}
+	return 0;
+}
+

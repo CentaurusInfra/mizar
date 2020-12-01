@@ -45,6 +45,8 @@
 #define TRANSITLOGNAME "transit"
 #define TRN_MAX_ITF 265
 #define TRN_MAX_VETH 2048
+#define SUPPLEMENTARY 1
+#define EXCEPTION 2
 
 void rpc_transit_remote_protocol_1(struct svc_req *rqstp,
 				   register SVCXPRT *transp);
@@ -1252,6 +1254,59 @@ int *unload_transit_xdp_pipeline_stage_1_svc(rpc_trn_ebpf_prog_stage_t *argp,
 	}
 
 	result = 0;
+	return &result;
+
+error:
+	return &result;
+}
+
+int *update_transit_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result;
+	result = 0;
+	int rc;
+	char *itf = policy->interface;
+	struct vsip_cidr_t cidr;
+
+	TRN_LOG_INFO("update_transit_network_policy_1_svc service");
+
+	struct user_metadata_t *md = trn_itf_table_find(itf);
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	cidr.tunnel_id = policy->tun_id;
+	cidr.prefixlen = policy->prefixlen;
+	cidr.local_ip = policy->local_ip;
+	cidr.remote_ip = policy->remote_ip;
+	__u64 bitmap = policy->bit_val;
+
+	if (policy->type == SUPPLEMENTARY) {
+		rc = trn_update_transit_supp_map(md, &cidr, bitmap);
+		if (rc != 0) {
+			TRN_LOG_ERROR("Failure updating transit supplementary network policy map");
+			result = RPC_TRN_FATAL;
+			goto error;
+		}
+	} else if (policy->type == EXCEPTION) {
+		rc = trn_update_transit_except_map(md, &cidr, bitmap);
+		if (rc != 0) {
+			TRN_LOG_ERROR("Failure updating transit exception network policy map");
+			result = RPC_TRN_FATAL;
+			goto error;
+		}
+	} else {
+		rc = trn_update_transit_primary_map(md, &cidr, bitmap);
+		if (rc != 0) {
+			TRN_LOG_ERROR("Failure updating transit primary network policy map");
+			result = RPC_TRN_FATAL;
+			goto error;
+		}
+	}
+
 	return &result;
 
 error:

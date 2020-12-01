@@ -52,6 +52,7 @@ static const struct cmd {
 	{ "delete-agent-metadata", trn_cli_delete_agent_md_subcmd },
 	{ "load-pipeline-stage", trn_cli_load_pipeline_stage_subcmd },
 	{ "unload-pipeline-stage", trn_cli_unload_pipeline_stage_subcmd },
+	{ "update-network-policy-ingress", trn_cli_update_transit_network_policy_subcmd },
 	{ 0 },
 };
 

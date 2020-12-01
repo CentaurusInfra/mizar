@@ -617,3 +617,64 @@ int trn_cli_parse_ebpf_prog_stage(const cJSON *jsonobj,
 	}
 	return 0;
 }
+
+int trn_cli_parse_network_policy_cidr(const cJSON *jsonobj,
+				      struct rpc_trn_vsip_cidr_t *cidrval)
+{
+	cJSON *prefixlen = cJSON_GetObjectItem(jsonobj, "prefixlen");
+	cJSON *tunnel_id = cJSON_GetObjectItem(jsonobj, "tunnel_id");
+	cJSON *local_ip = cJSON_GetObjectItem(jsonobj, "local_ip");
+	cJSON *remote_ip = cJSON_GetObjectItem(jsonobj, "cidr_ip");
+	cJSON *cidr_type = cJSON_GetObjectItem(jsonobj, "cidr_type");
+	cJSON *bit_val = cJSON_GetObjectItem(jsonobj, "bit_value");
+
+	if (tunnel_id == NULL) {
+		cidrval->tun_id = 0;
+	} else if (cJSON_IsString(tunnel_id)) {
+		cidrval->tun_id = atoi(tunnel_id->valuestring);
+	} else {
+		print_err("Error: Network policy tunnel_id is non-string.\n");
+		return -EINVAL;
+	}
+
+	if (cJSON_IsString(prefixlen)) {
+		cidrval->prefixlen = atoi(prefixlen->valuestring);
+	} else {
+		print_err("Error: Network policy prefixlen Error\n");
+		return -EINVAL;
+	}
+
+	if (local_ip != NULL && cJSON_IsString(local_ip)) {
+		struct sockaddr_in sa;
+		inet_pton(AF_INET, local_ip->valuestring, &(sa.sin_addr));
+		cidrval->local_ip = sa.sin_addr.s_addr;
+	} else {
+		print_err("Error: Network policy local IP is missing or non-string\n");
+		return -EINVAL;
+	}
+
+	if (remote_ip != NULL && cJSON_IsString(remote_ip)) {
+		struct sockaddr_in sa;
+		inet_pton(AF_INET, remote_ip->valuestring, &(sa.sin_addr));
+		cidrval->remote_ip = sa.sin_addr.s_addr;
+	} else {
+		print_err("Error: Network policy remote IP is missing or non-string\n");
+		return -EINVAL;
+	}
+
+	if (cJSON_IsString(cidr_type)) {
+		cidrval->type = atoi(cidr_type->valuestring);
+	} else {
+		print_err("Error: Network Policy cidr type Error\n");
+		return -EINVAL;
+	}
+
+	if (cJSON_IsString(bit_val)) {
+		cidrval->bit_val = atoi(bit_val->valuestring);
+	} else {
+		print_err("Error: Network policy bit map Error\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
