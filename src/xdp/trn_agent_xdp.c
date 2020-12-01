@@ -277,6 +277,69 @@ static __inline int trn_redirect(struct transit_packet *pkt, __u32 inner_src_ip,
 	return trn_encapsulate(pkt, md, tunnel_id, inner_src_ip, inner_dst_ip);
 }
 
+/*
+   check if egress network policy should be enforced
+   return value:
+     0 (false) :    no egress policy
+     non-0 (true) : need to enforce egress policy check
+*/
+static __inline int is_egress_enforced(__u64 tunnel_id, __be32 ip_addr)
+{
+	// todo: use agent metadata applicable field in lieu of packet metadata
+	struct vsip_enforce_t vsip = {.tunnel_id = tunnel_id, .local_ip = ip_addr};
+	__u8 *v = bpf_map_lookup_elem(&eg_vsip_enforce_map, &vsip);
+	return v && *v;
+}
+
+/*
+   enforce_egress_policy enforces egress network policy with the (outgoing) packet
+   return value:
+     0: egress policy allows this packet; no error
+    -1: egress policy denies this packet; egress policy denial error
+*/
+static __inline int enforce_egress_policy(const struct transit_packet *pkt)
+{
+	const __u32 full_vsip_cidr_prefix = (__u32)(sizeof(struct vsip_cidr_t) - sizeof(__u32)) * 8;
+
+	struct vsip_ppo_t vsip_ppo = {
+		.tunnel_id = pkt->agent_ep_tunid,
+		.local_ip = pkt->inner_ip->saddr,
+		.proto = 0,	// L3
+		.port = 0,	// L3
+	};
+	__u64 *policies_l3 = bpf_map_lookup_elem(&eg_vsip_ppo_map, &vsip_ppo);
+	__u64 policies_ppo = (policies_l3) ? *policies_l3 : 0;
+
+	vsip_ppo.proto = pkt->inner_ip->protocol;	// L4
+	vsip_ppo.port = pkt->inner_ipv4_tuple.dport;	// L4
+	__u64 *policies_l4 = bpf_map_lookup_elem(&eg_vsip_ppo_map, &vsip_ppo);
+	if (policies_l4) policies_ppo |= *policies_l4;
+
+	if (0 == policies_ppo) {
+		return -1;
+	}
+
+	struct vsip_cidr_t vsip_cidr = {
+		.prefixlen = full_vsip_cidr_prefix,
+		.tunnel_id = pkt->agent_ep_tunid,
+		.local_ip = pkt->inner_ip->saddr,
+		.remote_ip = pkt->inner_ip->daddr,
+	};
+	__u64 *policies_dip_prim = bpf_map_lookup_elem(&eg_vsip_prim_map, &vsip_cidr);
+	if (policies_dip_prim && (policies_ppo & *policies_dip_prim))
+		return 0;
+
+	__u64 *policies_dip_supp = bpf_map_lookup_elem(&eg_vsip_supp_map, &vsip_cidr);
+	__u64 *policies_dip_except = bpf_map_lookup_elem(&eg_vsip_except_map, &vsip_cidr);
+	if (policies_dip_supp) {
+		__u64 excepts = (policies_dip_except) ? *policies_dip_except : 0;
+		if ((*policies_dip_supp & ~excepts) & policies_ppo)
+			return 0;
+	}
+
+	return -1;
+}
+
 static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 {
 	pkt->inner_ip = (void *)pkt->inner_eth + pkt->inner_eth_off;
@@ -331,6 +394,17 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 
 		pkt->inner_ipv4_tuple.sport = pkt->inner_udp->source;
 		pkt->inner_ipv4_tuple.dport = pkt->inner_udp->dest;
+	}
+
+	// todo: add conn_track related logic properly
+	if (is_egress_enforced(pkt->agent_ep_tunid, pkt->inner_ip->saddr)) {
+		if (0 != enforce_egress_policy(pkt)) {
+			bpf_debug("[Agent:%ld.0x%x] ABORTED: packet to 0x%x egress policy denied\n",
+				pkt->agent_ep_tunid,
+				bpf_ntohl(pkt->agent_ep_ipv4),
+				bpf_ntohl(pkt->inner_ip->daddr));
+			return XDP_ABORTED;
+		}
 	}
 
 	/* Check if we need to apply a forward flow update */
