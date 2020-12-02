@@ -188,14 +188,14 @@ int trn_add_prog(struct user_metadata_t *md, unsigned int prog_idx,
 
 int trn_remove_prog(struct user_metadata_t *md, unsigned int prog_idx);
 
-int trn_update_transit_primary_map(struct user_metadata_t *md,
-				   struct vsip_cidr_t *cidr,
-				   __u64 bitmap);
+int trn_update_transit_network_policy_primary_map(struct user_metadata_t *md,
+						  struct vsip_cidr_t *cidr,
+						  __u64 bitmap);
 
-int trn_update_transit_supp_map(struct user_metadata_t *md,
-				struct vsip_cidr_t *cidr,
-				__u64 bitmap);
+int trn_update_transit_network_policy_supplementary_map(struct user_metadata_t *md,
+							struct vsip_cidr_t *cidr,
+							__u64 bitmap);
 
-int trn_update_transit_except_map(struct user_metadata_t *md,
-				  struct vsip_cidr_t *cidr,
-				  __u64 bitmap);
+int trn_update_transit_network_policy_except_map(struct user_metadata_t *md,
+						 struct vsip_cidr_t *cidr,
+						 __u64 bitmap);

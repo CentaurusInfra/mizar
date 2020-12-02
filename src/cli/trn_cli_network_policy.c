@@ -77,8 +77,8 @@ void dump_network_policy(struct rpc_trn_vsip_cidr_t *policy)
 	print_msg("Interface: %s\n", policy->interface);
 	print_msg("Tunnel ID: %ld\n", policy->tunid);
 	print_msg("Local IP: %x\n", policy->local_ip);
-	print_msg("Prefix: %d\n", policy->cidr_prefixlen);
-	print_msg("Remote IP: %x\n", policy->cidr_ip);
-	print_msg("Type: %d\n", policy->cidr_type);
+	print_msg("CIDR Prefix: %d\n", policy->cidr_prefixlen);
+	print_msg("CIDR IP: %x\n", policy->cidr_ip);
+	print_msg("CIDR Type: %d\n", policy->cidr_type);
 	print_msg("bit value: %ld\n", policy->bit_val);
 }

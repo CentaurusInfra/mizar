@@ -1265,7 +1265,6 @@ int *update_transit_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc
 {
 	UNUSED(rqstp);
 	static int result;
-	result = 0;
 	int rc;
 	char *itf = policy->interface;
 	struct vsip_cidr_t cidr;
@@ -1287,13 +1286,13 @@ int *update_transit_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc
 
 	switch (policy->cidr_type) {
 	case PRIMARY:
-		rc = trn_update_transit_primary_map(md, &cidr, bitmap);
+		rc = trn_update_transit_network_policy_primary_map(md, &cidr, bitmap);
 		break;
 	case SUPPLEMENTARY:
-		rc = trn_update_transit_supp_map(md, &cidr, bitmap);
+		rc = trn_update_transit_network_policy_supplementary_map(md, &cidr, bitmap);
 		break;
 	case EXCEPTION:
-		rc = trn_update_transit_except_map(md, &cidr, bitmap);
+		rc = trn_update_transit_network_policy_except_map(md, &cidr, bitmap);
 		break;
 	default:
 		result = RPC_TRN_FATAL;
@@ -1307,6 +1306,7 @@ int *update_transit_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc
 		goto error;
 	}
 
+	result = 0;
 	return &result;
 
 error:
