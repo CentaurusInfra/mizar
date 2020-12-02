@@ -45,6 +45,7 @@
 #define TRANSITLOGNAME "transit"
 #define TRN_MAX_ITF 265
 #define TRN_MAX_VETH 2048
+#define PRIMARY 0
 #define SUPPLEMENTARY 1
 #define EXCEPTION 2
 
@@ -1278,33 +1279,32 @@ int *update_transit_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc
 		goto error;
 	}
 
-	cidr.tunnel_id = policy->tun_id;
-	cidr.prefixlen = policy->prefixlen;
+	cidr.tunnel_id = policy->tunid;
+	cidr.prefixlen = policy->cidr_prefixlen;
 	cidr.local_ip = policy->local_ip;
-	cidr.remote_ip = policy->remote_ip;
+	cidr.remote_ip = policy->cidr_ip;
 	__u64 bitmap = policy->bit_val;
 
-	if (policy->type == SUPPLEMENTARY) {
-		rc = trn_update_transit_supp_map(md, &cidr, bitmap);
-		if (rc != 0) {
-			TRN_LOG_ERROR("Failure updating transit supplementary network policy map");
-			result = RPC_TRN_FATAL;
-			goto error;
-		}
-	} else if (policy->type == EXCEPTION) {
-		rc = trn_update_transit_except_map(md, &cidr, bitmap);
-		if (rc != 0) {
-			TRN_LOG_ERROR("Failure updating transit exception network policy map");
-			result = RPC_TRN_FATAL;
-			goto error;
-		}
-	} else {
+	switch (policy->cidr_type) {
+	case PRIMARY:
 		rc = trn_update_transit_primary_map(md, &cidr, bitmap);
-		if (rc != 0) {
-			TRN_LOG_ERROR("Failure updating transit primary network policy map");
-			result = RPC_TRN_FATAL;
-			goto error;
-		}
+		break;
+	case SUPPLEMENTARY:
+		rc = trn_update_transit_supp_map(md, &cidr, bitmap);
+		break;
+	case EXCEPTION:
+		rc = trn_update_transit_except_map(md, &cidr, bitmap);
+		break;
+	default:
+		result = RPC_TRN_FATAL;
+		goto error;
+	}
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure updating transit network policy map cidr: 0x%x / %d, for interface %s",
+					policy->cidr_ip, policy->cidr_prefixlen, policy->interface);
+		result = RPC_TRN_FATAL;
+		goto error;
 	}
 
 	return &result;

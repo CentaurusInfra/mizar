@@ -163,11 +163,11 @@ struct rpc_trn_ebpf_prog_stage_t {
 /* Defines a network policy table entry */
 struct rpc_trn_vsip_cidr_t {
        string interface<20>;
-       uint32_t prefixlen;
-       uint64_t tun_id;
+       uint64_t tunid;
        uint32_t local_ip;
-       uint32_t remote_ip;
-       int type;
+       uint32_t cidr_ip;
+       uint32_t cidr_prefixlen;
+       int cidr_type;
        uint64_t bit_val;
 };
 

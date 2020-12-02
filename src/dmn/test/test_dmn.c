@@ -592,11 +592,11 @@ static void test_update_transit_network_policy_1_svc(void **state)
 
 	struct rpc_trn_vsip_cidr_t policy1 = {
 		.interface = itf,
-		.prefixlen = 16,
-		.tun_id = 3,
+		.tunid = 3,
 		.local_ip = 0x100000a,
-		.remote_ip = 0xac00012,
-		.type = 1,
+		.cidr_prefixlen = 16,
+		.cidr_ip = 0xac00012,
+		.cidr_type = 1,
 		.bit_val = 4
 	};
 
