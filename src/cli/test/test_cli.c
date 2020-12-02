@@ -494,11 +494,7 @@ static int check_policy_equal(const LargestIntegralType value,
 		return false;
 	}
 
-	if (policy->prefixlen != c_policy->prefixlen) {
-		return false;
-	}
-
-	if (policy->tun_id != c_policy->tun_id) {
+	if (policy->tunid != c_policy->tunid) {
 		return false;
 	}
 
@@ -506,11 +502,15 @@ static int check_policy_equal(const LargestIntegralType value,
 		return false;
 	}
 
-	if (policy->remote_ip != c_policy->remote_ip) {
+	if (policy->cidr_prefixlen != c_policy->cidr_prefixlen) {
 		return false;
 	}
 
-	if (policy->type != c_policy->type) {
+	if (policy->cidr_ip != c_policy->cidr_ip) {
+		return false;
+	}
+
+	if (policy->cidr_type != c_policy->cidr_type) {
 		return false;
 	}
 
@@ -1946,27 +1946,27 @@ static void test_trn_cli_update_transit_network_policy_subcmd(void **state)
 
 	/* Test cases */
 	char *argv1[] = { "update-network-policy-ingress", "-i", "eth0", "-j", QUOTE({
-				  "prefixlen": "16",
 				  "tunnel_id": "3",
 				  "local_ip": "10.0.0.3",
+				  "cidr_prefixlen": "16",
 				  "cidr_ip": "172.0.0.9",
 				  "cidr_type": "1",
 				  "bit_value": "10"
 			  }) };
 
 	char *argv2[] = { "update-network-policy-ingress", "-i", "eth0", "-j", QUOTE({
-				  "prefixlen": "16",
 				  "tunnel_id": 3,
 				  "local_ip": "10.0.0.3",
+				  "cidr_prefixlen": "16",
 				  "cidr_ip": "172.0.0.9",
 				  "cidr_type": "1",
 				  "bit_value": "10"
 			  }) };
 
 	char *argv3[] = { "update-network-policy-ingress", "-i", "eth0", "-j", QUOTE({
-				  "prefixlen": "16",
 				  "tunnel_id": "3",
 				  "local_ip": 10.0.0.3,
+				  "cidr_prefixlen": "16",
 				  "cidr_ip": "172.0.0.9",
 				  "cidr_type": "1",
 				  "bit_value": "10"
@@ -1975,11 +1975,11 @@ static void test_trn_cli_update_transit_network_policy_subcmd(void **state)
 
 	struct rpc_trn_vsip_cidr_t exp_policy = {
 		.interface = itf,
-		.prefixlen = 16,
-		.tun_id = 3,
+		.tunid = 3,
 		.local_ip = 0x300000a,
-		.remote_ip = 0x90000ac,
-		.type = 1,
+		.cidr_prefixlen = 112,
+		.cidr_ip = 0x90000ac,
+		.cidr_type = 1,
 		.bit_val = 10
 	};
 

@@ -5,7 +5,7 @@
  *         
  * @brief CLI subcommands related to networks
  *
- * @copyright Copyright (c) 2019 The Authors.
+ * @copyright Copyright (c) 2020 The Authors.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -75,10 +75,10 @@ int trn_cli_update_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *a
 void dump_network_policy(struct rpc_trn_vsip_cidr_t *policy)
 {
 	print_msg("Interface: %s\n", policy->interface);
-	print_msg("Prefix: %d\n", policy->prefixlen);
-	print_msg("Tunnel ID: %ld\n", policy->tun_id);
+	print_msg("Tunnel ID: %ld\n", policy->tunid);
 	print_msg("Local IP: %x\n", policy->local_ip);
-	print_msg("Remote IP: %x\n", policy->remote_ip);
-	print_msg("Type: %d\n", policy->type);
+	print_msg("Prefix: %d\n", policy->cidr_prefixlen);
+	print_msg("Remote IP: %x\n", policy->cidr_ip);
+	print_msg("Type: %d\n", policy->cidr_type);
 	print_msg("bit value: %ld\n", policy->bit_val);
 }
