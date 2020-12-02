@@ -401,7 +401,8 @@ static __inline int trn_handle_scaled_ep_modify(struct transit_packet *pkt)
 */
 static __inline int is_ingress_enforced(__u64 tunnel_id, __be32 ip_addr)
 {
-	struct vsip_enforce_t vsip = {.tunnel_id = tunnel_id, .local_ip = ip_addr};
+	struct vsip_enforce_t vsip = { .tunnel_id = tunnel_id,
+				       .local_ip = ip_addr };
 	__u8 *v = bpf_map_lookup_elem(&ing_vsip_enforce_map, &vsip);
 	return v && *v;
 }
@@ -419,19 +420,18 @@ static __inline int enforce_ingress_policy(__u64 tunnel_id, const struct ipv4_tu
 	struct vsip_ppo_t vsip_ppo = {
 		.tunnel_id = tunnel_id,
 		.local_ip = ipv4_tuple->daddr,
-		.proto = 0,	// L3
-		.port = 0,	// L3
+		.proto = 0, 	// L3
+		.port = 0, 	// L3
 	};
 	__u64 *policies_l3 = bpf_map_lookup_elem(&ing_vsip_ppo_map, &vsip_ppo);
 	__u64 policies_ppo = (policies_l3) ? *policies_l3 : 0;
 
-	vsip_ppo.proto = ipv4_tuple->protocol;
-	vsip_ppo.port = ipv4_tuple->dport;
+	vsip_ppo.proto = ipv4_tuple->protocol;	// L4
+	vsip_ppo.port = ipv4_tuple->dport;	// L4
 	__u64 *policies_l4 = bpf_map_lookup_elem(&ing_vsip_ppo_map, &vsip_ppo);
 	if (policies_l4) policies_ppo |= *policies_l4;
 
-	if (0 == policies_ppo)
-		return -1;
+	if (0 == policies_ppo) return -1;
 
 	struct vsip_cidr_t vsip_cidr = {
 		.prefixlen = full_vsip_cidr_prefix,
@@ -506,15 +506,17 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 
 	__be64 tunnel_id = trn_vni_to_tunnel_id(pkt->geneve->vni);
 
-	// todo: only to check policy against TCP amd UDP packets
 	// todo: add conn_track related logic properly
-	if (is_ingress_enforced(tunnel_id, pkt->inner_ipv4_tuple.daddr)) {
-		if (0 != enforce_ingress_policy(tunnel_id, &pkt->inner_ipv4_tuple)) {
-			bpf_debug("[Transit:%d] ABORTED: packet to 0x%x from 0x%x ingress policy denied\n",
-				__LINE__,
-				bpf_ntohl(pkt->inner_ipv4_tuple.daddr),
-				bpf_ntohl(pkt->inner_ipv4_tuple.saddr));
-			return XDP_ABORTED;
+	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_TCP || pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
+		if (is_ingress_enforced(tunnel_id, pkt->inner_ipv4_tuple.daddr)) {
+			if (0 != enforce_ingress_policy(tunnel_id, &pkt->inner_ipv4_tuple)) {
+				bpf_debug(
+					"[Transit:%d] ABORTED: packet to 0x%x from 0x%x ingress policy denied\n",
+					__LINE__,
+					bpf_ntohl(pkt->inner_ipv4_tuple.daddr),
+					bpf_ntohl(pkt->inner_ipv4_tuple.saddr));
+				return XDP_ABORTED;
+			}
 		}
 	}
 
