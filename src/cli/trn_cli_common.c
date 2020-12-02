@@ -351,7 +351,6 @@ int trn_cli_parse_ep(const cJSON *jsonobj, struct rpc_trn_endpoint_t *ep)
 		struct sockaddr_in sa;
 		inet_pton(AF_INET, ip->valuestring, &(sa.sin_addr));
 		ep->ip = sa.sin_addr.s_addr;
-		
 	} else {
 		print_err("Error: IP is missing or non-string\n");
 		return -EINVAL;
@@ -652,8 +651,9 @@ int trn_cli_parse_network_policy_cidr(const cJSON *jsonobj,
 		return -EINVAL;
 	}
 
+	// adding 96 = 0x01100000 offsets the missing bit
 	if (cJSON_IsString(cidr_prefixlen)) {
-		cidrval->cidr_prefixlen = atoi(cidr_prefixlen->valuestring);
+		cidrval->cidr_prefixlen = atoi(cidr_prefixlen->valuestring) + 96;
 	} else {
 		print_err("Error: Network policy prefixlen Error\n");
 		return -EINVAL;
