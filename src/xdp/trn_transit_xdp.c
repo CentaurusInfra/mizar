@@ -393,6 +393,67 @@ static __inline int trn_handle_scaled_ep_modify(struct transit_packet *pkt)
 	return XDP_TX;
 }
 
+/*
+   check if ingress network policy should be enforced to specific destination
+   return value:
+     0 (false) :    no ingress policy
+     non-0 (true) : need to enforce ingress policy check
+*/
+static __inline int is_ingress_enforced(__u64 tunnel_id, __be32 ip_addr)
+{
+	struct vsip_enforce_t vsip = {.tunnel_id = tunnel_id, .local_ip = ip_addr};
+	__u8 *v = bpf_map_lookup_elem(&ing_vsip_enforce_map, &vsip);
+	return v && *v;
+}
+
+/*
+   enforce_ingress_policy enforces egress network policy with the (incoming) packet
+   return value:
+     0: ingress policy allows this packet; no error
+    -1: ingress policy denies this packet; ingress policy denial error
+*/
+static __inline int enforce_ingress_policy(__u64 tunnel_id, const struct ipv4_tuple_t *ipv4_tuple)
+{
+	const __u32 full_vsip_cidr_prefix = (__u32)(sizeof(struct vsip_cidr_t) - sizeof(__u32)) * 8;
+
+	struct vsip_ppo_t vsip_ppo = {
+		.tunnel_id = tunnel_id,
+		.local_ip = ipv4_tuple->daddr,
+		.proto = 0,	// L3
+		.port = 0,	// L3
+	};
+	__u64 *policies_l3 = bpf_map_lookup_elem(&ing_vsip_ppo_map, &vsip_ppo);
+	__u64 policies_ppo = (policies_l3) ? *policies_l3 : 0;
+
+	vsip_ppo.proto = ipv4_tuple->protocol;
+	vsip_ppo.port = ipv4_tuple->dport;
+	__u64 *policies_l4 = bpf_map_lookup_elem(&ing_vsip_ppo_map, &vsip_ppo);
+	if (policies_l4) policies_ppo |= *policies_l4;
+
+	if (0 == policies_ppo)
+		return -1;
+
+	struct vsip_cidr_t vsip_cidr = {
+		.prefixlen = full_vsip_cidr_prefix,
+		.tunnel_id = tunnel_id,
+		.local_ip = ipv4_tuple->daddr,
+		.remote_ip = ipv4_tuple->saddr,
+	};
+	__u64 *policies_sip_prim = bpf_map_lookup_elem(&ing_vsip_prim_map, &vsip_cidr);
+	if (policies_sip_prim && (policies_ppo & *policies_sip_prim))
+		return 0;
+
+	__u64 *policies_sip_supp = bpf_map_lookup_elem(&ing_vsip_supp_map, &vsip_cidr);
+	__u64 *policies_sip_except = bpf_map_lookup_elem(&ing_vsip_except_map, &vsip_cidr);
+	if (policies_sip_supp) {
+		__u64 excepts = (policies_sip_except) ? *policies_sip_except : 0;
+		if ((*policies_sip_supp & ~excepts) & policies_ppo)
+			return 0;
+	}
+
+	return -1;
+}
+
 static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 {
 	pkt->inner_ip = (void *)pkt->inner_eth + pkt->inner_eth_off;
@@ -443,8 +504,21 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 		pkt->inner_ipv4_tuple.dport = pkt->inner_udp->dest;
 	}
 
-	/* Lookup the source endpoint*/
 	__be64 tunnel_id = trn_vni_to_tunnel_id(pkt->geneve->vni);
+
+	// todo: only to check policy against TCP amd UDP packets
+	// todo: add conn_track related logic properly
+	if (is_ingress_enforced(tunnel_id, pkt->inner_ipv4_tuple.daddr)) {
+		if (0 != enforce_ingress_policy(tunnel_id, &pkt->inner_ipv4_tuple)) {
+			bpf_debug("[Transit:%d] ABORTED: packet to 0x%x from 0x%x ingress policy denied\n",
+				__LINE__,
+				bpf_ntohl(pkt->inner_ipv4_tuple.daddr),
+				bpf_ntohl(pkt->inner_ipv4_tuple.saddr));
+			return XDP_ABORTED;
+		}
+	}
+
+	/* Lookup the source endpoint*/
 	struct endpoint_t *src_ep;
 	struct endpoint_key_t src_epkey;
 
