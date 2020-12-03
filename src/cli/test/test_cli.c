@@ -1977,7 +1977,7 @@ static void test_trn_cli_update_transit_network_policy_subcmd(void **state)
 		.interface = itf,
 		.tunid = 3,
 		.local_ip = 0x300000a,
-		.cidr_prefixlen = 112,
+		.cidr_prefixlen = 16,
 		.cidr_ip = 0x90000ac,
 		.cidr_type = 1,
 		.bit_val = 10

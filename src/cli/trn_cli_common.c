@@ -651,9 +651,8 @@ int trn_cli_parse_network_policy_cidr(const cJSON *jsonobj,
 		return -EINVAL;
 	}
 
-	// adding 96 = 0x01100000 offsets the missing bit
 	if (cJSON_IsString(cidr_prefixlen)) {
-		cidrval->cidr_prefixlen = atoi(cidr_prefixlen->valuestring) + 96;
+		cidrval->cidr_prefixlen = atoi(cidr_prefixlen->valuestring);
 	} else {
 		print_err("Error: Network policy prefixlen Error\n");
 		return -EINVAL;

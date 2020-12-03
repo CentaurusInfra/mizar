@@ -1279,7 +1279,8 @@ int *update_transit_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc
 	}
 
 	cidr.tunnel_id = policy->tunid;
-	cidr.prefixlen = policy->cidr_prefixlen;
+	// Add explaination here for magic number 96
+	cidr.prefixlen = policy->cidr_prefixlen + 96;
 	cidr.local_ip = policy->local_ip;
 	cidr.remote_ip = policy->cidr_ip;
 	__u64 bitmap = policy->bit_val;
