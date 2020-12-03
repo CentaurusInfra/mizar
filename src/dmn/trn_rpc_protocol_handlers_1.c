@@ -45,6 +45,9 @@
 #define TRANSITLOGNAME "transit"
 #define TRN_MAX_ITF 265
 #define TRN_MAX_VETH 2048
+#define PRIMARY 0
+#define SUPPLEMENTARY 1
+#define EXCEPTION 2
 
 void rpc_transit_remote_protocol_1(struct svc_req *rqstp,
 				   register SVCXPRT *transp);
@@ -1248,6 +1251,59 @@ int *unload_transit_xdp_pipeline_stage_1_svc(rpc_trn_ebpf_prog_stage_t *argp,
 		TRN_LOG_ERROR("Failed to remove XDP stage %d for interface %s",
 			      prog_idx, argp->interface);
 		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	result = 0;
+	return &result;
+
+error:
+	return &result;
+}
+
+int *update_transit_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result;
+	int rc;
+	char *itf = policy->interface;
+	struct vsip_cidr_t cidr;
+
+	TRN_LOG_INFO("update_transit_network_policy_1_svc service");
+
+	struct user_metadata_t *md = trn_itf_table_find(itf);
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	cidr.tunnel_id = policy->tunid;
+	// Add explaination here for magic number 96
+	cidr.prefixlen = policy->cidr_prefixlen + 96;
+	cidr.local_ip = policy->local_ip;
+	cidr.remote_ip = policy->cidr_ip;
+	__u64 bitmap = policy->bit_val;
+
+	switch (policy->cidr_type) {
+	case PRIMARY:
+		rc = trn_update_transit_network_policy_primary_map(md, &cidr, bitmap);
+		break;
+	case SUPPLEMENTARY:
+		rc = trn_update_transit_network_policy_supplementary_map(md, &cidr, bitmap);
+		break;
+	case EXCEPTION:
+		rc = trn_update_transit_network_policy_except_map(md, &cidr, bitmap);
+		break;
+	default:
+		result = RPC_TRN_FATAL;
+		goto error;
+	}
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure updating transit network policy map cidr: 0x%x / %d, for interface %s",
+					policy->cidr_ip, policy->cidr_prefixlen, policy->interface);
+		result = RPC_TRN_FATAL;
 		goto error;
 	}
 

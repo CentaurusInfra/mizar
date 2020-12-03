@@ -584,6 +584,28 @@ static void test_update_agent_md_1_svc(void **state)
 	UNUSED(md1);
 }
 
+static void test_update_transit_network_policy_1_svc(void **state)
+{
+	UNUSED(state);
+
+	char itf[] = "lo";
+
+	struct rpc_trn_vsip_cidr_t policy1 = {
+		.interface = itf,
+		.tunid = 3,
+		.local_ip = 0x100000a,
+		.cidr_prefixlen = 16,
+		.cidr_ip = 0xac00012,
+		.cidr_type = 1,
+		.bit_val = 4
+	};
+
+	int *rc;
+	expect_function_call(__wrap_bpf_map_update_elem);
+	rc = update_transit_network_policy_1_svc(&policy1, NULL);
+	assert_int_equal(*rc, 0);
+}
+
 static void test_get_vpc_1_svc(void **state)
 {
 	UNUSED(state);
@@ -1177,7 +1199,7 @@ int main()
 		cmocka_unit_test(test_delete_ep_1_svc),
 		cmocka_unit_test(test_delete_agent_ep_1_svc),
 		cmocka_unit_test(test_delete_agent_md_1_svc),
-
+		cmocka_unit_test(test_update_transit_network_policy_1_svc)
 	};
 
 	int result = cmocka_run_group_tests(tests, groupSetup, groupTeardown);

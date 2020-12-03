@@ -73,6 +73,8 @@ int trn_cli_parse_agent_md(const cJSON *jsonfile,
 int trn_cli_parse_ebpf_prog(const cJSON *jsonobj, rpc_trn_ebpf_prog_t *prog);
 int trn_cli_parse_ebpf_prog_stage(const cJSON *jsonobj,
 				  rpc_trn_ebpf_prog_stage_t *stage);
+int trn_cli_parse_network_policy_cidr(const cJSON *jsonobj,
+					struct rpc_trn_vsip_cidr_t *cidrval);
 
 int trn_cli_update_port_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_update_vpc_subcmd(CLIENT *clnt, int argc, char *argv[]);
@@ -99,8 +101,12 @@ int trn_cli_delete_agent_md_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_load_pipeline_stage_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_unload_pipeline_stage_subcmd(CLIENT *clnt, int argc, char *argv[]);
 
+int trn_cli_update_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *argv[]);
+
 void dump_vpc(struct rpc_trn_vpc_t *vpc);
 void dump_net(struct rpc_trn_network_t *net);
 void dump_ep(struct rpc_trn_endpoint_t *ep);
 void dump_port(struct rpc_trn_port_t *port);
 void dump_agent_md(struct rpc_trn_agent_metadata_t *agent_md);
+void dump_network_policy(struct rpc_trn_vsip_cidr_t *policy);
+uint32_t parse_ip_address(const cJSON *ipobj);

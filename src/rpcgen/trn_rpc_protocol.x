@@ -160,6 +160,17 @@ struct rpc_trn_ebpf_prog_stage_t {
        rpc_trn_pipeline_stage stage;
 };
 
+/* Defines a network policy table entry */
+struct rpc_trn_vsip_cidr_t {
+       string interface<20>;
+       uint64_t tunid;
+       uint32_t local_ip;
+       uint32_t cidr_ip;
+       uint32_t cidr_prefixlen;
+       int cidr_type;
+       uint64_t bit_val;
+};
+
 /*----- Protocol. -----*/
 
 program RPC_TRANSIT_REMOTE_PROTOCOL {
@@ -191,6 +202,9 @@ program RPC_TRANSIT_REMOTE_PROTOCOL {
 
                 int LOAD_TRANSIT_XDP_PIPELINE_STAGE(rpc_trn_ebpf_prog_t) = 21;
                 int UNLOAD_TRANSIT_XDP_PIPELINE_STAGE(rpc_trn_ebpf_prog_stage_t) = 22;
+
+                int UPDATE_TRANSIT_NETWORK_POLICY(rpc_trn_vsip_cidr_t) = 23;
+
           } = 1;
 
 } =  0x20009051;
