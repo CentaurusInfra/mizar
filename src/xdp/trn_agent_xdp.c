@@ -397,13 +397,15 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 	}
 
 	// todo: add conn_track related logic properly
-	if (is_egress_enforced(pkt->agent_ep_tunid, pkt->inner_ip->saddr)) {
-		if (0 != enforce_egress_policy(pkt)) {
-			bpf_debug("[Agent:%ld.0x%x] ABORTED: packet to 0x%x egress policy denied\n",
-				pkt->agent_ep_tunid,
-				bpf_ntohl(pkt->agent_ep_ipv4),
-				bpf_ntohl(pkt->inner_ip->daddr));
-			return XDP_ABORTED;
+	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_TCP || pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
+		if (is_egress_enforced(pkt->agent_ep_tunid, pkt->inner_ip->saddr)) {
+			if (0 != enforce_egress_policy(pkt)) {
+				bpf_debug("[Agent:%ld.0x%x] ABORTED: packet to 0x%x egress policy denied\n",
+					pkt->agent_ep_tunid,
+					bpf_ntohl(pkt->agent_ep_ipv4),
+					bpf_ntohl(pkt->inner_ip->daddr));
+				return XDP_ABORTED;
+			}
 		}
 	}
 
