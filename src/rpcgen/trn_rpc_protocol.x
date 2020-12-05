@@ -171,6 +171,16 @@ struct rpc_trn_vsip_cidr_t {
        uint64_t bit_val;
 };
 
+/* Defines a network policy table key */
+struct rpc_trn_vsip_cidr_key_t {
+       string interface<20>;
+       uint64_t tunid;
+       uint32_t local_ip;
+       uint32_t cidr_ip;
+       uint32_t cidr_prefixlen;
+       int cidr_type;
+};
+
 /*----- Protocol. -----*/
 
 program RPC_TRANSIT_REMOTE_PROTOCOL {
@@ -204,6 +214,7 @@ program RPC_TRANSIT_REMOTE_PROTOCOL {
                 int UNLOAD_TRANSIT_XDP_PIPELINE_STAGE(rpc_trn_ebpf_prog_stage_t) = 22;
 
                 int UPDATE_TRANSIT_NETWORK_POLICY(rpc_trn_vsip_cidr_t) = 23;
+                int DELETE_TRANSIT_NETWORK_POLICY(rpc_trn_vsip_cidr_key_t) = 24;
 
           } = 1;
 

@@ -606,6 +606,38 @@ static void test_update_transit_network_policy_1_svc(void **state)
 	assert_int_equal(*rc, 0);
 }
 
+static void test_delete_transit_network_policy_1_svc(void **state)
+{
+	UNUSED(state);
+	char itf[] = "lo";
+	struct rpc_trn_vsip_cidr_key_t policy_key = {
+		.interface = itf,
+		.tunid = 3,
+		.local_ip = 0x100000a,
+		.cidr_prefixlen = 16,
+		.cidr_ip = 0xac00012,
+		.cidr_type = 1
+	};
+	int *rc;
+
+	/* Test delete_transit_network_policy_1 with valid vp_ckey */
+	will_return(__wrap_bpf_map_delete_elem, TRUE);
+	expect_function_call(__wrap_bpf_map_delete_elem);
+	rc = delete_transit_network_policy_1_svc(&policy_key, NULL);
+	assert_int_equal(*rc, 0);
+
+	/* Test delete_transit_network_policy_1 with invalid vpc_key */
+	will_return(__wrap_bpf_map_delete_elem, FALSE);
+	expect_function_call(__wrap_bpf_map_delete_elem);
+	rc = delete_transit_network_policy_1_svc(&policy_key, NULL);
+	assert_int_equal(*rc, RPC_TRN_FATAL);
+
+	/* Test delete_transit_network_policy_1 with invalid interface*/
+	policy_key.interface = "";
+	rc = delete_transit_network_policy_1_svc(&policy_key, NULL);
+	assert_int_equal(*rc, RPC_TRN_ERROR);
+}
+
 static void test_get_vpc_1_svc(void **state)
 {
 	UNUSED(state);
@@ -1199,7 +1231,8 @@ int main()
 		cmocka_unit_test(test_delete_ep_1_svc),
 		cmocka_unit_test(test_delete_agent_ep_1_svc),
 		cmocka_unit_test(test_delete_agent_md_1_svc),
-		cmocka_unit_test(test_update_transit_network_policy_1_svc)
+		cmocka_unit_test(test_update_transit_network_policy_1_svc),
+		cmocka_unit_test(test_delete_transit_network_policy_1_svc)
 	};
 
 	int result = cmocka_run_group_tests(tests, groupSetup, groupTeardown);
