@@ -55,6 +55,7 @@
 
 // global pinned ingress policy check map path
 const char *ing_vsip_enforce_map_path = "/sys/fs/bpf/ing_vsip_enforce_map";
+extern const char *conn_track_cache_path;
 
 int trn_user_metadata_free(struct user_metadata_t *md)
 {
@@ -111,6 +112,7 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	md->ing_vsip_ppo_map = bpf_map__next(md->ing_vsip_prim_map, md->obj);
 	md->ing_vsip_supp_map = bpf_map__next(md->ing_vsip_ppo_map, md->obj);
 	md->ing_vsip_except_map = bpf_map__next(md->ing_vsip_supp_map, md->obj);
+	md->conn_track_chche = bpf_map__next(md->ing_vsip_except_map, md->obj);
 
 	if (!md->networks_map || !md->vpc_map || !md->endpoints_map ||
 	    !md->port_map || !md->hosted_endpoints_iface_map ||
@@ -140,6 +142,7 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	md->ing_vsip_ppo_map_fd = bpf_map__fd(md->ing_vsip_ppo_map);
 	md->ing_vsip_supp_map_fd = bpf_map__fd(md->ing_vsip_supp_map);
 	md->ing_vsip_except_map_fd = bpf_map__fd(md->ing_vsip_except_map);
+	md->conn_track_cache_fd = bpf_map__fd(md->conn_track_chche);
 
 	if (bpf_map__unpin(md->xdpcap_hook_map, md->pcapfile) == 0) {
 		TRN_LOG_INFO("unpin exiting pcap map file: %s", md->pcapfile);
@@ -154,6 +157,7 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 
 	// pin the global shared ingress policy check map is applicable
 	bpf_map__pin(md->ing_vsip_enforce_map, ing_vsip_enforce_map_path);
+	bpf_map__pin(md->conn_track_chche, conn_track_cache_path);
 
 	return 0;
 }
@@ -339,6 +343,7 @@ int trn_add_prog(struct user_metadata_t *md, unsigned int prog_idx,
 	_SET_INNER_MAP(ing_vsip_ppo_map);
 	_SET_INNER_MAP(ing_vsip_supp_map);
 	_SET_INNER_MAP(ing_vsip_except_map);
+	_SET_INNER_MAP(conn_track_cache);
 
 	/* Only one prog is supported */
 	bpf_object__for_each_program(prog, stage->obj)
@@ -380,6 +385,7 @@ int trn_add_prog(struct user_metadata_t *md, unsigned int prog_idx,
 	_UPDATE_INNER_MAP(ing_vsip_ppo_map);
 	_UPDATE_INNER_MAP(ing_vsip_supp_map);
 	_UPDATE_INNER_MAP(ing_vsip_except_map);
+	_UPDATE_INNER_MAP(conn_track_cache);
 
 	return 0;
 error:
