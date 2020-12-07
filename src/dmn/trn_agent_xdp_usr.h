@@ -73,6 +73,7 @@ struct agent_user_metadata_t {
 	int eg_vsip_ppo_map_fd;
 	int eg_vsip_supp_map_fd;
 	int eg_vsip_except_map_fd;
+	int conn_track_cache_fd;
 
 	int fwd_flow_mod_cache_map_fd;
 	int rev_flow_mod_cache_map_fd;
@@ -93,6 +94,7 @@ struct agent_user_metadata_t {
 	struct bpf_map *eg_vsip_ppo_map;
 	struct bpf_map *eg_vsip_supp_map;
 	struct bpf_map *eg_vsip_except_map;
+	struct bpf_map *conn_track_cache;
 
 	struct bpf_prog_info info;
 	struct bpf_object *obj;
