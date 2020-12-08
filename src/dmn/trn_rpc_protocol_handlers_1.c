@@ -1313,3 +1313,58 @@ int *update_transit_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc
 error:
 	return &result;
 }
+
+int *delete_transit_network_policy_1_svc(rpc_trn_vsip_cidr_key_t *policy_key, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result;
+	int rc;
+	char *itf = policy_key->interface;
+	struct vsip_cidr_t cidr;
+
+	TRN_LOG_INFO("delete_transit_network_policy_1_svc service");
+
+	struct user_metadata_t *md = trn_itf_table_find(itf);
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	cidr.tunnel_id = policy_key->tunid;
+
+	// cidr-related maps have tunnel-id(64 bits),
+	// local-ip(32 bits) prior to destination cidr;
+	// hence the final prefix length is 64+32+{cidr prefix}
+	cidr.prefixlen = policy_key->cidr_prefixlen + 96;
+	cidr.local_ip = policy_key->local_ip;
+	cidr.remote_ip = policy_key->cidr_ip;
+
+	switch (policy_key->cidr_type) {
+	case PRIMARY:
+		rc = trn_delete_transit_network_policy_primary_map(md, &cidr);
+		break;
+	case SUPPLEMENTARY:
+		rc = trn_delete_transit_network_policy_supplementary_map(md, &cidr);
+		break;
+	case EXCEPTION:
+		rc = trn_delete_transit_network_policy_except_map(md, &cidr);
+		break;
+	default:
+		result = RPC_TRN_FATAL;
+		goto error;
+	}
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure deleting transit network policy map cidr: 0x%x / %d, for interface %s",
+					policy_key->cidr_ip, policy_key->cidr_prefixlen, policy_key->interface);
+		result = RPC_TRN_FATAL;
+		goto error;
+	}
+
+	result = 0;
+	return &result;
+
+error:
+	return &result;
+}

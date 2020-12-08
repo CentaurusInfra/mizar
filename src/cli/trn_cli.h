@@ -75,6 +75,8 @@ int trn_cli_parse_ebpf_prog_stage(const cJSON *jsonobj,
 				  rpc_trn_ebpf_prog_stage_t *stage);
 int trn_cli_parse_network_policy_cidr(const cJSON *jsonobj,
 					struct rpc_trn_vsip_cidr_t *cidrval);
+int trn_cli_parse_network_policy_cidr_key(const cJSON *jsonobj,
+					  struct rpc_trn_vsip_cidr_key_t *cidrkey);
 
 int trn_cli_update_port_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_update_vpc_subcmd(CLIENT *clnt, int argc, char *argv[]);
@@ -102,6 +104,7 @@ int trn_cli_load_pipeline_stage_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_unload_pipeline_stage_subcmd(CLIENT *clnt, int argc, char *argv[]);
 
 int trn_cli_update_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *argv[]);
+int trn_cli_delete_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *argv[]);
 
 void dump_vpc(struct rpc_trn_vpc_t *vpc);
 void dump_net(struct rpc_trn_network_t *net);
