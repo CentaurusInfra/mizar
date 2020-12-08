@@ -1332,7 +1332,10 @@ int *delete_transit_network_policy_1_svc(rpc_trn_vsip_cidr_key_t *policy_key, st
 	}
 
 	cidr.tunnel_id = policy_key->tunid;
-	// Add explaination here for magic number 96
+
+	// cidr-related maps have tunnel-id(64 bits),
+	// local-ip(32 bits) prior to destination cidr;
+	// hence the final prefix length is 64+32+{cidr prefix}
 	cidr.prefixlen = policy_key->cidr_prefixlen + 96;
 	cidr.local_ip = policy_key->local_ip;
 	cidr.remote_ip = policy_key->cidr_ip;
