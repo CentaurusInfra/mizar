@@ -45,6 +45,7 @@
 #include "trn_datamodel.h"
 #include "trn_transit_xdp_maps.h"
 #include "trn_kern.h"
+#include "conntrack_common.h"
 
 int _version SEC("version") = 1;
 
@@ -518,6 +519,9 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 				return XDP_ABORTED;
 			}
 		}
+
+		// todo: handle error in case it happens
+		conntrack_insert_connection(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple);
 	}
 
 	/* Lookup the source endpoint*/
