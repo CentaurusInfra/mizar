@@ -274,7 +274,7 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 	    !md->ep_flow_host_cache_ref || !md->ep_host_cache_ref ||
 	    !md->eg_vsip_enforce_map || !md->eg_vsip_prim_map ||
 	    !md->eg_vsip_ppo_map || !md->eg_vsip_supp_map ||
-	    !md->eg_vsip_except_map) {
+	    !md->eg_vsip_except_map || !md->conn_track_cache) {
 		TRN_LOG_ERROR("Failure finding maps objects.");
 		return 1;
 	}
