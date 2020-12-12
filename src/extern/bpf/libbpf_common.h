@@ -29,7 +29,7 @@
  * values provided by users in struct initializer-syntax as varargs.
  */
 #define DECLARE_LIBBPF_OPTS(TYPE, NAME, ...)				    \
-	struct TYPE NAME = ({ 						    \
+	struct TYPE NAME = __extension__ ({				    \
 		memset(&NAME, 0, sizeof(struct TYPE));			    \
 		(struct TYPE) {						    \
 			.sz = sizeof(struct TYPE),			    \
