@@ -26,12 +26,14 @@
 #include "trn_kern.h"
 
 __ALWAYS_INLINE__
-static inline int conntrack_insert_connection(void *conntracks, __u64 tunnel_id, const struct ipv4_tuple_t *tuple)
+static inline int conntrack_insert_tcpudp_conn(void *conntracks, __u64 tunnel_id, const struct ipv4_tuple_t *tuple)
 {
 	struct ipv4_ct_tuple_t conn = {
 		.vpc.tunnel_id = tunnel_id,
 		.tuple = *tuple,
 	};
 	__u8 value = 1;
-	return bpf_map_update_elem(conntracks, &conn, &value, 0);
+	return (tuple->protocol == IPPROTO_TCP || tuple->protocol == IPPROTO_UDP) ?
+		bpf_map_update_elem(conntracks, &conn, &value, 0) : 0;
 }
+

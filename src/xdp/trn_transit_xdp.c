@@ -519,10 +519,10 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 				return XDP_ABORTED;
 			}
 		}
-
-		// todo: handle error in case it happens
-		conntrack_insert_connection(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple);
 	}
+
+	// todo: consider to handle error in case it happens
+	conntrack_insert_tcpudp_conn(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple);
 
 	/* Lookup the source endpoint*/
 	struct endpoint_t *src_ep;

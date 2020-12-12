@@ -344,7 +344,6 @@ static __inline int enforce_egress_policy(const struct transit_packet *pkt)
 static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 {
 	pkt->inner_ip = (void *)pkt->inner_eth + pkt->inner_eth_off;
-	__u32 ipproto;
 
 	if (pkt->inner_ip + 1 > pkt->data_end) {
 		bpf_debug("[Agent:%ld.0x%x] ABORTED: Bad offset [%d]\n",
@@ -408,10 +407,10 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 				return XDP_ABORTED;
 			}
 		}
-
-		// todo: handle error in case it happens
-		conntrack_insert_connection(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple);
 	}
+
+	// todo: consider to handle error in case it happens
+	conntrack_insert_tcpudp_conn(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple);
 
 	/* Check if we need to apply a forward flow update */
 
