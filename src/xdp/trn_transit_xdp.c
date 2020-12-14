@@ -516,6 +516,7 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 					__LINE__,
 					bpf_ntohl(pkt->inner_ipv4_tuple.daddr),
 					bpf_ntohl(pkt->inner_ipv4_tuple.saddr));
+				conntrack_remove_tcpudp_conn(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple);
 				return XDP_ABORTED;
 			}
 		}
