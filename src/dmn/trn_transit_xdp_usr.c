@@ -120,9 +120,9 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	    !md->fwd_flow_mod_cache || !md->rev_flow_mod_cache ||
 	    !md->ep_flow_host_cache || !md->ep_host_cache ||
 	    !md->xdpcap_hook_map || !md->jmp_table_map ||
-	    !md->xdpcap_hook_map || !md->ing_vsip_ppo_map ||
-	    !md->ing_vsip_supp_map || !md->ing_vsip_except_map ||
-	    !md->conn_track_chche) {
+	    !md->ing_vsip_enforce_map || !md->ing_vsip_prim_map ||
+	    !md->ing_vsip_ppo_map || !md->ing_vsip_supp_map ||
+	    !md->ing_vsip_except_map || !md->conn_track_chche) {
 		TRN_LOG_ERROR("Failure finding maps objects.");
 		return 1;
 	}
