@@ -119,7 +119,10 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	    !md->interface_config_map || !md->interfaces_map ||
 	    !md->fwd_flow_mod_cache || !md->rev_flow_mod_cache ||
 	    !md->ep_flow_host_cache || !md->ep_host_cache ||
-	    !md->xdpcap_hook_map || !md->jmp_table_map) {
+	    !md->xdpcap_hook_map || !md->jmp_table_map ||
+	    !md->ing_vsip_enforce_map || !md->ing_vsip_prim_map ||
+	    !md->ing_vsip_ppo_map || !md->ing_vsip_supp_map ||
+	    !md->ing_vsip_except_map || !md->conn_track_chche) {
 		TRN_LOG_ERROR("Failure finding maps objects.");
 		return 1;
 	}
@@ -507,6 +510,11 @@ int trn_user_metadata_init(struct user_metadata_t *md, char *itf,
 	int err_code;
 	if (0 != (err_code = _reuse_shared_map_if_exists(md->obj, "ing_vsip_enforce_map", ing_vsip_enforce_map_path))) {
 		TRN_LOG_INFO("failed to reuse shared map at %s, error code %d\n", ing_vsip_enforce_map_path, err_code);
+		return 1;
+	}
+
+	if (0 != (err_code = _reuse_shared_map_if_exists(md->obj, "conn_track_cache", conn_track_cache_path))) {
+		TRN_LOG_INFO("failed to reuse shared map at %s, error code %d\n", conn_track_cache_path, err_code);
 		return 1;
 	}
 
