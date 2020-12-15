@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020 The Authors.
 
-# Authors: Sherif Abdelwahab <@zasherif>
-#          Phu Tran          <@phudtran>
+# Authors: Hong Chang   <@Hong-Chang>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -19,10 +18,35 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-FROM fwnetworking/python_base:latest
-COPY . /var/mizar/
-RUN pip3 install /var/mizar/
-RUN pip3 install epdb
-RUN ln -snf /var/mizar/build/bin /trn_bin
-COPY etc/luigi.cfg /etc/luigi/luigi.cfg
-CMD kopf run --standalone /var/mizar/mizar/operator.py
+import logging
+import json
+from cidr_trie import PatriciaTrie
+from kubernetes import client
+from mizar.common.workflow import *
+from mizar.dp.mizar.operators.droplets.droplets_operator import *
+from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
+from mizar.dp.mizar.operators.networkpolicies.networkpolicies_operator import *
+from mizar.dp.mizar.operators.vpcs.vpcs_operator import *
+from mizar.dp.mizar.operators.nets.nets_operator import *
+from mizar.common.constants import *
+
+logger = logging.getLogger()
+
+droplet_opr = DropletOperator()
+endpoint_opr = EndpointOperator()
+networkpolicy_opr = NetworkPolicyOperator()
+vpc_opr = VpcOperator()
+net_opr = NetOperator()
+
+
+class k8sNetworkPolicyCreate(WorkflowTask):
+    def requires(self):
+        logger.info("Requires {task}".format(task=self.__class__.__name__))
+        return []
+
+    def run(self):
+        logger.info("Run {task}".format(task=self.__class__.__name__))        
+
+        #TODO to be implemented
+
+        self.finalize()

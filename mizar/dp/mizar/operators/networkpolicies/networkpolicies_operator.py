@@ -19,10 +19,36 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-FROM fwnetworking/python_base:latest
-COPY . /var/mizar/
-RUN pip3 install /var/mizar/
-RUN pip3 install epdb
-RUN ln -snf /var/mizar/build/bin /trn_bin
-COPY etc/luigi.cfg /etc/luigi/luigi.cfg
-CMD kopf run --standalone /var/mizar/mizar/operator.py
+import logging
+import random
+import json
+from kubernetes import client, config
+from mizar.obj.endpoint import Endpoint
+from mizar.obj.networkpolicy import NetworkPolicy
+from mizar.obj.bouncer import Bouncer
+from mizar.common.constants import *
+from mizar.common.common import *
+from mizar.store.operator_store import OprStore
+from mizar.proto.interface_pb2 import *
+from mizar.daemon.interface_service import InterfaceServiceClient
+import uuid
+
+logger = logging.getLogger()
+
+
+class NetworkPolicyOperator(object):
+    _instance = None
+
+    def __new__(cls, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(NetworkPolicyOperator, cls).__new__(cls)
+            cls._init(cls, **kwargs)
+        return cls._instance
+
+    def _init(self, **kwargs):
+        logger.info(kwargs)
+        self.store = OprStore()
+        config.load_incluster_config()
+        self.obj_api = client.CustomObjectsApi()
+        self.core_api = client.CoreV1Api()
+        
