@@ -181,6 +181,13 @@ struct rpc_trn_vsip_cidr_key_t {
        int cidr_type;
 };
 
+/* Defines a network policy enforcement table key */
+struct rpc_trn_vsip_enforce_t {
+       string interface<20>;
+	uint64_t tunid;
+	uint32_t local_ip;
+};
+
 /*----- Protocol. -----*/
 
 program RPC_TRANSIT_REMOTE_PROTOCOL {
@@ -215,6 +222,7 @@ program RPC_TRANSIT_REMOTE_PROTOCOL {
 
                 int UPDATE_TRANSIT_NETWORK_POLICY(rpc_trn_vsip_cidr_t) = 23;
                 int DELETE_TRANSIT_NETWORK_POLICY(rpc_trn_vsip_cidr_key_t) = 24;
+                int UPDATE_TRANSIT_NETWORK_POLICY_ENFORCEMENT(rpc_trn_vsip_enforce_t) = 25;
 
           } = 1;
 

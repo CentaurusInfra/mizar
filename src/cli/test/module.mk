@@ -14,6 +14,7 @@ CLI_MOCKS += -Wl,--wrap=update_ep_1
 CLI_MOCKS += -Wl,--wrap=update_agent_ep_1
 CLI_MOCKS += -Wl,--wrap=update_agent_md_1
 CLI_MOCKS += -Wl,--wrap=update_transit_network_policy_1
+CLI_MOCKS += -Wl,--wrap=update_transit_network_policy_enforcement_1
 CLI_MOCKS += -Wl,--wrap=load_transit_xdp_1
 CLI_MOCKS += -Wl,--wrap=unload_transit_xdp_1
 CLI_MOCKS += -Wl,--wrap=load_transit_agent_xdp_1

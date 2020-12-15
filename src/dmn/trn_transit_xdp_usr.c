@@ -668,3 +668,17 @@ int trn_delete_transit_network_policy_except_map(struct user_metadata_t *md,
 	}
 	return 0;
 }
+
+int trn_update_transit_network_policy_enforcement_map(struct user_metadata_t *md,
+						      struct vsip_enforce_t *local,
+						      __u8 isenforce)
+{
+	int err = bpf_map_update_elem(md->ing_vsip_enforce_map_fd, local, &isenforce, 0);
+
+	if (err) {
+		TRN_LOG_ERROR("Update Enforcement ingress map failed (err:%d).",
+				err);
+		return 1;
+	}
+	return 0;
+}
