@@ -27,6 +27,9 @@ from mizar.common.common import *
 from mizar.common.common import run_cmd
 
 logger = logging.getLogger()
+import os
+if_name = os.popen("lshw -class network | grep -A 1 'bus info' | grep name | awk -F': ' '{print $2}'").read().split('\n')[0]
+
 
 
 class Droplet(object):
@@ -37,7 +40,7 @@ class Droplet(object):
         self.store = opr_store
         self.ip = ""
         self.mac = ""
-        self.phy_itf = 'eth0'
+        self.phy_itf = 'if_name'
         self.status = OBJ_STATUS.droplet_status_init
         self.known_substrates = {}
         self.known_bouncers = {}

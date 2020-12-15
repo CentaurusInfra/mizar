@@ -16,6 +16,8 @@ import sys
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
+import os
+if_name = os.popen("lshw -class network | grep -A 1 'bus info' | grep name | awk -F': ' '{print $2}'").read().split('\n')[0]
 
 POOL_WORKERS = 10
 
@@ -27,16 +29,18 @@ def init():
     nsenter -t 1 -m -u -n -i /etc/init.d/rpcbind restart && \
     nsenter -t 1 -m -u -n -i /etc/init.d/rsyslog restart && \
     nsenter -t 1 -m -u -n -i sysctl -w net.ipv4.tcp_mtu_probing=2 && \
-    nsenter -t 1 -m -u -n -i ip link set dev eth0 up mtu 9000' ''')
+    nsenter -t 1 -m -u -n -i ip link set dev if_name up mtu 9000' ''')
     r = subprocess.Popen(script, shell=True, stdout=subprocess.PIPE)
     output = r.stdout.read().decode().strip()
     logging.info("Setup done")
 
-    cmd = 'nsenter -t 1 -m -u -n -i ip addr show eth0 | grep "inet\\b" | awk \'{print $2}\' | cut -d/ -f1'
+    cmd = 'nsenter -t 1 -m -u -n -i ip addr show if_name | grep "inet\\b" | awk \'{print $2}\' | cut -d/ -f1'
+    logger.info("####Interface name app###: {}".format(cmd))
     r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     ip = r.stdout.read().decode().strip()
 
-    cmd = "nsenter -t 1 -m -u -n -i ip link set dev eth0 xdpgeneric off"
+    cmd = "nsenter -t 1 -m -u -n -i ip link set dev if_name xdpgeneric off"
+    logger.info("####interface name app2###: {}".format(cmd))
 
     r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     output = r.stdout.read().decode().strip()
@@ -48,7 +52,8 @@ def init():
     time.sleep(1)
     config = '{"xdp_path": "/trn_xdp/trn_transit_xdp_ebpf_debug.o", "pcapfile": "/bpffs/transit_xdp.pcap"}'
     cmd = (
-        f'''nsenter -t 1 -m -u -n -i /trn_bin/transit -s {ip} load-transit-xdp -i eth0 -j '{config}' ''')
+        f'''nsenter -t 1 -m -u -n -i /trn_bin/transit -s {ip} load-transit-xdp -i if_name -j '{config}' ''')
+    logger.info("#####interface3 app#######: {}".format(cmd))
 
     r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     output = r.stdout.read().decode().strip()

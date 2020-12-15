@@ -26,6 +26,9 @@ logger.addHandler(handler)
 logger = logging.getLogger()
 
 CONSUME_INTERFACE_TIMEOUT = 5
+import os
+if_name = os.popen("lshw -class network | grep -A 1 'bus info' | grep name | awk -F': ' '{print $2}'").read().split('\n')[0]
+
 
 
 class InterfaceServer(InterfaceServiceServicer):
@@ -37,11 +40,13 @@ class InterfaceServer(InterfaceServiceServicer):
         self.queued_pods = set()  # A set of pods, with queued interfaces (to be consumed)
         self.interfaces_lock = threading.Lock()
 
-        cmd = 'ip addr show eth0 | grep "inet\\b" | awk \'{print $2}\' | cut -d/ -f1'
+        cmd = 'ip addr show ',if_name,'| grep "inet\\b" | awk \'{print $2}\' | cut -d/ -f1'
+        logger.info("#####interface interface_service### : {}".format(cmd))
         r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         self.droplet_ip = r.stdout.read().decode().strip()
 
-        cmd = 'ip addr show eth0 | grep "link/ether\\b" | awk \'{print $2}\' | cut -d/ -f1'
+        cmd = 'ip addr show ',if_name,' | grep "link/ether\\b" | awk \'{print $2}\' | cut -d/ -f1'
+        logger.info("####interface2 interface_service ####: {}".format(cmd))
         r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         self.droplet_mac = r.stdout.read().decode().strip()
 
@@ -49,7 +54,8 @@ class InterfaceServer(InterfaceServiceServicer):
         r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         self.droplet_name = r.stdout.read().decode().strip()
 
-        self.itf = 'eth0'
+        self.itf = if_name
+        logger.info("####interface2 interface_service ####: {}".format(self.itf))
         self.rpc = LocalTransitRpc('127.0.0.1', self.droplet_mac)
 
     def __del__(self):
@@ -303,6 +309,7 @@ class InterfaceServiceClient():
 
     def DeleteInterface(self, interfaces_list):
         resp = self.stub.DeleteInterface(interfaces_list)
+        logger.info("Interface deleted c2c!")
         return resp
 
     def ActivateHostInterface(self, interface):
@@ -311,7 +318,8 @@ class InterfaceServiceClient():
 
 
 class LocalTransitRpc:
-    def __init__(self, ip, mac, itf='eth0', benchmark=False):
+    def __init__(self, ip, mac, itf='if_name', benchmark=False):
+        logger.info("####interface2 interface_service ####: {}")
         self.ip = ip
         self.mac = mac
         self.phy_itf = itf
@@ -328,6 +336,7 @@ class LocalTransitRpc:
         self.trn_cli_delete_net = f'''{self.trn_cli} delete-net -i {self.phy_itf} -j'''
         self.trn_cli_update_ep = f'''{self.trn_cli} update-ep -i {self.phy_itf} -j'''
         self.trn_cli_get_ep = f'''{self.trn_cli} get-ep -i {self.phy_itf} -j'''
+        logger.info("####FINAL####")
         self.trn_cli_delete_ep = f'''{self.trn_cli} delete-ep -i {self.phy_itf} -j'''
         self.trn_cli_load_pipeline_stage = f'''{self.trn_cli} load-pipeline-stage -i {self.phy_itf} -j'''
         self.trn_cli_unload_pipeline_stage = f'''{self.trn_cli} unload-pipeline-stage -i {self.phy_itf} -j'''
@@ -426,7 +435,7 @@ class LocalTransitRpc:
                 "mac": interface.address.mac,
                 "veth": interface.veth.name,
                 "remote_ips": [interface.droplet.ip_address],
-                "hosted_iface": 'eth0'
+                "hosted_iface": 'if_name'
             },
             "net": {
                 "tunnel_id": interface.address.tunnel_id,
@@ -437,7 +446,7 @@ class LocalTransitRpc:
             "eth": {
                 "ip": interface.droplet.ip_address,
                 "mac": interface.droplet.mac,
-                "iface": 'eth0'
+                "iface": 'if_name'
             }
         }
         jsonconf = json.dumps(jsonconf)

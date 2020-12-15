@@ -26,6 +26,8 @@ from mizar.common.constants import *
 from mizar.common.common import *
 
 logger = logging.getLogger()
+import os
+if_name = os.popen("lshw -class network | grep -A 1 'bus info' | grep name | awk -F': ' '{print $2}'").read().split('\n')[0]
 
 
 class Endpoint:
@@ -46,7 +48,7 @@ class Endpoint:
         self.droplet = ""
         self.droplet_ip = ""
         self.droplet_mac = ""
-        self.droplet_eth = 'eth0'
+        self.droplet_eth = 'if_name'
         self.droplet_obj = None
         self.veth_peer = ""
         self.veth_name = ""

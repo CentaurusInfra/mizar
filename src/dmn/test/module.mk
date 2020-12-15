@@ -15,7 +15,7 @@ CLI_MOCKS += -Wl,--wrap=bpf_map_delete_elem
 CLI_MOCKS += -Wl,--wrap=bpf_prog_load_xattr
 CLI_MOCKS += -Wl,--wrap=bpf_set_link_xdp_fd
 CLI_MOCKS += -Wl,--wrap=bpf_obj_get_info_by_fd
-CLI_MOCKS += -Wl,--wrap=bpf_map__next
+CLI_MOCKS += -Wl,--wrap=bpf_map__nextF
 CLI_MOCKS += -Wl,--wrap=bpf_map__fd
 CLI_MOCKS += -Wl,--wrap=bpf_map__pin
 CLI_MOCKS += -Wl,--wrap=bpf_map__unpin

@@ -22,15 +22,20 @@
 import logging
 import json
 from mizar.common.common import run_cmd
+import os
+if_name = os.popen("lshw -class network | grep -A 1 'bus info' | grep name | awk -F': ' '{print $2}'").read().split('\n')[0]
+
 
 logger = logging.getLogger()
 
 
 class TrnRpc:
-    def __init__(self, ip, mac, itf='eth0', benchmark=False):
+    def __init__(self, ip, mac, itf='if_name', benchmark=False):
+        logger.info("########interface name common#######: {}")
         self.ip = ip
         self.mac = mac
         self.phy_itf = itf
+
 
         # transitd cli commands
         self.trn_cli = f'''/trn_bin/transit -s {self.ip} '''

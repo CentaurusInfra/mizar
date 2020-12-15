@@ -27,13 +27,15 @@ from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
 from mizar.dp.mizar.operators.vpcs.vpcs_operator import *
 from mizar.dp.mizar.operators.nets.nets_operator import *
 from mizar.common.constants import *
-
+import os
 logger = logging.getLogger()
 
 droplet_opr = DropletOperator()
 endpoint_opr = EndpointOperator()
 vpc_opr = VpcOperator()
 net_opr = NetOperator()
+
+if_name = os.popen("lshw -class network | grep -A 1 'bus info' | grep name | awk -F': ' '{print $2}'").read().split('\n')[0]
 
 
 class k8sPodCreate(WorkflowTask):
@@ -56,7 +58,7 @@ class k8sPodCreate(WorkflowTask):
             'vpc': OBJ_DEFAULTS.default_ep_vpc,
             'subnet': OBJ_DEFAULTS.default_ep_net,
             'phase': self.param.body['status']['phase'],
-            'interfaces': [{'name': 'eth0'}]
+            'interfaces': [{'name': 'if_name'}]
         }
         logger.info("Pod spec {}".format(spec))
 

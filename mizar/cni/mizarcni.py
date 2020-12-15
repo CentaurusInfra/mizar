@@ -36,6 +36,9 @@ handler = logging.FileHandler('/tmp/mizarcni.log')
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
+import os
+if_name = os.popen("lshw -class network | grep -A 1 'bus info' | grep name | awk -F': ' '{print $2}'").read().split('\n')[0]
+
 
 class Cni:
     def __init__(self):
@@ -167,12 +170,15 @@ class Cni:
         # Disable TSO and checksum offload as xdp currently does not support
         logger.info("Disable tso for pod")
         cmd = "ip netns exec {} ethtool -K {} tso off gso off ufo off".format(
-            netns, "eth0")
+            netns, "if_name")
+        logger.info("#####interface name mizarncni #####: {}".format(cmd))
+
         rc, text = run_cmd(cmd)
         logger.info("Executed cmd {} tso rc: {} text {}".format(cmd, rc, text))
         logger.info("Disable rx tx offload for pod")
         cmd = "ip netns exec {} ethtool --offload {} rx off tx off".format(
-            netns, "eth0")
+            netns, "if_name")
+        logger.info("####interface2 name mi###: {}".format(cmd))
         rc, text = run_cmd(cmd)
         logger.info("Executed cmd {} rc: {} text {}".format(cmd, rc, text))
 

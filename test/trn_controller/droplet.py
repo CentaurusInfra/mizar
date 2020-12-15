@@ -9,14 +9,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 from test.trn_controller.common import cidr, logger, run_cmd
-import os
 import docker
 import time
 import json
+import os
+if_name = os.popen("lshw -class network | grep -A 1 'bus info' | grep name | awk -F': ' '{print $2}'").read().split('\n')[0]
+
 
 
 class droplet:
-    def __init__(self, id, droplet_type='docker', phy_itf='eth0', benchmark=False):
+    def __init__(self, id, droplet_type='docker', phy_itf='if_name', benchmark=False):
         """
         Models a host that runs the transit XDP program. In the
         functional test this is simply a docker container.
@@ -484,7 +486,7 @@ ip netns del {ep.ns} \' ''')
                 "mac": ep.get_mac(),
                 "veth": ep.get_veth_name(),
                 "remote_ips": ep.get_remote_ips(),
-                "hosted_iface": "eth0"
+                "hosted_iface": "if_name"
             },
             "net": {
                 "tunnel_id": net.get_tunnel_id(),
@@ -495,7 +497,7 @@ ip netns del {ep.ns} \' ''')
             "eth": {
                 "ip": self.ip,
                 "mac": self.mac,
-                "iface": "eth0"
+                "iface": "if_name"
             }
         }
         jsonconf = json.dumps(jsonconf)
@@ -700,7 +702,7 @@ cp /var/log/syslog /trn_test_out/syslog_{self.ip}
         # Restart dependancy services
         container.exec_run("/etc/init.d/rpcbind restart")
         container.exec_run("/etc/init.d/rsyslog restart")
-        container.exec_run("ip link set dev eth0 up mtu 9000")
+        container.exec_run("ip link set dev if_name up mtu 9000")
         container.exec_run("sysctl -w net.ipv4.tcp_mtu_probing=2")
 
         # We may need ovs for compatability tests
@@ -788,10 +790,10 @@ droplet_{self.ip}.pcap >/dev/null 2>&1 &\
     def dump_pcap_on_host(self, pcapfile, timeout=5):
         """
         Does tcpdump to a pcap file for "n" seconds on the host veth device
-        corresponding to the eth0 interface inside the docker container.
+        corresponding to the = interface inside the docker container.
         """
         veth_index = self.run(
-            "cat /sys/class/net/eth0/iflink")[1].strip()
+            "cat /sys/class/net/if_name/iflink")[1].strip()
         veth = self.run_from_root(
             "grep -l " + veth_index + " /sys/class/net/veth*/ifindex")[1].split("/")[4]
         run_cmd("timeout " + str(timeout) + " tcpdump -nn -A -i " + veth + " -w test/trn_func_tests/output/" +

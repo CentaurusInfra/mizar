@@ -10,17 +10,19 @@ from concurrent import futures
 from google.protobuf import empty_pb2
 
 logger = logging.getLogger()
+import os
+if_name = os.popen("lshw -class network | grep -A 1 'bus info' | grep name | awk -F': ' '{print $2}'").read().split('\n')[0]
 
 
 class DropletServer(droplet_pb2_grpc.DropletServiceServicer):
 
     def __init__(self):
-        self.itf = 'eth0'
-        cmd = 'ip addr show eth0 | grep "inet\\b" | awk \'{print $2}\' | cut -d/ -f1'
+        self.itf = 'if_name'
+        cmd = 'ip addr show if_name | grep "inet\\b" | awk \'{print $2}\' | cut -d/ -f1'
         r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         self.ip = r.stdout.read().decode().strip()
 
-        cmd = 'ip addr show eth0 | grep "link/ether\\b" | awk \'{print $2}\' | cut -d/ -f1'
+        cmd = 'ip addr show if_name | grep "link/ether\\b" | awk \'{print $2}\' | cut -d/ -f1'
         r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         self.mac = r.stdout.read().decode().strip()
 
