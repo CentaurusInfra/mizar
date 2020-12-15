@@ -121,6 +121,55 @@ int trn_cli_delete_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *a
 	return 0;
 }
 
+int trn_cli_update_transit_network_policy_enforcement_subcmd(CLIENT *clnt, int argc, char *argv[])
+{
+	ketopt_t om = KETOPT_INIT;
+	struct cli_conf_data_t conf;
+	cJSON *json_str = NULL;
+
+	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
+		return -EINVAL;
+	}
+
+	char *buf = conf.conf_str;
+	json_str = trn_cli_parse_json(buf);
+
+	if (json_str == NULL) {
+		return -EINVAL;
+	}
+
+	int *rc;
+	struct rpc_trn_vsip_enforce_t enforce;
+	char rpc[] = "update_transit_network_policy_enforcement_1";
+	enforce.interface = conf.intf;
+
+	int err = trn_cli_parse_network_policy_enforcement(json_str, &enforce);
+	cJSON_Delete(json_str);
+
+	if (err != 0) {
+		print_err("Error: parsing network policy enforcement config.\n");
+		return -EINVAL;
+	}
+
+	rc = update_transit_network_policy_enforcement_1(&enforce, clnt);
+	if (rc == (int *)NULL) {
+		print_err("RPC Error: client call failed: update_transit_network_policy_enforcement_1.\n");
+		return -EINVAL;
+	}
+
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal daemon error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
+	}
+
+	dump_enforced_policy(&enforce);
+	print_msg("update_transit_network_policy_enforcement_1 successfully updated network policy\n");
+
+	return 0;
+}
+
 void dump_network_policy(struct rpc_trn_vsip_cidr_t *policy)
 {
 	print_msg("Interface: %s\n", policy->interface);
@@ -130,4 +179,11 @@ void dump_network_policy(struct rpc_trn_vsip_cidr_t *policy)
 	print_msg("CIDR IP: %x\n", policy->cidr_ip);
 	print_msg("CIDR Type: %d\n", policy->cidr_type);
 	print_msg("bit value: %ld\n", policy->bit_val);
+}
+
+void dump_enforced_policy(struct rpc_trn_vsip_enforce_t *enforce)
+{
+	print_msg("Interface: %s\n", enforce->interface);
+	print_msg("Tunnel ID: %ld\n", enforce->tunid);
+	print_msg("Local IP: %x\n", enforce->local_ip);
 }

@@ -724,6 +724,31 @@ int trn_cli_parse_network_policy_cidr_key(const cJSON *jsonobj,
 	return 0;
 }
 
+int trn_cli_parse_network_policy_enforcement(const cJSON *jsonobj,
+					     struct rpc_trn_vsip_enforce_t *enforce)
+{
+	cJSON *tunnel_id = cJSON_GetObjectItem(jsonobj, "tunnel_id");
+	cJSON *ip = cJSON_GetObjectItem(jsonobj, "ip");
+
+	if (tunnel_id == NULL) {
+		enforce->tunid = 0;
+	} else if (cJSON_IsString(tunnel_id)) {
+		enforce->tunid = atoi(tunnel_id->valuestring);
+	} else {
+		print_err("Error: Network policy enforcement tunnel_id is non-string.\n");
+		return -EINVAL;
+	}
+
+	if (ip != NULL && cJSON_IsString(ip)) {
+		enforce->local_ip = parse_ip_address(ip);
+	} else {
+		print_err("Error: Network policy enforcement local IP is missing or non-string\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 uint32_t parse_ip_address(const cJSON *ipobj)
 {
 	struct sockaddr_in sa;
