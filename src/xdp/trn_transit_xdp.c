@@ -512,17 +512,18 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 		if (is_ingress_enforced(tunnel_id, pkt->inner_ipv4_tuple.daddr)) {
 			if (0 != enforce_ingress_policy(tunnel_id, &pkt->inner_ipv4_tuple)) {
 				bpf_debug(
-					"[Transit:%d] ABORTED: packet to 0x%x from 0x%x ingress policy denied\n",
-					__LINE__,
+					"[Transit:vpc 0x%lx] ABORTED: packet to 0x%x from 0x%x ingress policy denied\n",
+					tunnel_id,
 					bpf_ntohl(pkt->inner_ipv4_tuple.daddr),
 					bpf_ntohl(pkt->inner_ipv4_tuple.saddr));
+				conntrack_remove_tcpudp_conn(&conn_track_cache, tunnel_id, &pkt->inner_ipv4_tuple);
 				return XDP_ABORTED;
 			}
 		}
 	}
 
 	// todo: consider to handle error in case it happens
-	conntrack_insert_tcpudp_conn(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple);
+	conntrack_insert_tcpudp_conn(&conn_track_cache, tunnel_id, &pkt->inner_ipv4_tuple);
 
 	/* Lookup the source endpoint*/
 	struct endpoint_t *src_ep;

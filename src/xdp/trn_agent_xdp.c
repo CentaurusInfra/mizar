@@ -404,6 +404,7 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 					pkt->agent_ep_tunid,
 					bpf_ntohl(pkt->agent_ep_ipv4),
 					bpf_ntohl(pkt->inner_ip->daddr));
+				conntrack_remove_tcpudp_conn(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple);
 				return XDP_ABORTED;
 			}
 		}
