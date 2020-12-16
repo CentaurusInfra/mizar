@@ -71,7 +71,7 @@ CLANGFLAGS= -I.\
 			-Wno-compare-distinct-pointer-types \
 			-Wno-gnu-variable-sized-type-not-at-end \
 			-Wno-address-of-packed-member -Wno-tautological-compare \
-			-Wno-unknown-warning-option -O3 -emit-llvm -c -o -
+			-Wno-unknown-warning-option -O1 -emit-llvm -c -o -
 
 CLANGFLAGS_DEBUG:= -DDEBUG -D__KERNEL__ -g -D__BPF_TRACING__ $(CLANGFLAGS)
 
