@@ -47,3 +47,19 @@ static inline int conntrack_remove_tcpudp_conn(void *conntracks, __u64 tunnel_id
 	return (tuple->protocol == IPPROTO_TCP || tuple->protocol == IPPROTO_UDP) ?
 		bpf_map_delete_elem(conntracks, &conn) : 0;
 }
+
+__ALWAYS_INLINE__
+static inline int conntrack_is_reply_of_tracked_conn(void *conntracks, __u64 tunnel_id, const struct ipv4_tuple_t *tuple)
+{
+	struct ipv4_ct_tuple_t rev_conn = {
+		.vpc.tunnel_id = tunnel_id,
+		.tuple = {
+			.protocol = tuple->protocol,
+			.saddr = tuple->daddr,
+			.daddr = tuple->saddr,
+			.sport = tuple->dport,
+			.dport = tuple->sport,
+		},
+	};
+	return NULL != bpf_map_lookup_elem(conntracks, &rev_conn);
+}
