@@ -1406,3 +1406,39 @@ int *update_transit_network_policy_enforcement_1_svc(rpc_trn_vsip_enforce_t *enf
 error:
 	return &result;
 }
+
+int *delete_transit_network_policy_enforcement_1_svc(rpc_trn_vsip_enforce_t *enforce, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result;
+	int rc;
+	char *itf = enforce->interface;
+	struct vsip_enforce_t enf;
+
+	TRN_LOG_INFO("delete_transit_network_policy_enforcement_1_svc service");
+
+	struct user_metadata_t *md = trn_itf_table_find(itf);
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	enf.tunnel_id = enforce->tunid;
+	enf.local_ip = enforce->local_ip;
+
+	rc = trn_delete_transit_network_policy_enforcement_map(md, &enf);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure deleting transit network policy enforcement map ip address: 0x%x, for interface %s",
+					enforce->local_ip, enforce->interface);
+		result = RPC_TRN_FATAL;
+		goto error;
+	}
+
+	result = 0;
+	return &result;
+
+error:
+	return &result;
+}
