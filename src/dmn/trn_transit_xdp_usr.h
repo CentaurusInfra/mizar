@@ -216,3 +216,6 @@ int trn_delete_transit_network_policy_except_map(struct user_metadata_t *md,
 int trn_update_transit_network_policy_enforcement_map(struct user_metadata_t *md,
 						      struct vsip_enforce_t *local,
 						      __u8 isenforce);
+
+int trn_delete_transit_network_policy_enforcement_map(struct user_metadata_t *md,
+						      struct vsip_enforce_t *local);

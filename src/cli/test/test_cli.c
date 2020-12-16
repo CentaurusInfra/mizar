@@ -143,6 +143,15 @@ int *__wrap_update_transit_network_policy_enforcement_1(rpc_trn_vsip_enforce_t *
 	return retval;
 }
 
+int *__wrap_delete_transit_network_policy_enforcement_1(rpc_trn_vsip_enforce_t *enforce, CLIENT *clnt)
+{
+	check_expected_ptr(enforce);
+	check_expected_ptr(clnt);
+	int *retval = mock_ptr_type(int *);
+	function_called();
+	return retval;
+}
+
 rpc_trn_vpc_t *__wrap_get_vpc_1(rpc_trn_vpc_key_t *argp, CLIENT *clnt)
 {
 	check_expected_ptr(argp);
@@ -2260,6 +2269,84 @@ static void test_trn_cli_update_transit_network_policy_enforcement_subcmd(void *
 	assert_int_equal(rc, -EINVAL);
 }
 
+static void test_trn_cli_delete_transit_network_policy_enforcement_subcmd(void **state)
+{
+	UNUSED(state);
+	int rc;
+	int argc = 5;
+	char itf[] = "eth0";
+	int delete_transit_network_policy_enforcement_1_ret_val;
+
+	/* Test cases */
+	char *argv1[] = { "update-network-policy-enforcement-ingress", "-i", "eth0", "-j", QUOTE({
+				  "tunnel_id": "3",
+				  "ip": "10.0.0.3"
+			  }) };
+
+	char *argv2[] = { "update-network-policy-enforcement-ingress", "-i", "eth0", "-j", QUOTE({
+				  "tunnel_id": 3,
+				  "ip": "10.0.0.3"
+			  }) };
+
+	char *argv3[] = { "update-network-policy-enforcement-ingress", "-i", "eth0", "-j", QUOTE({
+				  "tunnel_id": "3",
+				  "ip": 10.0.0.3
+			  }) };
+
+	char *argv4[] = { "delete-network-policy-ingress", "-i", "eth0", "-j", QUOTE({
+				  "tunnel_id": "3"
+			  }) };
+
+	struct rpc_trn_vsip_enforce_t exp_enforce = {
+		.interface = itf,
+		.tunid = 3,
+		.local_ip = 0x300000a
+	};
+
+	/* Test call delete_transit_network_policy_enforcement_1 successfully */
+	TEST_CASE("delete-network-policy-enforcement-ingress succeed with well formed policy json input");
+	delete_transit_network_policy_enforcement_1_ret_val = 0;
+	expect_function_call(__wrap_delete_transit_network_policy_enforcement_1);
+	will_return(__wrap_delete_transit_network_policy_enforcement_1, &delete_transit_network_policy_enforcement_1_ret_val);
+	expect_check(__wrap_delete_transit_network_policy_enforcement_1, enforce, check_policy_enforcement_equal, &exp_enforce);
+	expect_any(__wrap_delete_transit_network_policy_enforcement_1, clnt);
+	rc = trn_cli_delete_transit_network_policy_enforcement_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, 0);
+
+	/* Test parse network policy input error*/
+	TEST_CASE("delete-network-policy-enforcement-ingress is not called with non-string field");
+	rc = trn_cli_delete_transit_network_policy_enforcement_subcmd(NULL, argc, argv2);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test parse network policy input error 2*/
+	TEST_CASE("delete-network-policy-enforcement-ingress is not called malformed json");
+	rc = trn_cli_delete_transit_network_policy_enforcement_subcmd(NULL, argc, argv3);
+	assert_int_equal(rc, -EINVAL);
+
+	TEST_CASE("delete-network-policy-enforcement-ingress is not called with missing required field");
+	rc = trn_cli_delete_transit_network_policy_enforcement_subcmd(NULL, argc, argv4);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call delete_transit_network_policy_enforcement_1 return error*/
+	TEST_CASE("delete-network-policy-enforcement-ingress subcommand fails if delete_transit_network_policy_1 returns error");
+	delete_transit_network_policy_enforcement_1_ret_val = -EINVAL;
+	expect_function_call(__wrap_delete_transit_network_policy_enforcement_1);
+	will_return(__wrap_delete_transit_network_policy_enforcement_1, &delete_transit_network_policy_enforcement_1_ret_val);
+	expect_any(__wrap_delete_transit_network_policy_enforcement_1, enforce);
+	expect_any(__wrap_delete_transit_network_policy_enforcement_1, clnt);
+	rc = trn_cli_delete_transit_network_policy_enforcement_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call delete_transit_network_policy_enforcement_1 return NULL*/
+	TEST_CASE("delete-network-policy-enforcement-ingress subcommand fails if delete_transit_network_policy_1 returns NULL");
+	expect_function_call(__wrap_delete_transit_network_policy_enforcement_1);
+	will_return(__wrap_delete_transit_network_policy_enforcement_1, NULL);
+	expect_any(__wrap_delete_transit_network_policy_enforcement_1, enforce);
+	expect_any(__wrap_delete_transit_network_policy_enforcement_1, clnt);
+	rc = trn_cli_delete_transit_network_policy_enforcement_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+}
+
 int main()
 {
 	const struct CMUnitTest tests[] = {
@@ -2284,7 +2371,8 @@ int main()
 		cmocka_unit_test(test_trn_cli_delete_agent_md_subcmd),
 		cmocka_unit_test(test_trn_cli_update_transit_network_policy_subcmd),
 		cmocka_unit_test(test_trn_cli_delete_transit_network_policy_subcmd),
-		cmocka_unit_test(test_trn_cli_update_transit_network_policy_enforcement_subcmd)
+		cmocka_unit_test(test_trn_cli_update_transit_network_policy_enforcement_subcmd),
+		cmocka_unit_test(test_trn_cli_delete_transit_network_policy_enforcement_subcmd)
 	};
 	return cmocka_run_group_tests(tests, NULL, NULL);
 }

@@ -153,7 +153,8 @@ int trn_cli_update_transit_network_policy_enforcement_subcmd(CLIENT *clnt, int a
 
 	rc = update_transit_network_policy_enforcement_1(&enforce, clnt);
 	if (rc == (int *)NULL) {
-		print_err("RPC Error: client call failed: update_transit_network_policy_enforcement_1.\n");
+		print_err("RPC Error: client call failed: update_transit_network_policy_enforcement_1 for local ip: 0x%x .\n",
+					enforce.local_ip);
 		return -EINVAL;
 	}
 
@@ -165,7 +166,59 @@ int trn_cli_update_transit_network_policy_enforcement_subcmd(CLIENT *clnt, int a
 	}
 
 	dump_enforced_policy(&enforce);
-	print_msg("update_transit_network_policy_enforcement_1 successfully updated network policy\n");
+	print_msg("update_transit_network_policy_enforcement_1 successfully updated network policy for local ip: 0x%x for interface %s \n",
+				enforce.local_ip, enforce.interface);
+
+	return 0;
+}
+
+int trn_cli_delete_transit_network_policy_enforcement_subcmd(CLIENT *clnt, int argc, char *argv[])
+{
+	ketopt_t om = KETOPT_INIT;
+	struct cli_conf_data_t conf;
+	cJSON *json_str = NULL;
+
+	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
+		return -EINVAL;
+	}
+
+	char *buf = conf.conf_str;
+	json_str = trn_cli_parse_json(buf);
+
+	if (json_str == NULL) {
+		return -EINVAL;
+	}
+
+	int *rc;
+	struct rpc_trn_vsip_enforce_t enforce;
+	char rpc[] = "delete_transit_network_policy_enforcement_1";
+	enforce.interface = conf.intf;
+
+	int err = trn_cli_parse_network_policy_enforcement(json_str, &enforce);
+	cJSON_Delete(json_str);
+
+	if (err != 0) {
+		print_err("Error: parsing network policy enforcement config.\n");
+		return -EINVAL;
+	}
+
+	rc = delete_transit_network_policy_enforcement_1(&enforce, clnt);
+	if (rc == (int *)NULL) {
+		print_err("RPC Error: client call failed: delete_transit_network_policy_enforcement_1 for local ip: 0x%x.\n",
+					enforce.local_ip);
+		return -EINVAL;
+	}
+
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal daemon error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
+	}
+
+	dump_enforced_policy(&enforce);
+	print_msg("delete_transit_network_policy_enforcement_1 successfully deleted network policy for local ip: 0x%x for interface %s\n",
+					enforce.local_ip, enforce.interface);
 
 	return 0;
 }

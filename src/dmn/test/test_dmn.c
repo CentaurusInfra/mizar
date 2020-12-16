@@ -641,7 +641,6 @@ static void test_delete_transit_network_policy_1_svc(void **state)
 static void test_update_transit_network_policy_enforcement_1_svc(void **state)
 {
 	UNUSED(state);
-
 	char itf[] = "lo";
 
 	struct rpc_trn_vsip_enforce_t enforce1 = {
@@ -654,6 +653,37 @@ static void test_update_transit_network_policy_enforcement_1_svc(void **state)
 	expect_function_call(__wrap_bpf_map_update_elem);
 	rc = update_transit_network_policy_enforcement_1_svc(&enforce1, NULL);
 	assert_int_equal(*rc, 0);
+}
+
+static void test_delete_transit_network_policy_enforcement_1_svc(void **state)
+{
+	UNUSED(state);
+	char itf[] = "lo";
+
+	struct rpc_trn_vsip_enforce_t enforce_key = {
+		.interface = itf,
+		.tunid = 3,
+		.local_ip = 0x100000a
+	};
+
+	int *rc;
+
+	/* Test delete_transit_network_policy_enforcement_1 with valid enforce_key */
+	will_return(__wrap_bpf_map_delete_elem, TRUE);
+	expect_function_call(__wrap_bpf_map_delete_elem);
+	rc = delete_transit_network_policy_enforcement_1_svc(&enforce_key, NULL);
+	assert_int_equal(*rc, 0);
+
+	/* Test delete_transit_network_policy_enforcement_1 with invalid enforce_key */
+	will_return(__wrap_bpf_map_delete_elem, FALSE);
+	expect_function_call(__wrap_bpf_map_delete_elem);
+	rc = delete_transit_network_policy_enforcement_1_svc(&enforce_key, NULL);
+	assert_int_equal(*rc, RPC_TRN_FATAL);
+
+	/* Test delete_transit_network_policy_enforcement_1 with invalid interface*/
+	enforce_key.interface = "";
+	rc = delete_transit_network_policy_enforcement_1_svc(&enforce_key, NULL);
+	assert_int_equal(*rc, RPC_TRN_ERROR);
 }
 
 static void test_get_vpc_1_svc(void **state)
@@ -1251,7 +1281,8 @@ int main()
 		cmocka_unit_test(test_delete_agent_md_1_svc),
 		cmocka_unit_test(test_update_transit_network_policy_1_svc),
 		cmocka_unit_test(test_delete_transit_network_policy_1_svc),
-		cmocka_unit_test(test_update_transit_network_policy_enforcement_1_svc)
+		cmocka_unit_test(test_update_transit_network_policy_enforcement_1_svc),
+		cmocka_unit_test(test_delete_transit_network_policy_enforcement_1_svc)
 	};
 
 	int result = cmocka_run_group_tests(tests, groupSetup, groupTeardown);

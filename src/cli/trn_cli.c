@@ -55,6 +55,7 @@ static const struct cmd {
 	{ "update-network-policy-ingress", trn_cli_update_transit_network_policy_subcmd },
 	{ "delete-network-policy-ingress", trn_cli_delete_transit_network_policy_subcmd },
 	{ "update-network-policy-enforcement-ingress", trn_cli_update_transit_network_policy_enforcement_subcmd },
+	{ "delete-network-policy-enforcement-ingress", trn_cli_delete_transit_network_policy_enforcement_subcmd },
 	{ 0 },
 };
 
