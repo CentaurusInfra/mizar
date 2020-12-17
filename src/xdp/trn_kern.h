@@ -193,6 +193,7 @@ static __be64 trn_vni_to_tunnel_id(const __u8 *vni)
 	return (vni[0] << 16) | (vni[1] << 8) | vni[2];
 }
 
+__ALWAYS_INLINE__
 static void trn_tunnel_id_to_vni(__be64 tun_id, __u8 *vni)
 {
 	/* Big endian! */

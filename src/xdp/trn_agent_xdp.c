@@ -398,6 +398,9 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 
 	// todo: add conn_track related logic properly
 	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_TCP || pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
+		if (conntrack_is_reply_of_tracked_conn(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple))
+			goto xdp_continue;
+
 		if (is_egress_enforced(pkt->agent_ep_tunid, pkt->inner_ip->saddr)) {
 			if (0 != enforce_egress_policy(pkt)) {
 				bpf_debug("[Agent:%ld.0x%x] ABORTED: packet to 0x%x egress policy denied\n",
@@ -417,6 +420,7 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 
 	struct ipv4_tuple_t in_tuple;
 	struct scaled_endpoint_remote_t *out_tuple;
+xdp_continue:
 	__builtin_memcpy(&in_tuple, &pkt->inner_ipv4_tuple,
 			 sizeof(struct ipv4_tuple_t));
 
