@@ -47,6 +47,8 @@ class OprStore(object):
         self.eps_net_store = {}
         self.eps_pod_store = {}
 
+        self.networkpolicies_store = {}
+
         self.dividers_store = {}
         self.dividers_vpc_store = {}
 
@@ -176,6 +178,19 @@ class OprStore(object):
     def _dump_eps(self):
         for e in self.eps_store.values():
             logger.debug("EP: {}, Spec: {}".format(e.name, e.get_obj_spec()))
+
+    def get_networkpolicy(self, name):
+        if name in self.networkpolicies_store:
+            return self.networkpolicies_store[name]
+        return None
+
+    def update_networkpolicy(self, networkpolicy):
+        logger.info("Store update networkpolicy {}".format(networkpolicy.name))
+        self.networkpolicies_store[networkpolicy.name] = networkpolicy
+
+    def delete_networkpolicy(self, name):
+        if name in self.networkpolicies_store:
+            del self.networkpolicies_store[name]
 
     def update_droplet(self, droplet):
         self.droplets_store[droplet.name] = droplet

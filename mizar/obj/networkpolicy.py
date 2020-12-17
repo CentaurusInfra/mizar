@@ -18,32 +18,55 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import kopf
 import logging
-import luigi
+import ipaddress
 from mizar.common.common import *
-from mizar.common.constants import *
-from mizar.common.wf_factory import *
-from mizar.common.wf_param import *
 
 logger = logging.getLogger()
 
 
-@kopf.on.resume('networking.k8s.io', 'v1', 'networkpolicies', retries=OBJ_DEFAULTS.kopf_max_retries, when=LAMBDAS.k8s_provider_vanilla)
-@kopf.on.update('networking.k8s.io', 'v1', 'networkpolicies', retries=OBJ_DEFAULTS.kopf_max_retries, when=LAMBDAS.k8s_provider_vanilla)
-@kopf.on.create('networking.k8s.io', 'v1', 'networkpolicies', retries=OBJ_DEFAULTS.kopf_max_retries, when=LAMBDAS.k8s_provider_vanilla)
-async def builtins_on_networkpolicy(body, spec, **kwargs):
-    param = HandlerParam()
-    param.name = "{}:{}".format(kwargs['namespace'],kwargs['name'])
-    param.body = body
-    param.spec = spec
-    run_workflow(wffactory().k8sNetworkPolicyCreate(param=param))
+class NetworkPolicy:
+    def __init__(self, name, obj_api, opr_store, spec=None):
+        self.name = name
+        self.obj_api = obj_api
+        self.store = opr_store
+        self.endpoints = []
+        if spec is not None:
+            self.set_obj_spec(spec)
 
+    @property
+    def get_endpoints(self):
+        return self.endpoints
 
-@kopf.on.delete('networking.k8s.io', 'v1', 'networkpolicies', retries=OBJ_DEFAULTS.kopf_max_retries, when=LAMBDAS.k8s_provider_vanilla)
-async def builtins_on_networkpolicy_delete(body, spec, **kwargs):
-    param = HandlerParam()
-    param.name = kwargs['name']
-    param.body = body
-    param.spec = spec
-    run_workflow(wffactory().k8sNetworkPolicyDelete(param=param))
+    def get_obj_spec(self):
+        self.obj = {
+            "endpoints": self.endpoints
+        }
+
+        return self.obj
+
+    def set_obj_spec(self, spec):
+        self.endpoints = get_spec_val('endpoints', spec)
+
+    def get_name(self):
+        return self.name
+
+    def get_plural(self):
+        return "networkpolicies"
+
+    def get_kind(self):
+        return "NetworkPolicy"    
+
+    def set_endpoints(self, endpoints):
+        self.endpoints = endpoints
+
+    def store_update_obj(self):
+        if self.store is None:
+            return
+        self.store.update_networkpolicy(self)
+
+    def store_delete_obj(self):
+        if self.store is None:
+            return
+        self.store.delete_networkpolicy(self.name)
+        
