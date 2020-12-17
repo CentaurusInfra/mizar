@@ -94,6 +94,11 @@ struct agent_user_metadata_t {
 	struct bpf_map *eg_vsip_ppo_map;
 	struct bpf_map *eg_vsip_supp_map;
 	struct bpf_map *eg_vsip_except_map;
+	struct bpf_map *ing_vsip_enforce_map;
+	struct bpf_map *ing_vsip_prim_map;
+	struct bpf_map *ing_vsip_ppo_map;
+	struct bpf_map *ing_vsip_supp_map;
+	struct bpf_map *ing_vsip_except_map;
 	struct bpf_map *conn_track_cache;
 
 	struct bpf_prog_info info;
