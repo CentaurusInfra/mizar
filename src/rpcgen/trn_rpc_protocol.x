@@ -188,6 +188,16 @@ struct rpc_trn_vsip_enforce_t {
 	uint32_t local_ip;
 };
 
+/* Defines a network policy protocol port table entry */
+struct rpc_trn_vsip_ppo_t {
+       string interface<20>;
+	uint64_t tunid;
+	uint32_t local_ip;
+	uint8_t proto;
+	uint16_t port;
+       uint64_t bit_val;
+};
+
 /*----- Protocol. -----*/
 
 program RPC_TRANSIT_REMOTE_PROTOCOL {
@@ -224,6 +234,7 @@ program RPC_TRANSIT_REMOTE_PROTOCOL {
                 int DELETE_TRANSIT_NETWORK_POLICY(rpc_trn_vsip_cidr_key_t) = 24;
                 int UPDATE_TRANSIT_NETWORK_POLICY_ENFORCEMENT(rpc_trn_vsip_enforce_t) = 25;
                 int DELETE_TRANSIT_NETWORK_POLICY_ENFORCEMENT(rpc_trn_vsip_enforce_t) = 26;
+                int UPDATE_TRANSIT_NETWORK_POLICY_PROTOCOL_PORT(rpc_trn_vsip_ppo_t) = 27;
 
           } = 1;
 
