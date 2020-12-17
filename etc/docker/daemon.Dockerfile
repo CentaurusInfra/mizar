@@ -21,5 +21,6 @@
 
 FROM fwnetworking/python_base:latest
 COPY . /var/mizar/
+RUN apt-get install -y iproute2
 RUN pip3 install /var/mizar/
 CMD mizard

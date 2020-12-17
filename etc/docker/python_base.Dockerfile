@@ -23,6 +23,7 @@ FROM python:3.7
 RUN apt-get update -y
 RUN apt-get install -y net-tools
 RUN apt-get install -y ethtool
+RUN apt-get install -y iproute2
 RUN apt-get install -y sudo
 RUN pip3 install PyYAML
 RUN pip3 install kopf
