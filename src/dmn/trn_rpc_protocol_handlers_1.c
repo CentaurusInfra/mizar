@@ -1464,9 +1464,8 @@ int *update_transit_network_policy_protocol_port_1_svc(rpc_trn_vsip_ppo_t *ppo, 
 	policy.local_ip = ppo->local_ip;
 	policy.proto = ppo->proto;
 	policy.port = ppo->port;
-	__u64 bitmap = ppo->bit_val;
 
-	rc = trn_update_transit_network_policy_protocol_port_map(md, &policy, bitmap);
+	rc = trn_update_transit_network_policy_protocol_port_map(md, &policy, ppo->bit_val);
 
 	if (rc != 0) {
 		TRN_LOG_ERROR("Failure updating transit network policy enforcement map ip address: 0x%x, for interface %s",

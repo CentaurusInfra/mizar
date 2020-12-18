@@ -184,17 +184,17 @@ struct rpc_trn_vsip_cidr_key_t {
 /* Defines a network policy enforcement table key */
 struct rpc_trn_vsip_enforce_t {
        string interface<20>;
-	uint64_t tunid;
-	uint32_t local_ip;
+       uint64_t tunid;
+       uint32_t local_ip;
 };
 
 /* Defines a network policy protocol port table entry */
 struct rpc_trn_vsip_ppo_t {
        string interface<20>;
-	uint64_t tunid;
-	uint32_t local_ip;
-	uint8_t proto;
-	uint16_t port;
+       uint64_t tunid;
+       uint32_t local_ip;
+       uint8_t proto;
+       uint16_t port;
        uint64_t bit_val;
 };
 
