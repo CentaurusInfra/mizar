@@ -18,23 +18,20 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import logging
-from mizar.common.workflow import *
-from mizar.common.networkpolicy_util import *
+from kubernetes import client
 
-logger = logging.getLogger()
+def build_label_filter(label_dict):
+    str_list = []
+    for key in label_dict:
+        str_list.append(key)
+        str_list.append("=")
+        str_list.append(label_dict[key])
+        str_list.append(",")
+    if len(str_list) > 0:
+        str_list.pop()
+    return "".join(str_list)
 
-class k8sNetworkPolicyCreate(WorkflowTask):
-    def requires(self):
-        logger.info("Requires {task}".format(task=self.__class__.__name__))
-        return []
-
-    def run(self):
-        logger.info("Run {task}".format(task=self.__class__.__name__))
-
-        name = self.param.name
-        pod_label_dict = self.param.spec["podSelector"]["matchLabels"]
-        policy_types = self.param.spec["policyTypes"]
-        handle_networkpolicy_create_update(name, pod_label_dict, policy_types)
-
-        self.finalize()
+def list_pods_by_labels(label_dict):
+    label_filter = build_label_filter(label_dict)
+    v1 = client.CoreV1Api()
+    return v1.list_pod_for_all_namespaces(watch=False, label_selector=label_filter)

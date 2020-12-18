@@ -18,23 +18,44 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import logging
-from mizar.common.workflow import *
-from mizar.common.networkpolicy_util import *
+class CidrNetworkPolicy:
+    def __init__(self, vni, local_ip, cidr, cidr_length, policy_bit_value, cidr_type):
+        self.vni = vni
+        self.local_ip = local_ip
+        self.cidr = cidr
+        self.cidr_length = cidr_length
+        self.policy_bit_value = policy_bit_value
+        self.cidr_type = cidr_type
 
-logger = logging.getLogger()
+    def get_cidr_type_int(self):
+        if self.cidr_type == "no_except":
+            return "0"
+        elif self.cidr_type == "with_except":
+            return "1"
+        else:
+            return "2"
 
-class k8sNetworkPolicyCreate(WorkflowTask):
-    def requires(self):
-        logger.info("Requires {task}".format(task=self.__class__.__name__))
-        return []
 
-    def run(self):
-        logger.info("Run {task}".format(task=self.__class__.__name__))
+class PortNetworkPolicy:
+    def __init__(self, vni, local_ip, protocol, port, policy_bit_value):
+        self.vni = vni
+        self.local_ip = local_ip
+        self.protocol = protocol
+        self.port = port
+        self.policy_bit_value = policy_bit_value
 
-        name = self.param.name
-        pod_label_dict = self.param.spec["podSelector"]["matchLabels"]
-        policy_types = self.param.spec["policyTypes"]
-        handle_networkpolicy_create_update(name, pod_label_dict, policy_types)
+    def getProtocolInt(self):
+        protocol = self.protocol.lower()
+        if protocol == "tcp":
+            return "6"
+        elif protocol == "udp":
+            return "17"
+        elif protocol == "sctp":
+            return "132"
+        else:
+            return "-1"
 
-        self.finalize()
+class EndpointEnforced:
+    def __init__(self, vni, ip):
+        self.vni = vni
+        self.ip = ip

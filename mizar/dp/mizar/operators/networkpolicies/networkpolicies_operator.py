@@ -51,3 +51,25 @@ class NetworkPolicyOperator(object):
         config.load_incluster_config()
         self.obj_api = client.CustomObjectsApi()
         self.core_api = client.CoreV1Api()
+
+    def get_networkpolicy_tmp_obj(self, name, spec):
+        return NetworkPolicy(name, self.obj_api, None, spec)
+
+    def get_networkpolicy_stored_obj(self, name, spec):
+        return NetworkPolicy(name, self.obj_api, self.store, spec)
+
+    def store_update(self, networkpolicy):
+        self.store.update_networkpolicy(networkpolicy)
+
+    def store_delete(self, networkpolicy):
+        self.store.delete_networkpolicy(networkpolicy.name)
+
+    def store_get(self, name):
+        return self.store.get_networkpolicy(name)
+
+    def on_networkpolicy_delete(self, body, spec, **kwargs):
+        logger.info("on_networkpolicy_delete {}".format(spec))
+
+    def get_networkpolicy(self, name):
+        splitted = name.split(":")
+        return self.obj_api.get_namespaced_custom_object("networking.k8s.io", "v1", splitted[0], "networkpolicies", splitted[1])
