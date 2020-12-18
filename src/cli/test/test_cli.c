@@ -152,6 +152,15 @@ int *__wrap_delete_transit_network_policy_enforcement_1(rpc_trn_vsip_enforce_t *
 	return retval;
 }
 
+int *__wrap_update_transit_network_policy_protocol_port_1(rpc_trn_vsip_ppo_t *ppo, CLIENT *clnt)
+{
+	check_expected_ptr(ppo);
+	check_expected_ptr(clnt);
+	int *retval = mock_ptr_type(int *);
+	function_called();
+	return retval;
+}
+
 rpc_trn_vpc_t *__wrap_get_vpc_1(rpc_trn_vpc_key_t *argp, CLIENT *clnt)
 {
 	check_expected_ptr(argp);
@@ -598,6 +607,40 @@ static int check_policy_enforcement_equal(const LargestIntegralType value,
 	}
 
 	if (enforce->local_ip != c_enforce->local_ip) {
+		return false;
+	}
+
+	return true;
+}
+
+static int check_policy_protocol_port_equal(const LargestIntegralType value,
+					    const LargestIntegralType check_value_data)
+{
+	struct rpc_trn_vsip_ppo_t *policy = (struct rpc_trn_vsip_ppo_t *)value;
+	struct rpc_trn_vsip_ppo_t *c_policy =
+		(struct rpc_trn_vsip_ppo_t *)check_value_data;
+
+	if (strcmp(policy->interface, c_policy->interface) != 0) {
+		return false;
+	}
+
+	if (policy->tunid != c_policy->tunid) {
+		return false;
+	}
+
+	if (policy->local_ip != c_policy->local_ip) {
+		return false;
+	}
+
+	if (policy->proto != c_policy->proto) {
+		return false;
+	}
+
+	if (policy->port != c_policy->port) {
+		return false;
+	}
+
+	if (policy->bit_val != c_policy->bit_val) {
 		return false;
 	}
 
@@ -2347,6 +2390,88 @@ static void test_trn_cli_delete_transit_network_policy_enforcement_subcmd(void *
 	assert_int_equal(rc, -EINVAL);
 }
 
+static void test_trn_cli_update_transit_network_policy_protocol_port_subcmd(void **state)
+{
+	UNUSED(state);
+	int rc;
+	int argc = 5;
+	int update_transit_network_policy_proto_port_1_ret_val = 0;
+
+	/* Test cases */
+	char *argv1[] = { "update-network-policy-ingress", "-i", "eth0", "-j", QUOTE({
+				  "tunnel_id": "3",
+				  "local_ip": "10.0.0.3",
+				  "protocol": "6",
+				  "port": "6379",
+				  "bit_value": "10"
+			  }) };
+
+	char *argv2[] = { "update-network-policy-ingress", "-i", "eth0", "-j", QUOTE({
+				  "tunnel_id": 3,
+				  "local_ip": "10.0.0.3",
+				  "protocol": "6",
+				  "port": "6379",
+				  "bit_value": "10"
+			  }) };
+
+	char *argv3[] = { "update-network-policy-ingress", "-i", "eth0", "-j", QUOTE({
+				  "tunnel_id": "3",
+				  "local_ip": 10.0.0.3,
+				  "protocol": "6",
+				  "port": "6379",
+				  "bit_value": "10"
+			  }) };
+	char itf[] = "eth0";
+
+	struct rpc_trn_vsip_ppo_t exp_ppo = {
+		.interface = itf,
+		.tunid = 3,
+		.local_ip = 0x300000a,
+		.proto = 6,
+		.port = 6379,
+		.bit_val = 10
+	};
+
+	/* Test call update_transit_network_policy successfully */
+	TEST_CASE("update_transit_network_policy_protocol_port succeed with well formed policy json input");
+	update_transit_network_policy_proto_port_1_ret_val = 0;
+	expect_function_call(__wrap_update_transit_network_policy_protocol_port_1);
+	will_return(__wrap_update_transit_network_policy_protocol_port_1, &update_transit_network_policy_proto_port_1_ret_val);
+	expect_check(__wrap_update_transit_network_policy_protocol_port_1, ppo, check_policy_protocol_port_equal, &exp_ppo);
+	expect_any(__wrap_update_transit_network_policy_protocol_port_1, clnt);
+	rc = trn_cli_update_transit_network_policy_protocol_port_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, 0);
+
+	/* Test parse network policy input error*/
+	TEST_CASE("update_transit_network_policy_protocol_port is not called with non-string field");
+	rc = trn_cli_update_transit_network_policy_protocol_port_subcmd(NULL, argc, argv2);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test parse network policy input error 2*/
+	TEST_CASE("update_transit_network_policy_protocol_port is not called malformed json");
+	rc = trn_cli_update_transit_network_policy_protocol_port_subcmd(NULL, argc, argv3);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call update_transit_network_policy_1 return error*/
+	TEST_CASE("update_transit_network_policy_protocol_port subcommand fails if update_transit_network_policy_protocol_port_1 returns error");
+	update_transit_network_policy_proto_port_1_ret_val = -EINVAL;
+	expect_function_call(__wrap_update_transit_network_policy_protocol_port_1);
+	will_return(__wrap_update_transit_network_policy_protocol_port_1, &update_transit_network_policy_proto_port_1_ret_val);
+	expect_any(__wrap_update_transit_network_policy_protocol_port_1, ppo);
+	expect_any(__wrap_update_transit_network_policy_protocol_port_1, clnt);
+	rc = trn_cli_update_transit_network_policy_protocol_port_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call update_transit_network_policy_1 return NULL*/
+	TEST_CASE("update-network-policy-ingress subcommand fails if update_transit_network_policy_1 returns NULL");
+	expect_function_call(__wrap_update_transit_network_policy_protocol_port_1);
+	will_return(__wrap_update_transit_network_policy_protocol_port_1, NULL);
+	expect_any(__wrap_update_transit_network_policy_protocol_port_1, ppo);
+	expect_any(__wrap_update_transit_network_policy_protocol_port_1, clnt);
+	rc = trn_cli_update_transit_network_policy_protocol_port_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+}
+
 int main()
 {
 	const struct CMUnitTest tests[] = {
@@ -2372,7 +2497,8 @@ int main()
 		cmocka_unit_test(test_trn_cli_update_transit_network_policy_subcmd),
 		cmocka_unit_test(test_trn_cli_delete_transit_network_policy_subcmd),
 		cmocka_unit_test(test_trn_cli_update_transit_network_policy_enforcement_subcmd),
-		cmocka_unit_test(test_trn_cli_delete_transit_network_policy_enforcement_subcmd)
+		cmocka_unit_test(test_trn_cli_delete_transit_network_policy_enforcement_subcmd),
+		cmocka_unit_test(test_trn_cli_update_transit_network_policy_protocol_port_subcmd)
 	};
 	return cmocka_run_group_tests(tests, NULL, NULL);
 }

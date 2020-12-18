@@ -223,6 +223,57 @@ int trn_cli_delete_transit_network_policy_enforcement_subcmd(CLIENT *clnt, int a
 	return 0;
 }
 
+int trn_cli_update_transit_network_policy_protocol_port_subcmd(CLIENT *clnt, int argc, char *argv[])
+{
+	ketopt_t om = KETOPT_INIT;
+	struct cli_conf_data_t conf;
+	cJSON *json_str = NULL;
+
+	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
+		return -EINVAL;
+	}
+
+	char *buf = conf.conf_str;
+	json_str = trn_cli_parse_json(buf);
+
+	if (json_str == NULL) {
+		return -EINVAL;
+	}
+
+	int *rc;
+	struct rpc_trn_vsip_ppo_t ppo;
+	char rpc[] = "update_transit_network_policy_protocol_port_1";
+	ppo.interface = conf.intf;
+
+	int err = trn_cli_parse_network_policy_protocol_port(json_str, &ppo);
+	cJSON_Delete(json_str);
+
+	if (err != 0) {
+		print_err("Error: parsing network policy protocol port config.\n");
+		return -EINVAL;
+	}
+
+	rc = update_transit_network_policy_protocol_port_1(&ppo, clnt);
+	if (rc == (int *)NULL) {
+		print_err("RPC Error: client call failed: update_transit_network_policy_protocol_port_1 for local ip: 0x%x for protocol %d port %d.\n",
+					ppo.local_ip, ppo.proto, ppo.port);
+		return -EINVAL;
+	}
+
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal daemon error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
+	}
+
+	dump_protocol_port_policy(&ppo);
+	print_msg("update_transit_network_policy_protocol_port_1 successfully updated network policy for local ip: 0x%x for interface %s \n",
+				ppo.local_ip, ppo.interface);
+
+	return 0;
+}
+
 void dump_network_policy(struct rpc_trn_vsip_cidr_t *policy)
 {
 	print_msg("Interface: %s\n", policy->interface);
@@ -239,4 +290,14 @@ void dump_enforced_policy(struct rpc_trn_vsip_enforce_t *enforce)
 	print_msg("Interface: %s\n", enforce->interface);
 	print_msg("Tunnel ID: %ld\n", enforce->tunid);
 	print_msg("Local IP: %x\n", enforce->local_ip);
+}
+
+void dump_protocol_port_policy(struct rpc_trn_vsip_ppo_t *ppo)
+{
+	print_msg("Interface: %s\n", ppo->interface);
+	print_msg("Tunnel ID: %ld\n", ppo->tunid);
+	print_msg("Local IP: %x\n", ppo->local_ip);
+	print_msg("Protocol: %d\n", ppo->proto);
+	print_msg("Port: %x\n", ppo->port);
+	print_msg("bit value: %ld\n", ppo->bit_val);
 }
