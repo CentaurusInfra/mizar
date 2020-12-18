@@ -51,4 +51,3 @@ class NetworkPolicyOperator(object):
         config.load_incluster_config()
         self.obj_api = client.CustomObjectsApi()
         self.core_api = client.CoreV1Api()
-        

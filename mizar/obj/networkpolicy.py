@@ -69,4 +69,3 @@ class NetworkPolicy:
         if self.store is None:
             return
         self.store.delete_networkpolicy(self.name)
-        

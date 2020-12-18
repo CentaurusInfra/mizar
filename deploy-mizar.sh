@@ -25,7 +25,7 @@ is_mizar_production=${1:-0}
 # Environments: k8s_kind, k8s_gcp, k8s_aws, 
 #               arktos_up, arktos_gcp, arktos_aws, 
 #               arktos_multi_master, arktos_with_kubemark, 
-mizar_environment=${2:-"k8s_kind"}
+mizar_environment=${2:-"arktos_up"}
 
 # Make sure script files are present and execute location is correct.
 if [[ ! -f install/deploy_steps.sh ]]; then
