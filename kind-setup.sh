@@ -61,7 +61,7 @@ MIZARCONF="${HOME}/mizar/build/tests/mizarcni.config"
 KINDHOME="${HOME}/.kube/config"
 USER=${1:-user}
 NODES=${2:-3}
-timeout=120
+timeout=240
 
 kind delete cluster
 docker network rm kind 2> /dev/null
