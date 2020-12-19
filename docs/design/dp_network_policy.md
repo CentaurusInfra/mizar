@@ -46,7 +46,7 @@ The solution is built on the following ideas:
 
 * Every policy has an ID represented by a unique bit, for example 0x00000001, 0x00000010, 0x00000100, etc.
 * Use different maps to store allowed IP blocks, except IPs or IP blocks, and ports.
-* In each map, the value part is an uint64 which represents all policies that applies to this rule. For example, if both policy #1 and #2 allows IP block 192.168.0.0/16, the entry will be like this: <vni, localIP, 192.168.0.0/16> --> 0x00000011
+* In each map, the value part is an uint64 which represents all policies that applies to this rule. For example, if both policy #1 and #2 allows IP block 192.168.0.0/16, the entry will be like this: <vni, local_ip, 192.168.0.0/16> --> 0x00000011
 * Use bitwise operation among the values from above maps to see if the final operation result is great than zero. If true, it means there is at least one policy meets all requirements.
 * Lastly, to not limit the total number of policies, policy ID are encoded per endpoint. So this design supports up to 64 policies for a single endpoint. And there is no limit for total number of policies.
 

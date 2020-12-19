@@ -18,23 +18,22 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import logging
-from mizar.common.workflow import *
-from mizar.common.networkpolicy_util import *
-
-logger = logging.getLogger()
-
-class k8sNetworkPolicyCreate(WorkflowTask):
-    def requires(self):
-        logger.info("Requires {task}".format(task=self.__class__.__name__))
-        return []
-
-    def run(self):
-        logger.info("Run {task}".format(task=self.__class__.__name__))
-        
-        name = self.param.name
-        pod_label_dict = self.param.spec["podSelector"]["matchLabels"]
-        policy_types = self.param.spec["policyTypes"]
-        handle_networkpolicy_create_update(name, pod_label_dict, policy_types)
-
-        self.finalize()
+def init_data_for_networkpolicy():
+    data = {
+        "indexed_policy_count": 0,
+        "networkpolicy_map": {},
+        "cidrs_map_no_except": {},
+        "cidrs_map_with_except": {},
+        "cidrs_map_except": {},
+        "ports_map": {},
+        "cidr_and_policies_map_no_except": {},
+        "cidr_and_policies_map_with_except": {},
+        "cidr_and_policies_map_except": {},
+        "port_and_policies_map": {},
+        "indexed_policy_map": {},
+        "cidr_table_no_except": [],
+        "cidr_table_with_except": [],
+        "cidr_table_except": [],
+        "port_table": [],
+    }
+    return data
