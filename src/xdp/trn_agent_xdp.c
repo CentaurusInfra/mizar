@@ -298,21 +298,21 @@ static __inline int is_egress_enforced(__u64 tunnel_id, __be32 ip_addr)
      0: egress policy allows this packet; no error
     -1: egress policy denies this packet; egress policy denial error
 */
-static __inline int enforce_egress_policy(const struct transit_packet *pkt)
+static __inline int enforce_egress_policy(__u64 tunnel_id, const struct ipv4_tuple_t *ipv4_tuple)
 {
 	const __u32 full_vsip_cidr_prefix = (__u32)(sizeof(struct vsip_cidr_t) - sizeof(__u32)) * 8;
 
 	struct vsip_ppo_t vsip_ppo = {
-		.tunnel_id = pkt->agent_ep_tunid,
-		.local_ip = pkt->inner_ip->saddr,
+		.tunnel_id = tunnel_id,
+		.local_ip = ipv4_tuple->saddr,
 		.proto = 0,	// L3
 		.port = 0,	// L3
 	};
 	__u64 *policies_l3 = bpf_map_lookup_elem(&eg_vsip_ppo_map, &vsip_ppo);
 	__u64 policies_ppo = (policies_l3) ? *policies_l3 : 0;
 
-	vsip_ppo.proto = pkt->inner_ip->protocol;	// L4
-	vsip_ppo.port = pkt->inner_ipv4_tuple.dport;	// L4
+	vsip_ppo.proto = ipv4_tuple->protocol;	// L4
+	vsip_ppo.port = ipv4_tuple->dport;	// L4
 	__u64 *policies_l4 = bpf_map_lookup_elem(&eg_vsip_ppo_map, &vsip_ppo);
 	if (policies_l4) policies_ppo |= *policies_l4;
 
@@ -322,9 +322,9 @@ static __inline int enforce_egress_policy(const struct transit_packet *pkt)
 
 	struct vsip_cidr_t vsip_cidr = {
 		.prefixlen = full_vsip_cidr_prefix,
-		.tunnel_id = pkt->agent_ep_tunid,
-		.local_ip = pkt->inner_ip->saddr,
-		.remote_ip = pkt->inner_ip->daddr,
+		.tunnel_id = tunnel_id,
+		.local_ip = ipv4_tuple->saddr,
+		.remote_ip = ipv4_tuple->daddr,
 	};
 	__u64 *policies_dip_prim = bpf_map_lookup_elem(&eg_vsip_prim_map, &vsip_cidr);
 	if (policies_dip_prim && (policies_ppo & *policies_dip_prim))
@@ -402,7 +402,7 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 			goto xdp_continue;
 
 		if (is_egress_enforced(pkt->agent_ep_tunid, pkt->inner_ip->saddr)) {
-			if (0 != enforce_egress_policy(pkt)) {
+			if (0 != enforce_egress_policy(pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple)) {
 				bpf_debug("[Agent:%ld.0x%x] ABORTED: packet to 0x%x egress policy denied\n",
 					pkt->agent_ep_tunid,
 					bpf_ntohl(pkt->agent_ep_ipv4),
