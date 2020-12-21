@@ -305,6 +305,11 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 	md->eg_vsip_ppo_map_fd		= bpf_map__fd(md->eg_vsip_ppo_map);
 	md->eg_vsip_supp_map_fd		= bpf_map__fd(md->eg_vsip_supp_map);
 	md->eg_vsip_except_map_fd	= bpf_map__fd(md->eg_vsip_except_map);
+	md->ing_vsip_enforce_map_fd	= bpf_map__fd(md->ing_vsip_enforce_map);
+	md->ing_vsip_prim_map_fd	= bpf_map__fd(md->ing_vsip_prim_map);
+	md->ing_vsip_ppo_map_fd		= bpf_map__fd(md->ing_vsip_ppo_map);
+	md->ing_vsip_supp_map_fd	= bpf_map__fd(md->ing_vsip_supp_map);
+	md->ing_vsip_except_map_fd	= bpf_map__fd(md->ing_vsip_except_map);
 	md->conn_track_cache_fd		= bpf_map__fd(md->conn_track_cache);
 
 	if (bpf_map__unpin(md->xdpcap_hook_map, md->pcapfile) == 0) {
