@@ -20,7 +20,7 @@
 
 import logging
 from mizar.common.workflow import *
-from mizar.common.networkpolicy_util import *
+from mizar.dp.mizar.workflows.builtins.networkpolicies.networkpolicy_util import *
 
 logger = logging.getLogger()
 

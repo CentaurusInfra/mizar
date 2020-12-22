@@ -24,7 +24,6 @@ import ipaddress
 from mizar.common.rpc import TrnRpc
 from mizar.common.constants import *
 from mizar.common.common import *
-from mizar.obj.data_networkpolicy import *
 
 logger = logging.getLogger()
 
@@ -314,9 +313,6 @@ class Endpoint:
 
     def get_mac(self):
         return str(self.mac)
-
-    def get_vni(self):
-        return str(self.vni)
 
     def get_remote_ips(self):
         if self.type == OBJ_DEFAULTS.ep_type_simple or self.type == OBJ_DEFAULTS.ep_type_host:

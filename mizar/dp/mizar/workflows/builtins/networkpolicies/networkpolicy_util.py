@@ -20,7 +20,7 @@
 
 from kubernetes import client
 from mizar.common.kubernetes_util import *
-from mizar.common.networkpolicy_data_util import *
+from mizar.dp.mizar.workflows.builtins.networkpolicies.networkpolicy_data_util import *
 from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
 from mizar.dp.mizar.operators.networkpolicies.networkpolicies_operator import *
 

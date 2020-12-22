@@ -44,7 +44,7 @@ class PortNetworkPolicy:
         self.port = port
         self.policy_bit_value = policy_bit_value
 
-    def getProtocolInt(self):
+    def get_protocol_int(self):
         protocol = self.protocol.lower()
         if protocol == "tcp":
             return "6"
