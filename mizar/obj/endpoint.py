@@ -109,7 +109,7 @@ class Endpoint:
             "hostmac": self.droplet_mac,
             "cnidelay": self.cnidelay,
             "provisiondelay": self.provisiondelay,
-            "pod": self.pod,
+            "pod": self.pod
         }
 
         return self.obj
