@@ -20,7 +20,9 @@
 
 import logging
 from mizar.common.workflow import *
-from mizar.dp.mizar.workflows.builtins.networkpolicies.networkpolicy_util import *
+from mizar.common.kubernetes_util import *
+from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
+from mizar.dp.mizar.operators.networkpolicies.networkpolicies_operator import *
 
 endpoint_opr = EndpointOperator()
 networkpolicy_opr = NetworkPolicyOperator()
@@ -68,6 +70,7 @@ class k8sNetworkPolicyCreate(WorkflowTask):
                     "ingress": data_for_networkpolicy_ingress,
                     "egress": data_for_networkpolicy_egress,
                 }
+                logger.info("data_for_networkpolicy: {}".format(data_for_networkpolicy))
                 #TODO Send data from operator to daemon
                 
 
