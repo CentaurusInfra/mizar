@@ -66,6 +66,11 @@ struct ebpf_prog_stage_t {
 	int rev_flow_mod_cache_ref_fd;
 	int ep_flow_host_cache_ref_fd;
 	int ep_host_cache_ref_fd;
+	int eg_vsip_enforce_map_ref_fd;
+	int eg_vsip_prim_map_ref_fd;
+	int eg_vsip_ppo_map_ref_fd;
+	int eg_vsip_supp_map_ref_fd;
+	int eg_vsip_except_map_ref_fd;
 	int ing_vsip_enforce_map_ref_fd;
 	int ing_vsip_prim_map_ref_fd;
 	int ing_vsip_ppo_map_ref_fd;
@@ -85,6 +90,11 @@ struct ebpf_prog_stage_t {
 	struct bpf_map *rev_flow_mod_cache_ref;
 	struct bpf_map *ep_flow_host_cache_ref;
 	struct bpf_map *ep_host_cache_ref;
+	struct bpf_map *eg_vsip_enforce_map_ref;
+	struct bpf_map *eg_vsip_prim_map_ref;
+	struct bpf_map *eg_vsip_ppo_map_ref;
+	struct bpf_map *eg_vsip_supp_map_ref;
+	struct bpf_map *eg_vsip_except_map_ref;
 	struct bpf_map *ing_vsip_enforce_map_ref;
 	struct bpf_map *ing_vsip_prim_map_ref;
 	struct bpf_map *ing_vsip_ppo_map_ref;
@@ -115,6 +125,11 @@ struct user_metadata_t {
 	int rev_flow_mod_cache_fd;
 	int ep_flow_host_cache_fd;
 	int ep_host_cache_fd;
+	int eg_vsip_enforce_map_fd;
+	int eg_vsip_prim_map_fd;
+	int eg_vsip_ppo_map_fd;
+	int eg_vsip_supp_map_fd;
+	int eg_vsip_except_map_fd;
 	int ing_vsip_enforce_map_fd;
 	int ing_vsip_prim_map_fd;
 	int ing_vsip_ppo_map_fd;
@@ -135,12 +150,17 @@ struct user_metadata_t {
 	struct bpf_map *ep_flow_host_cache;
 	struct bpf_map *ep_host_cache;
 	struct bpf_map *xdpcap_hook_map;
+	struct bpf_map *eg_vsip_enforce_map;
+	struct bpf_map *eg_vsip_prim_map;
+	struct bpf_map *eg_vsip_ppo_map;
+	struct bpf_map *eg_vsip_supp_map;
+	struct bpf_map *eg_vsip_except_map;
 	struct bpf_map *ing_vsip_enforce_map;
 	struct bpf_map *ing_vsip_prim_map;
 	struct bpf_map *ing_vsip_ppo_map;
 	struct bpf_map *ing_vsip_supp_map;
 	struct bpf_map *ing_vsip_except_map;
-	struct bpf_map *conn_track_chche;
+	struct bpf_map *conn_track_cache;
 
 	struct bpf_prog_info info;
 	struct bpf_object *obj;
