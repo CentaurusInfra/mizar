@@ -2311,7 +2311,7 @@ static void test_trn_cli_update_transit_network_policy_enforcement_subcmd(void *
 		.local_ip = 0x300000a
 	};
 
-	/* Test call update_transit_network_policy successfully */
+	/* Test call update_transit_network_policy_enforcement successfully */
 	TEST_CASE("update-network-policy-enforcement-ingress succeed with well formed policy json input");
 	update_transit_network_policy_enforcement_1_ret_val = 0;
 	expect_function_call(__wrap_update_transit_network_policy_enforcement_1);
@@ -2331,7 +2331,7 @@ static void test_trn_cli_update_transit_network_policy_enforcement_subcmd(void *
 	rc = trn_cli_update_transit_network_policy_enforcement_subcmd(NULL, argc, argv3);
 	assert_int_equal(rc, -EINVAL);
 
-	/* Test call update_transit_network_policy_1 return error*/
+	/* Test call update_transit_network_policy_enforcement_1 return error*/
 	TEST_CASE("update-network-policy-enforcement-ingress subcommand fails if update_transit_network_policy_enforcement_1 returns error");
 	update_transit_network_policy_enforcement_1_ret_val = -EINVAL;
 	expect_function_call(__wrap_update_transit_network_policy_enforcement_1);
@@ -2341,7 +2341,7 @@ static void test_trn_cli_update_transit_network_policy_enforcement_subcmd(void *
 	rc = trn_cli_update_transit_network_policy_enforcement_subcmd(NULL, argc, argv1);
 	assert_int_equal(rc, -EINVAL);
 
-	/* Test call update_transit_network_policy_1 return NULL*/
+	/* Test call update_transit_network_policy_enforcement_1 return NULL*/
 	TEST_CASE("update-network-policy-enforcement-ingress subcommand fails if update_transit_network_policy_enforcement_1 returns NULL");
 	expect_function_call(__wrap_update_transit_network_policy_enforcement_1);
 	will_return(__wrap_update_transit_network_policy_enforcement_1, NULL);
@@ -2385,7 +2385,7 @@ static void test_trn_cli_delete_transit_network_policy_enforcement_subcmd(void *
 		.local_ip = 0x300000a
 	};
 
-	/* Test call delete_transit_network_policy_enforcement_1 successfully */
+	/* Test call delete_transit_network_policy_enforcement successfully */
 	TEST_CASE("delete-network-policy-enforcement-ingress succeed with well formed policy json input");
 	delete_transit_network_policy_enforcement_1_ret_val = 0;
 	expect_function_call(__wrap_delete_transit_network_policy_enforcement_1);
@@ -2410,7 +2410,7 @@ static void test_trn_cli_delete_transit_network_policy_enforcement_subcmd(void *
 	assert_int_equal(rc, -EINVAL);
 
 	/* Test call delete_transit_network_policy_enforcement_1 return error*/
-	TEST_CASE("delete-network-policy-enforcement-ingress subcommand fails if delete_transit_network_policy_1 returns error");
+	TEST_CASE("delete-network-policy-enforcement-ingress subcommand fails if delete-network-policy-enforcement-ingress_1 returns error");
 	delete_transit_network_policy_enforcement_1_ret_val = -EINVAL;
 	expect_function_call(__wrap_delete_transit_network_policy_enforcement_1);
 	will_return(__wrap_delete_transit_network_policy_enforcement_1, &delete_transit_network_policy_enforcement_1_ret_val);
@@ -2420,7 +2420,7 @@ static void test_trn_cli_delete_transit_network_policy_enforcement_subcmd(void *
 	assert_int_equal(rc, -EINVAL);
 
 	/* Test call delete_transit_network_policy_enforcement_1 return NULL*/
-	TEST_CASE("delete-network-policy-enforcement-ingress subcommand fails if delete_transit_network_policy_1 returns NULL");
+	TEST_CASE("delete-network-policy-enforcement-ingress subcommand fails if delete-network-policy-enforcement-ingress_1 returns NULL");
 	expect_function_call(__wrap_delete_transit_network_policy_enforcement_1);
 	will_return(__wrap_delete_transit_network_policy_enforcement_1, NULL);
 	expect_any(__wrap_delete_transit_network_policy_enforcement_1, enforce);
@@ -2471,7 +2471,7 @@ static void test_trn_cli_update_transit_network_policy_protocol_port_subcmd(void
 		.bit_val = 10
 	};
 
-	/* Test call update_transit_network_policy successfully */
+	/* Test call update_transit_network_policy_protocol_port successfully */
 	TEST_CASE("update_transit_network_policy_protocol_port succeed with well formed policy json input");
 	update_transit_network_policy_proto_port_1_ret_val = 0;
 	expect_function_call(__wrap_update_transit_network_policy_protocol_port_1);
@@ -2502,7 +2502,7 @@ static void test_trn_cli_update_transit_network_policy_protocol_port_subcmd(void
 	assert_int_equal(rc, -EINVAL);
 
 	/* Test call update_transit_network_policy_1 return NULL*/
-	TEST_CASE("update-network-policy-ingress subcommand fails if update_transit_network_policy_protocol_port_1 returns NULL");
+	TEST_CASE("update_transit_network_policy_protocol_port subcommand fails if update_transit_network_policy_protocol_port_1 returns NULL");
 	expect_function_call(__wrap_update_transit_network_policy_protocol_port_1);
 	will_return(__wrap_update_transit_network_policy_protocol_port_1, NULL);
 	expect_any(__wrap_update_transit_network_policy_protocol_port_1, ppo);
@@ -2555,12 +2555,12 @@ static void test_trn_cli_delete_transit_network_policy_protocol_port_subcmd(void
 		.port = 6379
 	};
 
-	/* Test call delete_transit_network_policy_protocol_port_1 successfully */
+	/* Test call delete_transit_network_policy_protocol_port successfully */
 	TEST_CASE("delete-network-policy-protocol-port-ingress succeed with well formed policy json input");
 	delete_transit_network_policy_protocol_port_1_ret_val = 0;
 	expect_function_call(__wrap_delete_transit_network_policy_protocol_port_1);
 	will_return(__wrap_delete_transit_network_policy_protocol_port_1, &delete_transit_network_policy_protocol_port_1_ret_val);
-	expect_check(__wrap_delete_transit_network_policy_protocol_port_1, ppo, check_policy_enforcement_equal, &exp_ppo);
+	expect_check(__wrap_delete_transit_network_policy_protocol_port_1, ppo, check_policy_protocol_port_key_equal, &exp_ppo);
 	expect_any(__wrap_delete_transit_network_policy_protocol_port_1, clnt);
 	rc = trn_cli_delete_transit_network_policy_protocol_port_subcmd(NULL, argc, argv1);
 	assert_int_equal(rc, 0);
