@@ -1480,3 +1480,41 @@ int *update_transit_network_policy_protocol_port_1_svc(rpc_trn_vsip_ppo_t *ppo, 
 error:
 	return &result;
 }
+
+int *delete_transit_network_policy_protocol_port_1_svc(rpc_trn_vsip_ppo_key_t *ppo_key, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result;
+	int rc;
+	char *itf = ppo_key->interface;
+	struct vsip_ppo_t policy;
+
+	TRN_LOG_INFO("delete_transit_network_policy_protocol_port_1 service");
+
+	struct user_metadata_t *md = trn_itf_table_find(itf);
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	policy.tunnel_id = ppo_key->tunid;
+	policy.local_ip = ppo_key->local_ip;
+	policy.proto = ppo_key->proto;
+	policy.port = ppo_key->port;
+
+	rc = trn_delete_transit_network_policy_protocol_port_map(md, &policy);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure updating transit network policy enforcement map ip address: 0x%x, for interface %s",
+					ppo_key->local_ip, ppo_key->interface);
+		result = RPC_TRN_FATAL;
+		goto error;
+	}
+
+	result = 0;
+	return &result;
+
+error:
+	return &result;
+}
