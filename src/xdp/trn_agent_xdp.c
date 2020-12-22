@@ -278,69 +278,6 @@ static __inline int trn_redirect(struct transit_packet *pkt, __u32 inner_src_ip,
 	return trn_encapsulate(pkt, md, tunnel_id, inner_src_ip, inner_dst_ip);
 }
 
-/*
-   check if egress network policy should be enforced
-   return value:
-     0 (false) :    no egress policy
-     non-0 (true) : need to enforce egress policy check
-*/
-static __inline int is_egress_enforced(__u64 tunnel_id, __be32 ip_addr)
-{
-	// todo: use agent metadata applicable field in lieu of packet metadata
-	struct vsip_enforce_t vsip = {.tunnel_id = tunnel_id, .local_ip = ip_addr};
-	__u8 *v = bpf_map_lookup_elem(&eg_vsip_enforce_map, &vsip);
-	return v && *v;
-}
-
-/*
-   enforce_egress_policy enforces egress network policy with the (outgoing) packet
-   return value:
-     0: egress policy allows this packet; no error
-    -1: egress policy denies this packet; egress policy denial error
-*/
-static __inline int enforce_egress_policy(__u64 tunnel_id, const struct ipv4_tuple_t *ipv4_tuple)
-{
-	const __u32 full_vsip_cidr_prefix = (__u32)(sizeof(struct vsip_cidr_t) - sizeof(__u32)) * 8;
-
-	struct vsip_ppo_t vsip_ppo = {
-		.tunnel_id = tunnel_id,
-		.local_ip = ipv4_tuple->saddr,
-		.proto = 0,	// L3
-		.port = 0,	// L3
-	};
-	__u64 *policies_l3 = bpf_map_lookup_elem(&eg_vsip_ppo_map, &vsip_ppo);
-	__u64 policies_ppo = (policies_l3) ? *policies_l3 : 0;
-
-	vsip_ppo.proto = ipv4_tuple->protocol;	// L4
-	vsip_ppo.port = ipv4_tuple->dport;	// L4
-	__u64 *policies_l4 = bpf_map_lookup_elem(&eg_vsip_ppo_map, &vsip_ppo);
-	if (policies_l4) policies_ppo |= *policies_l4;
-
-	if (0 == policies_ppo) {
-		return -1;
-	}
-
-	struct vsip_cidr_t vsip_cidr = {
-		.prefixlen = full_vsip_cidr_prefix,
-		.tunnel_id = tunnel_id,
-		.local_ip = ipv4_tuple->saddr,
-		.remote_ip = ipv4_tuple->daddr,
-	};
-	__u64 *policies_dip_prim = bpf_map_lookup_elem(&eg_vsip_prim_map, &vsip_cidr);
-	if (policies_dip_prim && (policies_ppo & *policies_dip_prim))
-		return 0;
-
-	__u64 *policies_dip_supp = bpf_map_lookup_elem(&eg_vsip_supp_map, &vsip_cidr);
-	__u64 *policies_dip_except = bpf_map_lookup_elem(&eg_vsip_except_map, &vsip_cidr);
-	if (policies_dip_supp) {
-		__u64 excepts = (policies_dip_except) ? *policies_dip_except : 0;
-		if ((*policies_dip_supp & ~excepts) & policies_ppo)
-			return 0;
-	}
-
-	return -1;
-}
-
 static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 {
 	pkt->inner_ip = (void *)pkt->inner_eth + pkt->inner_eth_off;
@@ -398,8 +335,29 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 
 	// todo: add conn_track related logic properly
 	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_TCP || pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
-		if (conntrack_is_reply_of_tracked_conn(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple))
+		// todo: handle udp reply even when the originated connection is marked as denied;
+		// this is necessary to check the derived policy rules as policy night have been updated to allow;
+		// the impl will be after the conn_track has connection states.
+		if (conntrack_is_reply_of_tracked_conn(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple)){
+			if (pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
+				struct ipv4_tuple_t originated_tuple = {
+					.protocol = IPPROTO_UDP,
+					.saddr = pkt->inner_ipv4_tuple.daddr,
+					.daddr = pkt->inner_ipv4_tuple.saddr,
+					.sport = pkt->inner_ipv4_tuple.dport,
+					.dport = pkt->inner_ipv4_tuple.sport,
+				};
+				if (0 != ingress_policy_check(pkt->agent_ep_tunid, &originated_tuple)){
+					bpf_debug("[Agent:%ld.0x%x] ABORTED: packet to 0x%x egress policy denied, reply of a denied UDP conn\n",
+						pkt->agent_ep_tunid,
+						bpf_ntohl(pkt->agent_ep_ipv4),
+						bpf_ntohl(pkt->inner_ip->daddr));
+					conntrack_remove_tcpudp_conn(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple);
+					return XDP_ABORTED;
+				}
+			}
 			goto xdp_continue;
+		}
 
 		if (is_egress_enforced(pkt->agent_ep_tunid, pkt->inner_ip->saddr)) {
 			if (0 != enforce_egress_policy(pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple)) {
