@@ -64,6 +64,9 @@ class Endpoint:
         self.pod = ""
         self.deleted = False
         self.interface = None
+        self.ingress_networkpolicies = []
+        self.egress_networkpolicies = []
+        self.data_for_networkpolicy = {}
         if spec is not None:
             self.set_obj_spec(spec)
 
@@ -321,6 +324,34 @@ class Endpoint:
 
     def get_droplet_mac(self):
         return self.droplet_mac
+
+    def get_ingress_networkpolicies(self):
+        return self.ingress_networkpolicies
+
+    def get_egress_networkpolicies(self):
+        return self.egress_networkpolicies
+
+    def add_ingress_networkpolicy(self, ingress_networkpolicy_name):
+        self.ingress_networkpolicies.append(ingress_networkpolicy_name)
+        self.ingress_networkpolicies.sort()
+        #TODO update networkpolicy enforcement map ingress
+        self.store_update_obj()
+
+    def add_egress_networkpolicy(self, egress_networkpolicy_name):
+        self.egress_networkpolicies.append(egress_networkpolicy_name)
+        self.egress_networkpolicies.sort()
+        #TODO update networkpolicy enforcement map egress
+        self.store_update_obj()
+
+    def remove_ingress_networkpolicy(self, ingress_networkpolicy_name):
+        self.ingress_networkpolicies.remove(ingress_networkpolicy_name)
+        #TODO delete networkpolicy enforcement map ingress
+        self.store_update_obj()
+
+    def remove_egress_networkpolicy(self, egress_networkpolicy_name):
+        self.egress_networkpolicies.remove(egress_networkpolicy_name)
+        #TODO delete networkpolicy enforcement map egress
+        self.store_update_obj()
 
     def load_transit_agent(self):
         self.rpc.load_transit_agent_xdp(self.veth_peer)
