@@ -798,6 +798,47 @@ int trn_cli_parse_network_policy_protocol_port(const cJSON *jsonobj,
 	return 0;
 }
 
+int trn_cli_parse_network_policy_protocol_port_key(const cJSON *jsonobj,
+						   struct rpc_trn_vsip_ppo_key_t *ppo_key)
+{
+	cJSON *tunnel_id = cJSON_GetObjectItem(jsonobj, "tunnel_id");
+	cJSON *local_ip = cJSON_GetObjectItem(jsonobj, "local_ip");
+	cJSON *protocol = cJSON_GetObjectItem(jsonobj, "protocol");
+	cJSON *port = cJSON_GetObjectItem(jsonobj, "port");
+
+	if (tunnel_id == NULL) {
+		ppo_key->tunid = 0;
+	} else if (cJSON_IsString(tunnel_id)) {
+		ppo_key->tunid = atoi(tunnel_id->valuestring);
+	} else {
+		print_err("Error: Network policy tunnel_id is non-string.\n");
+		return -EINVAL;
+	}
+
+	if (local_ip != NULL && cJSON_IsString(local_ip)) {
+		ppo_key->local_ip = parse_ip_address(local_ip);
+	} else {
+		print_err("Error: Network policy local IP is missing or non-string\n");
+		return -EINVAL;
+	}
+
+	if (cJSON_IsString(protocol)) {
+		ppo_key->proto = atoi(protocol->valuestring);
+	} else {
+		print_err("Error: Network policy protocol Error\n");
+		return -EINVAL;
+	}
+
+	if (cJSON_IsString(port)) {
+		ppo_key->port = atoi(port->valuestring);
+	} else {
+		print_err("Error: Network policy port Error\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 uint32_t parse_ip_address(const cJSON *ipobj)
 {
 	struct sockaddr_in sa;

@@ -32,6 +32,7 @@ CLI_MOCKS += -Wl,--wrap=delete_agent_ep_1
 CLI_MOCKS += -Wl,--wrap=delete_agent_md_1
 CLI_MOCKS += -Wl,--wrap=delete_transit_network_policy_1
 CLI_MOCKS += -Wl,--wrap=delete_transit_network_policy_enforcement_1
+CLI_MOCKS += -Wl,--wrap=delete_transit_network_policy_protocol_port_1
 CLI_MOCKS += -Wl,--wrap=setrlimit
 
 unittest:: test_cli
