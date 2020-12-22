@@ -110,9 +110,6 @@ class Endpoint:
             "cnidelay": self.cnidelay,
             "provisiondelay": self.provisiondelay,
             "pod": self.pod,
-            "ingress_networkpolicies": self.ingress_networkpolicies,
-            "egress_networkpolicies": self.egress_networkpolicies,
-            "data_for_networkpolicy": self.data_for_networkpolicy,
         }
 
         return self.obj
@@ -136,9 +133,6 @@ class Endpoint:
         self.cnidelay = get_spec_val('cnidelay', spec)
         self.provisiondelay = get_spec_val('provisiondelay', spec)
         self.pod = get_spec_val('pod', spec)
-        self.ingress_networkpolicies = get_spec_val('ingress_networkpolicies', spec)
-        self.egress_networkpolicies = get_spec_val('egress_networkpolicies', spec)
-        self.data_for_networkpolicy = get_spec_val('data_for_networkpolicy', spec)
 
     def set_interface(self, interface):
         self.interface = interface
@@ -253,15 +247,6 @@ class Endpoint:
     def set_pod(self, pod):
         self.pod = pod
 
-    def set_ingress_networkpolicies(self, ingress_networkpolicies):
-        self.ingress_networkpolicies = ingress_networkpolicies
-
-    def set_egress_networkpolicies(self, egress_networkpolicies):
-        self.egress_networkpolicies = egress_networkpolicies
-
-    def set_data_for_networkpolicy(self, data_for_networkpolicy):
-        self.data_for_networkpolicy = data_for_networkpolicy
-
     def update_bouncers(self, bouncers, add=True):
         for bouncer in bouncers.values():
             if add:
@@ -350,23 +335,23 @@ class Endpoint:
         self.ingress_networkpolicies.append(ingress_networkpolicy_name)
         self.ingress_networkpolicies.sort()
         #TODO update networkpolicy enforcement map ingress
-        self.store.update_ep(self)
+        self.store_update_obj()
 
     def add_egress_networkpolicy(self, egress_networkpolicy_name):
         self.egress_networkpolicies.append(egress_networkpolicy_name)
         self.egress_networkpolicies.sort()
         #TODO update networkpolicy enforcement map egress
-        self.store.update_ep(self)
+        self.store_update_obj()
 
     def remove_ingress_networkpolicy(self, ingress_networkpolicy_name):
         self.ingress_networkpolicies.remove(ingress_networkpolicy_name)
         #TODO delete networkpolicy enforcement map ingress
-        self.store.update_ep(self)
+        self.store_update_obj()
 
     def remove_egress_networkpolicy(self, egress_networkpolicy_name):
         self.egress_networkpolicies.remove(egress_networkpolicy_name)
         #TODO delete networkpolicy enforcement map egress
-        self.store.update_ep(self)
+        self.store_update_obj()
 
     def load_transit_agent(self):
         self.rpc.load_transit_agent_xdp(self.veth_peer)
