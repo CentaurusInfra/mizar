@@ -449,7 +449,7 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 	// todo: add conn_track related logic properly
 	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_TCP || pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
 		// todo: handle udp reply even when the originated connection is marked as denied;
-		// this is necessary to check the derived policy rules as policy night have been updated to allow;
+		// this is necessary to check the derived policy rules as policy might have been updated to allow;
 		// the impl will be after the conn_track has connection states.
 		if (conntrack_is_reply_of_tracked_conn(&conn_track_cache, tunnel_id, &pkt->inner_ipv4_tuple)){
 			if (pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
@@ -470,6 +470,7 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 					return XDP_ABORTED;
 				}
 			}
+			// todo: get rid of goto
 			goto xdp_continue;
 		}
 
