@@ -76,12 +76,22 @@ class k8sNetworkPolicyCreate(WorkflowTask):
 
     def generate_data_for_networkpolicy_ingress(self, ep):
         data = self.init_data_for_networkpolicy()
-        #TODO build ingress data
+        direction = "ingress"
+
+        for networkpolicy_name in ep.ingress_networkpolicies:
+            networkpolicy = networkpolicy_opr.get_networkpolicy(networkpolicy_name)
+            self.fill_data_from_directional_traffic_rules(data, direction, networkpolicy)
+        self.build_access_rules(data, ep)
         return data
 
     def generate_data_for_networkpolicy_egress(self, ep):
         data = self.init_data_for_networkpolicy()
-        #TODO build egress data
+        direction = "egress"
+
+        for networkpolicy_name in ep.egress_networkpolicies:
+            networkpolicy = networkpolicy_opr.get_networkpolicy(networkpolicy_name)
+            self.fill_data_from_directional_traffic_rules(data, direction, networkpolicy)
+        self.build_access_rules(data, ep)
         return data
 
     def init_data_for_networkpolicy(self):
@@ -103,3 +113,51 @@ class k8sNetworkPolicyCreate(WorkflowTask):
             "port_table": [],
         }
         return data
+
+    def fill_data_from_directional_traffic_rules(self, data, direction, networkpolicy):
+        network_policy_name = networkpolicy["metadata"]["name"]
+        for index, directional_traffic_rules in enumerate(networkpolicy["spec"][direction]):
+            indexed_policy_name = "{}_{}_{}".format(network_policy_name, direction, index)
+            if network_policy_name not in data["networkpolicy_map"]:
+                data["networkpolicy_map"][network_policy_name] = set()
+            if indexed_policy_name not in data["networkpolicy_map"][network_policy_name]:
+                data["networkpolicy_map"][network_policy_name].add(indexed_policy_name)
+                data["indexed_policy_count"] += 1
+
+            self.fill_cidrs_from_directional_traffic_rules(data, indexed_policy_name, direction, directional_traffic_rules)
+
+    def fill_cidrs_from_directional_traffic_rules(self, data, indexed_policy_name, direction, directional_traffic_rules):
+        if indexed_policy_name not in data["ports_map"]:
+            data["ports_map"][indexed_policy_name] = []
+        for port in directional_traffic_rules["ports"]:
+            data["ports_map"][indexed_policy_name].append("{}:{}".format(port["protocol"], port["port"]))
+
+        if indexed_policy_name not in data["cidrs_map_no_except"]:
+            data["cidrs_map_no_except"][indexed_policy_name] = []
+        if indexed_policy_name not in data["cidrs_map_with_except"]:
+            data["cidrs_map_with_except"][indexed_policy_name] = []
+        if indexed_policy_name not in data["cidrs_map_except"]:
+            data["cidrs_map_except"][indexed_policy_name] = []
+        for gress_item in directional_traffic_rules["from" if direction == "ingress" else "to"]:
+            if "ipBlock" in gress_item:
+                if "except" in gress_item["ipBlock"]:
+                    data["cidrs_map_with_except"][indexed_policy_name].append(gress_item["ipBlock"]["cidr"])
+                    for except_cidr in gress_item["ipBlock"]["except"]:
+                        data["cidrs_map_except"][indexed_policy_name].append(except_cidr)
+                else:
+                    data["cidrs_map_no_except"][
+                        indexed_policy_name].append(gress_item["ipBlock"]["cidr"])
+            elif "namespaceSelector" in gress_item and "podSelector" in gress_item:
+                raise NotImplementedError("Not implemented")
+            elif "namespaceSelector" in gress_item:
+                raise NotImplementedError("Not implemented")
+            elif "podSelector" in gress_item:
+                pods = list_pods_by_labels(gress_item["podSelector"]["matchLabels"])
+                for pod in pods.items:
+                    data["cidrs_map_no_except"][indexed_policy_name].append("{}/32".format(pod.status.pod_ip))
+            else:
+                raise NotImplementedError("Not implemented for {}".format(gress_item))
+
+    def build_access_rules(self, data, ep):
+        #TODO Build data that fits for daemon data format
+        logger.info("To be implemented: Build data that fits for daemon data format")

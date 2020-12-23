@@ -51,3 +51,7 @@ class NetworkPolicyOperator(object):
         config.load_incluster_config()
         self.obj_api = client.CustomObjectsApi()
         self.core_api = client.CoreV1Api()
+
+    def get_networkpolicy(self, name):
+        splitted = name.split(":")
+        return self.obj_api.get_namespaced_custom_object("networking.k8s.io", "v1", splitted[0], "networkpolicies", splitted[1])
