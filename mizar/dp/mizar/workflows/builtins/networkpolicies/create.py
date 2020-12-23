@@ -76,22 +76,22 @@ class k8sNetworkPolicyCreate(WorkflowTask):
 
     def generate_data_for_networkpolicy_ingress(self, ep):
         data = self.init_data_for_networkpolicy()
-        gress_type = "ingress"
+        direction = "ingress"
 
         for networkpolicy_name in ep.ingress_networkpolicies:
             networkpolicy = networkpolicy_opr.get_networkpolicy(networkpolicy_name)
-            self.fill_data_from_onegress(data, gress_type, networkpolicy)
-        self.build_gressdata(data, ep)
+            self.fill_data_from_directional_traffic_data(data, direction, networkpolicy)
+        self.build_directional_data(data, ep)
         return data
 
     def generate_data_for_networkpolicy_egress(self, ep):
         data = self.init_data_for_networkpolicy()
-        gress_type = "egress"
+        direction = "egress"
 
         for networkpolicy_name in ep.egress_networkpolicies:
             networkpolicy = networkpolicy_opr.get_networkpolicy(networkpolicy_name)
-            self.fill_data_from_onegress(data, gress_type, networkpolicy)
-        self.build_gressdata(data, ep)
+            self.fill_data_from_directional_traffic_data(data, direction, networkpolicy)
+        self.build_directional_data(data, ep)
         return data
 
     def init_data_for_networkpolicy(self):
@@ -114,22 +114,22 @@ class k8sNetworkPolicyCreate(WorkflowTask):
         }
         return data
 
-    def fill_data_from_onegress(self, data, gress_type, networkpolicy):
+    def fill_data_from_directional_traffic_data(self, data, direction, networkpolicy):
         network_policy_name = networkpolicy["metadata"]["name"]
-        for index, onegress in enumerate(networkpolicy["spec"][gress_type]):
-            indexed_policy_name = "{}_{}_{}".format(network_policy_name, gress_type, index)
+        for index, directional_traffic_data in enumerate(networkpolicy["spec"][direction]):
+            indexed_policy_name = "{}_{}_{}".format(network_policy_name, direction, index)
             if network_policy_name not in data["networkpolicy_map"]:
                 data["networkpolicy_map"][network_policy_name] = set()
             if indexed_policy_name not in data["networkpolicy_map"][network_policy_name]:
                 data["networkpolicy_map"][network_policy_name].add(indexed_policy_name)
                 data["indexed_policy_count"] += 1
 
-            self.fill_cidrs_from_onegress(data, indexed_policy_name, gress_type, onegress)
+            self.fill_cidrs_from_directional_traffic_data(data, indexed_policy_name, direction, directional_traffic_data)
 
-    def fill_cidrs_from_onegress(self, data, indexed_policy_name, gress_type, onegress):
+    def fill_cidrs_from_directional_traffic_data(self, data, indexed_policy_name, direction, directional_traffic_data):
         if indexed_policy_name not in data["ports_map"]:
             data["ports_map"][indexed_policy_name] = []
-        for port in onegress["ports"]:
+        for port in directional_traffic_data["ports"]:
             data["ports_map"][indexed_policy_name].append("{}:{}".format(port["protocol"], port["port"]))
 
         if indexed_policy_name not in data["cidrs_map_no_except"]:
@@ -138,7 +138,7 @@ class k8sNetworkPolicyCreate(WorkflowTask):
             data["cidrs_map_with_except"][indexed_policy_name] = []
         if indexed_policy_name not in data["cidrs_map_except"]:
             data["cidrs_map_except"][indexed_policy_name] = []
-        for gress_item in onegress["from" if gress_type == "ingress" else "to"]:
+        for gress_item in directional_traffic_data["from" if direction == "ingress" else "to"]:
             if "ipBlock" in gress_item:
                 if "except" in gress_item["ipBlock"]:
                     data["cidrs_map_with_except"][indexed_policy_name].append(gress_item["ipBlock"]["cidr"])
@@ -158,6 +158,6 @@ class k8sNetworkPolicyCreate(WorkflowTask):
             else:
                 raise NotImplementedError("Not implemented for {}".format(gress_item))
 
-    def build_gressdata(self, data, ep):
+    def build_directional_data(self, data, ep):
         #TODO Build data that fits for daemon data format
         logger.info("To be implemented: Build data that fits for daemon data format")
