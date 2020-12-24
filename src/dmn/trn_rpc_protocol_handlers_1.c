@@ -1269,7 +1269,7 @@ int *update_transit_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc
 	char *itf = policy->interface;
 	int type = policy->cidr_type;
 
-	int counter = (int)(sizeof(policy) / sizeof(rpc_trn_vsip_cidr_t));
+	int counter = (int)(sizeof(policy) / sizeof(struct rpc_trn_vsip_cidr_t));
 	if (counter == 0)
 	{
 		TRN_LOG_INFO("policy has length of 0. Nothing to do");

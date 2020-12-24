@@ -2145,7 +2145,7 @@ static void test_trn_cli_update_transit_network_policy_subcmd(void **state)
 			  }]) };
 	char itf[] = "eth0";
 
-	struct rpc_trn_vsip_cidr_t exp_policy1 = {
+	struct rpc_trn_vsip_cidr_t policies[2] = {{
 		.interface = itf,
 		.tunid = 3,
 		.local_ip = 0x300000a,
@@ -2153,9 +2153,8 @@ static void test_trn_cli_update_transit_network_policy_subcmd(void **state)
 		.cidr_ip = 0x90000ac,
 		.cidr_type = 1,
 		.bit_val = 10
-	};
-
-	struct rpc_trn_vsip_cidr_t exp_policy2 = {
+	},
+	{
 		.interface = itf,
 		.tunid = 1,
 		.local_ip = 0x100000a,
@@ -2163,11 +2162,7 @@ static void test_trn_cli_update_transit_network_policy_subcmd(void **state)
 		.cidr_ip = 0x60000ac,
 		.cidr_type = 2,
 		.bit_val = 1
-	};
-
-	struct rpc_trn_vsip_cidr_t policies[2];
-	policies[0] = exp_policy1;
-	policies[1] = exp_policy2;
+	}};
 
 	/* Test call update_transit_network_policy successfully */
 	TEST_CASE("update-network-policy-ingress succeed with well formed policy json input");

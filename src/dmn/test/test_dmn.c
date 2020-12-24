@@ -588,9 +588,8 @@ static void test_update_transit_network_policy_1_svc(void **state)
 {
 	UNUSED(state);
 	char itf[] = "lo";
-	struct rpc_trn_vsip_cidr_t policies[2];
 
-	struct rpc_trn_vsip_cidr_t policy1 = {
+	struct rpc_trn_vsip_cidr_t policies[2] = {{
 		.interface = itf,
 		.tunid = 3,
 		.local_ip = 0x100000a,
@@ -598,9 +597,8 @@ static void test_update_transit_network_policy_1_svc(void **state)
 		.cidr_ip = 0xac00012,
 		.cidr_type = 1,
 		.bit_val = 4
-	};
-
-	struct rpc_trn_vsip_cidr_t policy2 = {
+	},
+	{
 		.interface = itf,
 		.tunid = 3,
 		.local_ip = 0x100000a,
@@ -608,10 +606,7 @@ static void test_update_transit_network_policy_1_svc(void **state)
 		.cidr_ip = 0xac00012,
 		.cidr_type = 2,
 		.bit_val = 4
-	};
-
-	policies[0] = policy1;
-	policies[1] = policy2;
+	}};
 
 	int *rc;
 	rc = update_transit_network_policy_1_svc(policies, NULL);

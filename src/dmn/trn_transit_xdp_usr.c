@@ -641,7 +641,7 @@ int trn_update_transit_network_policy_primary_map(struct user_metadata_t *md,
 						  struct vsip_cidr_t *ipcidr,
 						  __u64 *bitmap)
 {
-	int counter = (int)(sizeof(ipcidr) / sizeof(*ipcidr));
+	int counter = (int)(sizeof(ipcidr) / sizeof(struct vsip_cidr_t));
 	for (int i = 0; i < counter; i++)
 	{
 		int err = bpf_map_update_elem(md->ing_vsip_prim_map_fd, ipcidr, bitmap, 0);
@@ -661,7 +661,7 @@ int trn_update_transit_network_policy_supplementary_map(struct user_metadata_t *
 							struct vsip_cidr_t *ipcidr,
 							__u64 *bitmap)
 {
-	int counter = (int)(sizeof(ipcidr) / sizeof(*ipcidr));
+	int counter = (int)(sizeof(ipcidr) / sizeof(struct vsip_cidr_t));
 	for (int i = 0; i < counter; i++)
 	{
 		int err = bpf_map_update_elem(md->ing_vsip_supp_map_fd, ipcidr, bitmap, 0);
@@ -680,7 +680,7 @@ int trn_update_transit_network_policy_except_map(struct user_metadata_t *md,
 						 struct vsip_cidr_t *ipcidr,
 						 __u64 *bitmap)
 {
-	int counter = (int)(sizeof(ipcidr) / sizeof(*ipcidr));
+	int counter = (int)(sizeof(ipcidr) / sizeof(struct vsip_cidr_t));
 	for (int i = 0; i < counter; i++)
 	{
 		int err = bpf_map_update_elem(md->ing_vsip_except_map_fd, ipcidr, bitmap, 0);
