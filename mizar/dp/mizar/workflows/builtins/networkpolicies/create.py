@@ -19,6 +19,7 @@
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import logging
+from cidr_trie import PatriciaTrie
 from mizar.common.workflow import *
 from mizar.common.kubernetes_util import *
 from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
@@ -29,6 +30,7 @@ networkpolicy_opr = NetworkPolicyOperator()
 
 logger = logging.getLogger()
 
+
 class k8sNetworkPolicyCreate(WorkflowTask):
     def requires(self):
         logger.info("Requires {task}".format(task=self.__class__.__name__))
@@ -36,7 +38,7 @@ class k8sNetworkPolicyCreate(WorkflowTask):
 
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
-        
+
         name = self.param.name
         pod_label_dict = self.param.spec["podSelector"]["matchLabels"]
         policy_types = self.param.spec["policyTypes"]
@@ -72,7 +74,6 @@ class k8sNetworkPolicyCreate(WorkflowTask):
                 }
                 logger.info("data_for_networkpolicy: {}".format(data_for_networkpolicy))
                 #TODO Send data from operator to daemon
-                
 
     def generate_data_for_networkpolicy_ingress(self, ep):
         data = self.init_data_for_networkpolicy()
@@ -138,26 +139,93 @@ class k8sNetworkPolicyCreate(WorkflowTask):
             data["cidrs_map_with_except"][indexed_policy_name] = []
         if indexed_policy_name not in data["cidrs_map_except"]:
             data["cidrs_map_except"][indexed_policy_name] = []
-        for gress_item in directional_traffic_rules["from" if direction == "ingress" else "to"]:
-            if "ipBlock" in gress_item:
-                if "except" in gress_item["ipBlock"]:
-                    data["cidrs_map_with_except"][indexed_policy_name].append(gress_item["ipBlock"]["cidr"])
-                    for except_cidr in gress_item["ipBlock"]["except"]:
+        for rule_item in directional_traffic_rules["from" if direction == "ingress" else "to"]:
+            if "ipBlock" in rule_item:
+                if "except" in rule_item["ipBlock"]:
+                    data["cidrs_map_with_except"][indexed_policy_name].append(rule_item["ipBlock"]["cidr"])
+                    for except_cidr in rule_item["ipBlock"]["except"]:
                         data["cidrs_map_except"][indexed_policy_name].append(except_cidr)
                 else:
-                    data["cidrs_map_no_except"][
-                        indexed_policy_name].append(gress_item["ipBlock"]["cidr"])
-            elif "namespaceSelector" in gress_item and "podSelector" in gress_item:
+                    data["cidrs_map_no_except"][indexed_policy_name].append(rule_item["ipBlock"]["cidr"])
+            elif "namespaceSelector" in rule_item and "podSelector" in rule_item:
                 raise NotImplementedError("Not implemented")
-            elif "namespaceSelector" in gress_item:
+            elif "namespaceSelector" in rule_item:
                 raise NotImplementedError("Not implemented")
-            elif "podSelector" in gress_item:
-                pods = list_pods_by_labels(gress_item["podSelector"]["matchLabels"])
+            elif "podSelector" in rule_item:
+                pods = list_pods_by_labels(rule_item["podSelector"]["matchLabels"])
                 for pod in pods.items:
                     data["cidrs_map_no_except"][indexed_policy_name].append("{}/32".format(pod.status.pod_ip))
             else:
-                raise NotImplementedError("Not implemented for {}".format(gress_item))
+                raise NotImplementedError("Not implemented for {}".format(rule_item))
 
-    def build_access_rules(self, data, ep):
-        #TODO Build data that fits for daemon data format
-        logger.info("To be implemented: Build data that fits for daemon data format")
+    def build_access_rules(self, access_rules, ep):
+        self.build_cidr_and_policies_map(access_rules, "no_except")
+        self.build_cidr_and_policies_map(access_rules, "with_except")
+        self.build_cidr_and_policies_map(access_rules, "except")
+        self.build_port_and_policies_map(access_rules)
+        self.build_indexed_policy_map(access_rules)
+        self.build_cidr_table(access_rules, ep, "no_except")
+        self.build_cidr_table(access_rules, ep, "with_except")
+        self.build_cidr_table(access_rules, ep, "except")
+        self.build_port_table(access_rules, ep)
+
+    def build_cidr_and_policies_map(self, access_rules, cidr_type):
+        cidr_map_name = "cidrs_map_" + cidr_type
+        cidr_and_policies_map_name = "cidr_and_policies_map_" + cidr_type
+        trie = PatriciaTrie()
+        for indexed_policy_name, cidrs in access_rules[cidr_map_name].items():
+            for cidr in cidrs:
+                if cidr not in access_rules[cidr_and_policies_map_name]:
+                    access_rules[cidr_and_policies_map_name][cidr] = set()
+                access_rules[cidr_and_policies_map_name][cidr].add(indexed_policy_name)
+                trie.insert(cidr, access_rules[cidr_and_policies_map_name][cidr])
+        for cidr, indexed_policy_names in access_rules[cidr_and_policies_map_name].items():
+            found_cidr_map = trie.find_all(cidr)
+            for found_cidr_tuple in found_cidr_map:
+                if indexed_policy_names != found_cidr_tuple[1]:
+                    for foundPolicyName in found_cidr_tuple[1]:
+                        indexed_policy_names.add(foundPolicyName)
+
+    def build_port_and_policies_map(self, access_rules):
+        for indexed_policy_name, ports in access_rules["ports_map"].items():
+            for port in ports:
+                if port not in access_rules["port_and_policies_map"]:
+                    access_rules["port_and_policies_map"][port] = set()
+                access_rules["port_and_policies_map"][port].add(indexed_policy_name)
+
+    def build_indexed_policy_map(self, access_rules):
+        bit = 1
+        for _, indexed_policy_names in access_rules["networkpolicy_map"].items():
+            for indexed_policy_name in indexed_policy_names:
+                access_rules["indexed_policy_map"][indexed_policy_name] = bit
+                bit <<= 1
+
+    def build_cidr_table(self, access_rules, ep, cidr_type):
+        cidr_table_name = "cidr_table_" + cidr_type
+        cidr_and_policies_map_name = "cidr_and_policies_map_" + cidr_type
+        for cidr, indexed_policy_names in access_rules[cidr_and_policies_map_name].items():
+            splitted_cidr = cidr.split("/")
+            access_rules[cidr_table_name].append({
+                "vni": ep.vni,
+                "local_ip": ep.ip,
+                "cidr": splitted_cidr[0],
+                "cidr_length": int(splitted_cidr[1]),
+                "bit_value": self.calculate_policy_bit_value(access_rules, indexed_policy_names),
+            })
+
+    def calculate_policy_bit_value(self, access_rules, indexed_policy_names):
+        policy_bit_value = 0
+        for indexed_policy_name in indexed_policy_names:
+            policy_bit_value += access_rules["indexed_policy_map"][indexed_policy_name]
+        return policy_bit_value
+
+    def build_port_table(self, access_rules, ep):
+        for port, indexed_policy_names in access_rules["port_and_policies_map"].items():
+            splitted = port.split(":")
+            access_rules["port_table"].append({
+                "vni": ep.vni,
+                "local_ip": ep.ip,
+                "protocol": splitted[0],
+                "port": splitted[1],
+                "bit_value": self.calculate_policy_bit_value(access_rules, indexed_policy_names),
+            })
