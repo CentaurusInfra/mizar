@@ -1266,10 +1266,10 @@ int *update_transit_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc
 	UNUSED(rqstp);
 	static int result;
 	int rc;
-	char *itf = policy->interface;
-	int type = policy->cidr_type;
+	char *itf = policy[0].interface;
+	int type = policy[0].cidr_type;
 
-	int counter = (int)(sizeof(policy) / sizeof(struct rpc_trn_vsip_cidr_t));
+	int counter = policy[0].count;
 	if (counter == 0)
 	{
 		TRN_LOG_INFO("policy has length of 0. Nothing to do");
@@ -1302,13 +1302,13 @@ int *update_transit_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc
 
 	switch (type) {
 	case PRIMARY:
-		rc = trn_update_transit_network_policy_primary_map(md, cidr, bitmap);
+		rc = trn_update_transit_network_policy_primary_map(md, cidr, bitmap, counter);
 		break;
 	case SUPPLEMENTARY:
-		rc = trn_update_transit_network_policy_supplementary_map(md, cidr, bitmap);
+		rc = trn_update_transit_network_policy_supplementary_map(md, cidr, bitmap, counter);
 		break;
 	case EXCEPTION:
-		rc = trn_update_transit_network_policy_except_map(md, cidr, bitmap);
+		rc = trn_update_transit_network_policy_except_map(md, cidr, bitmap, counter);
 		break;
 	default:
 		result = RPC_TRN_FATAL;

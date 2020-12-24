@@ -49,6 +49,7 @@ int trn_cli_update_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *a
 	{
 		struct rpc_trn_vsip_cidr_t cidrval;
 		cidrval.interface = conf.intf;
+		cidrval.count = counter;
 		cJSON *policy = cJSON_GetArrayItem(json_str, i);
 		int err = trn_cli_parse_network_policy_cidr(policy, &cidrval);
 
@@ -344,6 +345,7 @@ void dump_network_policy(struct rpc_trn_vsip_cidr_t *policy)
 	print_msg("CIDR IP: %x\n", policy->cidr_ip);
 	print_msg("CIDR Type: %d\n", policy->cidr_type);
 	print_msg("bit value: %ld\n", policy->bit_val);
+	print_msg("counter: %d\n", policy->count);
 }
 
 void dump_enforced_policy(struct rpc_trn_vsip_enforce_t *enforce)
