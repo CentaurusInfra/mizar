@@ -36,24 +36,32 @@ int trn_cli_update_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *a
 
 	char *buf = conf.conf_str;
 	json_str = trn_cli_parse_json(buf);
+	int counter = cJSON_GetArraySize(json_str); 
 
 	if (json_str == NULL) {
 		return -EINVAL;
 	}
 	int *rc;
-	struct rpc_trn_vsip_cidr_t cidrval;
+	struct rpc_trn_vsip_cidr_t cidr_list[counter];
 	char rpc[] = "update_transit_network_policy_1";
-	cidrval.interface = conf.intf;
 
-	int err = trn_cli_parse_network_policy_cidr(json_str, &cidrval);
+	for (int i = 0; i < counter; i++)
+	{
+		struct rpc_trn_vsip_cidr_t cidrval;
+		cidrval.interface = conf.intf;
+		cJSON *policy = cJSON_GetArrayItem(json_str, i);
+		int err = trn_cli_parse_network_policy_cidr(policy, &cidrval);
+
+		if (err != 0) {
+			print_err("Error: parsing network policy config.\n");
+			return -EINVAL;
+		}
+
+		cidr_list[i] = cidrval;
+	}
 	cJSON_Delete(json_str);
 
-	if (err != 0) {
-		print_err("Error: parsing network policy config.\n");
-		return -EINVAL;
-	}
-
-	rc = update_transit_network_policy_1(&cidrval, clnt);
+	rc = update_transit_network_policy_1(cidr_list, clnt);
 	if (rc == (int *)NULL) {
 		print_err("RPC Error: client call failed: update_transit_network_policy_1.\n");
 		return -EINVAL;
@@ -66,7 +74,10 @@ int trn_cli_update_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *a
 		return -EINVAL;
 	}
 
-	dump_network_policy(&cidrval);
+	for (int k = 0; k < counter; k++)
+	{
+		dump_network_policy(&cidr_list[k]);
+	}
 	print_msg("update_transit_network_policy_1 successfully updated network policy\n");
 	
 	return 0;
