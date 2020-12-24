@@ -148,13 +148,27 @@ class k8sNetworkPolicyCreate(WorkflowTask):
                 else:
                     data["cidrs_map_no_except"][indexed_policy_name].append(rule_item["ipBlock"]["cidr"])
             elif "namespaceSelector" in rule_item and "podSelector" in rule_item:
-                raise NotImplementedError("Not implemented")
-            elif "namespaceSelector" in rule_item:
-                raise NotImplementedError("Not implemented")
-            elif "podSelector" in rule_item:
+                namespaces = list_namespaces_by_labels(rule_item["namespaceSelector"]["matchLabels"])
+                namespace_set = set()
+                for namespace in namespaces.items:
+                    namespace_set.add(namespace.metadata.name)
+
                 pods = list_pods_by_labels(rule_item["podSelector"]["matchLabels"])
                 for pod in pods.items:
-                    data["cidrs_map_no_except"][indexed_policy_name].append("{}/32".format(pod.status.pod_ip))
+                    if pod.metadata.namespace in namespace_set and pod.status.pod_ip is not None:
+                        data["cidrs_map_no_except"][indexed_policy_name].append("{}/32".format(pod.status.pod_ip))
+            elif "namespaceSelector" in rule_item:                
+                namespaces = list_namespaces_by_labels(rule_item["namespaceSelector"]["matchLabels"])
+                for namespace in namespaces.items:
+                    pods = list_pods_by_namespace(namespace.metadata.name)
+                    for pod in pods.items:
+                        if pod.status.pod_ip is not None:
+                            data["cidrs_map_no_except"][indexed_policy_name].append("{}/32".format(pod.status.pod_ip))
+            elif "podSelector" in rule_item:
+                pods = list_pods_by_labels(rule_item["podSelector"]["matchLabels"])
+                for pod in pods.items:                    
+                    if pod.status.pod_ip is not None:
+                        data["cidrs_map_no_except"][indexed_policy_name].append("{}/32".format(pod.status.pod_ip))
             else:
                 raise NotImplementedError("Not implemented for {}".format(rule_item))
 

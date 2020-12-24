@@ -31,7 +31,16 @@ def build_label_filter(label_dict):
         str_list.pop()
     return "".join(str_list)
 
+def list_namespaces_by_labels(label_dict):
+    label_filter = build_label_filter(label_dict)
+    v1 = client.CoreV1Api()
+    return v1.list_namespace(watch=False, label_selector=label_filter)
+
 def list_pods_by_labels(label_dict):
     label_filter = build_label_filter(label_dict)
     v1 = client.CoreV1Api()
     return v1.list_pod_for_all_namespaces(watch=False, label_selector=label_filter)
+
+def list_pods_by_namespace(namespace):
+    v1 = client.CoreV1Api()
+    return v1.list_pod_for_all_namespaces(watch=False, field_selector="metadata.namespace={}".format(namespace))
