@@ -587,22 +587,32 @@ static void test_update_agent_md_1_svc(void **state)
 static void test_update_transit_network_policy_1_svc(void **state)
 {
 	UNUSED(state);
-
 	char itf[] = "lo";
 
-	struct rpc_trn_vsip_cidr_t policy1 = {
+	struct rpc_trn_vsip_cidr_t policies[2] = {{
 		.interface = itf,
 		.tunid = 3,
 		.local_ip = 0x100000a,
 		.cidr_prefixlen = 16,
 		.cidr_ip = 0xac00012,
 		.cidr_type = 1,
-		.bit_val = 4
-	};
+		.bit_val = 4,
+		.count = 2
+	},
+	{
+		.interface = itf,
+		.tunid = 3,
+		.local_ip = 0x100000a,
+		.cidr_prefixlen = 16,
+		.cidr_ip = 0xac00012,
+		.cidr_type = 2,
+		.bit_val = 4,
+		.count = 2
+	}};
 
 	int *rc;
-	expect_function_call(__wrap_bpf_map_update_elem);
-	rc = update_transit_network_policy_1_svc(&policy1, NULL);
+	expect_function_calls(__wrap_bpf_map_update_elem, 2);
+	rc = update_transit_network_policy_1_svc(policies, NULL);
 	assert_int_equal(*rc, 0);
 }
 
