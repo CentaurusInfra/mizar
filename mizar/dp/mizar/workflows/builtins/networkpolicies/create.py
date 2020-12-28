@@ -21,7 +21,6 @@
 import logging
 from cidr_trie import PatriciaTrie
 from mizar.common.workflow import *
-from mizar.common.kubernetes_util import *
 from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
 from mizar.dp.mizar.operators.networkpolicies.networkpolicies_operator import *
 
@@ -47,7 +46,9 @@ class k8sNetworkPolicyCreate(WorkflowTask):
         self.finalize()
 
     def handle_networkpolicy_create_update(self, name, pod_label_dict, policy_types):
-        pods = list_pods_by_labels(pod_label_dict)
+        pods = kube_list_pods_by_labels(networkpolicy_opr.core_api, pod_label_dict)
+        if pods is None:
+            return
 
         has_ingress = "Ingress" in policy_types
         has_egress = "Egress" in policy_types
@@ -148,27 +149,32 @@ class k8sNetworkPolicyCreate(WorkflowTask):
                 else:
                     data["cidrs_map_no_except"][indexed_policy_name].append(rule_item["ipBlock"]["cidr"])
             elif "namespaceSelector" in rule_item and "podSelector" in rule_item:
-                namespaces = list_namespaces_by_labels(rule_item["namespaceSelector"]["matchLabels"])
-                namespace_set = set()
-                for namespace in namespaces.items:
-                    namespace_set.add(namespace.metadata.name)
+                namespaces = kube_list_namespaces_by_labels(networkpolicy_opr.core_api, rule_item["namespaceSelector"]["matchLabels"])
+                if namespaces is not None:
+                    namespace_set = set()
+                    for namespace in namespaces.items:
+                        namespace_set.add(namespace.metadata.name)
 
-                pods = list_pods_by_labels(rule_item["podSelector"]["matchLabels"])
-                for pod in pods.items:
-                    if pod.metadata.namespace in namespace_set and pod.status.pod_ip is not None:
-                        data["cidrs_map_no_except"][indexed_policy_name].append("{}/32".format(pod.status.pod_ip))
+                    pods = kube_list_pods_by_labels(networkpolicy_opr.core_api, rule_item["podSelector"]["matchLabels"])
+                    if pods is not None:
+                        for pod in pods.items:
+                            if pod.metadata.namespace in namespace_set and pod.status.pod_ip is not None:
+                                data["cidrs_map_no_except"][indexed_policy_name].append("{}/32".format(pod.status.pod_ip))
             elif "namespaceSelector" in rule_item:                
-                namespaces = list_namespaces_by_labels(rule_item["namespaceSelector"]["matchLabels"])
-                for namespace in namespaces.items:
-                    pods = list_pods_by_namespace(namespace.metadata.name)
+                namespaces = kube_list_namespaces_by_labels(networkpolicy_opr.core_api, rule_item["namespaceSelector"]["matchLabels"])
+                if namespaces is not None:
+                    for namespace in namespaces.items:
+                        pods = kube_list_pods_by_namespace(networkpolicy_opr.core_api, namespace.metadata.name)
+                        if pods is not None:
+                            for pod in pods.items:
+                                if pod.status.pod_ip is not None:
+                                    data["cidrs_map_no_except"][indexed_policy_name].append("{}/32".format(pod.status.pod_ip))
+            elif "podSelector" in rule_item:
+                pods = kube_list_pods_by_labels(networkpolicy_opr.core_api, rule_item["podSelector"]["matchLabels"])
+                if pods is not None:
                     for pod in pods.items:
                         if pod.status.pod_ip is not None:
                             data["cidrs_map_no_except"][indexed_policy_name].append("{}/32".format(pod.status.pod_ip))
-            elif "podSelector" in rule_item:
-                pods = list_pods_by_labels(rule_item["podSelector"]["matchLabels"])
-                for pod in pods.items:                    
-                    if pod.status.pod_ip is not None:
-                        data["cidrs_map_no_except"][indexed_policy_name].append("{}/32".format(pod.status.pod_ip))
             else:
                 raise NotImplementedError("Not implemented for {}".format(rule_item))
 
