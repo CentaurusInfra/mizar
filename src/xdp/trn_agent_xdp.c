@@ -335,10 +335,11 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 
 	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_TCP || pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
 		__u8 *tracked_state = get_originated_conn_state(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple);
+		// todo: only check for bi-directional connections
 		if (NULL != tracked_state){
 			if (0 != egress_reply_packet_check(pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple, *tracked_state))
 			{
-				bpf_debug("[Agent:%ld.0x%x] ABORTED: packet to 0x%x egress policy denied, reply of a denied UDP conn\n",
+				bpf_debug("[Agent:%ld.0x%x] ABORTED: packet to 0x%x egress policy denied, reply of a denied conn\n",
 					pkt->agent_ep_tunid,
 					bpf_ntohl(pkt->agent_ep_ipv4),
 					bpf_ntohl(pkt->inner_ip->daddr));

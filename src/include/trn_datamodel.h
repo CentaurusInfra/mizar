@@ -175,6 +175,6 @@ struct ipv4_ct_tuple_t {
 
 enum conn_status {
 	TRFFIC_DENIED	= 1 << 0,	// traffic is denied (1) or default allowed (0)
-	UNI_DIRECTION 	= 1 << 1,	// traffic is uni-direction only, or bi-direction
+	UNI_DIRECTION 	= 1 << 1,	// reserved; traffic is uni-direction only, or bi-direction
 	FLAG_REEVAL 	= 1 << 2,	// need to re-evaluate allow/deny traffic
 };

@@ -448,10 +448,11 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 
 	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_TCP || pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
 		__u8 *tracked_state = get_originated_conn_state(&conn_track_cache, tunnel_id, &pkt->inner_ipv4_tuple);
-		if (NULL != tracked_state){
+		// todo: only check for bi-directional connections
+		if (NULL != tracked_state) {
 			if (0 != ingress_reply_packet_check(tunnel_id, &pkt->inner_ipv4_tuple, *tracked_state))
 			{
-				bpf_debug("[Transit:vpc 0x%lx] ABORTED: packet to 0x%x from 0x%x ingress denied, reply of a denied UDP conn\n",
+				bpf_debug("[Transit:vpc 0x%lx] ABORTED: packet to 0x%x from 0x%x ingress denied, reply of a denied conn\n",
 					tunnel_id,
 					bpf_ntohl(pkt->inner_ipv4_tuple.daddr),
 					bpf_ntohl(pkt->inner_ipv4_tuple.saddr));

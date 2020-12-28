@@ -251,7 +251,7 @@ static inline int egress_reply_packet_check(__u64 tunnel_id, const struct ipv4_t
      should be allowed or denied, based on the tracked originated conn state, and the derived policy if applicable
    return value:
      0: allows this packet; no error (by either open policy or an allowing egress policy)
-    -1: denies this packet; ingress policy denial error
+     non-0: denies this packet; ingress policy denial error
 */
 __ALWAYS_INLINE__
 static inline int ingress_reply_packet_check(__u64 tunnel_id, const struct ipv4_tuple_t *ipv4_tuple, __u8 originated_conn_state)
