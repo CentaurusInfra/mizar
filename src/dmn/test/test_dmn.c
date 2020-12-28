@@ -620,31 +620,43 @@ static void test_delete_transit_network_policy_1_svc(void **state)
 {
 	UNUSED(state);
 	char itf[] = "lo";
-	struct rpc_trn_vsip_cidr_key_t policy_key = {
+	struct rpc_trn_vsip_cidr_key_t policy_keys[2] = {{
 		.interface = itf,
 		.tunid = 3,
 		.local_ip = 0x100000a,
 		.cidr_prefixlen = 16,
 		.cidr_ip = 0xac00012,
-		.cidr_type = 1
-	};
+		.cidr_type = 1,
+		.count = 2
+	},
+	{
+		.interface = itf,
+		.tunid = 1,
+		.local_ip = 0x900000a,
+		.cidr_prefixlen = 16,
+		.cidr_ip = 0xac00012,
+		.cidr_type = 1,
+		.count = 2
+	}};
 	int *rc;
 
 	/* Test delete_transit_network_policy_1 with valid vp_ckey */
 	will_return(__wrap_bpf_map_delete_elem, TRUE);
+	will_return(__wrap_bpf_map_delete_elem, TRUE);
 	expect_function_call(__wrap_bpf_map_delete_elem);
-	rc = delete_transit_network_policy_1_svc(&policy_key, NULL);
+	expect_function_call(__wrap_bpf_map_delete_elem);
+	rc = delete_transit_network_policy_1_svc(policy_keys, NULL);
 	assert_int_equal(*rc, 0);
 
 	/* Test delete_transit_network_policy_1 with invalid vpc_key */
 	will_return(__wrap_bpf_map_delete_elem, FALSE);
 	expect_function_call(__wrap_bpf_map_delete_elem);
-	rc = delete_transit_network_policy_1_svc(&policy_key, NULL);
+	rc = delete_transit_network_policy_1_svc(policy_keys, NULL);
 	assert_int_equal(*rc, RPC_TRN_FATAL);
 
 	/* Test delete_transit_network_policy_1 with invalid interface*/
-	policy_key.interface = "";
-	rc = delete_transit_network_policy_1_svc(&policy_key, NULL);
+	policy_keys[0].interface = "";
+	rc = delete_transit_network_policy_1_svc(policy_keys, NULL);
 	assert_int_equal(*rc, RPC_TRN_ERROR);
 }
 
