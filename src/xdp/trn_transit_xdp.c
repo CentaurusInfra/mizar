@@ -446,30 +446,18 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 
 	__be64 tunnel_id = trn_vni_to_tunnel_id(pkt->geneve->vni);
 
-	// todo: add conn_track related logic properly
 	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_TCP || pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
-		// todo: handle udp reply even when the originated connection is marked as denied;
-		// this is necessary to check the derived policy rules as policy might have been updated to allow;
-		// the impl will be after the conn_track has connection states.
-		if (conntrack_is_reply_of_tracked_conn(&conn_track_cache, tunnel_id, &pkt->inner_ipv4_tuple)){
-			if (pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
-				struct ipv4_tuple_t originated_tuple = {
-					.protocol = IPPROTO_UDP,
-					.saddr = pkt->inner_ipv4_tuple.daddr,
-					.daddr = pkt->inner_ipv4_tuple.saddr,
-					.sport = pkt->inner_ipv4_tuple.dport,
-					.dport = pkt->inner_ipv4_tuple.sport,
-				};
-				if (0 != egress_policy_check(tunnel_id, &originated_tuple)){
-					bpf_debug("[Transit:vpc 0x%lx] ABORTED: packet to 0x%x from 0x%x ingress denied, reply of a denied UDP conn\n",
-						tunnel_id,
-						bpf_ntohl(pkt->inner_ipv4_tuple.daddr),
-						bpf_ntohl(pkt->inner_ipv4_tuple.saddr));
-					// todo: to change conn state if it is available instead of removing it from the map
-					conntrack_remove_tcpudp_conn(&conn_track_cache, tunnel_id, &originated_tuple);
-					return XDP_ABORTED;
-				}
+		__u8 *tracked_state = get_originated_conn_state(&conn_track_cache, tunnel_id, &pkt->inner_ipv4_tuple);
+		if (NULL != tracked_state){
+			if (0 != ingress_reply_packet_check(tunnel_id, &pkt->inner_ipv4_tuple, *tracked_state))
+			{
+				bpf_debug("[Transit:vpc 0x%lx] ABORTED: packet to 0x%x from 0x%x ingress denied, reply of a denied UDP conn\n",
+					tunnel_id,
+					bpf_ntohl(pkt->inner_ipv4_tuple.daddr),
+					bpf_ntohl(pkt->inner_ipv4_tuple.saddr));
+				return XDP_ABORTED;
 			}
+
 			// todo: get rid of goto
 			goto xdp_continue;
 		}
@@ -481,14 +469,16 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 					tunnel_id,
 					bpf_ntohl(pkt->inner_ipv4_tuple.daddr),
 					bpf_ntohl(pkt->inner_ipv4_tuple.saddr));
-				conntrack_remove_tcpudp_conn(&conn_track_cache, tunnel_id, &pkt->inner_ipv4_tuple);
+				__u8 conn_state = (pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) ? FLAG_REEVAL | TRFFIC_DENIED : TRFFIC_DENIED;
+				conntrack_insert_tcpudp_conn(&conn_track_cache, tunnel_id, &pkt->inner_ipv4_tuple, conn_state);
 				return XDP_ABORTED;
 			}
 		}
 	}
 
 	// todo: consider to handle error in case it happens
-	conntrack_insert_tcpudp_conn(&conn_track_cache, tunnel_id, &pkt->inner_ipv4_tuple);
+	__u8 conn_state = (pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) ? FLAG_REEVAL : 0;
+	conntrack_insert_tcpudp_conn(&conn_track_cache, tunnel_id, &pkt->inner_ipv4_tuple, conn_state);
 
 	/* Lookup the source endpoint*/
 	struct endpoint_t *src_ep;
