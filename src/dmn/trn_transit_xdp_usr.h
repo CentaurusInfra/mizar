@@ -228,13 +228,16 @@ int trn_update_transit_network_policy_except_map(struct user_metadata_t *md,
 						 int counter);
 
 int trn_delete_transit_network_policy_primary_map(struct user_metadata_t *md,
-						  struct vsip_cidr_t *cidr);
+						  struct vsip_cidr_t *cidr,
+						  int counter);
 
 int trn_delete_transit_network_policy_supplementary_map(struct user_metadata_t *md,
-							struct vsip_cidr_t *cidr);
+							struct vsip_cidr_t *cidr,
+							int counter);
 
 int trn_delete_transit_network_policy_except_map(struct user_metadata_t *md,
-						 struct vsip_cidr_t *cidr);
+						 struct vsip_cidr_t *cidr,
+						 int counter);
 
 int trn_update_transit_network_policy_enforcement_map(struct user_metadata_t *md,
 						      struct vsip_enforce_t *local,

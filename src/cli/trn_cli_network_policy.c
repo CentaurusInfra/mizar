@@ -36,11 +36,11 @@ int trn_cli_update_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *a
 
 	char *buf = conf.conf_str;
 	json_str = trn_cli_parse_json(buf);
-	int counter = cJSON_GetArraySize(json_str); 
-
 	if (json_str == NULL) {
 		return -EINVAL;
 	}
+	int counter = cJSON_GetArraySize(json_str); 
+
 	int *rc;
 	struct rpc_trn_vsip_cidr_t cidr_list[counter];
 	char rpc[] = "update_transit_network_policy_1";
@@ -96,25 +96,32 @@ int trn_cli_delete_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *a
 
 	char *buf = conf.conf_str;
 	json_str = trn_cli_parse_json(buf);
-
 	if (json_str == NULL) {
 		return -EINVAL;
 	}
+	int counter = cJSON_GetArraySize(json_str); 
 
 	int *rc;
-	struct rpc_trn_vsip_cidr_key_t cidrkey;
+	struct rpc_trn_vsip_cidr_key_t cidrkeys[counter];
 	char rpc[] = "delete_transit_network_policy_1";
-	cidrkey.interface = conf.intf;
 
-	int err = trn_cli_parse_network_policy_cidr_key(json_str, &cidrkey);
+	for (int i = 0; i < counter; i++)
+	{
+		struct rpc_trn_vsip_cidr_key_t cidrkey;
+		cidrkey.interface = conf.intf;
+		cidrkey.count = counter;
+		cJSON *policy = cJSON_GetArrayItem(json_str, i);
+		int err = trn_cli_parse_network_policy_cidr_key(json_str, &cidrkey);
+
+		if (err != 0) {
+			print_err("Error: parsing network policy config.\n");
+			return -EINVAL;
+		}
+		cidrkeys[i] = cidrkey;
+	}
 	cJSON_Delete(json_str);
 
-	if (err != 0) {
-		print_err("Error: parsing network policy config.\n");
-		return -EINVAL;
-	}
-
-	rc = delete_transit_network_policy_1(&cidrkey, clnt);
+	rc = delete_transit_network_policy_1(cidrkeys, clnt);
 	if (rc == (int *)NULL) {
 		print_err("RPC Error: client call failed: delete_transit_network_policy_1.\n");
 		return -EINVAL;
@@ -127,8 +134,7 @@ int trn_cli_delete_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *a
 		return -EINVAL;
 	}
 
-	print_msg("delete_transit_network_policy_1 successfully deleted network policy cidr: 0x%x / %d, for interface %s\n",
-				cidrkey.cidr_ip, cidrkey.cidr_prefixlen, cidrkey.interface);
+	print_msg("delete_transit_network_policy_1 successfully deleted network policy cidr.\n");
 
 	return 0;
 }
