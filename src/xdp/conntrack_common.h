@@ -26,25 +26,13 @@
 #include "trn_kern.h"
 
 __ALWAYS_INLINE__
-static inline int conntrack_insert_tcpudp_conn(void *conntracks, __u64 tunnel_id, const struct ipv4_tuple_t *tuple, __u8 state)
+static inline int conntrack_set_conn_state(void *conntracks, __u64 tunnel_id, const struct ipv4_tuple_t *tuple, __u8 state)
 {
 	struct ipv4_ct_tuple_t conn = {
 		.vpc.tunnel_id = tunnel_id,
 		.tuple = *tuple,
 	};
-	return (tuple->protocol == IPPROTO_TCP || tuple->protocol == IPPROTO_UDP) ?
-		bpf_map_update_elem(conntracks, &conn, &state, 0) : 0;
-}
-
-__ALWAYS_INLINE__
-static inline int conntrack_remove_tcpudp_conn(void *conntracks, __u64 tunnel_id, const struct ipv4_tuple_t *tuple)
-{
-	struct ipv4_ct_tuple_t conn = {
-		.vpc.tunnel_id = tunnel_id,
-		.tuple = *tuple,
-	};
-	return (tuple->protocol == IPPROTO_TCP || tuple->protocol == IPPROTO_UDP) ?
-		bpf_map_delete_elem(conntracks, &conn) : 0;
+	return bpf_map_update_elem(conntracks, &conn, &state, 0);
 }
 
 __ALWAYS_INLINE__
@@ -228,7 +216,7 @@ static inline int egress_policy_check(__u64 tunnel_id, const struct ipv4_tuple_t
      should be allowed or denied, based on the tracked originated conn state, and the derived policy if applicable
    return value:
      0: allows this packet; no error (by either open policy or an allowing egress policy)
-    -1: denies this packet; ingress policy denial error
+     non-0: denies this packet; ingress policy denial error
 */
 __ALWAYS_INLINE__
 static inline int egress_reply_packet_check(__u64 tunnel_id, const struct ipv4_tuple_t *ipv4_tuple, __u8 originated_conn_state)
