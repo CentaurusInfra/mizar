@@ -111,6 +111,7 @@ int trn_cli_load_pipeline_stage_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_unload_pipeline_stage_subcmd(CLIENT *clnt, int argc, char *argv[]);
 
 int trn_cli_update_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *argv[]);
+int trn_cli_update_agent_network_policy_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_delete_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_update_transit_network_policy_enforcement_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_delete_transit_network_policy_enforcement_subcmd(CLIENT *clnt, int argc, char *argv[]);

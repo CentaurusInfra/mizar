@@ -138,3 +138,18 @@ int trn_agent_metadata_init(struct agent_user_metadata_t *md, char *itf,
 
 int trn_agent_add_prog(struct agent_user_metadata_t *umd, int prog,
 		       int prog_fd);
+
+int trn_update_agent_network_policy_primary_map(struct agent_user_metadata_t *md,
+						  struct vsip_cidr_t *cidr,
+						  __u64 *bitmap,
+						  int counter);
+
+int trn_update_agent_network_policy_supplementary_map(struct agent_user_metadata_t *md,
+							struct vsip_cidr_t *cidr,
+							__u64 *bitmap,
+							int counter);
+
+int trn_update_agent_network_policy_except_map(struct agent_user_metadata_t *md,
+						 struct vsip_cidr_t *cidr,
+						 __u64 *bitmap,
+						 int counter);

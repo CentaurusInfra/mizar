@@ -42,7 +42,7 @@ int trn_cli_update_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *a
 	int counter = cJSON_GetArraySize(json_str); 
 
 	int *rc;
-	struct rpc_trn_vsip_cidr_t cidr_list[counter];
+	struct rpc_trn_vsip_cidr_t cidrs[counter];
 	char rpc[] = "update_transit_network_policy_1";
 
 	for (int i = 0; i < counter; i++)
@@ -58,11 +58,11 @@ int trn_cli_update_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *a
 			return -EINVAL;
 		}
 
-		cidr_list[i] = cidrval;
+		cidrs[i] = cidrval;
 	}
 	cJSON_Delete(json_str);
 
-	rc = update_transit_network_policy_1(cidr_list, clnt);
+	rc = update_transit_network_policy_1(cidrs, clnt);
 	if (rc == (int *)NULL) {
 		print_err("RPC Error: client call failed: update_transit_network_policy_1.\n");
 		return -EINVAL;
@@ -77,9 +77,69 @@ int trn_cli_update_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *a
 
 	for (int k = 0; k < counter; k++)
 	{
-		dump_network_policy(&cidr_list[k]);
+		dump_network_policy(&cidrs[k]);
 	}
 	print_msg("update_transit_network_policy_1 successfully updated network policy\n");
+	
+	return 0;
+}
+
+int trn_cli_update_agent_network_policy_subcmd(CLIENT *clnt, int argc, char *argv[])
+{
+	ketopt_t om = KETOPT_INIT;
+	struct cli_conf_data_t conf;
+	cJSON *json_str = NULL;
+
+	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
+		return -EINVAL;
+	}
+
+	char *buf = conf.conf_str;
+	json_str = trn_cli_parse_json(buf);
+	if (json_str == NULL) {
+		return -EINVAL;
+	}
+	int counter = cJSON_GetArraySize(json_str); 
+
+	int *rc;
+	struct rpc_trn_vsip_cidr_t cidrs[counter];
+	char rpc[] = "update_agent_network_policy_1";
+
+	for (int i = 0; i < counter; i++)
+	{
+		struct rpc_trn_vsip_cidr_t cidrval;
+		cidrval.interface = conf.intf;
+		cidrval.count = counter;
+		cJSON *policy = cJSON_GetArrayItem(json_str, i);
+		int err = trn_cli_parse_network_policy_cidr(policy, &cidrval);
+
+		if (err != 0) {
+			print_err("Error: parsing network policy config.\n");
+			return -EINVAL;
+		}
+
+		cidrs[i] = cidrval;
+	}
+	cJSON_Delete(json_str);
+
+	rc = update_agent_network_policy_1(cidrs, clnt);
+	if (rc == (int *)NULL) {
+		print_err("RPC Error: client call failed: update_agent_network_policy_1.\n");
+		return -EINVAL;
+	}
+
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal daemon error, see agentd logs for details.\n",
+			rpc);
+		return -EINVAL;
+	}
+
+	for (int k = 0; k < counter; k++)
+	{
+		dump_network_policy(&cidrs[k]);
+	}
+	print_msg("update_agent_network_policy_1 successfully updated network policy\n");
 	
 	return 0;
 }
