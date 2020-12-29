@@ -1335,9 +1335,9 @@ int *delete_transit_network_policy_1_svc(rpc_trn_vsip_cidr_key_t *policy_key, st
 	UNUSED(rqstp);
 	static int result;
 	int rc;
-	char *itf = policy_key[0].interface;
-	int type = policy_key[0].cidr_type;
-	int counter = policy_key[0].count;
+	char *itf = policy_key->interface;
+	int type = policy_key->cidr_type;
+	int counter = policy_key->count;
 
 	if (counter == 0){
 		TRN_LOG_INFO("policy list has length of 0. Nothing to do");
@@ -1357,14 +1357,13 @@ int *delete_transit_network_policy_1_svc(rpc_trn_vsip_cidr_key_t *policy_key, st
 
 	for (int i = 0; i < counter; i++)
 	{
-		cidr[i].tunnel_id = policy_key->tunid;
+		cidr[i].tunnel_id = policy_key[i].tunid;
 		// cidr-related maps have tunnel-id(64 bits),
 		// local-ip(32 bits) prior to destination cidr;
 		// hence the final prefix length is 64+32+{cidr prefix}
-		cidr[i].prefixlen = policy_key->cidr_prefixlen + 96;
-		cidr[i].local_ip = policy_key->local_ip;
-		cidr[i].remote_ip = policy_key->cidr_ip;
-		policy_key++;
+		cidr[i].prefixlen = policy_key[i].cidr_prefixlen + 96;
+		cidr[i].local_ip = policy_key[i].local_ip;
+		cidr[i].remote_ip = policy_key[i].cidr_ip;
 	}
 
 	switch (type) {

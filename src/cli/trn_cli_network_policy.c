@@ -102,7 +102,7 @@ int trn_cli_delete_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *a
 	int counter = cJSON_GetArraySize(json_str); 
 
 	int *rc;
-	struct rpc_trn_vsip_cidr_key_t cidrkey_list[counter];
+	struct rpc_trn_vsip_cidr_key_t cidrkeys[counter];
 	char rpc[] = "delete_transit_network_policy_1";
 
 	for (int i = 0; i < counter; i++)
@@ -117,11 +117,11 @@ int trn_cli_delete_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *a
 			print_err("Error: parsing network policy config.\n");
 			return -EINVAL;
 		}
-		cidrkey_list[i] = cidrkey;
+		cidrkeys[i] = cidrkey;
 	}
 	cJSON_Delete(json_str);
 
-	rc = delete_transit_network_policy_1(cidrkey_list, clnt);
+	rc = delete_transit_network_policy_1(cidrkeys, clnt);
 	if (rc == (int *)NULL) {
 		print_err("RPC Error: client call failed: delete_transit_network_policy_1.\n");
 		return -EINVAL;
