@@ -2208,7 +2208,7 @@ static void test_trn_cli_delete_transit_network_policy_subcmd(void **state)
 	int delete_transit_network_policy_1_ret_val;
 
 	/* Test cases */
-	char *argv1[] = { "delete-network-policy-ingress", "-i", "eth0", "-j", QUOTE({
+	char *argv1[] = { "delete-network-policy-ingress", "-i", "eth0", "-j", QUOTE([{
 				  "tunnel_id": "3",
 				  "local_ip": "10.0.0.3",
 				  "cidr_prefixlen": "16",
@@ -2223,7 +2223,7 @@ static void test_trn_cli_delete_transit_network_policy_subcmd(void **state)
 				  "cidr_type": "2"
 			  }]) };
 
-	char *argv2[] = { "delete-network-policy-ingress", "-i", "eth0", "-j", QUOTE({
+	char *argv2[] = { "delete-network-policy-ingress", "-i", "eth0", "-j", QUOTE([{
 				  "tunnel_id": "3",
 				  "local_ip": 10.0.0.3,
 				  "cidr_prefixlen": "16",
@@ -2238,21 +2238,29 @@ static void test_trn_cli_delete_transit_network_policy_subcmd(void **state)
 				  "cidr_type": "2"
 			  }]) };
 
-	struct rpc_trn_vsip_cidr_key_t exp_policy_key = {
+	struct rpc_trn_vsip_cidr_key_t exp_policy_key[2] = {{
 		.interface = itf,
 		.tunid = 3,
 		.local_ip = 0x300000a,
 		.cidr_prefixlen = 16,
 		.cidr_ip = 0x90000ac,
 		.cidr_type = 1
-	};
+	},
+	{
+		.interface = itf,
+		.tunid = 1,
+		.local_ip = 0x100000a,
+		.cidr_prefixlen = 17,
+		.cidr_ip = 0x60000ac,
+		.cidr_type = 2
+	}};
 
 	/* Test call delete_transit_network_policy successfully */
 	TEST_CASE("delete-network-policy-ingress succeed with well formed policy json input");
 	delete_transit_network_policy_1_ret_val = 0;
 	expect_function_call(__wrap_delete_transit_network_policy_1);
 	will_return(__wrap_delete_transit_network_policy_1, &delete_transit_network_policy_1_ret_val);
-	expect_check(__wrap_delete_transit_network_policy_1, policy, check_policy_key_equal, &exp_policy_key);
+	expect_check(__wrap_delete_transit_network_policy_1, policy, check_policy_key_equal, exp_policy_key);
 	expect_any(__wrap_delete_transit_network_policy_1, clnt);
 	rc = trn_cli_delete_transit_network_policy_subcmd(NULL, argc, argv1);
 	assert_int_equal(rc, 0);
@@ -2290,46 +2298,49 @@ static void test_trn_cli_update_transit_network_policy_enforcement_subcmd(void *
 	int update_transit_network_policy_enforcement_1_ret_val = 0;
 
 	/* Test cases */
-	char *argv1[] = { "update-network-policy-enforcement-ingress", "-i", "eth0", "-j", QUOTE({
+	char *argv1[] = { "update-network-policy-enforcement-ingress", "-i", "eth0", "-j", QUOTE([{
 				  "tunnel_id": "3",
 				  "ip": "10.0.0.3"
-			  }) };
-
-	char *argv2[] = { "update-network-policy-enforcement-ingress", "-i", "eth0", "-j", QUOTE({
-				  "tunnel_id": 3,
+			  },
+			  {
+				  "tunnel_id": "3",
 				  "ip": "10.0.0.3"
-			  }) };
+			  }]) };
 
-	char *argv3[] = { "update-network-policy-enforcement-ingress", "-i", "eth0", "-j", QUOTE({
+	char *argv2[] = { "update-network-policy-enforcement-ingress", "-i", "eth0", "-j", QUOTE([{
 				  "tunnel_id": "3",
 				  "ip": 10.0.0.3
-			  }) };
+			  },
+			  {
+				  "tunnel_id": "3",
+				  "ip": 10.0.0.3
+			  }]) };
 	char itf[] = "eth0";
 
-	struct rpc_trn_vsip_enforce_t exp_enforce = {
+	struct rpc_trn_vsip_enforce_t exp_enforce[2] = {{
 		.interface = itf,
 		.tunid = 3,
 		.local_ip = 0x300000a
-	};
+	},
+	{
+		.interface = itf,
+		.tunid = 3,
+		.local_ip = 0x300000a
+	}};
 
 	/* Test call update_transit_network_policy_enforcement successfully */
 	TEST_CASE("update-network-policy-enforcement-ingress succeed with well formed policy json input");
 	update_transit_network_policy_enforcement_1_ret_val = 0;
 	expect_function_call(__wrap_update_transit_network_policy_enforcement_1);
 	will_return(__wrap_update_transit_network_policy_enforcement_1, &update_transit_network_policy_enforcement_1_ret_val);
-	expect_check(__wrap_update_transit_network_policy_enforcement_1, enforce, check_policy_enforcement_equal, &exp_enforce);
+	expect_check(__wrap_update_transit_network_policy_enforcement_1, enforce, check_policy_enforcement_equal, exp_enforce);
 	expect_any(__wrap_update_transit_network_policy_enforcement_1, clnt);
 	rc = trn_cli_update_transit_network_policy_enforcement_subcmd(NULL, argc, argv1);
 	assert_int_equal(rc, 0);
 
-	/* Test parse network policy input error*/
-	TEST_CASE("update-network-policy-enforcement-ingress is not called with non-string field");
-	rc = trn_cli_update_transit_network_policy_enforcement_subcmd(NULL, argc, argv2);
-	assert_int_equal(rc, -EINVAL);
-
 	/* Test parse network policy input error 2*/
 	TEST_CASE("update-network-policy-enforcement-ingress is not called malformed json");
-	rc = trn_cli_update_transit_network_policy_enforcement_subcmd(NULL, argc, argv3);
+	rc = trn_cli_update_transit_network_policy_enforcement_subcmd(NULL, argc, argv2);
 	assert_int_equal(rc, -EINVAL);
 
 	/* Test call update_transit_network_policy_enforcement_1 return error*/

@@ -665,15 +665,22 @@ static void test_update_transit_network_policy_enforcement_1_svc(void **state)
 	UNUSED(state);
 	char itf[] = "lo";
 
-	struct rpc_trn_vsip_enforce_t enforce1 = {
+	struct rpc_trn_vsip_enforce_t enforce1[2] = {{
 		.interface = itf,
 		.tunid = 3,
-		.local_ip = 0x100000a
-	};
+		.local_ip = 0x100000a,
+		.count = 2
+	},
+	{
+		.interface = itf,
+		.tunid = 3,
+		.local_ip = 0x100000a,
+		.count = 2
+	}};
 
 	int *rc;
-	expect_function_call(__wrap_bpf_map_update_elem);
-	rc = update_transit_network_policy_enforcement_1_svc(&enforce1, NULL);
+	expect_function_calls(__wrap_bpf_map_update_elem, 2);
+	rc = update_transit_network_policy_enforcement_1_svc(enforce1, NULL);
 	assert_int_equal(*rc, 0);
 }
 
