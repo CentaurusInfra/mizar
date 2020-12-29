@@ -26,15 +26,14 @@
 #include "trn_kern.h"
 
 __ALWAYS_INLINE__
-static inline int conntrack_insert_tcpudp_conn(void *conntracks, __u64 tunnel_id, const struct ipv4_tuple_t *tuple)
+static inline int conntrack_insert_tcpudp_conn(void *conntracks, __u64 tunnel_id, const struct ipv4_tuple_t *tuple, __u8 state)
 {
 	struct ipv4_ct_tuple_t conn = {
 		.vpc.tunnel_id = tunnel_id,
 		.tuple = *tuple,
 	};
-	__u8 value = 1;
 	return (tuple->protocol == IPPROTO_TCP || tuple->protocol == IPPROTO_UDP) ?
-		bpf_map_update_elem(conntracks, &conn, &value, 0) : 0;
+		bpf_map_update_elem(conntracks, &conn, &state, 0) : 0;
 }
 
 __ALWAYS_INLINE__
@@ -49,19 +48,19 @@ static inline int conntrack_remove_tcpudp_conn(void *conntracks, __u64 tunnel_id
 }
 
 __ALWAYS_INLINE__
-static inline int conntrack_is_reply_of_tracked_conn(void *conntracks, __u64 tunnel_id, const struct ipv4_tuple_t *tuple)
+static inline __u8* get_originated_conn_state(void *conntracks, __u64 tunnel_id, const struct ipv4_tuple_t *reply_tuple)
 {
 	struct ipv4_ct_tuple_t rev_conn = {
 		.vpc.tunnel_id = tunnel_id,
 		.tuple = {
-			.protocol = tuple->protocol,
-			.saddr = tuple->daddr,
-			.daddr = tuple->saddr,
-			.sport = tuple->dport,
-			.dport = tuple->sport,
+			.protocol = reply_tuple->protocol,
+			.saddr = reply_tuple->daddr,
+			.daddr = reply_tuple->saddr,
+			.sport = reply_tuple->dport,
+			.dport = reply_tuple->sport,
 		},
 	};
-	return NULL != bpf_map_lookup_elem(conntracks, &rev_conn);
+	return bpf_map_lookup_elem(conntracks, &rev_conn);
 }
 
 /*
@@ -222,4 +221,50 @@ static inline int egress_policy_check(__u64 tunnel_id, const struct ipv4_tuple_t
 		return 0;
 
 	return enforce_egress_policy(tunnel_id, ipv4_tuple);
+}
+
+/*
+   egress_reply_packet_check checks whether the outgoing (egress) reply packet of the specific tunnel id and connection tuple
+     should be allowed or denied, based on the tracked originated conn state, and the derived policy if applicable
+   return value:
+     0: allows this packet; no error (by either open policy or an allowing egress policy)
+    -1: denies this packet; ingress policy denial error
+*/
+__ALWAYS_INLINE__
+static inline int egress_reply_packet_check(__u64 tunnel_id, const struct ipv4_tuple_t *ipv4_tuple, __u8 originated_conn_state)
+{
+	if (!(originated_conn_state & FLAG_REEVAL))
+		return originated_conn_state & TRFFIC_DENIED;
+
+	struct ipv4_tuple_t originated_tuple = {
+		.protocol = ipv4_tuple->protocol,
+		.saddr = ipv4_tuple->daddr,
+		.daddr = ipv4_tuple->saddr,
+		.sport = ipv4_tuple->dport,
+		.dport = ipv4_tuple->sport,
+	};
+	return ingress_policy_check(tunnel_id, &originated_tuple);
+}
+
+/*
+   ingress_reply_packet_check checks whether the incoming (ingress) reply packet of the specific tunnel id and connection tuple
+     should be allowed or denied, based on the tracked originated conn state, and the derived policy if applicable
+   return value:
+     0: allows this packet; no error (by either open policy or an allowing egress policy)
+     non-0: denies this packet; ingress policy denial error
+*/
+__ALWAYS_INLINE__
+static inline int ingress_reply_packet_check(__u64 tunnel_id, const struct ipv4_tuple_t *ipv4_tuple, __u8 originated_conn_state)
+{
+	if (!(originated_conn_state & FLAG_REEVAL))
+		return originated_conn_state & TRFFIC_DENIED;
+
+	struct ipv4_tuple_t originated_tuple = {
+		.protocol = ipv4_tuple->protocol,
+		.saddr = ipv4_tuple->daddr,
+		.daddr = ipv4_tuple->saddr,
+		.sport = ipv4_tuple->dport,
+		.dport = ipv4_tuple->sport,
+	};
+	return egress_policy_check(tunnel_id, &originated_tuple);
 }

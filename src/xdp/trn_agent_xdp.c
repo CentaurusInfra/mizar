@@ -333,29 +333,19 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 		pkt->inner_ipv4_tuple.dport = pkt->inner_udp->dest;
 	}
 
-	// todo: add conn_track related logic properly
 	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_TCP || pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
-		// todo: handle udp reply even when the originated connection is marked as denied;
-		// this is necessary to check the derived policy rules as policy might have been updated to allow;
-		// the impl will be after the conn_track has connection states.
-		if (conntrack_is_reply_of_tracked_conn(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple)){
-			if (pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
-				struct ipv4_tuple_t originated_tuple = {
-					.protocol = IPPROTO_UDP,
-					.saddr = pkt->inner_ipv4_tuple.daddr,
-					.daddr = pkt->inner_ipv4_tuple.saddr,
-					.sport = pkt->inner_ipv4_tuple.dport,
-					.dport = pkt->inner_ipv4_tuple.sport,
-				};
-				if (0 != ingress_policy_check(pkt->agent_ep_tunid, &originated_tuple)){
-					bpf_debug("[Agent:%ld.0x%x] ABORTED: packet to 0x%x egress policy denied, reply of a denied UDP conn\n",
-						pkt->agent_ep_tunid,
-						bpf_ntohl(pkt->agent_ep_ipv4),
-						bpf_ntohl(pkt->inner_ip->daddr));
-					conntrack_remove_tcpudp_conn(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple);
-					return XDP_ABORTED;
-				}
+		__u8 *tracked_state = get_originated_conn_state(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple);
+		// todo: only check for bi-directional connections
+		if (NULL != tracked_state){
+			if (0 != egress_reply_packet_check(pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple, *tracked_state))
+			{
+				bpf_debug("[Agent:%ld.0x%x] ABORTED: packet to 0x%x egress policy denied, reply of a denied conn\n",
+					pkt->agent_ep_tunid,
+					bpf_ntohl(pkt->agent_ep_ipv4),
+					bpf_ntohl(pkt->inner_ip->daddr));
+				return XDP_ABORTED;
 			}
+
 			// todo: get rid of goto
 			goto xdp_continue;
 		}
@@ -366,14 +356,16 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 					pkt->agent_ep_tunid,
 					bpf_ntohl(pkt->agent_ep_ipv4),
 					bpf_ntohl(pkt->inner_ip->daddr));
-				conntrack_remove_tcpudp_conn(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple);
+				__u8 conn_state = (pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) ? FLAG_REEVAL | TRFFIC_DENIED : TRFFIC_DENIED;
+				conntrack_insert_tcpudp_conn(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple, conn_state);
 				return XDP_ABORTED;
 			}
 		}
 	}
 
 	// todo: consider to handle error in case it happens
-	conntrack_insert_tcpudp_conn(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple);
+	__u8 conn_state = (pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) ? FLAG_REEVAL : 0;
+	conntrack_insert_tcpudp_conn(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple, conn_state);
 
 	/* Check if we need to apply a forward flow update */
 
