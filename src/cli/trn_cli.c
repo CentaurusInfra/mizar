@@ -53,6 +53,7 @@ static const struct cmd {
 	{ "load-pipeline-stage", trn_cli_load_pipeline_stage_subcmd },
 	{ "unload-pipeline-stage", trn_cli_unload_pipeline_stage_subcmd },
 	{ "update-network-policy-ingress", trn_cli_update_transit_network_policy_subcmd },
+	{ "update-network-policy-egress", trn_cli_update_agent_network_policy_subcmd },
 	{ "delete-network-policy-ingress", trn_cli_delete_transit_network_policy_subcmd },
 	{ "update-network-policy-enforcement-ingress", trn_cli_update_transit_network_policy_enforcement_subcmd },
 	{ "delete-network-policy-enforcement-ingress", trn_cli_delete_transit_network_policy_enforcement_subcmd },

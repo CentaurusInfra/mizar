@@ -134,6 +134,15 @@ int *__wrap_update_transit_network_policy_1(rpc_trn_vsip_cidr_t *policy, CLIENT 
 	return retval;
 }
 
+int *__wrap_update_agent_network_policy_1(rpc_trn_vsip_cidr_t *policy, CLIENT *clnt)
+{
+	check_expected_ptr(policy);
+	check_expected_ptr(clnt);
+	int *retval = mock_ptr_type(int *);
+	function_called();
+	return retval;
+}
+
 int *__wrap_update_transit_network_policy_enforcement_1(rpc_trn_vsip_enforce_t *enforce, CLIENT *clnt)
 {
 	check_expected_ptr(enforce);
@@ -2199,6 +2208,103 @@ static void test_trn_cli_update_transit_network_policy_subcmd(void **state)
 	assert_int_equal(rc, -EINVAL);
 }
 
+static void test_trn_cli_update_agent_network_policy_subcmd(void **state)
+{
+	UNUSED(state);
+	int rc;
+	int argc = 5;
+	int update_agent_network_policy_1_ret_val = 0;
+
+	/* Test cases */
+	char *argv1[] = { "update-network-policy-egress", "-i", "eth0", "-j", QUOTE([{
+				  "tunnel_id": "3",
+				  "local_ip": "10.0.0.3",
+				  "cidr_prefixlen": "16",
+				  "cidr_ip": "172.0.0.9",
+				  "cidr_type": "1",
+				  "bit_value": "10"
+			  },
+			  {
+				  "tunnel_id": "1",
+				  "local_ip": "10.0.0.1",
+				  "cidr_prefixlen": "17",
+				  "cidr_ip": "172.0.0.6",
+				  "cidr_type": "2",
+				  "bit_value": "1"
+			  }]) };
+
+	char *argv2[] = { "update-network-policy-egress", "-i", "eth0", "-j", QUOTE([{
+				  "tunnel_id": "3",
+				  "local_ip": 10.0.0.3,
+				  "cidr_prefixlen": "16",
+				  "cidr_ip": "172.0.0.9",
+				  "cidr_type": "1",
+				  "bit_value": "10"
+			  },
+			  {
+				  "tunnel_id": "1",
+				  "local_ip": 10.0.0.1,
+				  "cidr_prefixlen": "17",
+				  "cidr_ip": "172.0.0.6",
+				  "cidr_type": "2",
+				  "bit_value": "1"
+			  }]) };
+	char itf[] = "eth0";
+
+	struct rpc_trn_vsip_cidr_t policies[2] = {{
+		.interface = itf,
+		.tunid = 3,
+		.local_ip = 0x300000a,
+		.cidr_prefixlen = 16,
+		.cidr_ip = 0x90000ac,
+		.cidr_type = 1,
+		.bit_val = 10
+	},
+	{
+		.interface = itf,
+		.tunid = 1,
+		.local_ip = 0x100000a,
+		.cidr_prefixlen = 17,
+		.cidr_ip = 0x60000ac,
+		.cidr_type = 2,
+		.bit_val = 1
+	}};
+
+	/* Test call update_agent_network_policy successfully */
+	TEST_CASE("update-network-policy-egress succeed with well formed policy json input");
+	update_agent_network_policy_1_ret_val = 0;
+	expect_function_call(__wrap_update_agent_network_policy_1);
+	will_return(__wrap_update_agent_network_policy_1, &update_agent_network_policy_1_ret_val);
+	expect_check(__wrap_update_agent_network_policy_1, policy, check_policy_equal, policies);
+	expect_any(__wrap_update_agent_network_policy_1, clnt);
+	rc = trn_cli_update_agent_network_policy_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, 0);
+
+	/* Test parse network policy input error 2*/
+	TEST_CASE("update-network-policy-egress is not called malformed json");
+	rc = trn_cli_update_agent_network_policy_subcmd(NULL, argc, argv2);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call update_agent_network_policy_1 return error*/
+	TEST_CASE("update-network-policy-egress subcommand fails if update_agent_network_policy_1 returns error");
+	update_agent_network_policy_1_ret_val = -EINVAL;
+	expect_function_call(__wrap_update_agent_network_policy_1);
+	will_return(__wrap_update_agent_network_policy_1, &update_agent_network_policy_1_ret_val);
+	expect_any(__wrap_update_agent_network_policy_1, policy);
+	expect_any(__wrap_update_agent_network_policy_1, clnt);
+	rc = trn_cli_update_agent_network_policy_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call update_agent_network_policy_1 return NULL*/
+	TEST_CASE("update-network-policy-egress subcommand fails if update_agent_network_policy_1 returns NULL");
+	expect_function_call(__wrap_update_agent_network_policy_1);
+	will_return(__wrap_update_agent_network_policy_1, NULL);
+	expect_any(__wrap_update_agent_network_policy_1, policy);
+	expect_any(__wrap_update_agent_network_policy_1, clnt);
+	rc = trn_cli_update_agent_network_policy_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+}
+
 static void test_trn_cli_delete_transit_network_policy_subcmd(void **state)
 {
 	UNUSED(state);
@@ -2623,6 +2729,7 @@ int main()
 		cmocka_unit_test(test_trn_cli_delete_agent_ep_subcmd),
 		cmocka_unit_test(test_trn_cli_delete_agent_md_subcmd),
 		cmocka_unit_test(test_trn_cli_update_transit_network_policy_subcmd),
+		cmocka_unit_test(test_trn_cli_update_agent_network_policy_subcmd),
 		cmocka_unit_test(test_trn_cli_delete_transit_network_policy_subcmd),
 		cmocka_unit_test(test_trn_cli_update_transit_network_policy_enforcement_subcmd),
 		cmocka_unit_test(test_trn_cli_delete_transit_network_policy_enforcement_subcmd),

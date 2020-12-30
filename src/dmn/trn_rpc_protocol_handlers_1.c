@@ -1330,6 +1330,70 @@ error:
 	return &result;
 }
 
+int *update_agent_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result = -1;
+	int rc;
+	int map_fd;
+	char *itf = policy[0].interface;
+	int type = policy[0].cidr_type;
+
+	int counter = policy[0].count;
+	if (counter == 0)
+	{
+		TRN_LOG_INFO("policy has length of 0. Nothing to do");
+		result = 0;
+		return &result;
+	}
+
+	struct vsip_cidr_t cidr[counter];
+	__u64 bitmap[counter];
+
+	TRN_LOG_INFO("update_agent_network_policy_1_svc service");
+
+	struct agent_user_metadata_t *md = trn_vif_table_find(itf);
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	for (int i = 0; i < counter; i++)
+	{
+		cidr[i].tunnel_id = policy->tunid;
+		// cidr-related maps have tunnel-id(64 bits),
+		// local-ip(32 bits) prior to destination cidr;
+		// hence the final prefix length is 64+32+{cidr prefix}
+		cidr[i].prefixlen = policy->cidr_prefixlen + 96;
+		cidr[i].local_ip = policy->local_ip;
+		cidr[i].remote_ip = policy->cidr_ip;
+		bitmap[i] = policy->bit_val;
+		policy++;
+	}
+
+	if (type == PRIMARY) {
+		map_fd = md->eg_vsip_prim_map_fd;
+	}else if (type == SUPPLEMENTARY){
+		map_fd = md->eg_vsip_supp_map_fd;
+	}else{
+		map_fd = md->eg_vsip_except_map_fd;
+	}
+
+	rc = trn_update_agent_network_policy_map(map_fd, cidr, bitmap, counter);
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure updating agent network policy map cidr.");
+		result = RPC_TRN_FATAL;
+		goto error;
+	}
+
+	result = 0;
+	return &result;
+
+error:
+	return &result;
+}
+
 int *delete_transit_network_policy_1_svc(rpc_trn_vsip_cidr_key_t *policy_key, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
