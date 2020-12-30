@@ -59,7 +59,16 @@ class NetworkPolicyUtil:
                     "egress": data_for_networkpolicy_egress,
                 }
                 logger.info("data_for_networkpolicy: {}".format(data_for_networkpolicy))
-                #TODO Send data from operator to daemon
+                old_data_for_networkpolicy = ep.get_data_for_networkpolicy()
+                if len(old_data_for_networkpolicy) > 0:
+                    if len(old_data_for_networkpolicy["old"]) > 0 and old_data_for_networkpolicy["old"]["ingress"] == data_for_networkpolicy_ingress and old_data_for_networkpolicy["old"]["egress"] == data_for_networkpolicy_egress:
+                        continue
+
+                    old_data_for_networkpolicy["old"] = {}
+                    data_for_networkpolicy["old"] = old_data_for_networkpolicy
+
+                ep.set_data_for_networkpolicy(data_for_networkpolicy)
+                ep.update_networkpolicy_per_endpoint(data_for_networkpolicy)
 
     def generate_data_for_networkpolicy_ingress(self, ep):
         data = self.init_data_for_networkpolicy()
