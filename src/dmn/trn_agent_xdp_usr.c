@@ -583,6 +583,22 @@ int trn_update_agent_network_policy_map(int fd,
 		ipcidr++;
 		bitmap++;
 	}
+	return 0;
+}
 
+int trn_delete_agent_network_policy_map(int fd,
+					 struct vsip_cidr_t *ipcidr,
+					 int counter)
+{
+	for (int i = 0; i < counter; i++)
+	{
+		int err = bpf_map_delete_elem(fd, ipcidr);
+		if (err) {
+			TRN_LOG_ERROR("Store Primary ingress map failed (err:%d).",
+				err);
+			return 1;
+		}
+		ipcidr++;
+	}
 	return 0;
 }

@@ -205,6 +205,61 @@ int trn_cli_delete_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *a
 	return 0;
 }
 
+int trn_cli_delete_agent_network_policy_subcmd(CLIENT *clnt, int argc, char *argv[])
+{
+	ketopt_t om = KETOPT_INIT;
+	struct cli_conf_data_t conf;
+	cJSON *json_str = NULL;
+
+	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
+		return -EINVAL;
+	}
+
+	char *buf = conf.conf_str;
+	json_str = trn_cli_parse_json(buf);
+	if (json_str == NULL) {
+		return -EINVAL;
+	}
+	int counter = cJSON_GetArraySize(json_str); 
+
+	int *rc;
+	struct rpc_trn_vsip_cidr_key_t cidrkeys[counter];
+	char rpc[] = "delete_agent_network_policy_1";
+
+	for (int i = 0; i < counter; i++)
+	{
+		struct rpc_trn_vsip_cidr_key_t cidrkey;
+		cidrkey.interface = conf.intf;
+		cidrkey.count = counter;
+		cJSON *policy = cJSON_GetArrayItem(json_str, i);
+		int err = trn_cli_parse_network_policy_cidr_key(policy, &cidrkey);
+
+		if (err != 0) {
+			print_err("Error: parsing network policy config.\n");
+			return -EINVAL;
+		}
+		cidrkeys[i] = cidrkey;
+	}
+	cJSON_Delete(json_str);
+
+	rc = delete_agent_network_policy_1(cidrkeys, clnt);
+	if (rc == (int *)NULL) {
+		print_err("RPC Error: client call failed: delete_agent_network_policy_1.\n");
+		return -EINVAL;
+	}
+
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal daemon error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
+	}
+
+	print_msg("delete_agent_network_policy_1 successfully deleted network policy cidr.\n");
+
+	return 0;
+}
+
 int trn_cli_update_transit_network_policy_enforcement_subcmd(CLIENT *clnt, int argc, char *argv[])
 {
 	ketopt_t om = KETOPT_INIT;
