@@ -567,14 +567,14 @@ int trn_agent_metadata_init(struct agent_user_metadata_t *md, char *itf,
 	return 0;
 }
 
-int trn_update_agent_network_policy_primary_map(struct agent_user_metadata_t *md,
-						  struct vsip_cidr_t *ipcidr,
-						  __u64 *bitmap,
-						  int counter)
+int trn_update_agent_network_policy_map(int fd,
+					 struct vsip_cidr_t *ipcidr,
+					 __u64 *bitmap,
+					 int counter)
 {
 	for (int i = 0; i < counter; i++)
 	{
-		int err = bpf_map_update_elem(md->eg_vsip_prim_map_fd, ipcidr, bitmap, 0);
+		int err = bpf_map_update_elem(fd, ipcidr, bitmap, 0);
 		if (err) {
 			TRN_LOG_ERROR("Store Primary ingress map failed (err:%d).",
 				err);
@@ -584,43 +584,5 @@ int trn_update_agent_network_policy_primary_map(struct agent_user_metadata_t *md
 		bitmap++;
 	}
 
-	return 0;
-}
-
-int trn_update_agent_network_policy_supplementary_map(struct agent_user_metadata_t *md,
-							struct vsip_cidr_t *ipcidr,
-							__u64 *bitmap,
-							int counter)
-{
-	for (int i = 0; i < counter; i++)
-	{
-		int err = bpf_map_update_elem(md->eg_vsip_supp_map_fd, ipcidr, bitmap, 0);
-		if (err) {
-			TRN_LOG_ERROR("Store Supplementary ingress map failed (err:%d).",
-				err);
-			return 1;
-		}
-		ipcidr++;
-		bitmap++;
-	}
-	return 0;
-}
-
-int trn_update_agent_network_policy_except_map(struct agent_user_metadata_t *md,
-						 struct vsip_cidr_t *ipcidr,
-						 __u64 *bitmap,
-						 int counter)
-{
-	for (int i = 0; i < counter; i++)
-	{
-		int err = bpf_map_update_elem(md->eg_vsip_except_map_fd, ipcidr, bitmap, 0);
-		if (err) {
-			TRN_LOG_ERROR("Store Except ingress map failed (err:%d).",
-				err);
-			return 1;
-		}
-		ipcidr++;
-		bitmap++;
-	}
 	return 0;
 }

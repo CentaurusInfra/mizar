@@ -1333,8 +1333,9 @@ error:
 int *update_agent_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result;
+	static int result = -1;
 	int rc;
+	int map_fd;
 	char *itf = policy[0].interface;
 	int type = policy[0].cidr_type;
 
@@ -1371,21 +1372,15 @@ int *update_agent_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc_r
 		policy++;
 	}
 
-	switch (type) {
-	case PRIMARY:
-		rc = trn_update_agent_network_policy_primary_map(md, cidr, bitmap, counter);
-		break;
-	case SUPPLEMENTARY:
-		rc = trn_update_agent_network_policy_supplementary_map(md, cidr, bitmap, counter);
-		break;
-	case EXCEPTION:
-		rc = trn_update_agent_network_policy_except_map(md, cidr, bitmap, counter);
-		break;
-	default:
-		result = RPC_TRN_FATAL;
-		goto error;
+	if (type == PRIMARY) {
+		map_fd = md->eg_vsip_prim_map_fd;
+	}else if (type == SUPPLEMENTARY){
+		map_fd = md->eg_vsip_supp_map_fd;
+	}else{
+		map_fd = md->eg_vsip_except_map_fd;
 	}
 
+	rc = trn_update_agent_network_policy_map(map_fd, cidr, bitmap, counter);
 	if (rc != 0) {
 		TRN_LOG_ERROR("Failure updating agent network policy map cidr.");
 		result = RPC_TRN_FATAL;

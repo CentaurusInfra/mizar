@@ -137,6 +137,12 @@ int trn_cli_update_agent_network_policy_subcmd(CLIENT *clnt, int argc, char *arg
 
 	for (int k = 0; k < counter; k++)
 	{
+		if (&cidrs[k] == NULL){
+			print_err("update_agent_network_policy_1 Expected %d elements to be updated into network policy map, but only has %d elements. \n",
+					counter, k-1);
+			return -EINVAL; 
+		}
+
 		dump_network_policy(&cidrs[k]);
 	}
 	print_msg("update_agent_network_policy_1 successfully updated network policy\n");
