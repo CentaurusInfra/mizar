@@ -103,7 +103,7 @@ void trn_vif_table_delete(char *itf)
 int *update_vpc_1_svc(rpc_trn_vpc_t *vpc, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result;
+	static int result = -1;
 	result = 0;
 	int rc;
 	char *itf = vpc->interface;
@@ -153,7 +153,7 @@ error:
 int *update_net_1_svc(rpc_trn_network_t *net, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result;
+	static int result = -1;
 	result = 0;
 	int rc;
 	char *itf = net->interface;
@@ -212,7 +212,7 @@ error:
 int *update_ep_1_svc(rpc_trn_endpoint_t *ep, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result;
+	static int result = -1;
 	result = 0;
 	int rc;
 	char *itf = ep->interface;
@@ -287,7 +287,7 @@ error:
 int *update_port_1_svc(rpc_trn_port_t *port, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result;
+	static int result = -1;
 	result = 0;
 	int rc;
 	char *itf = port->interface;
@@ -331,7 +331,7 @@ error:
 int *delete_vpc_1_svc(rpc_trn_vpc_key_t *argp, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result;
+	static int result = -1;
 	result = 0;
 	int rc;
 	struct vpc_key_t vpckey;
@@ -370,7 +370,7 @@ int *delete_net_1_svc(rpc_trn_network_key_t *argp, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
 
-	static int result;
+	static int result = -1;
 	result = 0;
 	int rc;
 	struct network_key_t netkey;
@@ -413,7 +413,7 @@ error:
 int *delete_ep_1_svc(rpc_trn_endpoint_key_t *argp, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result;
+	static int result = -1;
 	result = 0;
 	int rc;
 	struct endpoint_key_t epkey;
@@ -605,7 +605,7 @@ error:
 int *load_transit_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result;
+	static int result = -1;
 
 	int rc;
 	bool unload_error = false;
@@ -678,7 +678,7 @@ error:
 int *unload_transit_xdp_1_svc(rpc_intf_t *argp, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result;
+	static int result = -1;
 	int rc;
 	char *itf = argp->interface;
 
@@ -713,7 +713,7 @@ int *load_transit_agent_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf,
 				  struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result;
+	static int result = -1;
 
 	int rc;
 	bool unload_error = false;
@@ -777,7 +777,7 @@ error:
 int *unload_transit_agent_xdp_1_svc(rpc_intf_t *argp, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result;
+	static int result = -1;
 	int rc;
 	char *itf = argp->interface;
 
@@ -813,7 +813,7 @@ error:
 int *update_agent_ep_1_svc(rpc_trn_endpoint_t *ep, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result;
+	static int result = -1;
 	result = 0;
 	int rc;
 	char *itf = ep->interface;
@@ -892,7 +892,7 @@ error:
 int *delete_agent_ep_1_svc(rpc_trn_endpoint_key_t *argp, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result;
+	static int result = -1;
 	result = 0;
 	struct endpoint_key_t epkey;
 	int rc;
@@ -995,7 +995,7 @@ int *update_agent_md_1_svc(rpc_trn_agent_metadata_t *agent_md,
 			   struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result;
+	static int result = -1;
 	int rc;
 	char *itf = agent_md->interface;
 
@@ -1078,7 +1078,7 @@ int *delete_agent_md_1_svc(rpc_intf_t *argp, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
 
-	static int result;
+	static int result = -1;
 	result = 0;
 	int rc;
 
@@ -1172,7 +1172,7 @@ int *load_transit_xdp_pipeline_stage_1_svc(rpc_trn_ebpf_prog_t *argp,
 {
 	UNUSED(rqstp);
 
-	static int result;
+	static int result = -1;
 	int rc;
 	struct user_metadata_t *md;
 	char *prog_path = argp->xdp_path;
@@ -1219,7 +1219,7 @@ int *unload_transit_xdp_pipeline_stage_1_svc(rpc_trn_ebpf_prog_stage_t *argp,
 					     struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result;
+	static int result = -1;
 	int rc;
 	struct user_metadata_t *md;
 	unsigned int prog_idx = argp->stage;
@@ -1264,7 +1264,7 @@ error:
 int *update_transit_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result;
+	static int result = -1;
 	int rc;
 	char *itf = policy->interface;
 	int type = policy->cidr_type;
@@ -1397,7 +1397,7 @@ error:
 int *delete_transit_network_policy_1_svc(rpc_trn_vsip_cidr_key_t *policy_key, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result;
+	static int result = -1;
 	int rc;
 	char *itf = policy_key->interface;
 	int type = policy_key->cidr_type;
@@ -1458,10 +1458,70 @@ error:
 	return &result;
 }
 
+int *delete_agent_network_policy_1_svc(rpc_trn_vsip_cidr_key_t *policy_key, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result = -1;
+	int rc = -1;
+	int map_fd = -1;
+	char *itf = policy_key->interface;
+	int type = policy_key->cidr_type;
+	int counter = policy_key->count;
+
+	if (counter == 0){
+		TRN_LOG_INFO("policy list has length of 0. Nothing to do");
+		result = 0;
+		return &result;
+	}
+	struct vsip_cidr_t cidr[counter];
+
+	TRN_LOG_INFO("delete_transit_network_policy_1_svc service");
+
+	struct agent_user_metadata_t *md = trn_vif_table_find(itf);
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	for (int i = 0; i < counter; i++)
+	{
+		cidr[i].tunnel_id = policy_key[i].tunid;
+		// cidr-related maps have tunnel-id(64 bits),
+		// local-ip(32 bits) prior to destination cidr;
+		// hence the final prefix length is 64+32+{cidr prefix}
+		cidr[i].prefixlen = policy_key[i].cidr_prefixlen + 96;
+		cidr[i].local_ip = policy_key[i].local_ip;
+		cidr[i].remote_ip = policy_key[i].cidr_ip;
+	}
+
+	if (type == PRIMARY) {
+		map_fd = md->eg_vsip_prim_map_fd;
+	}else if (type == SUPPLEMENTARY){
+		map_fd = md->eg_vsip_supp_map_fd;
+	}else{
+		map_fd = md->eg_vsip_except_map_fd;
+	}
+
+	rc = trn_delete_agent_network_policy_map(map_fd, cidr, counter);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure deleting transit network policy map cidr");
+		result = RPC_TRN_FATAL;
+		goto error;
+	}
+
+	result = 0;
+	return &result;
+
+error:
+	return &result;
+}
+
 int *update_transit_network_policy_enforcement_1_svc(rpc_trn_vsip_enforce_t *policy, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result;
+	static int result = -1;
 	int rc;
 	char *itf = policy->interface;
 
@@ -1510,7 +1570,7 @@ error:
 int *delete_transit_network_policy_enforcement_1_svc(rpc_trn_vsip_enforce_t *enforce, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result;
+	static int result = -1;
 	int rc;
 	char *itf = enforce->interface;
 	struct vsip_enforce_t enf;
@@ -1546,7 +1606,7 @@ error:
 int *update_transit_network_policy_protocol_port_1_svc(rpc_trn_vsip_ppo_t *ppo, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result;
+	static int result = -1;
 	int rc;
 	char *itf = ppo->interface;
 	struct vsip_ppo_t policy;
@@ -1584,7 +1644,7 @@ error:
 int *delete_transit_network_policy_protocol_port_1_svc(rpc_trn_vsip_ppo_key_t *ppo_key, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result;
+	static int result = -1;
 	int rc;
 	char *itf = ppo_key->interface;
 	struct vsip_ppo_t policy;

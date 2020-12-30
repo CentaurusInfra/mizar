@@ -143,3 +143,7 @@ int trn_update_agent_network_policy_map(int fd,
 					 struct vsip_cidr_t *cidr,
 					 __u64 *bitmap,
 					 int counter);
+
+int trn_delete_agent_network_policy_map(int fd,
+					 struct vsip_cidr_t *ipcidr,
+					 int counter);
