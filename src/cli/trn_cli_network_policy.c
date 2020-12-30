@@ -77,6 +77,12 @@ int trn_cli_update_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *a
 
 	for (int k = 0; k < counter; k++)
 	{
+		if (&cidrs[k] == NULL)
+		{
+			print_err("update_transit_network_policy_1 Expected %d elements to be updated into network policy map, but only has %d elements. \n",
+					counter, k-1);
+			return -EINVAL;
+		}
 		dump_network_policy(&cidrs[k]);
 	}
 	print_msg("update_transit_network_policy_1 successfully updated network policy\n");
@@ -313,10 +319,83 @@ int trn_cli_update_transit_network_policy_enforcement_subcmd(CLIENT *clnt, int a
 
 	for (int k = 0; k < counter; k++)
 	{
+		if (&enforces[k] == NULL)
+		{
+			print_err("update_transit_enforcement_network_policy_1 Expected %d elements to be updated into network policy map, but only has %d elements. \n",
+					counter, k-1);
+			return -EINVAL;
+		}
 		dump_enforced_policy(&enforces[k]);
 	}
 	
 	print_msg("update_transit_network_policy_enforcement_1 successfully updated network policy enforcement maps\n");
+
+	return 0;
+}
+
+int trn_cli_update_agent_network_policy_enforcement_subcmd(CLIENT *clnt, int argc, char *argv[])
+{
+	ketopt_t om = KETOPT_INIT;
+	struct cli_conf_data_t conf;
+	cJSON *json_str = NULL;
+
+	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
+		return -EINVAL;
+	}
+
+	char *buf = conf.conf_str;
+	json_str = trn_cli_parse_json(buf);
+	int counter = cJSON_GetArraySize(json_str);
+
+	if (json_str == NULL) {
+		return -EINVAL;
+	}
+
+	int *rc;
+	struct rpc_trn_vsip_enforce_t enforces[counter];
+	char rpc[] = "update_agent_network_policy_enforcement_1";
+
+	for (int i = 0; i < counter; i++)
+	{
+		struct rpc_trn_vsip_enforce_t enforce;
+		enforce.interface = conf.intf;
+		enforce.count = counter;
+		cJSON *policy = cJSON_GetArrayItem(json_str, i);
+
+		int err = trn_cli_parse_network_policy_enforcement(policy, &enforce);
+		if (err != 0) {
+			print_err("Error: parsing network policy enforcement config.\n");
+			return -EINVAL;
+		}
+		enforces[i] = enforce;
+	}
+	cJSON_Delete(json_str);
+
+	rc = update_agent_network_policy_enforcement_1(enforces, clnt);
+	if (rc == (int *)NULL) {
+		print_err("RPC Error: client call failed: update_agent_network_policy_enforcement_1\n");
+		return -EINVAL;
+	}
+
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal daemon error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
+	}
+
+	for (int k = 0; k < counter; k++)
+	{
+		if (&enforces[k] == NULL)
+		{
+			print_err("update_agent_enforcement_network_policy_1 Expected %d elements to be updated into network policy map, but only has %d elements. \n",
+					counter, k-1);
+			return -EINVAL;
+		}
+		dump_enforced_policy(&enforces[k]);
+	}
+	
+	print_msg("update_agent_network_policy_enforcement_1 successfully updated network policy enforcement maps\n");
 
 	return 0;
 }
