@@ -337,6 +337,7 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 		__u8 *tracked_state = get_originated_conn_state(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple);
 		// todo: only check for bi-directional connections
 		if (NULL != tracked_state){
+			// reply packet is usually allowed, unless re-eval blocks it
 			if (0 != egress_reply_packet_check(pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple, *tracked_state))
 			{
 				bpf_debug("[Agent:%ld.0x%x] ABORTED: packet to 0x%x egress policy denied, reply of a denied conn\n",
@@ -345,33 +346,28 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 					bpf_ntohl(pkt->inner_ip->daddr));
 				return XDP_ABORTED;
 			}
-
-			// todo: get rid of goto
-			goto xdp_continue;
-		}
-
-		if (is_egress_enforced(pkt->agent_ep_tunid, pkt->inner_ip->saddr)) {
-			if (0 != enforce_egress_policy(pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple)) {
+		} else {
+			// originated-directional packet subjects to policy check, if required so
+			if (0 != egress_policy_check(pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple)) {
 				bpf_debug("[Agent:%ld.0x%x] ABORTED: packet to 0x%x egress policy denied\n",
 					pkt->agent_ep_tunid,
 					bpf_ntohl(pkt->agent_ep_ipv4),
 					bpf_ntohl(pkt->inner_ip->daddr));
-				__u8 conn_state = (pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) ? FLAG_REEVAL | TRFFIC_DENIED : TRFFIC_DENIED;
-				conntrack_insert_tcpudp_conn(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple, conn_state);
+				__u8 conn_denied = (pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) ? FLAG_REEVAL | TRFFIC_DENIED : TRFFIC_DENIED;
+				conntrack_set_conn_state(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple, conn_denied);
 				return XDP_ABORTED;
 			}
+
+			// todo: consider to handle error in case it happens
+			__u8 conn_allowed = (pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) ? FLAG_REEVAL : 0;
+			conntrack_set_conn_state(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple, conn_allowed);
 		}
 	}
-
-	// todo: consider to handle error in case it happens
-	__u8 conn_state = (pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) ? FLAG_REEVAL : 0;
-	conntrack_insert_tcpudp_conn(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple, conn_state);
 
 	/* Check if we need to apply a forward flow update */
 
 	struct ipv4_tuple_t in_tuple;
 	struct scaled_endpoint_remote_t *out_tuple;
-xdp_continue:
 	__builtin_memcpy(&in_tuple, &pkt->inner_ipv4_tuple,
 			 sizeof(struct ipv4_tuple_t));
 
