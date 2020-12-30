@@ -277,6 +277,48 @@ def kube_read_config_map(core_api, name, namespace):
     except:
         return None
 
+def kube_list_namespaces_by_labels(core_api, label_dict):
+    try:
+        label_filter = build_label_filter(label_dict)
+        response = core_api.list_namespace(
+            watch=False,
+            label_selector=label_filter
+        )
+        return response
+    except:
+        return None
+
+def kube_list_pods_by_labels(core_api, label_dict):
+    try:
+        label_filter = build_label_filter(label_dict)
+        response = core_api.list_pod_for_all_namespaces(
+            watch=False,
+            label_selector=label_filter
+        )
+        return response
+    except:
+        return None
+
+def kube_list_pods_by_namespace(core_api, namespace):
+    try:
+        response = core_api.list_pod_for_all_namespaces(
+            watch=False,
+            field_selector="metadata.namespace={}".format(namespace)
+        )
+        return response
+    except:
+        return None
+
+def build_label_filter(label_dict):
+    str_list = []
+    for key in label_dict:
+        str_list.append(key)
+        str_list.append("=")
+        str_list.append(label_dict[key])
+        str_list.append(",")
+    if len(str_list) > 0:
+        str_list.pop()
+    return "".join(str_list)
 
 def get_spec_val(key, spec, default=""):
     return default if key not in spec else spec[key]
