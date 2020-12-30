@@ -1266,10 +1266,10 @@ int *update_transit_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc
 	UNUSED(rqstp);
 	static int result;
 	int rc;
-	char *itf = policy[0].interface;
-	int type = policy[0].cidr_type;
+	char *itf = policy->interface;
+	int type = policy->cidr_type;
 
-	int counter = policy[0].count;
+	int counter = policy->count;
 	if (counter == 0)
 	{
 		TRN_LOG_INFO("policy has length of 0. Nothing to do");
@@ -1458,14 +1458,23 @@ error:
 	return &result;
 }
 
-int *update_transit_network_policy_enforcement_1_svc(rpc_trn_vsip_enforce_t *enforce, struct svc_req *rqstp)
+int *update_transit_network_policy_enforcement_1_svc(rpc_trn_vsip_enforce_t *policy, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
 	static int result;
 	int rc;
-	char *itf = enforce->interface;
-	struct vsip_enforce_t enf;
-	__u8 val;
+	char *itf = policy->interface;
+
+	int counter = policy->count;
+	if (counter == 0)
+	{
+		TRN_LOG_INFO("policy has length of 0. Nothing to do");
+		result = 0;
+		return &result;
+	}
+
+	struct vsip_enforce_t enforces[counter];
+	__u8 val[counter];
 
 	TRN_LOG_INFO("update_transit_network_policy_enforcement_1_svc service");
 
@@ -1476,15 +1485,17 @@ int *update_transit_network_policy_enforcement_1_svc(rpc_trn_vsip_enforce_t *enf
 		goto error;
 	}
 
-	enf.tunnel_id = enforce->tunid;
-	enf.local_ip = enforce->local_ip;
-	val = 1;
+	for (int i = 0; i < counter; i++)
+	{
+		enforces[i].tunnel_id = policy[i].tunid;
+		enforces[i].local_ip = policy[i].local_ip;
+		val[i] = 1;
+	}
 
-	rc = trn_update_transit_network_policy_enforcement_map(md, &enf, val);
+	rc = trn_update_transit_network_policy_enforcement_map(md, enforces, val, counter);
 
 	if (rc != 0) {
-		TRN_LOG_ERROR("Failure updating transit network policy enforcement map ip address: 0x%x, for interface %s",
-					enforce->local_ip, enforce->interface);
+		TRN_LOG_ERROR("Failure updating transit network policy enforcement map \n");
 		result = RPC_TRN_FATAL;
 		goto error;
 	}
