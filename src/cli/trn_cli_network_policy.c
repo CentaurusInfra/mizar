@@ -350,8 +350,8 @@ int trn_cli_delete_transit_network_policy_enforcement_subcmd(CLIENT *clnt, int a
 		enforce.interface = conf.intf;
 		enforce.count = counter;
 		cJSON *policy = cJSON_GetArrayItem(json_str, i);
-		int err = trn_cli_parse_network_policy_enforcement(json_str, &enforce);
 
+		int err = trn_cli_parse_network_policy_enforcement(policy, &enforce);
 		if (err != 0) {
 			print_err("Error: parsing network policy enforcement config.\n");
 			return -EINVAL;
