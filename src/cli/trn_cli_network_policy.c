@@ -77,11 +77,10 @@ int trn_cli_update_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *a
 
 	for (int k = 0; k < counter; k++)
 	{
-		if (&cidrs[k] == NULL)
-		{
+		if (&cidrs[k] == NULL){
 			print_err("update_transit_network_policy_1 Expected %d elements to be updated into network policy map, but only has %d elements. \n",
 					counter, k-1);
-			return -EINVAL;
+			return -EINVAL; 
 		}
 		dump_network_policy(&cidrs[k]);
 	}
@@ -148,7 +147,6 @@ int trn_cli_update_agent_network_policy_subcmd(CLIENT *clnt, int argc, char *arg
 					counter, k-1);
 			return -EINVAL; 
 		}
-
 		dump_network_policy(&cidrs[k]);
 	}
 	print_msg("update_agent_network_policy_1 successfully updated network policy\n");
@@ -319,11 +317,10 @@ int trn_cli_update_transit_network_policy_enforcement_subcmd(CLIENT *clnt, int a
 
 	for (int k = 0; k < counter; k++)
 	{
-		if (&enforces[k] == NULL)
-		{
-			print_err("update_transit_enforcement_network_policy_1 Expected %d elements to be updated into network policy map, but only has %d elements. \n",
+		if (&enforces[k] == NULL){
+			print_err("update_transit_network_policy_enforcement_1 Expected %d elements to be updated into network policy map, but only has %d elements. \n",
 					counter, k-1);
-			return -EINVAL;
+			return -EINVAL; 
 		}
 		dump_enforced_policy(&enforces[k]);
 	}
@@ -474,23 +471,31 @@ int trn_cli_update_transit_network_policy_protocol_port_subcmd(CLIENT *clnt, int
 		return -EINVAL;
 	}
 
-	int *rc;
-	struct rpc_trn_vsip_ppo_t ppo;
-	char rpc[] = "update_transit_network_policy_protocol_port_1";
-	ppo.interface = conf.intf;
+	int counter = cJSON_GetArraySize(json_str);
 
-	int err = trn_cli_parse_network_policy_protocol_port(json_str, &ppo);
+	int *rc;
+	struct rpc_trn_vsip_ppo_t ppos[counter];
+	char rpc[] = "update_transit_network_policy_protocol_port_1";
+
+	for (int i = 0; i < counter; i++)
+	{
+		struct rpc_trn_vsip_ppo_t ppo;
+		ppo.interface = conf.intf;
+		ppo.count = counter;
+		cJSON *policy = cJSON_GetArrayItem(json_str, i);
+
+		int err = trn_cli_parse_network_policy_protocol_port(policy, &ppo);
+		if (err != 0) {
+			print_err("Error: parsing network policy protocol port config.\n");
+			return -EINVAL;
+		}
+		ppos[i] = ppo;
+	}
 	cJSON_Delete(json_str);
 
-	if (err != 0) {
-		print_err("Error: parsing network policy protocol port config.\n");
-		return -EINVAL;
-	}
-
-	rc = update_transit_network_policy_protocol_port_1(&ppo, clnt);
+	rc = update_transit_network_policy_protocol_port_1(ppos, clnt);
 	if (rc == (int *)NULL) {
-		print_err("RPC Error: client call failed: update_transit_network_policy_protocol_port_1 for local ip: 0x%x for protocol %d port %d.\n",
-					ppo.local_ip, ppo.proto, ppo.port);
+		print_err("RPC Error: client call failed: update_transit_network_policy_protocol_port_1 \n");
 		return -EINVAL;
 	}
 
@@ -501,9 +506,16 @@ int trn_cli_update_transit_network_policy_protocol_port_subcmd(CLIENT *clnt, int
 		return -EINVAL;
 	}
 
-	dump_protocol_port_policy(&ppo);
-	print_msg("update_transit_network_policy_protocol_port_1 successfully updated network policy for local ip: 0x%x for interface %s \n",
-				ppo.local_ip, ppo.interface);
+	for (int k = 0; k < counter; k++)
+	{
+		if (&ppos[k] == NULL){
+			print_err("update_transit_network_policy_protocol_port_1 Expected %d elements to be updated into network policy map, but only has %d elements. \n",
+					counter, k-1);
+			return -EINVAL; 
+		}
+		dump_protocol_port_policy(&ppos[k]);
+	}
+	print_msg("update_transit_network_policy_protocol_port_1 successfully updated network policy \n");
 
 	return 0;
 }

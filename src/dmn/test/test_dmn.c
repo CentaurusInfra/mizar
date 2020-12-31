@@ -830,18 +830,28 @@ static void test_update_transit_network_policy_protocol_port_1_svc(void **state)
 	UNUSED(state);
 	char itf[] = "lo";
 
-	struct rpc_trn_vsip_ppo_t ppo1 = {
+	struct rpc_trn_vsip_ppo_t ppo1[2] = {{
 		.interface = itf,
 		.tunid = 3,
 		.local_ip = 0x300000a,
 		.proto = 6,
 		.port = 6379,
-		.bit_val = 10
-	};
+		.bit_val = 10,
+		.count = 2
+	},
+	{
+		.interface = itf,
+		.tunid = 3,
+		.local_ip = 0x300000a,
+		.proto = 6,
+		.port = 6379,
+		.bit_val = 10,
+		.count = 2
+	}};
 
 	int *rc;
-	expect_function_call(__wrap_bpf_map_update_elem);
-	rc = update_transit_network_policy_protocol_port_1_svc(&ppo1, NULL);
+	expect_function_calls(__wrap_bpf_map_update_elem, 2);
+	rc = update_transit_network_policy_protocol_port_1_svc(ppo1, NULL);
 	assert_int_equal(*rc, 0);
 }
 
