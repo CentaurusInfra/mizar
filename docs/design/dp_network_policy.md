@@ -148,13 +148,12 @@ int enforce_policy_on_packet(packet) {
    }
 
    if enforced_by_policy && policy_check_result == false {
+       update_connection_tracking_state(packet, denied)
        return XDP_DROP
    }
 
     //now we will return pass
-    if connection is not in conn_track {
-       update_connection_tracking(packet)
-    }
+    update_connection_tracking_state(packet, allowed)
    
     return XDP_PASS
 }
@@ -198,7 +197,17 @@ int enforce_policy_on_packet(packet) {
 ### Connection Tracking
 
 * Maintain connection states.
-* Remove map entries when they are not allowed by updated policies.
+
+| Status | Description |
+| ------ | ----------- |
+| 0x01   | traffic is denied or allowed |
+| 0x04   | need to re-evaluate applicable policy, or simply base on decision already made |
+
+When traffic is denied by policy enforcement, its tracked connection will have state 0x01 (for tcp), or 0x05 (udp); when allowed, state is 0x00(tcp) or 0x04(udp), respectively.
+
+When xdp prog is making decision for the reply flow, for packets that are reply of a tracked connection, it will re-evaluate with the policy of the originated direction - if the state indicates so (which applies to udp flows).
+
+* Map entries, when they are not allowed by updated policies, are still tracked in the map and their state changed to denied to reflect the policy. The aging of such entries would be handled by the LRU map automatically.
 * Remove map entries when the associated endpoint is deleted.
 
 
