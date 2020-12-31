@@ -2584,17 +2584,8 @@ static void test_trn_cli_delete_transit_network_policy_enforcement_subcmd(void *
 			  }) };
 
 	char *argv2[] = { "delete-network-policy-enforcement-ingress", "-i", "eth0", "-j", QUOTE({
-				  "tunnel_id": 3,
-				  "ip": "10.0.0.3"
-			  }) };
-
-	char *argv3[] = { "delete-network-policy-enforcement-ingress", "-i", "eth0", "-j", QUOTE({
 				  "tunnel_id": "3",
 				  "ip": 10.0.0.3
-			  }) };
-
-	char *argv4[] = { "delete-network-policy-enforcement-ingress", "-i", "eth0", "-j", QUOTE({
-				  "tunnel_id": "3"
 			  }) };
 
 	struct rpc_trn_vsip_enforce_t exp_enforce = {
@@ -2613,18 +2604,9 @@ static void test_trn_cli_delete_transit_network_policy_enforcement_subcmd(void *
 	rc = trn_cli_delete_transit_network_policy_enforcement_subcmd(NULL, argc, argv1);
 	assert_int_equal(rc, 0);
 
-	/* Test parse network policy input error*/
-	TEST_CASE("delete-network-policy-enforcement-ingress is not called with non-string field");
-	rc = trn_cli_delete_transit_network_policy_enforcement_subcmd(NULL, argc, argv2);
-	assert_int_equal(rc, -EINVAL);
-
 	/* Test parse network policy input error 2*/
 	TEST_CASE("delete-network-policy-enforcement-ingress is not called malformed json");
-	rc = trn_cli_delete_transit_network_policy_enforcement_subcmd(NULL, argc, argv3);
-	assert_int_equal(rc, -EINVAL);
-
-	TEST_CASE("delete-network-policy-enforcement-ingress is not called with missing required field");
-	rc = trn_cli_delete_transit_network_policy_enforcement_subcmd(NULL, argc, argv4);
+	rc = trn_cli_delete_transit_network_policy_enforcement_subcmd(NULL, argc, argv2);
 	assert_int_equal(rc, -EINVAL);
 
 	/* Test call delete_transit_network_policy_enforcement_1 return error*/

@@ -1573,9 +1573,16 @@ int *delete_transit_network_policy_enforcement_1_svc(rpc_trn_vsip_enforce_t *enf
 	static int result = -1;
 	int rc;
 	char *itf = enforce->interface;
-	struct vsip_enforce_t enf;
+	int counter = enforce->count;
 
 	TRN_LOG_INFO("delete_transit_network_policy_enforcement_1_svc service");
+
+	if (counter == 0){
+		TRN_LOG_INFO("policy list has length of 0. Nothing to do");
+		result = 0;
+		return &result;
+	}
+	struct vsip_enforce_t enfs[counter];
 
 	struct user_metadata_t *md = trn_itf_table_find(itf);
 	if (!md) {
@@ -1584,14 +1591,16 @@ int *delete_transit_network_policy_enforcement_1_svc(rpc_trn_vsip_enforce_t *enf
 		goto error;
 	}
 
-	enf.tunnel_id = enforce->tunid;
-	enf.local_ip = enforce->local_ip;
+	for (int i = 0; i < counter; i++)
+	{
+		enfs[i].tunnel_id = enforce[i].tunid;
+		enfs[i].local_ip = enforce[i].local_ip;
+	}
 
-	rc = trn_delete_transit_network_policy_enforcement_map(md, &enf);
+	rc = trn_delete_transit_network_policy_enforcement_map(md, enfs, counter);
 
 	if (rc != 0) {
-		TRN_LOG_ERROR("Failure deleting transit network policy enforcement map ip address: 0x%x, for interface %s",
-					enforce->local_ip, enforce->interface);
+		TRN_LOG_ERROR("Failure deleting transit network policy enforcement map \n");
 		result = RPC_TRN_FATAL;
 		goto error;
 	}

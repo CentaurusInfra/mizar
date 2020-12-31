@@ -245,7 +245,8 @@ int trn_update_transit_network_policy_enforcement_map(struct user_metadata_t *md
 						      int counter);
 
 int trn_delete_transit_network_policy_enforcement_map(struct user_metadata_t *md,
-						      struct vsip_enforce_t *local);
+						      struct vsip_enforce_t *local,
+						      int counter);
 
 int trn_update_transit_network_policy_protocol_port_map(struct user_metadata_t *md,
 						        struct vsip_ppo_t *policy,
