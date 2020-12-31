@@ -417,23 +417,31 @@ int trn_cli_delete_transit_network_policy_enforcement_subcmd(CLIENT *clnt, int a
 		return -EINVAL;
 	}
 
-	int *rc;
-	struct rpc_trn_vsip_enforce_t enforce;
-	char rpc[] = "delete_transit_network_policy_enforcement_1";
-	enforce.interface = conf.intf;
+	int counter = cJSON_GetArraySize(json_str);
 
-	int err = trn_cli_parse_network_policy_enforcement(json_str, &enforce);
+	int *rc;
+	struct rpc_trn_vsip_enforce_t enforces[counter];
+	char rpc[] = "delete_transit_network_policy_enforcement_1";
+
+	for (int i = 0; i < counter; i++)
+	{
+		struct rpc_trn_vsip_enforce_t enforce;
+		enforce.interface = conf.intf;
+		enforce.count = counter;
+		cJSON *policy = cJSON_GetArrayItem(json_str, i);
+
+		int err = trn_cli_parse_network_policy_enforcement(policy, &enforce);
+		if (err != 0) {
+			print_err("Error: parsing network policy enforcement config.\n");
+			return -EINVAL;
+		}
+		enforces[i] = enforce;
+	}
 	cJSON_Delete(json_str);
 
-	if (err != 0) {
-		print_err("Error: parsing network policy enforcement config.\n");
-		return -EINVAL;
-	}
-
-	rc = delete_transit_network_policy_enforcement_1(&enforce, clnt);
+	rc = delete_transit_network_policy_enforcement_1(enforces, clnt);
 	if (rc == (int *)NULL) {
-		print_err("RPC Error: client call failed: delete_transit_network_policy_enforcement_1 for local ip: 0x%x.\n",
-					enforce.local_ip);
+		print_err("RPC Error: client call failed: delete_transit_network_policy_enforcement_1\n");
 		return -EINVAL;
 	}
 
@@ -444,9 +452,7 @@ int trn_cli_delete_transit_network_policy_enforcement_subcmd(CLIENT *clnt, int a
 		return -EINVAL;
 	}
 
-	dump_enforced_policy(&enforce);
-	print_msg("delete_transit_network_policy_enforcement_1 successfully deleted network policy for local ip: 0x%x for interface %s\n",
-					enforce.local_ip, enforce.interface);
+	print_msg("delete_transit_network_policy_enforcement_1 successfully deleted network policy \n");
 
 	return 0;
 }
