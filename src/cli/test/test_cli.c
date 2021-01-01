@@ -2721,58 +2721,67 @@ static void test_trn_cli_update_transit_network_policy_protocol_port_subcmd(void
 	int update_transit_network_policy_proto_port_1_ret_val = 0;
 
 	/* Test cases */
-	char *argv1[] = { "update-network-policy-protocol-port-ingress", "-i", "eth0", "-j", QUOTE({
+	char *argv1[] = { "update-network-policy-protocol-port-ingress", "-i", "eth0", "-j", QUOTE([{
 				  "tunnel_id": "3",
 				  "local_ip": "10.0.0.3",
 				  "protocol": "6",
 				  "port": "6379",
 				  "bit_value": "10"
-			  }) };
-
-	char *argv2[] = { "update-network-policy-protocol-port-ingress", "-i", "eth0", "-j", QUOTE({
-				  "tunnel_id": 3,
+			  },
+			  {
+				  "tunnel_id": "3",
 				  "local_ip": "10.0.0.3",
 				  "protocol": "6",
 				  "port": "6379",
 				  "bit_value": "10"
-			  }) };
+			  }]) };
 
-	char *argv3[] = { "update-network-policy-protocol-port-ingress", "-i", "eth0", "-j", QUOTE({
+	char *argv2[] = { "update-network-policy-protocol-port-ingress", "-i", "eth0", "-j", QUOTE([{
 				  "tunnel_id": "3",
 				  "local_ip": 10.0.0.3,
 				  "protocol": "6",
 				  "port": "6379",
 				  "bit_value": "10"
-			  }) };
+			  },
+			  {
+				  "tunnel_id": "3",
+				  "local_ip": 10.0.0.3,
+				  "protocol": "6",
+				  "port": "6379",
+				  "bit_value": "10"
+			  }]) };
 	char itf[] = "eth0";
 
-	struct rpc_trn_vsip_ppo_t exp_ppo = {
+	struct rpc_trn_vsip_ppo_t exp_ppo[2] = {{
 		.interface = itf,
 		.tunid = 3,
 		.local_ip = 0x300000a,
 		.proto = 6,
 		.port = 6379,
 		.bit_val = 10
-	};
+	},
+	{
+		.interface = itf,
+		.tunid = 3,
+		.local_ip = 0x300000a,
+		.proto = 6,
+		.port = 6379,
+		.bit_val = 10
+	}};
 
 	/* Test call update_transit_network_policy_protocol_port successfully */
 	TEST_CASE("update_transit_network_policy_protocol_port succeed with well formed policy json input");
 	update_transit_network_policy_proto_port_1_ret_val = 0;
 	expect_function_call(__wrap_update_transit_network_policy_protocol_port_1);
 	will_return(__wrap_update_transit_network_policy_protocol_port_1, &update_transit_network_policy_proto_port_1_ret_val);
-	expect_check(__wrap_update_transit_network_policy_protocol_port_1, ppo, check_policy_protocol_port_equal, &exp_ppo);
+	expect_check(__wrap_update_transit_network_policy_protocol_port_1, ppo, check_policy_protocol_port_equal, exp_ppo);
 	expect_any(__wrap_update_transit_network_policy_protocol_port_1, clnt);
 	rc = trn_cli_update_transit_network_policy_protocol_port_subcmd(NULL, argc, argv1);
 	assert_int_equal(rc, 0);
 
-	/* Test parse network policy input error*/
-	TEST_CASE("update_transit_network_policy_protocol_port is not called with non-string field");
-	rc = trn_cli_update_transit_network_policy_protocol_port_subcmd(NULL, argc, argv2);
-	assert_int_equal(rc, -EINVAL);
-
 	/* Test parse network policy input error 2*/
 	TEST_CASE("update_transit_network_policy_protocol_port is not called malformed json");
-	rc = trn_cli_update_transit_network_policy_protocol_port_subcmd(NULL, argc, argv3);
+	rc = trn_cli_update_transit_network_policy_protocol_port_subcmd(NULL, argc, argv2);
 	assert_int_equal(rc, -EINVAL);
 
 	/* Test call update_transit_network_policy_1 return error*/
