@@ -24,6 +24,7 @@ import ipaddress
 from mizar.common.rpc import TrnRpc
 from mizar.common.constants import *
 from mizar.common.common import *
+from mizar.obj.data_networkpolicy import *
 
 logger = logging.getLogger()
 
@@ -334,24 +335,34 @@ class Endpoint:
     def add_ingress_networkpolicy(self, ingress_networkpolicy_name):
         self.ingress_networkpolicies.append(ingress_networkpolicy_name)
         self.ingress_networkpolicies.sort()
-        #TODO update networkpolicy enforcement map ingress
+        if len(self.ingress_networkpolicies) == 1:
+            self.update_network_policy_enforcement_map_ingress()
         self.store_update_obj()
 
     def add_egress_networkpolicy(self, egress_networkpolicy_name):
         self.egress_networkpolicies.append(egress_networkpolicy_name)
         self.egress_networkpolicies.sort()
-        #TODO update networkpolicy enforcement map egress
+        if len(self.egress_networkpolicies) == 1:
+            self.update_network_policy_enforcement_map_egress()
         self.store_update_obj()
 
     def remove_ingress_networkpolicy(self, ingress_networkpolicy_name):
         self.ingress_networkpolicies.remove(ingress_networkpolicy_name)
-        #TODO delete networkpolicy enforcement map ingress
+        if len(self.ingress_networkpolicies) == 0:
+            self.delete_network_policy_enforcement_map_ingress()
         self.store_update_obj()
 
     def remove_egress_networkpolicy(self, egress_networkpolicy_name):
         self.egress_networkpolicies.remove(egress_networkpolicy_name)
-        #TODO delete networkpolicy enforcement map egress
+        if len(self.egress_networkpolicies) == 0:
+            self.delete_network_policy_enforcement_map_egress()
         self.store_update_obj()
+
+    def get_data_for_networkpolicy(self):
+        return self.data_for_networkpolicy
+
+    def set_data_for_networkpolicy(self, data_for_networkpolicy):
+        self.data_for_networkpolicy = data_for_networkpolicy
 
     def load_transit_agent(self):
         self.rpc.load_transit_agent_xdp(self.veth_peer)
@@ -364,3 +375,109 @@ class Endpoint:
 
     def delete_agent_substrate(self, ep, bouncer):
         self.rpc.delete_agent_substrate_ep(ep, bouncer.ip)
+
+    def update_networkpolicy_per_endpoint(self, data):
+        if len(data["old"]) > 0:
+            self.delete_network_policy_ingress("no_except", data["old"]["ingress"]["cidr_table_no_except"])
+            self.delete_network_policy_ingress("with_except", data["old"]["ingress"]["cidr_table_with_except"])
+            self.delete_network_policy_ingress("except", data["old"]["ingress"]["cidr_table_except"])
+            self.delete_network_policy_egress("no_except", data["old"]["egress"]["cidr_table_no_except"])
+            self.delete_network_policy_egress("with_except", data["old"]["egress"]["cidr_table_with_except"])
+            self.delete_network_policy_egress("except", data["old"]["egress"]["cidr_table_except"])
+
+            self.delete_network_policy_protocol_port_ingress(data["old"]["ingress"]["port_table"])
+            self.delete_network_policy_protocol_port_egress(data["old"]["egress"]["port_table"])
+
+        self.update_network_policy_ingress("no_except", data["ingress"]["cidr_table_no_except"])
+        self.update_network_policy_ingress("with_except", data["ingress"]["cidr_table_with_except"])
+        self.update_network_policy_ingress("except", data["ingress"]["cidr_table_except"])
+        self.update_network_policy_egress("no_except", data["egress"]["cidr_table_no_except"])
+        self.update_network_policy_egress("with_except", data["egress"]["cidr_table_with_except"])
+        self.update_network_policy_egress("except", data["egress"]["cidr_table_except"])
+
+        self.update_network_policy_protocol_port_ingress(data["ingress"]["port_table"])
+        self.update_network_policy_protocol_port_egress(data["egress"]["port_table"])
+
+    def update_network_policy_ingress(self, cidr_type, cidr_table):
+        cidr_networkpolicy_list = []
+        for item in cidr_table:
+            cidr_networkpolicy = CidrNetworkPolicy(
+                item["vni"], item["local_ip"], item["cidr"], item["cidr_length"], item["bit_value"],
+                cidr_type)
+            cidr_networkpolicy_list.append(cidr_networkpolicy)
+        self.rpc.update_network_policy_ingress(cidr_networkpolicy_list)
+
+    def update_network_policy_egress(self, cidr_type, cidr_table):
+        cidr_networkpolicy_list = []
+        for item in cidr_table:
+            cidr_networkpolicy = CidrNetworkPolicy(
+                item["vni"], item["local_ip"], item["cidr"], item["cidr_length"], item["bit_value"],
+                cidr_type)
+            cidr_networkpolicy_list.append(cidr_networkpolicy)
+        self.rpc.update_network_policy_egress(self, cidr_networkpolicy_list)
+
+    def update_network_policy_protocol_port_ingress(self, port_table):
+        cidr_networkpolicy_list = []
+        for item in port_table:
+            cidr_networkpolicy = PortNetworkPolicy(
+                item["vni"], item["local_ip"], item["protocol"], item["port"], item["bit_value"])
+            cidr_networkpolicy_list.append(cidr_networkpolicy)
+        self.rpc.update_network_policy_protocol_port_ingress(cidr_networkpolicy_list)
+
+    def update_network_policy_protocol_port_egress(self, port_table):
+        cidr_networkpolicy_list = []
+        for item in port_table:
+            cidr_networkpolicy = PortNetworkPolicy(
+                item["vni"], item["local_ip"], item["protocol"], item["port"], item["bit_value"])
+            cidr_networkpolicy_list.append(cidr_networkpolicy)
+        self.rpc.update_network_policy_protocol_port_egress(self, cidr_networkpolicy_list)
+
+    def delete_network_policy_ingress(self, cidr_type, cidr_table):
+        cidr_networkpolicy_list = []
+        for item in cidr_table:
+            cidr_networkpolicy = CidrNetworkPolicy(
+                item["vni"], item["local_ip"], item["cidr"], item["cidr_length"], item["bit_value"],
+                cidr_type)
+            cidr_networkpolicy_list.append(cidr_networkpolicy)
+        self.rpc.delete_network_policy_ingress(cidr_networkpolicy_list)
+
+    def delete_network_policy_egress(self, cidr_type, cidr_table):
+        cidr_networkpolicy_list = []
+        for item in cidr_table:
+            cidr_networkpolicy = CidrNetworkPolicy(
+                item["vni"], item["local_ip"], item["cidr"], item["cidr_length"], item["bit_value"],
+                cidr_type)
+            cidr_networkpolicy_list.append(cidr_networkpolicy)
+        self.rpc.delete_network_policy_egress(self, cidr_networkpolicy_list)
+
+    def delete_network_policy_protocol_port_ingress(self, port_table):
+        cidr_networkpolicy_list = []
+        for item in port_table:
+            cidr_networkpolicy = PortNetworkPolicy(
+                item["vni"], item["local_ip"], item["protocol"], item["port"], item["bit_value"])
+            cidr_networkpolicy_list.append(cidr_networkpolicy)
+        self.rpc.delete_network_policy_protocol_port_ingress(cidr_networkpolicy_list)
+
+    def delete_network_policy_protocol_port_egress(self, port_table):
+        cidr_networkpolicy_list = []
+        for item in port_table:
+            cidr_networkpolicy = PortNetworkPolicy(
+                item["vni"], item["local_ip"], item["protocol"], item["port"], item["bit_value"])
+            cidr_networkpolicy_list.append(cidr_networkpolicy)
+        self.rpc.delete_network_policy_protocol_port_egress(self, cidr_networkpolicy_list)
+
+    def update_network_policy_enforcement_map_ingress(self):
+        endpointEnforced = EndpointEnforced(self.vni, self.ip)
+        self.rpc.update_network_policy_enforcement_map_ingress(endpointEnforced)
+
+    def update_network_policy_enforcement_map_egress(self):
+        endpointEnforced = EndpointEnforced(self.vni, self.ip)
+        self.rpc.update_network_policy_enforcement_map_egress(endpointEnforced)
+
+    def delete_network_policy_enforcement_map_ingress(self):
+        endpointEnforced = EndpointEnforced(self.vni, self.ip)
+        self.rpc.delete_network_policy_enforcement_map_ingress(endpointEnforced)
+
+    def delete_network_policy_enforcement_map_egress(self):
+        endpointEnforced = EndpointEnforced(self.vni, self.ip)
+        self.rpc.delete_network_policy_enforcement_map_egress(endpointEnforced)
