@@ -791,8 +791,8 @@ int trn_update_transit_network_policy_protocol_port_map(struct user_metadata_t *
 		int err = bpf_map_update_elem(md->ing_vsip_ppo_map_fd, &policy[i], &bitmap[i], 0);
 
 		if (err) {
-			TRN_LOG_ERROR("Update Protocol-Port ingress map failed (err:%d).",
-					err);
+			TRN_LOG_ERROR("Update Protocol-Port ingress map failed (err:%d) for ip address 0x%x with protocol %d and port %d. \n",
+					err, policy[i].local_ip, policy[i].proto, policy[i].port);
 			return 1;
 		}
 	}
