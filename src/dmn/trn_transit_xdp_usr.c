@@ -800,14 +800,18 @@ int trn_update_transit_network_policy_protocol_port_map(struct user_metadata_t *
 }
 
 int trn_delete_transit_network_policy_protocol_port_map(struct user_metadata_t *md,
-						        struct vsip_ppo_t *policy)
+						        struct vsip_ppo_t *policy,
+							int counter)
 {
-	int err = bpf_map_delete_elem(md->ing_vsip_ppo_map_fd, policy);
+	for (int i = 0; i < counter; i++)
+	{
+		int err = bpf_map_delete_elem(md->ing_vsip_ppo_map_fd, &policy[i]);
 
-	if (err) {
-		TRN_LOG_ERROR("Delete Protocol-Port ingress map failed (err:%d).",
-				err);
-		return 1;
+		if (err) {
+			TRN_LOG_ERROR("Delete Protocol-Port ingress map failed (err:%d).for ip address 0x%x with protocol %d and port %d. \n",
+					err, policy[i].local_ip, policy[i].proto, policy[i].port);
+			return 1;
+		}
 	}
 	return 0;
 }

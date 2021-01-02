@@ -537,23 +537,29 @@ int trn_cli_delete_transit_network_policy_protocol_port_subcmd(CLIENT *clnt, int
 		return -EINVAL;
 	}
 
+	int counter = cJSON_GetArraySize(json_str);
 	int *rc;
-	struct rpc_trn_vsip_ppo_key_t ppo_key;
+	struct rpc_trn_vsip_ppo_key_t ppo_keys[counter];
 	char rpc[] = "delete_transit_network_policy_protocol_port_1";
-	ppo_key.interface = conf.intf;
 
-	int err = trn_cli_parse_network_policy_protocol_port_key(json_str, &ppo_key);
+	for (int i = 0; i < counter; i++)
+	{
+		struct rpc_trn_vsip_ppo_key_t ppo_key;
+		ppo_key.interface = conf.intf;
+		ppo_key.count = counter;
+		cJSON *policy = cJSON_GetArrayItem(json_str, i);
+		int err = trn_cli_parse_network_policy_protocol_port_key(policy, &ppo_key);
+		if (err != 0) {
+			print_err("Error: parsing network policy protocol port config.\n");
+			return -EINVAL;
+		}
+		ppo_keys[i] = ppo_key;
+	}
 	cJSON_Delete(json_str);
 
-	if (err != 0) {
-		print_err("Error: parsing network policy protocol port config.\n");
-		return -EINVAL;
-	}
-
-	rc = delete_transit_network_policy_protocol_port_1(&ppo_key, clnt);
+	rc = delete_transit_network_policy_protocol_port_1(ppo_keys, clnt);
 	if (rc == (int *)NULL) {
-		print_err("RPC Error: client call failed: delete_transit_network_policy_protocol_port_1 for local ip: 0x%x for protocol %d port %d.\n",
-					ppo_key.local_ip, ppo_key.proto, ppo_key.port);
+		print_err("RPC Error: client call failed: delete_transit_network_policy_protocol_port_1 \n");
 		return -EINVAL;
 	}
 
@@ -564,8 +570,7 @@ int trn_cli_delete_transit_network_policy_protocol_port_subcmd(CLIENT *clnt, int
 		return -EINVAL;
 	}
 
-	print_msg("delete_transit_network_policy_protocol_port_1 successfully deleted network policy for local ip: 0x%x for interface %s \n",
-				ppo_key.local_ip, ppo_key.interface);
+	print_msg("delete_transit_network_policy_protocol_port_1 successfully deleted network policy \n");
 
 	return 0;
 }

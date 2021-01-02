@@ -860,30 +860,42 @@ static void test_delete_transit_network_policy_protocol_port_1_svc(void **state)
 	UNUSED(state);
 	char itf[] = "lo";
 
-	struct rpc_trn_vsip_ppo_key_t ppo_key = {
+	struct rpc_trn_vsip_ppo_key_t ppo_keys[2] = {{
 		.interface = itf,
 		.tunid = 3,
 		.local_ip = 0x300000a,
 		.proto = 6,
-		.port = 6379
-	};
+		.port = 6379,
+		.count = 2
+	},
+	{
+		.interface = itf,
+		.tunid = 2,
+		.local_ip = 0x200000a,
+		.proto = 6,
+		.port = 6379,
+		.count = 2
+	}};
 
 	int *rc;
-	/* Test delete_transit_network_policy_protocol_port_1 with valid ppo_key */
+	/* Test delete_transit_network_policy_protocol_port_1 with valid ppo_keys */
 	will_return(__wrap_bpf_map_delete_elem, TRUE);
 	expect_function_call(__wrap_bpf_map_delete_elem);
-	rc = delete_transit_network_policy_protocol_port_1_svc(&ppo_key, NULL);
+	will_return(__wrap_bpf_map_delete_elem, TRUE);
+	expect_function_call(__wrap_bpf_map_delete_elem);
+	rc = delete_transit_network_policy_protocol_port_1_svc(ppo_keys, NULL);
 	assert_int_equal(*rc, 0);
 
-	/* Test delete_transit_network_policy_protocol_port_1 with invalid ppo_key */
+	/* Test delete_transit_network_policy_protocol_port_1 with invalid ppo_keys */
 	will_return(__wrap_bpf_map_delete_elem, FALSE);
 	expect_function_call(__wrap_bpf_map_delete_elem);
-	rc = delete_transit_network_policy_protocol_port_1_svc(&ppo_key, NULL);
+	rc = delete_transit_network_policy_protocol_port_1_svc(ppo_keys, NULL);
 	assert_int_equal(*rc, RPC_TRN_FATAL);
 
 	/* Test delete_transit_network_policy_protocol_port_1 with invalid interface*/
-	ppo_key.interface = "";
-	rc = delete_transit_network_policy_protocol_port_1_svc(&ppo_key, NULL);
+	ppo_keys[0].interface = "";
+	ppo_keys[1].interface = "";
+	rc = delete_transit_network_policy_protocol_port_1_svc(ppo_keys, NULL);
 	assert_int_equal(*rc, RPC_TRN_ERROR);
 }
 

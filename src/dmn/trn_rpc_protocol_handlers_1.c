@@ -1715,9 +1715,16 @@ int *delete_transit_network_policy_protocol_port_1_svc(rpc_trn_vsip_ppo_key_t *p
 	static int result = -1;
 	int rc;
 	char *itf = ppo_key->interface;
-	struct vsip_ppo_t policy;
+	int counter = ppo_key->count;
 
 	TRN_LOG_INFO("delete_transit_network_policy_protocol_port_1 service");
+
+	if (counter == 0){
+		TRN_LOG_INFO("policy list has length of 0. Nothing to do");
+		result = 0;
+		return &result;
+	}
+	struct vsip_ppo_t policies[counter];
 
 	struct user_metadata_t *md = trn_itf_table_find(itf);
 	if (!md) {
@@ -1726,16 +1733,17 @@ int *delete_transit_network_policy_protocol_port_1_svc(rpc_trn_vsip_ppo_key_t *p
 		goto error;
 	}
 
-	policy.tunnel_id = ppo_key->tunid;
-	policy.local_ip = ppo_key->local_ip;
-	policy.proto = ppo_key->proto;
-	policy.port = ppo_key->port;
+	for (int i = 0; i < counter; i++){
+		policies[i].tunnel_id = ppo_key[i].tunid;
+		policies[i].local_ip = ppo_key[i].local_ip;
+		policies[i].proto = ppo_key[i].proto;
+		policies[i].port = ppo_key[i].port;
+	}
 
-	rc = trn_delete_transit_network_policy_protocol_port_map(md, &policy);
+	rc = trn_delete_transit_network_policy_protocol_port_map(md, policies, counter);
 
 	if (rc != 0) {
-		TRN_LOG_ERROR("Failure updating transit network policy enforcement map ip address: 0x%x, for interface %s",
-					ppo_key->local_ip, ppo_key->interface);
+		TRN_LOG_ERROR("Failure updating transit network policy enforcement map \n");
 		result = RPC_TRN_FATAL;
 		goto error;
 	}
