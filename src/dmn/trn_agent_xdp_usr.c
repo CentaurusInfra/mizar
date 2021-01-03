@@ -576,7 +576,7 @@ int trn_update_agent_network_policy_map(int fd,
 	{
 		int err = bpf_map_update_elem(fd, &ipcidr[i], &bitmap[i], 0);
 		if (err) {
-			TRN_LOG_ERROR("Store Primary egress map failed (err:%d) for ip address 0x%x wit remote cidr 0x%x / %d ",
+			TRN_LOG_ERROR("Store network policy egress CIDR map failed (err:%d) for ip address 0x%x wit remote cidr 0x%x / %d ",
 				err, ipcidr[i].local_ip, ipcidr[i].remote_ip, ipcidr[i].prefixlen);
 			return 1;
 		}
@@ -592,7 +592,7 @@ int trn_delete_agent_network_policy_map(int fd,
 	{
 		int err = bpf_map_delete_elem(fd, &ipcidr[i]);
 		if (err) {
-			TRN_LOG_ERROR("Store Primary egress map failed (err:%d) for ip address 0x%x wit remote cidr 0x%x / %d ",
+			TRN_LOG_ERROR("Delete network policy egress CIDR map failed (err:%d) for ip address 0x%x wit remote cidr 0x%x / %d ",
 				err, ipcidr[i].local_ip, ipcidr[i].remote_ip, ipcidr[i].prefixlen);
 			return 1;
 		}
