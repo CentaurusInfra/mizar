@@ -1265,6 +1265,7 @@ int *update_transit_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc
 {
 	UNUSED(rqstp);
 	static int result = -1;
+	int map_fd = -1;
 	int rc;
 	char *itf = policy->interface;
 	int type = policy->cidr_type;
@@ -1302,20 +1303,19 @@ int *update_transit_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc
 		policy++;
 	}
 
-	switch (type) {
-	case PRIMARY:
-		rc = trn_update_transit_network_policy_primary_map(md, cidr, bitmap, counter);
-		break;
-	case SUPPLEMENTARY:
-		rc = trn_update_transit_network_policy_supplementary_map(md, cidr, bitmap, counter);
-		break;
-	case EXCEPTION:
-		rc = trn_update_transit_network_policy_except_map(md, cidr, bitmap, counter);
-		break;
-	default:
-		result = RPC_TRN_FATAL;
+	if (type == PRIMARY) {
+		map_fd = md->ing_vsip_prim_map_fd;
+	}else if (type == SUPPLEMENTARY){
+		map_fd = md->ing_vsip_supp_map_fd;
+	}else if (type == EXCEPTION){
+		map_fd = md->ing_vsip_except_map_fd;
+	}else {
+		TRN_LOG_ERROR("Wrong network policy CIDR type. \n");
+		result = RPC_TRN_ERROR;
 		goto error;
 	}
+
+	rc = trn_update_transit_network_policy_map(map_fd, cidr, bitmap, counter);
 
 	if (rc != 0) {
 		TRN_LOG_ERROR("Failure updating transit network policy map cidr.");
@@ -1335,7 +1335,7 @@ int *update_agent_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc_r
 	UNUSED(rqstp);
 	static int result = -1;
 	int rc;
-	int map_fd;
+	int map_fd = -1;
 	char *itf = policy[0].interface;
 	int type = policy[0].cidr_type;
 
@@ -1376,8 +1376,12 @@ int *update_agent_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc_r
 		map_fd = md->eg_vsip_prim_map_fd;
 	}else if (type == SUPPLEMENTARY){
 		map_fd = md->eg_vsip_supp_map_fd;
-	}else{
+	}else if (type == EXCEPTION){
 		map_fd = md->eg_vsip_except_map_fd;
+	}else {
+		TRN_LOG_ERROR("Wrong network policy CIDR type. \n");
+		result = RPC_TRN_ERROR;
+		goto error;
 	}
 
 	rc = trn_update_agent_network_policy_map(map_fd, cidr, bitmap, counter);
@@ -1399,6 +1403,7 @@ int *delete_transit_network_policy_1_svc(rpc_trn_vsip_cidr_key_t *policy_key, st
 	UNUSED(rqstp);
 	static int result = -1;
 	int rc;
+	int map_fd = -1;
 	char *itf = policy_key->interface;
 	int type = policy_key->cidr_type;
 	int counter = policy_key->count;
@@ -1430,20 +1435,19 @@ int *delete_transit_network_policy_1_svc(rpc_trn_vsip_cidr_key_t *policy_key, st
 		cidr[i].remote_ip = policy_key[i].cidr_ip;
 	}
 
-	switch (type) {
-	case PRIMARY:
-		rc = trn_delete_transit_network_policy_primary_map(md, cidr, counter);
-		break;
-	case SUPPLEMENTARY:
-		rc = trn_delete_transit_network_policy_supplementary_map(md, cidr, counter);
-		break;
-	case EXCEPTION:
-		rc = trn_delete_transit_network_policy_except_map(md, cidr, counter);
-		break;
-	default:
-		result = RPC_TRN_FATAL;
+	if (type == PRIMARY) {
+		map_fd = md->ing_vsip_prim_map_fd;
+	}else if (type == SUPPLEMENTARY){
+		map_fd = md->ing_vsip_supp_map_fd;
+	}else if (type == EXCEPTION){
+		map_fd = md->ing_vsip_except_map_fd;
+	}else {
+		TRN_LOG_ERROR("Wrong network policy CIDR type. \n");
+		result = RPC_TRN_ERROR;
 		goto error;
 	}
+
+	rc = trn_delete_transit_network_policy_map(map_fd, cidr, counter);
 
 	if (rc != 0) {
 		TRN_LOG_ERROR("Failure deleting transit network policy map cidr");
@@ -1499,8 +1503,12 @@ int *delete_agent_network_policy_1_svc(rpc_trn_vsip_cidr_key_t *policy_key, stru
 		map_fd = md->eg_vsip_prim_map_fd;
 	}else if (type == SUPPLEMENTARY){
 		map_fd = md->eg_vsip_supp_map_fd;
-	}else{
+	}else if (type == EXCEPTION){
 		map_fd = md->eg_vsip_except_map_fd;
+	}else {
+		TRN_LOG_ERROR("Wrong network policy CIDR type. \n");
+		result = RPC_TRN_ERROR;
+		goto error;
 	}
 
 	rc = trn_delete_agent_network_policy_map(map_fd, cidr, counter);

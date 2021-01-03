@@ -637,111 +637,35 @@ uint32_t trn_get_interface_ipv4(int itf_idx)
 	return ((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr;
 }
 
-int trn_update_transit_network_policy_primary_map(struct user_metadata_t *md,
-						  struct vsip_cidr_t *ipcidr,
-						  __u64 *bitmap,
-						  int counter)
+int trn_update_transit_network_policy_map(int fd,
+					   struct vsip_cidr_t *ipcidr,
+					   __u64 *bitmap,
+					   int counter)
 {
 	for (int i = 0; i < counter; i++)
 	{
-		int err = bpf_map_update_elem(md->ing_vsip_prim_map_fd, ipcidr, bitmap, 0);
+		int err = bpf_map_update_elem(fd, &ipcidr[i], &bitmap[i], 0);
 		if (err) {
-			TRN_LOG_ERROR("Store Primary ingress map failed (err:%d).",
-				err);
+			TRN_LOG_ERROR("Store ingress CIDR map failed (err:%d) for ip address 0x%x wit remote cidr 0x%x / %d ",
+				err, ipcidr[i].local_ip, ipcidr[i].remote_ip, ipcidr[i].prefixlen);
 			return 1;
 		}
-		ipcidr++;
-		bitmap++;
-	}
-
-	return 0;
-}
-
-int trn_update_transit_network_policy_supplementary_map(struct user_metadata_t *md,
-							struct vsip_cidr_t *ipcidr,
-							__u64 *bitmap,
-							int counter)
-{
-	for (int i = 0; i < counter; i++)
-	{
-		int err = bpf_map_update_elem(md->ing_vsip_supp_map_fd, ipcidr, bitmap, 0);
-		if (err) {
-			TRN_LOG_ERROR("Store Supplementary ingress map failed (err:%d).",
-				err);
-			return 1;
-		}
-		ipcidr++;
-		bitmap++;
 	}
 	return 0;
 }
 
-int trn_update_transit_network_policy_except_map(struct user_metadata_t *md,
-						 struct vsip_cidr_t *ipcidr,
-						 __u64 *bitmap,
-						 int counter)
+int trn_delete_transit_network_policy_map(int fd,
+					   struct vsip_cidr_t *ipcidr,
+					   int counter)
 {
 	for (int i = 0; i < counter; i++)
 	{
-		int err = bpf_map_update_elem(md->ing_vsip_except_map_fd, ipcidr, bitmap, 0);
+		int err = bpf_map_delete_elem(fd, &ipcidr[i]);
 		if (err) {
-			TRN_LOG_ERROR("Store Except ingress map failed (err:%d).",
-				err);
+			TRN_LOG_ERROR("Delete ingress CIDR map failed (err:%d) for ip address 0x%x wit remote cidr 0x%x / %d ",
+				err, ipcidr[i].local_ip, ipcidr[i].remote_ip, ipcidr[i].prefixlen);
 			return 1;
 		}
-		ipcidr++;
-		bitmap++;
-	}
-	return 0;
-}
-
-int trn_delete_transit_network_policy_primary_map(struct user_metadata_t *md,
-						  struct vsip_cidr_t *cidr,
-						  int counter)
-{
-	for (int i = 0; i < counter; i++)
-	{
-		int err = bpf_map_delete_elem(md->ing_vsip_prim_map_fd, cidr);
-		if (err) {
-			TRN_LOG_ERROR("Delete Primary ingress map failed (err:%d).",
-				err);
-			return 1;
-		}
-		cidr++;
-	}
-	return 0;
-}
-
-int trn_delete_transit_network_policy_supplementary_map(struct user_metadata_t *md,
-							struct vsip_cidr_t *cidr,
-							int counter)
-{
-	for (int i = 0; i < counter; i++)
-	{
-		int err = bpf_map_delete_elem(md->ing_vsip_supp_map_fd, cidr);
-		if (err) {
-			TRN_LOG_ERROR("Delete Supplementary ingress map failed (err:%d).",
-				err);
-			return 1;
-		}
-		cidr++;
-	}
-	return 0;
-}
-
-int trn_delete_transit_network_policy_except_map(struct user_metadata_t *md,
-						 struct vsip_cidr_t *cidr,
-						 int counter)
-{
-	for (int i = 0; i < counter; i++)
-	{
-		int err = bpf_map_delete_elem(md->ing_vsip_except_map_fd, cidr);
-		if (err) {
-			TRN_LOG_ERROR("Delete Except ingress map failed (err:%d).",
-				err);
-			return 1;
-		}
-		cidr++;
 	}
 	return 0;
 }
