@@ -574,14 +574,12 @@ int trn_update_agent_network_policy_map(int fd,
 {
 	for (int i = 0; i < counter; i++)
 	{
-		int err = bpf_map_update_elem(fd, ipcidr, bitmap, 0);
+		int err = bpf_map_update_elem(fd, &ipcidr[i], &bitmap[i], 0);
 		if (err) {
-			TRN_LOG_ERROR("Store Primary ingress map failed (err:%d).",
-				err);
+			TRN_LOG_ERROR("Store Primary egress map failed (err:%d) for ip address 0x%x wit remote cidr 0x%x / %d ",
+				err, ipcidr[i].local_ip, ipcidr[i].remote_ip, ipcidr[i].prefixlen);
 			return 1;
 		}
-		ipcidr++;
-		bitmap++;
 	}
 	return 0;
 }
@@ -592,13 +590,12 @@ int trn_delete_agent_network_policy_map(int fd,
 {
 	for (int i = 0; i < counter; i++)
 	{
-		int err = bpf_map_delete_elem(fd, ipcidr);
+		int err = bpf_map_delete_elem(fd, &ipcidr[i]);
 		if (err) {
-			TRN_LOG_ERROR("Store Primary ingress map failed (err:%d).",
-				err);
+			TRN_LOG_ERROR("Store Primary egress map failed (err:%d) for ip address 0x%x wit remote cidr 0x%x / %d ",
+				err, ipcidr[i].local_ip, ipcidr[i].remote_ip, ipcidr[i].prefixlen);
 			return 1;
 		}
-		ipcidr++;
 	}
 	return 0;
 }
@@ -614,8 +611,8 @@ int trn_update_agent_network_policy_enforcement_map(struct agent_user_metadata_t
 		int err = bpf_map_update_elem(md->eg_vsip_enforce_map_fd, &local[i], &isenforce[i], 0);
 
 		if (err) {
-			TRN_LOG_ERROR("Update Enforcement ingress map failed (err:%d).",
-					err);
+			TRN_LOG_ERROR("Update Enforcement egress map failed (err:%d) for ip address 0x%x. \n",
+					err, local[i].local_ip);
 			return 1;
 		}
 	}
@@ -632,8 +629,8 @@ int trn_delete_agent_network_policy_enforcement_map(struct agent_user_metadata_t
 		int err = bpf_map_delete_elem(md->eg_vsip_enforce_map_fd, &local[i]);
 
 		if (err) {
-			TRN_LOG_ERROR("Delete Enforcement ingress map failed (err:%d).",
-					err);
+			TRN_LOG_ERROR("Delete Enforcement egress map failed (err:%d) for ip address 0x%x. ",
+					err, local[i].local_ip);
 			return 1;
 		}
 	}
