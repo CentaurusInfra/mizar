@@ -1762,6 +1762,54 @@ error:
 	return &result;
 }
 
+int *update_agent_network_policy_protocol_port_1_svc(rpc_trn_vsip_ppo_t *ppo, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result = -1;
+	int rc;
+	char *itf = ppo->interface;
+	int counter = ppo->count;
+
+	TRN_LOG_INFO("update_agent_network_policy_protocol_port_1_svc service");
+	if (counter == 0){
+		TRN_LOG_INFO("policy list has length of 0. Nothing to do");
+		result = 0;
+		return &result;
+	}
+	struct vsip_ppo_t policies[counter];
+	__u64 bitmap[counter];
+
+	struct agent_user_metadata_t *md = trn_vif_table_find(itf);
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	for (int i = 0; i < counter; i++)
+	{
+		policies[i].tunnel_id = ppo[i].tunid;
+		policies[i].local_ip = ppo[i].local_ip;
+		policies[i].proto = ppo[i].proto;
+		policies[i].port = ppo[i].port;
+		bitmap[i] = ppo[i].bit_val;
+	}
+
+	rc = trn_update_agent_network_policy_protocol_port_map(md, policies, bitmap, counter);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure updating agent network policy enforcement map\n");
+		result = RPC_TRN_FATAL;
+		goto error;
+	}
+
+	result = 0;
+	return &result;
+
+error:
+	return &result;
+}
+
 int *delete_transit_network_policy_protocol_port_1_svc(rpc_trn_vsip_ppo_key_t *ppo_key, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
