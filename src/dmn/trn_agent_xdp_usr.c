@@ -654,3 +654,20 @@ int trn_update_agent_network_policy_protocol_port_map(struct agent_user_metadata
 	}
 	return 0;
 }
+
+int trn_delete_agent_network_policy_protocol_port_map(struct agent_user_metadata_t *md,
+						        struct vsip_ppo_t *policy,
+							int counter)
+{
+	for (int i = 0; i < counter; i++)
+	{
+		int err = bpf_map_delete_elem(md->ing_vsip_ppo_map_fd, &policy[i]);
+
+		if (err) {
+			TRN_LOG_ERROR("Delete Protocol-Port egress map failed (err:%d).for ip address 0x%x with protocol %d and port %d. \n",
+					err, policy[i].local_ip, policy[i].proto, policy[i].port);
+			return 1;
+		}
+	}
+	return 0;
+}
