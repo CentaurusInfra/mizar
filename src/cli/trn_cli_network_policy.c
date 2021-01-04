@@ -537,8 +537,13 @@ int trn_cli_delete_transit_network_policy_protocol_port_subcmd(CLIENT *clnt, int
 		return -EINVAL;
 	}
 
-	int counter = cJSON_GetArraySize(json_str);
 	int *rc;
+	int counter = cJSON_GetArraySize(json_str);
+	if (counter <= 0) {
+		print_err("Input policy size is less than or equal to zero. Please check your input. \n");
+		return -EINVAL;
+	}
+
 	struct rpc_trn_vsip_ppo_key_t ppo_keys[counter];
 	char rpc[] = "delete_transit_network_policy_protocol_port_1";
 
