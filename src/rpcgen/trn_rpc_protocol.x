@@ -209,6 +209,7 @@ struct rpc_trn_vsip_ppo_key_t {
        uint32_t local_ip;
        uint8_t proto;
        uint16_t port;
+       int count;
 };
 
 /*----- Protocol. -----*/

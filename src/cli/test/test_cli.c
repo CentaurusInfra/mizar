@@ -2895,63 +2895,60 @@ static void test_trn_cli_delete_transit_network_policy_protocol_port_subcmd(void
 	int delete_transit_network_policy_protocol_port_1_ret_val;
 
 	/* Test cases */
-	char *argv1[] = { "delete-network-policy-protocol-port-ingress", "-i", "eth0", "-j", QUOTE({
+	char *argv1[] = { "delete-network-policy-protocol-port-ingress", "-i", "eth0", "-j", QUOTE([{
 				  "tunnel_id": "3",
 				  "local_ip": "10.0.0.3",
 				  "protocol": "6",
 				  "port": "6379"
-			  }) };
-
-	char *argv2[] = { "delete-network-policy-protocol-port-ingress", "-i", "eth0", "-j", QUOTE({
-				  "tunnel_id": 3,
-				  "local_ip": "10.0.0.3",
+			  },
+			  {
+				  "tunnel_id": "2",
+				  "local_ip": "10.0.0.2",
 				  "protocol": "6",
 				  "port": "6379"
-			  }) };
+			  }]) };
 
-	char *argv3[] = { "delete-network-policy-protocol-port-ingress", "-i", "eth0", "-j", QUOTE({
+	char *argv2[] = { "delete-network-policy-protocol-port-ingress", "-i", "eth0", "-j", QUOTE([{
 				  "tunnel_id": "3",
 				  "local_ip": 10.0.0.3,
 				  "protocol": "6",
 				  "port": "6379"
-			  }) };
-
-	char *argv4[] = { "delete-network-policy-protocol-port-ingress", "-i", "eth0", "-j", QUOTE({
-				  "tunnel_id": "3",
+			  },
+			  {
+				  "tunnel_id": "2",
+				  "local_ip": 10.0.0.2,
 				  "protocol": "6",
 				  "port": "6379"
-			  }) };
+			  }]) };
 
-	struct rpc_trn_vsip_ppo_t exp_ppo = {
+	struct rpc_trn_vsip_ppo_t exp_ppo[2] = {{
 		.interface = itf,
 		.tunid = 3,
 		.local_ip = 0x300000a,
 		.proto = 6,
 		.port = 6379
-	};
+	},
+	{
+		.interface = itf,
+		.tunid = 2,
+		.local_ip = 0x200000a,
+		.proto = 6,
+		.port = 6379
+	}};
 
 	/* Test call delete_transit_network_policy_protocol_port successfully */
 	TEST_CASE("delete-network-policy-protocol-port-ingress succeed with well formed policy json input");
 	delete_transit_network_policy_protocol_port_1_ret_val = 0;
 	expect_function_call(__wrap_delete_transit_network_policy_protocol_port_1);
 	will_return(__wrap_delete_transit_network_policy_protocol_port_1, &delete_transit_network_policy_protocol_port_1_ret_val);
-	expect_check(__wrap_delete_transit_network_policy_protocol_port_1, ppo, check_policy_protocol_port_key_equal, &exp_ppo);
+	expect_check(__wrap_delete_transit_network_policy_protocol_port_1, ppo, check_policy_protocol_port_key_equal, exp_ppo);
 	expect_any(__wrap_delete_transit_network_policy_protocol_port_1, clnt);
 	rc = trn_cli_delete_transit_network_policy_protocol_port_subcmd(NULL, argc, argv1);
 	assert_int_equal(rc, 0);
 
-	/* Test parse network policy input error*/
-	TEST_CASE("delete-network-policy-protocol-port-ingress is not called with non-string field");
-	rc = trn_cli_delete_transit_network_policy_protocol_port_subcmd(NULL, argc, argv2);
-	assert_int_equal(rc, -EINVAL);
-
 	/* Test parse network policy input error 2*/
 	TEST_CASE("delete-network-policy-protocol-port-ingress is not called malformed json");
-	rc = trn_cli_delete_transit_network_policy_protocol_port_subcmd(NULL, argc, argv3);
-	assert_int_equal(rc, -EINVAL);
-
-	TEST_CASE("delete-network-policy-protocol-port-ingress is not called with missing required field");
-	rc = trn_cli_delete_transit_network_policy_protocol_port_subcmd(NULL, argc, argv4);
+	rc = trn_cli_delete_transit_network_policy_protocol_port_subcmd(NULL, argc, argv2);
 	assert_int_equal(rc, -EINVAL);
 
 	/* Test call delete_transit_network_policy_protocol_port_1 return error*/

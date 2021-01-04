@@ -212,32 +212,14 @@ int trn_add_prog(struct user_metadata_t *md, unsigned int prog_idx,
 
 int trn_remove_prog(struct user_metadata_t *md, unsigned int prog_idx);
 
-int trn_update_transit_network_policy_primary_map(struct user_metadata_t *md,
-						  struct vsip_cidr_t *cidr,
-						  __u64 *bitmap,
-						  int counter);
+int trn_update_transit_network_policy_map(int fd,
+					   struct vsip_cidr_t *ipcidr,
+					   __u64 *bitmap,
+					   int counter);
 
-int trn_update_transit_network_policy_supplementary_map(struct user_metadata_t *md,
-							struct vsip_cidr_t *cidr,
-							__u64 *bitmap,
-							int counter);
-
-int trn_update_transit_network_policy_except_map(struct user_metadata_t *md,
-						 struct vsip_cidr_t *cidr,
-						 __u64 *bitmap,
-						 int counter);
-
-int trn_delete_transit_network_policy_primary_map(struct user_metadata_t *md,
-						  struct vsip_cidr_t *cidr,
-						  int counter);
-
-int trn_delete_transit_network_policy_supplementary_map(struct user_metadata_t *md,
-							struct vsip_cidr_t *cidr,
-							int counter);
-
-int trn_delete_transit_network_policy_except_map(struct user_metadata_t *md,
-						 struct vsip_cidr_t *cidr,
-						 int counter);
+int trn_delete_transit_network_policy_map(int fd,
+					   struct vsip_cidr_t *ipcidr,
+					   int counter);
 
 int trn_update_transit_network_policy_enforcement_map(struct user_metadata_t *md,
 						      struct vsip_enforce_t *local,
@@ -254,4 +236,5 @@ int trn_update_transit_network_policy_protocol_port_map(struct user_metadata_t *
 							int counter);
 
 int trn_delete_transit_network_policy_protocol_port_map(struct user_metadata_t *md,
-						        struct vsip_ppo_t *policy);
+						        struct vsip_ppo_t *policy,
+							int counter);
