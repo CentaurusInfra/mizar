@@ -252,6 +252,7 @@ program RPC_TRANSIT_REMOTE_PROTOCOL {
                 int UPDATE_AGENT_NETWORK_POLICY(rpc_trn_vsip_cidr_t) = 29;
                 int DELETE_AGENT_NETWORK_POLICY(rpc_trn_vsip_cidr_key_t) = 30;
                 int UPDATE_AGENT_NETWORK_POLICY_ENFORCEMENT(rpc_trn_vsip_enforce_t) = 31;
+                int DELETE_AGENT_NETWORK_POLICY_ENFORCEMENT(rpc_trn_vsip_enforce_t) = 32;
 
           } = 1;
 

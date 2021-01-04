@@ -152,3 +152,7 @@ int trn_update_agent_network_policy_enforcement_map(struct agent_user_metadata_t
 						      struct vsip_enforce_t *local,
 						      __u8 *isenforce,
 						      int counter);
+
+int trn_delete_agent_network_policy_enforcement_map(struct agent_user_metadata_t *md,
+						      struct vsip_enforce_t *local,
+						      int counter);
