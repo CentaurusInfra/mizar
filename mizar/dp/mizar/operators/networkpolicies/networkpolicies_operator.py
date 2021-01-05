@@ -52,6 +52,18 @@ class NetworkPolicyOperator(object):
         self.obj_api = client.CustomObjectsApi()
         self.core_api = client.CoreV1Api()
 
-    def get_networkpolicy(self, name):
+    def get_networkpolicy_from_cluster(self, name):
         splitted = name.split(":")
         return self.obj_api.get_namespaced_custom_object("networking.k8s.io", "v1", splitted[0], "networkpolicies", splitted[1])
+
+    def get_or_create_networkpolicy_from_store(self, name):
+        splitted = name.split(":")
+        policy_name = splitted[1]
+        networkpolicy = self.store.get_networkpolicy(policy_name)
+        if networkpolicy is None:
+            networkpolicy = NetworkPolicy(policy_name, self.obj_api, self.store)
+            self.store.update_networkpolicy(networkpolicy)
+        return networkpolicy
+
+    def store_update(self, networkpolicy):
+        self.store.update_networkpolicy(networkpolicy)
