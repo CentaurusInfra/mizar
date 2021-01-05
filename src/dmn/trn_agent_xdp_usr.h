@@ -161,3 +161,7 @@ int trn_update_agent_network_policy_protocol_port_map(struct agent_user_metadata
 						        struct vsip_ppo_t *policy,
 						        __u64 *bitmap,
 							int counter);
+
+int trn_delete_agent_network_policy_protocol_port_map(struct agent_user_metadata_t *md,
+						        struct vsip_ppo_t *policy,
+							int counter);
