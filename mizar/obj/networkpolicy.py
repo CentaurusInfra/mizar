@@ -26,27 +26,15 @@ logger = logging.getLogger()
 
 
 class NetworkPolicy:
-    def __init__(self, name, obj_api, opr_store, spec=None):
+    def __init__(self, name, obj_api, opr_store):
         self.name = name
         self.obj_api = obj_api
         self.store = opr_store
-        self.endpoints = []
-        if spec is not None:
-            self.set_obj_spec(spec)
+        self.endpoints = set()
 
     @property
     def get_endpoints(self):
         return self.endpoints
-
-    def get_obj_spec(self):
-        self.obj = {
-            "endpoints": self.endpoints
-        }
-
-        return self.obj
-
-    def set_obj_spec(self, spec):
-        self.endpoints = get_spec_val('endpoints', spec)
 
     def get_name(self):
         return self.name
@@ -57,8 +45,8 @@ class NetworkPolicy:
     def get_kind(self):
         return "NetworkPolicy"    
 
-    def set_endpoints(self, endpoints):
-        self.endpoints = endpoints
+    def add_endpoint(self, endpoint_name):
+        self.endpoints.add(endpoint_name)
 
     def store_update_obj(self):
         if self.store is None:

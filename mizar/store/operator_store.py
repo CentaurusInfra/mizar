@@ -49,6 +49,9 @@ class OprStore(object):
 
         self.networkpolicies_store = {}
 
+        self.label_networkpolicies_ingress_store = {}
+        self.label_networkpolicies_egress_store = {}
+
         self.dividers_store = {}
         self.dividers_vpc_store = {}
 
@@ -191,6 +194,28 @@ class OprStore(object):
     def delete_networkpolicy(self, name):
         if name in self.networkpolicies_store:
             del self.networkpolicies_store[name]
+
+    def get_networkpolicies_by_label_ingress(self, label):
+        if label in self.label_networkpolicies_ingress_store:
+            return self.label_networkpolicies_ingress_store[label]
+        return None
+
+    def add_label_networkpolicy_ingress(self, label, policy_name_list):
+        if label not in self.label_networkpolicies_ingress_store:
+            self.label_networkpolicies_ingress_store[label] = set()
+        for policy_name in policy_name_list:
+            self.label_networkpolicies_ingress_store[label].add(policy_name)
+
+    def get_networkpolicies_by_label_egress(self, label):
+        if label in self.label_networkpolicies_egress_store:
+            return self.label_networkpolicies_egress_store[label]
+        return None
+
+    def add_label_networkpolicy_egress(self, label, policy_name_list):
+        if label not in self.label_networkpolicies_egress_store:
+            self.label_networkpolicies_egress_store[label] = set()
+        for policy_name in policy_name_list:
+            self.label_networkpolicies_egress_store[label].add(policy_name)
 
     def update_droplet(self, droplet):
         self.droplets_store[droplet.name] = droplet
