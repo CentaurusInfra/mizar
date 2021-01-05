@@ -119,6 +119,7 @@ int trn_cli_update_agent_network_policy_enforcement_subcmd(CLIENT *clnt, int arg
 int trn_cli_delete_transit_network_policy_enforcement_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_delete_agent_network_policy_enforcement_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_update_transit_network_policy_protocol_port_subcmd(CLIENT *clnt, int argc, char *argv[]);
+int trn_cli_update_agent_network_policy_protocol_port_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_delete_transit_network_policy_protocol_port_subcmd(CLIENT *clnt, int argc, char *argv[]);
 
 void dump_vpc(struct rpc_trn_vpc_t *vpc);

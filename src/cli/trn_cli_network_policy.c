@@ -39,9 +39,15 @@ int trn_cli_update_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *a
 	if (json_str == NULL) {
 		return -EINVAL;
 	}
-	int counter = cJSON_GetArraySize(json_str); 
 
 	int *rc;
+
+	int counter = cJSON_GetArraySize(json_str); 
+	if (counter <= 0) {
+		print_err("Input policy size is less than or equal to zero. Please check your input. \n");
+		return -EINVAL;
+	}
+
 	struct rpc_trn_vsip_cidr_t cidrs[counter];
 	char rpc[] = "update_transit_network_policy_1";
 
@@ -104,9 +110,15 @@ int trn_cli_update_agent_network_policy_subcmd(CLIENT *clnt, int argc, char *arg
 	if (json_str == NULL) {
 		return -EINVAL;
 	}
-	int counter = cJSON_GetArraySize(json_str); 
 
 	int *rc;
+
+	int counter = cJSON_GetArraySize(json_str); 
+	if (counter <= 0) {
+		print_err("Input policy size is less than or equal to zero. Please check your input. \n");
+		return -EINVAL;
+	}
+
 	struct rpc_trn_vsip_cidr_t cidrs[counter];
 	char rpc[] = "update_agent_network_policy_1";
 
@@ -169,9 +181,15 @@ int trn_cli_delete_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *a
 	if (json_str == NULL) {
 		return -EINVAL;
 	}
-	int counter = cJSON_GetArraySize(json_str); 
 
 	int *rc;
+
+	int counter = cJSON_GetArraySize(json_str); 
+	if (counter <= 0) {
+		print_err("Input policy size is less than or equal to zero. Please check your input. \n");
+		return -EINVAL;
+	}
+
 	struct rpc_trn_vsip_cidr_key_t cidrkeys[counter];
 	char rpc[] = "delete_transit_network_policy_1";
 
@@ -224,9 +242,15 @@ int trn_cli_delete_agent_network_policy_subcmd(CLIENT *clnt, int argc, char *arg
 	if (json_str == NULL) {
 		return -EINVAL;
 	}
-	int counter = cJSON_GetArraySize(json_str); 
 
 	int *rc;
+
+	int counter = cJSON_GetArraySize(json_str); 
+	if (counter <= 0) {
+		print_err("Input policy size is less than or equal to zero. Please check your input. \n");
+		return -EINVAL;
+	}
+
 	struct rpc_trn_vsip_cidr_key_t cidrkeys[counter];
 	char rpc[] = "delete_agent_network_policy_1";
 
@@ -276,13 +300,18 @@ int trn_cli_update_transit_network_policy_enforcement_subcmd(CLIENT *clnt, int a
 
 	char *buf = conf.conf_str;
 	json_str = trn_cli_parse_json(buf);
-	int counter = cJSON_GetArraySize(json_str);
-
 	if (json_str == NULL) {
 		return -EINVAL;
 	}
 
 	int *rc;
+
+	int counter = cJSON_GetArraySize(json_str); 
+	if (counter <= 0) {
+		print_err("Input policy size is less than or equal to zero. Please check your input. \n");
+		return -EINVAL;
+	}
+
 	struct rpc_trn_vsip_enforce_t enforces[counter];
 	char rpc[] = "update_transit_network_policy_enforcement_1";
 
@@ -342,13 +371,18 @@ int trn_cli_update_agent_network_policy_enforcement_subcmd(CLIENT *clnt, int arg
 
 	char *buf = conf.conf_str;
 	json_str = trn_cli_parse_json(buf);
-	int counter = cJSON_GetArraySize(json_str);
-
 	if (json_str == NULL) {
 		return -EINVAL;
 	}
 
 	int *rc;
+
+	int counter = cJSON_GetArraySize(json_str); 
+	if (counter <= 0) {
+		print_err("Input policy size is less than or equal to zero. Please check your input. \n");
+		return -EINVAL;
+	}
+
 	struct rpc_trn_vsip_enforce_t enforces[counter];
 	char rpc[] = "update_agent_network_policy_enforcement_1";
 
@@ -414,9 +448,14 @@ int trn_cli_delete_transit_network_policy_enforcement_subcmd(CLIENT *clnt, int a
 		return -EINVAL;
 	}
 
-	int counter = cJSON_GetArraySize(json_str);
-
 	int *rc;
+
+	int counter = cJSON_GetArraySize(json_str); 
+	if (counter <= 0) {
+		print_err("Input policy size is less than or equal to zero. Please check your input. \n");
+		return -EINVAL;
+	}
+
 	struct rpc_trn_vsip_enforce_t enforces[counter];
 	char rpc[] = "delete_transit_network_policy_enforcement_1";
 
@@ -471,9 +510,14 @@ int trn_cli_delete_agent_network_policy_enforcement_subcmd(CLIENT *clnt, int arg
 		return -EINVAL;
 	}
 
-	int counter = cJSON_GetArraySize(json_str);
-
 	int *rc;
+
+	int counter = cJSON_GetArraySize(json_str); 
+	if (counter <= 0) {
+		print_err("Input policy size is less than or equal to zero. Please check your input. \n");
+		return -EINVAL;
+	}
+
 	struct rpc_trn_vsip_enforce_t enforces[counter];
 	char rpc[] = "delete_agent_network_policy_enforcement_1";
 
@@ -528,9 +572,14 @@ int trn_cli_update_transit_network_policy_protocol_port_subcmd(CLIENT *clnt, int
 		return -EINVAL;
 	}
 
-	int counter = cJSON_GetArraySize(json_str);
-
 	int *rc;
+
+	int counter = cJSON_GetArraySize(json_str); 
+	if (counter <= 0) {
+		print_err("Input policy size is less than or equal to zero. Please check your input. \n");
+		return -EINVAL;
+	}
+
 	struct rpc_trn_vsip_ppo_t ppos[counter];
 	char rpc[] = "update_transit_network_policy_protocol_port_1";
 
@@ -577,6 +626,77 @@ int trn_cli_update_transit_network_policy_protocol_port_subcmd(CLIENT *clnt, int
 	return 0;
 }
 
+int trn_cli_update_agent_network_policy_protocol_port_subcmd(CLIENT *clnt, int argc, char *argv[])
+{
+	ketopt_t om = KETOPT_INIT;
+	struct cli_conf_data_t conf;
+	cJSON *json_str = NULL;
+
+	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
+		return -EINVAL;
+	}
+
+	char *buf = conf.conf_str;
+	json_str = trn_cli_parse_json(buf);
+
+	if (json_str == NULL) {
+		return -EINVAL;
+	}
+
+	int *rc;
+
+	int counter = cJSON_GetArraySize(json_str); 
+	if (counter <= 0) {
+		print_err("Input policy size is less than or equal to zero. Please check your input. \n");
+		return -EINVAL;
+	}
+
+	struct rpc_trn_vsip_ppo_t ppos[counter];
+	char rpc[] = "update_agent_network_policy_protocol_port_1";
+
+	for (int i = 0; i < counter; i++)
+	{
+		struct rpc_trn_vsip_ppo_t ppo;
+		ppo.interface = conf.intf;
+		ppo.count = counter;
+		cJSON *policy = cJSON_GetArrayItem(json_str, i);
+
+		int err = trn_cli_parse_network_policy_protocol_port(policy, &ppo);
+		if (err != 0) {
+			print_err("Error: parsing network policy protocol port config.\n");
+			return -EINVAL;
+		}
+		ppos[i] = ppo;
+	}
+	cJSON_Delete(json_str);
+
+	rc = update_agent_network_policy_protocol_port_1(ppos, clnt);
+	if (rc == (int *)NULL) {
+		print_err("RPC Error: client call failed: update_agent_network_policy_protocol_port_1 \n");
+		return -EINVAL;
+	}
+
+	if (*rc != 0) {
+		print_err(
+			"Error: %s fatal daemon error, see transitd logs for details.\n",
+			rpc);
+		return -EINVAL;
+	}
+
+	for (int k = 0; k < counter; k++)
+	{
+		if (&ppos[k] == NULL){
+			print_err("update_agent_network_policy_protocol_port_1 Expected %d elements to be updated into network policy map, but only has %d elements. \n",
+					counter, k-1);
+			return -EINVAL; 
+		}
+		dump_protocol_port_policy(&ppos[k]);
+	}
+	print_msg("update_agent_network_policy_protocol_port_1 successfully updated network policy \n");
+
+	return 0;
+}
+
 int trn_cli_delete_transit_network_policy_protocol_port_subcmd(CLIENT *clnt, int argc, char *argv[])
 {
 	ketopt_t om = KETOPT_INIT;
@@ -595,7 +715,8 @@ int trn_cli_delete_transit_network_policy_protocol_port_subcmd(CLIENT *clnt, int
 	}
 
 	int *rc;
-	int counter = cJSON_GetArraySize(json_str);
+
+	int counter = cJSON_GetArraySize(json_str); 
 	if (counter <= 0) {
 		print_err("Input policy size is less than or equal to zero. Please check your input. \n");
 		return -EINVAL;
