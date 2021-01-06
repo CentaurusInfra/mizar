@@ -38,6 +38,7 @@ async def builtins_on_pod(body, spec, **kwargs):
     param.name = kwargs['name']
     param.body = body
     param.spec = spec
+    param.diff = kwargs['diff']
     run_workflow(wffactory().k8sPodCreate(param=param))
 
 
@@ -47,4 +48,5 @@ async def builtins_on_pod_delete(body, spec, **kwargs):
     param.name = kwargs['name']
     param.body = body
     param.spec = spec
+    param.diff = kwargs['diff']
     run_workflow(wffactory().k8sPodDelete(param=param))

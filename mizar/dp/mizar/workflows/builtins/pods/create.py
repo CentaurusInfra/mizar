@@ -27,6 +27,7 @@ from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
 from mizar.dp.mizar.operators.vpcs.vpcs_operator import *
 from mizar.dp.mizar.operators.nets.nets_operator import *
 from mizar.common.constants import *
+from mizar.networkpolicy.networkpolicy_util import *
 
 logger = logging.getLogger()
 
@@ -34,6 +35,7 @@ droplet_opr = DropletOperator()
 endpoint_opr = EndpointOperator()
 vpc_opr = VpcOperator()
 net_opr = NetOperator()
+networkpolicy_util = NetworkPolicyUtil()
 
 
 class k8sPodCreate(WorkflowTask):
@@ -44,6 +46,8 @@ class k8sPodCreate(WorkflowTask):
 
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
+
+        networkpolicy_util.handle_pod_change_for_networkpolicy(self.param.diff)
 
         if "hostIP" not in self.param.body['status']:
             self.raise_temporary_error("Pod spec not ready.")
