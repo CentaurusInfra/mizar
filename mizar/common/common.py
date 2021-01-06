@@ -44,6 +44,12 @@ def run_cmd(cmd):
     returncode = result.returncode
     return (returncode, text)
 
+def count_characters(self, a_dict):
+    count = 0
+    for key, value in a_dict.items():
+        count += len(key)
+        count += len(str(value))
+    return count
 
 def get_iface_index(name, iproute):
     intfs = iproute.link_lookup(ifname=name)

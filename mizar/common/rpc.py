@@ -21,7 +21,8 @@
 
 import logging
 import json
-from mizar.common.common import run_cmd
+from mizar.common.common import run_cmd, count_characters
+from mizar.common.constants import *
 
 logger = logging.getLogger()
 
@@ -318,6 +319,7 @@ class TrnRpc:
         if len(cidr_networkpolicy_list) == 0:
             return
         conf_list = []
+        counter = 0
         for cidr_networkpolicy in cidr_networkpolicy_list:
             conf = {
                 "tunnel_id": cidr_networkpolicy.vni,
@@ -327,12 +329,23 @@ class TrnRpc:
                 "cidr_type": cidr_networkpolicy.get_cidr_type_int(),
                 "bit_value": str(cidr_networkpolicy.policy_bit_value),
             }
-            conf_list.append(conf)
+            item_len = count_characters(conf)
+            counter += item_len
+            if (counter < CONSTANTS.MAX_CLI_CHAR_LENGTH):
+                conf_list.append(conf)
+            if (counter + item_len > CONSTANTS.MAX_CLI_CHAR_LENGTH):
+                self.run_cli_update_network_policy_ingress(conf_list)
+                conf_list = []
+                counter = 0
+        self.run_cli_update_network_policy_ingress(conf_list)
+
+    def run_cli_update_network_policy_ingress(self, conf_list):
         jsonconf = json.dumps(conf_list)
         cmd = f'''{self.trn_cli_update_network_policy_ingress} \'{jsonconf}\''''
         logger.info("update_network_policy_ingress: {}".format(cmd))
         returncode, text = run_cmd(cmd)
         logger.info("update_network_policy_ingress returns {} {}".format(returncode, text))
+    #### TODO: to shorten cli commands from line 51 to 62 to reduce size of the cli cmd
 
     def update_network_policy_egress(self, ep, cidr_networkpolicy_list):
         if len(cidr_networkpolicy_list) == 0:
