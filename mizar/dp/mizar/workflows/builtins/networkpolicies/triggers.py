@@ -34,7 +34,7 @@ logger = logging.getLogger()
 @kopf.on.create('networking.k8s.io', 'v1', 'networkpolicies', retries=OBJ_DEFAULTS.kopf_max_retries, when=LAMBDAS.k8s_provider_vanilla)
 async def builtins_on_networkpolicy(body, spec, **kwargs):
     param = HandlerParam()
-    param.name = "{}:{}".format(kwargs['namespace'],kwargs['name'])
+    param.name = "{}:{}".format(kwargs['namespace'], kwargs['name'])
     param.body = body
     param.spec = spec
     run_workflow(wffactory().k8sNetworkPolicyCreate(param=param))

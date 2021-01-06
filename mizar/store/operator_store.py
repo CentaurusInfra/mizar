@@ -47,10 +47,10 @@ class OprStore(object):
         self.eps_net_store = {}
         self.eps_pod_store = {}
 
-        self.networkpolicies_store = {}
-
         self.label_networkpolicies_ingress_store = {}
         self.label_networkpolicies_egress_store = {}
+
+        self.networkpolicy_endpoints_store = {}
 
         self.dividers_store = {}
         self.dividers_vpc_store = {}
@@ -182,19 +182,6 @@ class OprStore(object):
         for e in self.eps_store.values():
             logger.debug("EP: {}, Spec: {}".format(e.name, e.get_obj_spec()))
 
-    def get_networkpolicy(self, name):
-        if name in self.networkpolicies_store:
-            return self.networkpolicies_store[name]
-        return None
-
-    def update_networkpolicy(self, networkpolicy):
-        logger.info("Store update networkpolicy {}".format(networkpolicy.name))
-        self.networkpolicies_store[networkpolicy.name] = networkpolicy
-
-    def delete_networkpolicy(self, name):
-        if name in self.networkpolicies_store:
-            del self.networkpolicies_store[name]
-
     def get_networkpolicies_by_label_ingress(self, label):
         if label in self.label_networkpolicies_ingress_store:
             return self.label_networkpolicies_ingress_store[label]
@@ -216,6 +203,16 @@ class OprStore(object):
             self.label_networkpolicies_egress_store[label] = set()
         for policy_name in policy_name_list:
             self.label_networkpolicies_egress_store[label].add(policy_name)
+
+    def get_endpoints_by_networkpolicy(self, policy_name):
+        if policy_name in self.networkpolicy_endpoints_store:
+            return self.networkpolicy_endpoints_store[policy_name]
+        return None
+
+    def add_networkpolicy_endpoint(self, policy_name, endpoint_name):
+        if policy_name not in self.networkpolicy_endpoints_store:
+            self.networkpolicy_endpoints_store[policy_name] = set()
+        self.networkpolicy_endpoints_store[policy_name].add(endpoint_name)
 
     def update_droplet(self, droplet):
         self.droplets_store[droplet.name] = droplet
