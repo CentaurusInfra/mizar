@@ -75,6 +75,10 @@ class NetworkPolicyUtil:
             networkpolicy_opr.store.add_label_networkpolicy_ingress(label, data_for_networkpolicy["ingress"]["label_networkpolicies_map"][label])
         for label in data_for_networkpolicy["egress"]["label_networkpolicies_map"]:
             networkpolicy_opr.store.add_label_networkpolicy_egress(label, data_for_networkpolicy["egress"]["label_networkpolicies_map"][label])
+        for label in data_for_networkpolicy["ingress"]["namespace_label_networkpolicies_map"]:
+            networkpolicy_opr.store.add_namespace_label_networkpolicy_ingress(label, data_for_networkpolicy["ingress"]["namespace_label_networkpolicies_map"][label])
+        for label in data_for_networkpolicy["egress"]["namespace_label_networkpolicies_map"]:
+            networkpolicy_opr.store.add_namespace_label_networkpolicy_egress(label, data_for_networkpolicy["egress"]["namespace_label_networkpolicies_map"][label])
 
     def generate_data_for_networkpolicy_ingress(self, ep):
         data = self.init_data_for_networkpolicy()
@@ -105,6 +109,7 @@ class NetworkPolicyUtil:
             "cidrs_map_except": {},
             "ports_map": {},
             "label_networkpolicies_map": {},
+            "namespace_label_networkpolicies_map": {},
             "cidr_and_policies_map_no_except": {},
             "cidr_and_policies_map_with_except": {},
             "cidr_and_policies_map_except": {},
@@ -151,6 +156,7 @@ class NetworkPolicyUtil:
                     data["cidrs_map_no_except"][indexed_policy_name].append(rule_item["ipBlock"]["cidr"])
             elif "namespaceSelector" in rule_item and "podSelector" in rule_item:
                 self.add_label_networkpolicy(data, rule_item["podSelector"]["matchLabels"], policy_name)
+                self.add_namespace_label_networkpolicy(data, rule_item["namespaceSelector"]["matchLabels"], policy_name)
                 namespaces = kube_list_namespaces_by_labels(networkpolicy_opr.core_api, rule_item["namespaceSelector"]["matchLabels"])
                 if namespaces is not None:
                     namespace_set = set()
@@ -162,7 +168,8 @@ class NetworkPolicyUtil:
                         for pod in pods.items:
                             if pod.metadata.namespace in namespace_set and pod.status.pod_ip is not None:
                                 data["cidrs_map_no_except"][indexed_policy_name].append("{}/32".format(pod.status.pod_ip))
-            elif "namespaceSelector" in rule_item:                
+            elif "namespaceSelector" in rule_item:
+                self.add_namespace_label_networkpolicy(data, rule_item["namespaceSelector"]["matchLabels"], policy_name)
                 namespaces = kube_list_namespaces_by_labels(networkpolicy_opr.core_api, rule_item["namespaceSelector"]["matchLabels"])
                 if namespaces is not None:
                     for namespace in namespaces.items:
@@ -187,6 +194,13 @@ class NetworkPolicyUtil:
             if label not in data["label_networkpolicies_map"]:
                 data["label_networkpolicies_map"][label] = set()
             data["label_networkpolicies_map"][label].add(policy_name)
+
+    def add_namespace_label_networkpolicy(self, data, label_dict, policy_name):
+        for key in label_dict:
+            label = "{}={}".format(key, label_dict[key])
+            if label not in data["namespace_label_networkpolicies_map"]:
+                data["namespace_label_networkpolicies_map"][label] = set()
+            data["namespace_label_networkpolicies_map"][label].add(policy_name)
 
     def build_access_rules(self, access_rules, ep):
         self.build_cidr_and_policies_map(access_rules, "no_except")
