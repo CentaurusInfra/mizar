@@ -39,7 +39,7 @@ iperf3 -c iperf-s -t 60 -u -b 1000M -l 64
 ```
 After the throughput test is done, delete iperf3 server and client pods.
 
-### Metwork latency testing
+### Network latency testing
 netperf tool is used to collect network latency metrics, in form of TCP_RR(request/response with 1 byte message body).
 To start netperf server (netserver):
 ```bash
