@@ -50,6 +50,9 @@ class OprStore(object):
         self.label_networkpolicies_ingress_store = {}
         self.label_networkpolicies_egress_store = {}
 
+        self.namespace_label_networkpolicies_ingress_store = {}
+        self.namespace_label_networkpolicies_egress_store = {}
+
         self.networkpolicy_endpoints_store = {}
 
         self.dividers_store = {}
@@ -203,6 +206,28 @@ class OprStore(object):
             self.label_networkpolicies_egress_store[label] = set()
         for policy_name in policy_name_list:
             self.label_networkpolicies_egress_store[label].add(policy_name)
+
+    def get_networkpolicies_by_namespace_label_ingress(self, label):
+        if label in self.namespace_label_networkpolicies_ingress_store:
+            return self.namespace_label_networkpolicies_ingress_store[label]
+        return None
+
+    def add_namespace_label_networkpolicy_ingress(self, label, policy_name_list):
+        if label not in self.namespace_label_networkpolicies_ingress_store:
+            self.namespace_label_networkpolicies_ingress_store[label] = set()
+        for policy_name in policy_name_list:
+            self.namespace_label_networkpolicies_ingress_store[label].add(policy_name)
+
+    def get_networkpolicies_by_namespace_label_egress(self, label):
+        if label in self.namespace_label_networkpolicies_egress_store:
+            return self.namespace_label_networkpolicies_egress_store[label]
+        return None
+
+    def add_namespace_label_networkpolicy_egress(self, label, policy_name_list):
+        if label not in self.namespace_label_networkpolicies_egress_store:
+            self.namespace_label_networkpolicies_egress_store[label] = set()
+        for policy_name in policy_name_list:
+            self.namespace_label_networkpolicies_egress_store[label].add(policy_name)
 
     def get_endpoints_by_networkpolicy(self, policy_name):
         if policy_name in self.networkpolicy_endpoints_store:
