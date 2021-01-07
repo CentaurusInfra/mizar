@@ -34,9 +34,9 @@ class k8sNetworkPolicyCreate(WorkflowTask):
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
 
-        name = self.param.name
+        policy_name = "{}:{}".format(self.param.namespace, self.param.name)
         pod_label_dict = self.param.spec["podSelector"]["matchLabels"]
         policy_types = self.param.spec["policyTypes"]
-        networkpolicy_util.handle_networkpolicy_create_update(name, pod_label_dict, policy_types)
+        networkpolicy_util.handle_networkpolicy_create_update(policy_name, pod_label_dict, policy_types)
 
         self.finalize()

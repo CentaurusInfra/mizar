@@ -24,7 +24,6 @@ import random
 import json
 from kubernetes import client, config
 from mizar.obj.endpoint import Endpoint
-from mizar.obj.networkpolicy import NetworkPolicy
 from mizar.obj.bouncer import Bouncer
 from mizar.common.constants import *
 from mizar.common.common import *
@@ -55,15 +54,3 @@ class NetworkPolicyOperator(object):
     def get_networkpolicy_from_cluster(self, name):
         splitted = name.split(":")
         return self.obj_api.get_namespaced_custom_object("networking.k8s.io", "v1", splitted[0], "networkpolicies", splitted[1])
-
-    def get_or_create_networkpolicy_from_store(self, name):
-        splitted = name.split(":")
-        policy_name = splitted[1]
-        networkpolicy = self.store.get_networkpolicy(policy_name)
-        if networkpolicy is None:
-            networkpolicy = NetworkPolicy(policy_name, self.obj_api, self.store)
-            self.store.update_networkpolicy(networkpolicy)
-        return networkpolicy
-
-    def store_update(self, networkpolicy):
-        self.store.update_networkpolicy(networkpolicy)
