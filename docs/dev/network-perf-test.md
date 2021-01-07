@@ -1,7 +1,7 @@
 # How to test Mizar network performance
 This document records the considerations of Mizar network performance testing, and the tools used and steps of processes in metric collecting.
 
-Also, it has one sample collection of network metrics for the reference, which was the result of one of the basic performace testings.
+Also, it has one sample collection of network metrics for the reference, which was the result of one of the basic performance testings.
 
 
 ## Background
@@ -9,9 +9,9 @@ Mizar is based on new technology of eBPF/XDP, provides brand new networking for 
 
 
 ## Target network metrics
-* TCP stream throuput (not to confuse with bandwidth)
+* TCP stream throughput (not to confuse with bandwidth)
 * UDP PPS throughput
-* Latency
+* Network latency
 
 
 ## Basic Test Process
@@ -39,8 +39,8 @@ iperf3 -c iperf-s -t 60 -u -b 1000M -l 64
 ```
 After the throughput test is done, delete iperf3 server and client pods.
 
-### Latency testing
-netperf tool is used to collect latency metrics.
+### Metwork latency testing
+netperf tool is used to collect network latency metrics, in form of TCP_RR(request/response with 1 byte message body).
 To start netperf server (netserver):
 ```bash
 kubectl run np-s --image alectolytic/netperf --overrides='{"spec":{"nodeName":"kind-worker"}}'
