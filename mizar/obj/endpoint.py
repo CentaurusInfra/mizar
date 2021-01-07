@@ -377,6 +377,9 @@ class Endpoint:
         self.rpc.delete_agent_substrate_ep(ep, bouncer.ip)
 
     def update_networkpolicy_per_endpoint(self, data):
+        self.update_network_policy_ingress("except", data["ingress"]["cidr_table_except"])
+        self.update_network_policy_egress("except", data["egress"]["cidr_table_except"])
+
         if len(data["old"]) > 0:
             self.delete_network_policy_ingress("no_except", data["old"]["ingress"]["cidr_table_no_except"])
             self.delete_network_policy_ingress("with_except", data["old"]["ingress"]["cidr_table_with_except"])
@@ -384,17 +387,13 @@ class Endpoint:
             self.delete_network_policy_egress("no_except", data["old"]["egress"]["cidr_table_no_except"])
             self.delete_network_policy_egress("with_except", data["old"]["egress"]["cidr_table_with_except"])
             self.delete_network_policy_egress("except", data["old"]["egress"]["cidr_table_except"])
-
             self.delete_network_policy_protocol_port_ingress(data["old"]["ingress"]["port_table"])
             self.delete_network_policy_protocol_port_egress(data["old"]["egress"]["port_table"])
 
         self.update_network_policy_ingress("no_except", data["ingress"]["cidr_table_no_except"])
         self.update_network_policy_ingress("with_except", data["ingress"]["cidr_table_with_except"])
-        self.update_network_policy_ingress("except", data["ingress"]["cidr_table_except"])
         self.update_network_policy_egress("no_except", data["egress"]["cidr_table_no_except"])
         self.update_network_policy_egress("with_except", data["egress"]["cidr_table_with_except"])
-        self.update_network_policy_egress("except", data["egress"]["cidr_table_except"])
-
         self.update_network_policy_protocol_port_ingress(data["ingress"]["port_table"])
         self.update_network_policy_protocol_port_egress(data["egress"]["port_table"])
 

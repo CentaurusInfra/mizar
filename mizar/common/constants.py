@@ -36,7 +36,7 @@ class CONSTANTS:
     ON_XDP_SCALED_EP = "ON_XDP_SCALED_EP"
     IPPROTO_TCP = "6"
     IPROTO_UDP = "17"
-
+    MAX_CLI_CHAR_LENGTH = 2000
 
 class OBJ_STATUS:
     obj_init = 'Init'
