@@ -21,7 +21,7 @@
 
 import logging
 import json
-from mizar.common.common import run_cmd
+from mizar.common.common import run_cmd, network_policy_rpc_helper
 from mizar.common.constants import *
 
 logger = logging.getLogger()
@@ -328,12 +328,8 @@ class TrnRpc:
                 "cidr_type": cidr_networkpolicy.get_cidr_type_int(),
                 "bit_value": str(cidr_networkpolicy.policy_bit_value),
             }
-            # +1 is for comma that will get added during json conversion
-            item_len = len(json.dumps(conf)) + 1
-            counter = len(json.dumps(conf_list)) + item_len
-            if (counter < CONSTANTS.MAX_CLI_CHAR_LENGTH):
-                conf_list.append(conf)
-            if (counter + item_len > CONSTANTS.MAX_CLI_CHAR_LENGTH):
+            conf_list.append(conf)
+            if (network_policy_rpc_helper(conf, conf_list)):
                 self.run_cli_update_network_policy_ingress(conf_list)
                 conf_list = []
         self.run_cli_update_network_policy_ingress(conf_list)
@@ -344,7 +340,6 @@ class TrnRpc:
         logger.info("update_network_policy_ingress: {}".format(cmd))
         returncode, text = run_cmd(cmd)
         logger.info("update_network_policy_ingress returns {} {}".format(returncode, text))
-    #### TODO: to shorten cli commands from line 51 to 62 to reduce size of the cli cmd
 
     def update_network_policy_egress(self, ep, cidr_networkpolicy_list):
         if len(cidr_networkpolicy_list) == 0:
@@ -360,12 +355,8 @@ class TrnRpc:
                 "cidr_type": cidr_networkpolicy.get_cidr_type_int(),
                 "bit_value": str(cidr_networkpolicy.policy_bit_value),
             }
-            # +1 is for comma that will get added during json conversion
-            item_len = len(json.dumps(conf)) + 1
-            counter = len(json.dumps(conf_list)) + item_len
-            if (counter < CONSTANTS.MAX_CLI_CHAR_LENGTH):
-                conf_list.append(conf)
-            if (counter + item_len > CONSTANTS.MAX_CLI_CHAR_LENGTH):
+            conf_list.append(conf)
+            if (network_policy_rpc_helper(conf, conf_list)):
                 self.run_cli_update_network_policy_egress(conf_list, itf)
                 conf_list = []
         self.run_cli_update_network_policy_egress(conf_list, itf)
@@ -390,12 +381,8 @@ class TrnRpc:
                 "cidr_type": cidr_networkpolicy.get_cidr_type_int(),
                 "bit_value": str(cidr_networkpolicy.policy_bit_value),
             }
-            # +1 is for comma that will get added during json conversion
-            item_len = len(json.dumps(conf)) + 1
-            counter = len(json.dumps(conf_list)) + item_len
-            if (counter < CONSTANTS.MAX_CLI_CHAR_LENGTH):
-                conf_list.append(conf)
-            if (counter + item_len > CONSTANTS.MAX_CLI_CHAR_LENGTH):
+            conf_list.append(conf)
+            if (network_policy_rpc_helper(conf, conf_list)):
                 self.run_cli_delete_network_policy_ingress(conf_list)
                 conf_list = []
         self.run_cli_delete_network_policy_ingress(conf_list)
@@ -421,15 +408,11 @@ class TrnRpc:
                 "cidr_type": cidr_networkpolicy.get_cidr_type_int(),
                 "bit_value": str(cidr_networkpolicy.policy_bit_value),
             }
-            # +1 is for comma that will get added during json conversion
-            item_len = len(json.dumps(conf)) + 1
-            counter = len(json.dumps(conf_list)) + item_len
-            if (counter < CONSTANTS.MAX_CLI_CHAR_LENGTH):
-                conf_list.append(conf)
-            if (counter + item_len > CONSTANTS.MAX_CLI_CHAR_LENGTH):
+            conf_list.append(conf)
+            if (network_policy_rpc_helper(conf, conf_list)):
                 self.run_cli_delete_network_policy_egress(conf_list, itf)
                 conf_list = []
-            self.run_cli_delete_network_policy_egress(conf_list, itf)
+        self.run_cli_delete_network_policy_egress(conf_list, itf)
 
     def run_cli_delete_network_policy_egress(self, conf_list, itf):
         jsonconf = json.dumps(conf_list)
@@ -450,15 +433,11 @@ class TrnRpc:
                 "port": port_networkpolicy.port,
                 "bit_value": str(port_networkpolicy.policy_bit_value),
             }
-            # +1 is for comma that will get added during json conversion
-            item_len = len(json.dumps(conf)) + 1
-            counter = len(json.dumps(conf_list)) + item_len
-            if (counter < CONSTANTS.MAX_CLI_CHAR_LENGTH):
-                conf_list.append(conf)
-            if (counter + item_len > CONSTANTS.MAX_CLI_CHAR_LENGTH):
+            conf_list.append(conf)
+            if (network_policy_rpc_helper(conf, conf_list)):
                 self.run_cli_update_network_policy_protocol_port_ingress(conf_list)
                 conf_list = []
-            self.run_cli_update_network_policy_protocol_port_ingress(conf_list)
+        self.run_cli_update_network_policy_protocol_port_ingress(conf_list)
 
     def run_cli_update_network_policy_protocol_port_ingress(self, conf_list):
         jsonconf = json.dumps(conf_list)
@@ -480,15 +459,11 @@ class TrnRpc:
                 "port": port_networkpolicy.port,
                 "bit_value": str(port_networkpolicy.policy_bit_value),
             }
-            # +1 is for comma that will get added during json conversion
-            item_len = len(json.dumps(conf)) + 1
-            counter = len(json.dumps(conf_list)) + item_len
-            if (counter < CONSTANTS.MAX_CLI_CHAR_LENGTH):
-                conf_list.append(conf)
-            if (counter + item_len > CONSTANTS.MAX_CLI_CHAR_LENGTH):
+            conf_list.append(conf)
+            if (network_policy_rpc_helper(conf, conf_list)):
                 self.run_cli_update_network_policy_protocol_port_egress(conf_list, itf)
                 conf_list = []
-            self.run_cli_update_network_policy_protocol_port_egress(conf_list, itf)
+        self.run_cli_update_network_policy_protocol_port_egress(conf_list, itf)
 
     def run_cli_update_network_policy_protocol_port_egress(self, conf_list, itf):
         jsonconf = json.dumps(conf_list)
@@ -509,15 +484,11 @@ class TrnRpc:
                 "port": port_networkpolicy.port,
                 "bit_value": str(port_networkpolicy.policy_bit_value),
             }
-            # +1 is for comma that will get added during json conversion
-            item_len = len(json.dumps(conf)) + 1
-            counter = len(json.dumps(conf_list)) + item_len
-            if (counter < CONSTANTS.MAX_CLI_CHAR_LENGTH):
-                conf_list.append(conf)
-            if (counter + item_len > CONSTANTS.MAX_CLI_CHAR_LENGTH):
+            conf_list.append(conf)
+            if (network_policy_rpc_helper(conf, conf_list)):
                 self.run_cli_delete_network_policy_protocol_port_ingress(conf_list)
                 conf_list = []
-            self.run_cli_delete_network_policy_protocol_port_ingress(conf_list)
+        self.run_cli_delete_network_policy_protocol_port_ingress(conf_list)
 
     def run_cli_delete_network_policy_protocol_port_ingress(self, conf_list):
         jsonconf = json.dumps(conf_list)
@@ -539,15 +510,11 @@ class TrnRpc:
                 "port": port_networkpolicy.port,
                 "bit_value": str(port_networkpolicy.policy_bit_value),
             }
-            # +1 is for comma that will get added during json conversion
-            item_len = len(json.dumps(conf)) + 1
-            counter = len(json.dumps(conf_list)) + item_len
-            if (counter < CONSTANTS.MAX_CLI_CHAR_LENGTH):
-                conf_list.append(conf)
-            if (counter + item_len > CONSTANTS.MAX_CLI_CHAR_LENGTH):
+            conf_list.append(conf)
+            if (network_policy_rpc_helper(conf, conf_list)):
                 self.run_cli_delete_network_policy_protocol_port_egress(conf_list, itf)
                 conf_list = []
-            self.run_cli_delete_network_policy_protocol_port_egress(conf_list, itf)
+        self.run_cli_delete_network_policy_protocol_port_egress(conf_list, itf)
 
     def run_cli_delete_network_policy_protocol_port_egress(self, conf_list, itf):
         jsonconf = json.dumps(conf_list)

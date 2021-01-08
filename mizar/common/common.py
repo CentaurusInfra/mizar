@@ -25,6 +25,7 @@ import logging
 import luigi
 import kopf
 import datetime
+import json
 import dateutil.parser
 from kubernetes import watch, client
 from ctypes.util import find_library
@@ -382,3 +383,11 @@ def reset_param(param):
     param.extra = None
     param.return_message = None
     return param
+
+def network_policy_rpc_helper(conf, conf_list):
+    # +1 is for comma that will get added during json conversion
+    item_len = len(json.dumps(conf)) + 1
+    counter = len(json.dumps(conf_list)) + item_len
+    if (counter + item_len > CONSTANTS.MAX_CLI_CHAR_LENGTH):
+        return True
+    return False
