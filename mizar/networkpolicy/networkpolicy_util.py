@@ -30,26 +30,76 @@ logger = logging.getLogger()
 
 
 class NetworkPolicyUtil:
-    def handle_networkpolicy_create_update(self, name, pod_label_dict, policy_types):
+    def update_networkpolicy_endpoints_mapping_and_return_affected_endpoint_names(self, policy_name, pod_label_dict):
+        affected_endpoint_names = set()
+
+        endpoint_name_list = self.retrieve_endpoints_for_networkpolicy(policy_name, pod_label_dict)
+
+        if policy_name not in networkpolicy_opr.store.networkpolicy_endpoints_store:
+            networkpolicy_opr.store.networkpolicy_endpoints_store[policy_name] = set()
+
+        for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_store[policy_name]:
+            if endpoint_name in endpoint_name_list:
+                endpoint_name_list.remove(endpoint_name)
+            else:                
+                affected_endpoint_names.add(endpoint_name)
+                ep = networkpolicy_opr.store.get_ep(endpoint_name)
+                if ep is not None:
+                    ep.remove_ingress_networkpolicy(policy_name)
+                    ep.remove_egress_networkpolicy(policy_name)
+
+        for endpoint_name in affected_endpoint_names:
+            networkpolicy_opr.store.networkpolicy_endpoints_store[policy_name].remove(endpoint_name)
+
+        for endpoint_name in endpoint_name_list:
+            networkpolicy_opr.store.add_networkpolicy_endpoint(policy_name, endpoint_name)
+            affected_endpoint_names.add(endpoint_name)
+
+        if len(networkpolicy_opr.store.networkpolicy_endpoints_store[policy_name]) == 0:
+            networkpolicy_opr.store.networkpolicy_endpoints_store.pop(policy_name)
+
+        return affected_endpoint_names
+
+    def retrieve_endpoints_for_networkpolicy(self, policy_name, pod_label_dict):
+        endpoint_name_list = set()
+
+        if pod_label_dict is None:
+            return endpoint_name_list
+
         pods = kube_list_pods_by_labels(networkpolicy_opr.core_api, pod_label_dict)
         if pods is None:
-            return
+            return endpoint_name_list
+        
+        for pod in pods.items:
+            pod_name = pod.metadata.name
+            eps = endpoint_opr.store.get_eps_in_pod(pod_name)
+            for ep in eps.values():
+                endpoint_name_list.add(ep.name)
 
+        return endpoint_name_list
+
+    def add_networkpolicy_for_endpoint(self, policy_name, policy_types):
         has_ingress = "Ingress" in policy_types
         has_egress = "Egress" in policy_types
 
         if not has_ingress and not has_egress:
             return
 
-        for pod in pods.items:
-            pod_name = pod.metadata.name
-            eps = endpoint_opr.store.get_eps_in_pod(pod_name)
-            for ep in eps.values():
-                networkpolicy_opr.store.add_networkpolicy_endpoint(name, ep.name)
-                if has_ingress and name not in ep.ingress_networkpolicies:
-                    ep.add_ingress_networkpolicy(name)
-                if has_egress and name not in ep.egress_networkpolicies:
-                    ep.add_egress_networkpolicy(name)
+        if policy_name not in networkpolicy_opr.store.networkpolicy_endpoints_store:
+            return
+        
+        for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_store[policy_name]:
+            ep = networkpolicy_opr.store.get_ep(endpoint_name)
+            if ep is not None:
+                if has_ingress and policy_name not in ep.ingress_networkpolicies:
+                    ep.add_ingress_networkpolicy(policy_name)
+                if has_egress and policy_name not in ep.egress_networkpolicies:
+                    ep.add_egress_networkpolicy(policy_name)
+
+    def handle_networkpolicy_update_delete(self, endpoint_name_list):
+        for endpoint_name in endpoint_name_list:
+            ep = networkpolicy_opr.store.get_ep(endpoint_name)
+            if ep is not None:
                 self.handle_endpoint_for_networkpolicy(ep)
 
     def handle_endpoint_for_networkpolicy(self, ep):
@@ -60,7 +110,7 @@ class NetworkPolicyUtil:
             "ingress": data_for_networkpolicy_ingress,
             "egress": data_for_networkpolicy_egress,
         }
-        logger.info("data_for_networkpolicy: {}".format(data_for_networkpolicy))
+        
         old_data_for_networkpolicy = ep.get_data_for_networkpolicy()
         if len(old_data_for_networkpolicy) > 0:
             if len(old_data_for_networkpolicy["old"]) > 0 and old_data_for_networkpolicy["old"]["ingress"] == data_for_networkpolicy_ingress and old_data_for_networkpolicy["old"]["egress"] == data_for_networkpolicy_egress:
@@ -69,6 +119,7 @@ class NetworkPolicyUtil:
             old_data_for_networkpolicy["old"] = {}
             data_for_networkpolicy["old"] = old_data_for_networkpolicy
 
+        logger.info("data_for_networkpolicy: {}".format(data_for_networkpolicy))
         ep.set_data_for_networkpolicy(data_for_networkpolicy)
         ep.update_networkpolicy_per_endpoint(data_for_networkpolicy)
         for label in data_for_networkpolicy["ingress"]["label_networkpolicies_map"]:
@@ -84,6 +135,9 @@ class NetworkPolicyUtil:
         data = self.init_data_for_networkpolicy()
         direction = "ingress"
 
+        if len(ep.ingress_networkpolicies) == 0:
+            return data
+
         for networkpolicy_name in ep.ingress_networkpolicies:
             networkpolicy_spec = networkpolicy_opr.get_networkpolicy_from_cluster(networkpolicy_name)
             self.fill_data_from_directional_traffic_rules(data, direction, networkpolicy_spec)
@@ -93,6 +147,9 @@ class NetworkPolicyUtil:
     def generate_data_for_networkpolicy_egress(self, ep):
         data = self.init_data_for_networkpolicy()
         direction = "egress"
+
+        if len(ep.egress_networkpolicies) == 0:
+            return data
 
         for networkpolicy_name in ep.egress_networkpolicies:
             networkpolicy_spec = networkpolicy_opr.get_networkpolicy_from_cluster(networkpolicy_name)

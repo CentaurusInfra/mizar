@@ -47,10 +47,16 @@ class OprStore(object):
         self.eps_net_store = {}
         self.eps_pod_store = {}
 
+        # label of pods in networkpolicy.spec.podSelector
+        self.label_networkpolicies_store = {}
+        # label of pods in networkpolicy ingress rules
         self.label_networkpolicies_ingress_store = {}
+        # label of pods in networkpolicy egress rules
         self.label_networkpolicies_egress_store = {}
 
+        # label of namespaces in networkpolicy ingress rules
         self.namespace_label_networkpolicies_ingress_store = {}
+        # label of namespaces in networkpolicy egress rules
         self.namespace_label_networkpolicies_egress_store = {}
 
         self.networkpolicy_endpoints_store = {}
@@ -184,6 +190,17 @@ class OprStore(object):
     def _dump_eps(self):
         for e in self.eps_store.values():
             logger.debug("EP: {}, Spec: {}".format(e.name, e.get_obj_spec()))
+
+    def get_networkpolicies_by_label(self, label):
+        if label in self.label_networkpolicies_store:
+            return self.label_networkpolicies_store[label]
+        return None
+
+    def add_label_networkpolicy(self, label, policy_name_list):
+        if label not in self.label_networkpolicies_store:
+            self.label_networkpolicies_store[label] = set()
+        for policy_name in policy_name_list:
+            self.label_networkpolicies_store[label].add(policy_name)
 
     def get_networkpolicies_by_label_ingress(self, label):
         if label in self.label_networkpolicies_ingress_store:
