@@ -30,7 +30,7 @@ logger = logging.getLogger()
 
 
 class NetworkPolicyUtil:
-    def update_networkpolicy_endpoints_mapping_and_return_affected_endpoint_names(self, policy_name, pod_label_dict):
+    def update_and_retrieve_affected_endpoint_names(self, policy_name, pod_label_dict):
         affected_endpoint_names = set()
 
         endpoint_name_list = self.retrieve_endpoints_for_networkpolicy(policy_name, pod_label_dict)
@@ -44,7 +44,9 @@ class NetworkPolicyUtil:
             else:                
                 affected_endpoint_names.add(endpoint_name)
                 ep = networkpolicy_opr.store.get_ep(endpoint_name)
-                if ep is not None:
+                if ep is None:
+                    logger.warn("In operator store, found endpoint {} in networkpolicy_endpoints_store but cannot retrieve it from eps_store.".format(endpoint_name))
+                else:
                     ep.remove_ingress_networkpolicy(policy_name)
                     ep.remove_egress_networkpolicy(policy_name)
 
@@ -90,7 +92,9 @@ class NetworkPolicyUtil:
         
         for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_store[policy_name]:
             ep = networkpolicy_opr.store.get_ep(endpoint_name)
-            if ep is not None:
+            if ep is None:
+                logger.warn("In operator store, found endpoint {} in networkpolicy_endpoints_store but cannot retrieve it from eps_store.".format(endpoint_name))
+            else:
                 if has_ingress and policy_name not in ep.ingress_networkpolicies:
                     ep.add_ingress_networkpolicy(policy_name)
                 if has_egress and policy_name not in ep.egress_networkpolicies:
@@ -99,7 +103,9 @@ class NetworkPolicyUtil:
     def handle_networkpolicy_update_delete(self, endpoint_name_list):
         for endpoint_name in endpoint_name_list:
             ep = networkpolicy_opr.store.get_ep(endpoint_name)
-            if ep is not None:
+            if ep is None:
+                logger.warn("In operator store, found endpoint {} to be update network policy data but cannot retrieve it from eps_store.".format(endpoint_name))
+            else:
                 self.handle_endpoint_for_networkpolicy(ep)
 
     def handle_endpoint_for_networkpolicy(self, ep):
@@ -379,7 +385,9 @@ class NetworkPolicyUtil:
         
         for endpoint_name in endpoint_name_list:
             ep = endpoint_opr.store_get(endpoint_name)
-            if ep is not None:
+            if ep is None:
+                logger.warn("In operator store, found endpoint {} in networkpolicy_endpoints_store but cannot retrieve it from eps_store.".format(endpoint_name))
+            else:
                 logger.info("Update networkpolicy data for endpoint {}".format(ep.name))
                 self.handle_endpoint_for_networkpolicy(ep)
 

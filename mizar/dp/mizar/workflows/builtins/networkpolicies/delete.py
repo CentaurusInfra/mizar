@@ -35,7 +35,7 @@ class k8sNetworkPolicyDelete(WorkflowTask):
         logger.info("Run {task}".format(task=self.__class__.__name__))
 
         policy_name = "{}:{}".format(self.param.namespace, self.param.name)
-        affected_endpoint_names = networkpolicy_util.update_networkpolicy_endpoints_mapping_and_return_affected_endpoint_names(policy_name, None)
+        affected_endpoint_names = networkpolicy_util.update_and_retrieve_affected_endpoint_names(policy_name, None)
 
         policy_types = self.param.spec["policyTypes"]
         networkpolicy_util.handle_networkpolicy_update_delete(affected_endpoint_names)
