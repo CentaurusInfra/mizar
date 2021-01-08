@@ -332,28 +332,34 @@ class Endpoint:
     def get_egress_networkpolicies(self):
         return self.egress_networkpolicies
 
-    def add_ingress_networkpolicy(self, ingress_networkpolicy_name):
-        self.ingress_networkpolicies.append(ingress_networkpolicy_name)
+    def add_ingress_networkpolicy(self, policy_name):
+        self.ingress_networkpolicies.append(policy_name)
         self.ingress_networkpolicies.sort()
         if len(self.ingress_networkpolicies) == 1:
             self.update_network_policy_enforcement_map_ingress()
         self.store_update_obj()
 
-    def add_egress_networkpolicy(self, egress_networkpolicy_name):
-        self.egress_networkpolicies.append(egress_networkpolicy_name)
+    def add_egress_networkpolicy(self, policy_name):
+        self.egress_networkpolicies.append(policy_name)
         self.egress_networkpolicies.sort()
         if len(self.egress_networkpolicies) == 1:
             self.update_network_policy_enforcement_map_egress()
         self.store_update_obj()
 
-    def remove_ingress_networkpolicy(self, ingress_networkpolicy_name):
-        self.ingress_networkpolicies.remove(ingress_networkpolicy_name)
+    def remove_ingress_networkpolicy(self, policy_name):
+        if policy_name not in self.ingress_networkpolicies:
+            return
+
+        self.ingress_networkpolicies.remove(policy_name)
         if len(self.ingress_networkpolicies) == 0:
             self.delete_network_policy_enforcement_map_ingress()
         self.store_update_obj()
 
-    def remove_egress_networkpolicy(self, egress_networkpolicy_name):
-        self.egress_networkpolicies.remove(egress_networkpolicy_name)
+    def remove_egress_networkpolicy(self, policy_name):
+        if policy_name not in self.egress_networkpolicies:
+            return
+
+        self.egress_networkpolicies.remove(policy_name)
         if len(self.egress_networkpolicies) == 0:
             self.delete_network_policy_enforcement_map_egress()
         self.store_update_obj()
