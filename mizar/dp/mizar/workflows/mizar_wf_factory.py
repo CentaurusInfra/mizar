@@ -66,6 +66,11 @@ from mizar.dp.mizar.workflows.builtins.pods.create import *
 from mizar.dp.mizar.workflows.builtins.pods.provisioned import *
 from mizar.dp.mizar.workflows.builtins.pods.delete import *
 
+from mizar.dp.mizar.workflows.builtins.namespaces.bootstrap import *
+from mizar.dp.mizar.workflows.builtins.namespaces.create import *
+from mizar.dp.mizar.workflows.builtins.namespaces.provisioned import *
+from mizar.dp.mizar.workflows.builtins.namespaces.delete import *
+
 from mizar.dp.mizar.workflows.builtins.networkpolicies.bootstrap import *
 from mizar.dp.mizar.workflows.builtins.networkpolicies.create import *
 from mizar.dp.mizar.workflows.builtins.networkpolicies.provisioned import *
@@ -165,6 +170,12 @@ class MizarWorkflowFactory():
 
     def k8sPodDelete(self, param):
         return k8sPodDelete(param=param)
+
+    def k8sNamespaceCreate(self, param):
+        return k8sNamespaceCreate(param=param)
+
+    def k8sNamespaceDelete(self, param):
+        return k8sNamespaceDelete(param=param)
 
     def k8sNetworkPolicyCreate(self, param):
         return k8sNetworkPolicyCreate(param=param)

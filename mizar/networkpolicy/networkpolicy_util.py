@@ -275,7 +275,7 @@ class NetworkPolicyUtil:
             })
 
     def handle_pod_change_for_networkpolicy(self, diff):
-        data = self.extract_pod_label_change(diff)
+        data = self.extract_label_change(diff)
         if len(data["add"]) == 0 and len(data["remove"]) == 0:
             return
 
@@ -286,6 +286,31 @@ class NetworkPolicyUtil:
         for label in data["remove"]:
             self.add_affected_networkpolicy_by_pod_label(policy_name_list, label)
 
+        self.handle_networkpolicy_change(policy_name_list)
+
+    def add_affected_networkpolicy_by_pod_label(self, policy_name_list, label):
+        if label in networkpolicy_opr.store.label_networkpolicies_ingress_store:
+            for policy_name in networkpolicy_opr.store.label_networkpolicies_ingress_store[label]:
+                policy_name_list.add(policy_name)
+        if label in networkpolicy_opr.store.label_networkpolicies_egress_store:
+            for policy_name in networkpolicy_opr.store.label_networkpolicies_egress_store[label]:
+                policy_name_list.add(policy_name)
+
+    def handle_namespace_change_for_networkpolicy(self, diff):
+        data = self.extract_label_change(diff)
+        if len(data["add"]) == 0 and len(data["remove"]) == 0:
+            return
+
+        policy_name_list = set()
+        for label in data["add"]:
+            self.add_affected_networkpolicy_by_namespace_label(policy_name_list, label)
+
+        for label in data["remove"]:
+            self.add_affected_networkpolicy_by_namespace_label(policy_name_list, label)
+
+        self.handle_networkpolicy_change(policy_name_list)
+
+    def handle_networkpolicy_change(self, policy_name_list):
         if len(policy_name_list) == 0:
             return
 
@@ -301,25 +326,25 @@ class NetworkPolicyUtil:
                 logger.info("Update networkpolicy data for endpoint {}".format(ep.name))
                 self.handle_endpoint_for_networkpolicy(ep)
 
-    def add_affected_networkpolicy_by_pod_label(self, policy_name_list, label):
-        if label in networkpolicy_opr.store.label_networkpolicies_ingress_store:
-            for policy_name in networkpolicy_opr.store.label_networkpolicies_ingress_store[label]:
+    def add_affected_networkpolicy_by_namespace_label(self, policy_name_list, label):
+        if label in networkpolicy_opr.store.namespace_label_networkpolicies_ingress_store:
+            for policy_name in networkpolicy_opr.store.namespace_label_networkpolicies_ingress_store[label]:
                 policy_name_list.add(policy_name)
-        if label in networkpolicy_opr.store.label_networkpolicies_egress_store:
-            for policy_name in networkpolicy_opr.store.label_networkpolicies_egress_store[label]:
+        if label in networkpolicy_opr.store.namespace_label_networkpolicies_egress_store:
+            for policy_name in networkpolicy_opr.store.namespace_label_networkpolicies_egress_store[label]:
                 policy_name_list.add(policy_name)
 
-    def extract_pod_label_change(self, diff):
+    def extract_label_change(self, diff):
         data = {
             "add": set(),
             "remove": set()
         }
         for item in diff:
-            self.process_pod_label_change(data, item[0], item[1], item[2], item[3])
+            self.process_label_change(data, item[0], item[1], item[2], item[3])
 
         return data        
 
-    def process_pod_label_change(self, data, change_type, field, old, new):
+    def process_label_change(self, data, change_type, field, old, new):
         if field is not None and len(field) == 3 and field[0] == "metadata" and field[1] == "labels":
             if change_type == "add":
                 data["add"].add("{}={}".format(field[2], new))
