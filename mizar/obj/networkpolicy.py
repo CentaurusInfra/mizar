@@ -19,27 +19,48 @@
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import logging
-from mizar.common.workflow import *
-from mizar.dp.mizar.operators.networkpolicies.networkpolicies_operator import *
-from mizar.networkpolicy.networkpolicy_util import *
+import ipaddress
+from mizar.common.common import *
 
-networkpolicy_opr = NetworkPolicyOperator()
-networkpolicy_util = NetworkPolicyUtil()
 logger = logging.getLogger()
 
-class k8sNetworkPolicyDelete(WorkflowTask):
 
-    def requires(self):
-        logger.info("Requires {task}".format(task=self.__class__.__name__))
-        return []
+class NetworkPolicy:
+    def __init__(self, name, obj_api, opr_store, spec=None):
+        self.name = name
+        self.obj_api = obj_api
+        self.store = opr_store
+        self.pod_label_dict = {}
+        self.policy_types = []
+        if spec is not None:
+            self.set_obj_spec(spec)
 
-    def run(self):
-        logger.info("Run {task}".format(task=self.__class__.__name__))
+    def set_obj_spec(self, spec):
+        self.pod_label_dict = spec["podSelector"]["matchLabels"]
+        self.policy_types = spec["policyTypes"]
 
-        policy_name = "{}:{}".format(self.param.namespace, self.param.name)
-        affected_endpoint_names = networkpolicy_util.update_and_retrieve_affected_endpoint_names(policy_name, None, None)
+    @property
+    def get_pod_label_dict(self):
+        return self.pod_label_dict
 
-        networkpolicy_util.handle_networkpolicy_update_delete(affected_endpoint_names)
-        networkpolicy_opr.store.delete_networkpolicy(policy_name)
+    def get_policy_types(self):
+        return self.policy_types
 
-        self.finalize()
+    def get_name(self):
+        return self.name
+
+    def get_plural(self):
+        return "networkpolicies"
+
+    def get_kind(self):
+        return "NetworkPolicy"
+
+    def store_update_obj(self):
+        if self.store is None:
+            return
+        self.store.update_networkpolicy(self)
+
+    def store_delete_obj(self):
+        if self.store is None:
+            return
+        self.store.delete_networkpolicy(self.name)

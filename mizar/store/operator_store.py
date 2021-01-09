@@ -47,6 +47,8 @@ class OprStore(object):
         self.eps_net_store = {}
         self.eps_pod_store = {}
 
+        self.networkpolicies_store = {}
+
         # label of pods in networkpolicy.spec.podSelector
         self.label_networkpolicies_store = {}
         # label of pods in networkpolicy ingress rules
@@ -191,16 +193,28 @@ class OprStore(object):
         for e in self.eps_store.values():
             logger.debug("EP: {}, Spec: {}".format(e.name, e.get_obj_spec()))
 
+    def get_networkpolicy(self, name):
+        if name in self.networkpolicies_store:
+            return self.networkpolicies_store[name]
+        return None
+
+    def update_networkpolicy(self, networkpolicy):
+        logger.info("Store update networkpolicy {}".format(networkpolicy.name))
+        self.networkpolicies_store[networkpolicy.name] = networkpolicy
+
+    def delete_networkpolicy(self, name):
+        if name in self.networkpolicies_store:
+            del self.networkpolicies_store[name]
+
     def get_networkpolicies_by_label(self, label):
         if label in self.label_networkpolicies_store:
             return self.label_networkpolicies_store[label]
         return None
 
-    def add_label_networkpolicy(self, label, policy_name_list):
+    def add_label_networkpolicy(self, label, policy_name):
         if label not in self.label_networkpolicies_store:
             self.label_networkpolicies_store[label] = set()
-        for policy_name in policy_name_list:
-            self.label_networkpolicies_store[label].add(policy_name)
+        self.label_networkpolicies_store[label].add(policy_name)
 
     def get_networkpolicies_by_label_ingress(self, label):
         if label in self.label_networkpolicies_ingress_store:
