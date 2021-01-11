@@ -40,8 +40,8 @@ class k8sNetworkPolicyCreate(WorkflowTask):
         pod_label_dict = self.param.spec["podSelector"]["matchLabels"]
         policy_types = self.param.spec["policyTypes"]
         networkpolicy_opr.update_networkpolicy_to_store(policy_name, self.param.spec)
-        affected_endpoint_names = networkpolicy_util.update_and_retrieve_affected_endpoint_names(policy_name, pod_label_dict, policy_types)
+        endpoint_names = networkpolicy_util.update_and_retrieve_endpoint_names(policy_name, pod_label_dict, policy_types)
         
-        networkpolicy_util.handle_networkpolicy_update_delete(affected_endpoint_names)        
+        networkpolicy_util.handle_networkpolicy_update_delete(endpoint_names)        
 
         self.finalize()
