@@ -21,7 +21,7 @@
 
 import logging
 import json
-from mizar.common.common import run_cmd, network_policy_rpc_helper
+from mizar.common.common import run_cmd, conf_list_has_max_elements
 from mizar.common.constants import *
 
 logger = logging.getLogger()
@@ -329,7 +329,7 @@ class TrnRpc:
                 "bit_value": str(cidr_networkpolicy.policy_bit_value),
             }
             conf_list.append(conf)
-            if (network_policy_rpc_helper(conf, conf_list)):
+            if (conf_list_has_max_elements(conf, conf_list)):
                 self.run_cli_update_network_policy_ingress(conf_list)
                 conf_list = []
         self.run_cli_update_network_policy_ingress(conf_list)
@@ -356,7 +356,7 @@ class TrnRpc:
                 "bit_value": str(cidr_networkpolicy.policy_bit_value),
             }
             conf_list.append(conf)
-            if (network_policy_rpc_helper(conf, conf_list)):
+            if (conf_list_has_max_elements(conf, conf_list)):
                 self.run_cli_update_network_policy_egress(conf_list, itf)
                 conf_list = []
         self.run_cli_update_network_policy_egress(conf_list, itf)
@@ -382,7 +382,7 @@ class TrnRpc:
                 "bit_value": str(cidr_networkpolicy.policy_bit_value),
             }
             conf_list.append(conf)
-            if (network_policy_rpc_helper(conf, conf_list)):
+            if (conf_list_has_max_elements(conf, conf_list)):
                 self.run_cli_delete_network_policy_ingress(conf_list)
                 conf_list = []
         self.run_cli_delete_network_policy_ingress(conf_list)
@@ -409,7 +409,7 @@ class TrnRpc:
                 "bit_value": str(cidr_networkpolicy.policy_bit_value),
             }
             conf_list.append(conf)
-            if (network_policy_rpc_helper(conf, conf_list)):
+            if (conf_list_has_max_elements(conf, conf_list)):
                 self.run_cli_delete_network_policy_egress(conf_list, itf)
                 conf_list = []
         self.run_cli_delete_network_policy_egress(conf_list, itf)
@@ -434,7 +434,7 @@ class TrnRpc:
                 "bit_value": str(port_networkpolicy.policy_bit_value),
             }
             conf_list.append(conf)
-            if (network_policy_rpc_helper(conf, conf_list)):
+            if (conf_list_has_max_elements(conf, conf_list)):
                 self.run_cli_update_network_policy_protocol_port_ingress(conf_list)
                 conf_list = []
         self.run_cli_update_network_policy_protocol_port_ingress(conf_list)
@@ -460,7 +460,7 @@ class TrnRpc:
                 "bit_value": str(port_networkpolicy.policy_bit_value),
             }
             conf_list.append(conf)
-            if (network_policy_rpc_helper(conf, conf_list)):
+            if (conf_list_has_max_elements(conf, conf_list)):
                 self.run_cli_update_network_policy_protocol_port_egress(conf_list, itf)
                 conf_list = []
         self.run_cli_update_network_policy_protocol_port_egress(conf_list, itf)
@@ -485,7 +485,7 @@ class TrnRpc:
                 "bit_value": str(port_networkpolicy.policy_bit_value),
             }
             conf_list.append(conf)
-            if (network_policy_rpc_helper(conf, conf_list)):
+            if (conf_list_has_max_elements(conf, conf_list)):
                 self.run_cli_delete_network_policy_protocol_port_ingress(conf_list)
                 conf_list = []
         self.run_cli_delete_network_policy_protocol_port_ingress(conf_list)
@@ -511,7 +511,7 @@ class TrnRpc:
                 "bit_value": str(port_networkpolicy.policy_bit_value),
             }
             conf_list.append(conf)
-            if (network_policy_rpc_helper(conf, conf_list)):
+            if (conf_list_has_max_elements(conf, conf_list)):
                 self.run_cli_delete_network_policy_protocol_port_egress(conf_list, itf)
                 conf_list = []
         self.run_cli_delete_network_policy_protocol_port_egress(conf_list, itf)
