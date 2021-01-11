@@ -384,7 +384,7 @@ def reset_param(param):
     param.return_message = None
     return param
 
-def network_policy_rpc_helper(conf, conf_list):
+def conf_list_has_max_elements(conf, conf_list):
     # +1 is for comma that will get added during json conversion
     item_len = len(json.dumps(conf)) + 1
     counter = len(json.dumps(conf_list)) + item_len
