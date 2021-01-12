@@ -333,6 +333,8 @@ class Endpoint:
         return self.egress_networkpolicies
 
     def add_ingress_networkpolicy(self, policy_name):
+        if policy_name in self.ingress_networkpolicies:
+            return
         self.ingress_networkpolicies.append(policy_name)
         self.ingress_networkpolicies.sort()
         if len(self.ingress_networkpolicies) == 1:
@@ -340,6 +342,8 @@ class Endpoint:
         self.store_update_obj()
 
     def add_egress_networkpolicy(self, policy_name):
+        if policy_name in self.egress_networkpolicies:
+            return
         self.egress_networkpolicies.append(policy_name)
         self.egress_networkpolicies.sort()
         if len(self.egress_networkpolicies) == 1:

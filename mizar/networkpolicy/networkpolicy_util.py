@@ -30,9 +30,11 @@ logger = logging.getLogger()
 
 
 class NetworkPolicyUtil:
-    def update_and_retrieve_affected_endpoint_names(self, policy_name, pod_label_dict):
-        affected_endpoint_names = set()
+    def update_and_retrieve_endpoint_names(self, policy_name, pod_label_dict, policy_types):
+        endpoint_names = set()
 
+        self.update_pod_label_networkpolicy_mapping_in_store(policy_name, pod_label_dict)
+        
         endpoint_name_list = self.retrieve_endpoints_for_networkpolicy(policy_name, pod_label_dict)
 
         if policy_name not in networkpolicy_opr.store.networkpolicy_endpoints_store:
@@ -42,7 +44,7 @@ class NetworkPolicyUtil:
             if endpoint_name in endpoint_name_list:
                 endpoint_name_list.remove(endpoint_name)
             else:                
-                affected_endpoint_names.add(endpoint_name)
+                endpoint_names.add(endpoint_name)
                 ep = networkpolicy_opr.store.get_ep(endpoint_name)
                 if ep is None:
                     logger.warn("In operator store, found endpoint {} in networkpolicy_endpoints_store but cannot retrieve it from eps_store.".format(endpoint_name))
@@ -50,17 +52,27 @@ class NetworkPolicyUtil:
                     ep.remove_ingress_networkpolicy(policy_name)
                     ep.remove_egress_networkpolicy(policy_name)
 
-        for endpoint_name in affected_endpoint_names:
+        for endpoint_name in endpoint_names:
             networkpolicy_opr.store.networkpolicy_endpoints_store[policy_name].remove(endpoint_name)
 
         for endpoint_name in endpoint_name_list:
             networkpolicy_opr.store.add_networkpolicy_endpoint(policy_name, endpoint_name)
-            affected_endpoint_names.add(endpoint_name)
+            endpoint_names.add(endpoint_name)
 
         if len(networkpolicy_opr.store.networkpolicy_endpoints_store[policy_name]) == 0:
             networkpolicy_opr.store.networkpolicy_endpoints_store.pop(policy_name)
 
-        return affected_endpoint_names
+        self.add_networkpolicy_for_endpoint(policy_name, policy_types)
+
+        return endpoint_names
+
+    def update_pod_label_networkpolicy_mapping_in_store(self, policy_name, pod_label_dict):
+        if pod_label_dict is None:
+            return
+            
+        for key in pod_label_dict:
+            label = "{}={}".format(key, pod_label_dict[key])
+            networkpolicy_opr.store.add_label_networkpolicy(label, policy_name)
 
     def retrieve_endpoints_for_networkpolicy(self, policy_name, pod_label_dict):
         endpoint_name_list = set()
@@ -81,6 +93,9 @@ class NetworkPolicyUtil:
         return endpoint_name_list
 
     def add_networkpolicy_for_endpoint(self, policy_name, policy_types):
+        if policy_types is None:
+            return
+
         has_ingress = "Ingress" in policy_types
         has_egress = "Egress" in policy_types
 
@@ -342,12 +357,31 @@ class NetworkPolicyUtil:
         if len(data["add"]) == 0 and len(data["remove"]) == 0:
             return
 
+        # Followed code piece is to calculate how many policy are affected by the label change, and form data of policy_name_list.
+        # Either label is added or removed, policy is affected, so for both data["add"] and data["remove"] we call same function add_affected_networkpolicy_by_pod_label.
+        # Here label is defined in policy's podSelector of ingress rule or egress rule.
         policy_name_list = set()
         for label in data["add"]:
             self.add_affected_networkpolicy_by_pod_label(policy_name_list, label)
-
         for label in data["remove"]:
             self.add_affected_networkpolicy_by_pod_label(policy_name_list, label)
+
+        endpoint_affected_policy_name_list = set()
+        # Followed code piece is to calculate how many policy are affected by the label change, and form data of endpoint_affected_policy_name_list.
+        # Either label is added or removed, policy is affected, so for both data["add"] and data["remove"] we call same function add_endpoint_affected_networkpolicy_by_pod_label.
+        # Here label is defined in policy's podSelector which affecting policy's mapping to endpoints.
+        for label in data["add"]:            
+            self.add_endpoint_affected_networkpolicy_by_pod_label(endpoint_affected_policy_name_list, label)
+        for label in data["remove"]:
+            self.add_endpoint_affected_networkpolicy_by_pod_label(endpoint_affected_policy_name_list, label)
+
+        for policy_name in endpoint_affected_policy_name_list:
+            networkpolicy = networkpolicy_opr.store.get_networkpolicy(policy_name)
+            if networkpolicy is None:
+                logger.warn("In operator store, found affected networkpolicy {} by pod label change but cannot retrieve it from networkpolicies_store.".format(policy_name))
+            else:
+                self.update_and_retrieve_endpoint_names(policy_name, networkpolicy.pod_label_dict, networkpolicy.policy_types)
+                policy_name_list.add(policy_name)
 
         self.handle_networkpolicy_change(policy_name_list)
 
@@ -357,6 +391,16 @@ class NetworkPolicyUtil:
                 policy_name_list.add(policy_name)
         if label in networkpolicy_opr.store.label_networkpolicies_egress_store:
             for policy_name in networkpolicy_opr.store.label_networkpolicies_egress_store[label]:
+                policy_name_list.add(policy_name)
+
+    # Here endpoint is not a noun. It's adjectives to describe networkpolicy. It's "endpoint_affected_networkpolicy". 
+    # In a networkpolicy definition, the podSelector is a list of labels. And the podSelector can appear two places: 
+    # one is in policy ingress/egress rules, the second one is in the beginning of the policy definition which means the policy's power on the pods/endpoints. 
+    # Accordingly, when a pod changed label, it may affect networkpolicy ingress/egress rules, or affect networkpolicy-endpoints mapping. 
+    # If a policy is affected by pod label change, I call it "endpoint affected networkpolicy".
+    def add_endpoint_affected_networkpolicy_by_pod_label(self, policy_name_list, label):
+        if label in networkpolicy_opr.store.label_networkpolicies_store:
+            for policy_name in networkpolicy_opr.store.label_networkpolicies_store[label]:
                 policy_name_list.add(policy_name)
 
     def handle_namespace_change_for_networkpolicy(self, diff):
