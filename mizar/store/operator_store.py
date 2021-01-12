@@ -205,6 +205,22 @@ class OprStore(object):
     def delete_networkpolicy(self, name):
         if name in self.networkpolicies_store:
             del self.networkpolicies_store[name]
+        self.delete_networkpolicy_in_label_policy_store(self.label_networkpolicies_store, name)
+        self.delete_networkpolicy_in_label_policy_store(self.label_networkpolicies_ingress_store, name)
+        self.delete_networkpolicy_in_label_policy_store(self.label_networkpolicies_egress_store, name)
+        self.delete_networkpolicy_in_label_policy_store(self.namespace_label_networkpolicies_ingress_store, name)
+        self.delete_networkpolicy_in_label_policy_store(self.namespace_label_networkpolicies_egress_store, name)
+
+    def delete_networkpolicy_in_label_policy_store(self, label_policy_store, policy_name):
+        label_list = set()
+        for label in label_policy_store:
+            if policy_name in label_policy_store[label]:
+                label_policy_store[label].remove(policy_name)
+                if len(label_policy_store[label]) == 0:
+                    label_list.add(label)
+
+        for label in label_list:
+            label_policy_store.pop(label)
 
     def get_networkpolicies_by_label(self, label):
         if label in self.label_networkpolicies_store:
