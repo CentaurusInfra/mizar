@@ -30,12 +30,12 @@ logger = logging.getLogger()
 
 
 class NetworkPolicyUtil:
-    def update_and_retrieve_endpoint_names(self, policy_name, pod_label_dict, policy_types):
+    def update_and_retrieve_endpoint_names(self, policy_name, policy_namespace, pod_label_dict, policy_types):
         endpoint_names = set()
 
         self.update_pod_label_networkpolicy_mapping_in_store(policy_name, pod_label_dict)
         
-        endpoint_name_list = self.retrieve_endpoints_for_networkpolicy(policy_name, pod_label_dict)
+        endpoint_name_list = self.retrieve_endpoints_for_networkpolicy(policy_name, policy_namespace, pod_label_dict)
 
         if policy_name not in networkpolicy_opr.store.networkpolicy_endpoints_store:
             networkpolicy_opr.store.networkpolicy_endpoints_store[policy_name] = set()
@@ -74,13 +74,13 @@ class NetworkPolicyUtil:
             label = "{}={}".format(key, pod_label_dict[key])
             networkpolicy_opr.store.add_label_networkpolicy(label, policy_name)
 
-    def retrieve_endpoints_for_networkpolicy(self, policy_name, pod_label_dict):
+    def retrieve_endpoints_for_networkpolicy(self, policy_name, policy_namespace, pod_label_dict):
         endpoint_name_list = set()
 
         if pod_label_dict is None:
             return endpoint_name_list
 
-        pods = kube_list_pods_by_labels(networkpolicy_opr.core_api, pod_label_dict)
+        pods = kube_list_pods_by_labels(networkpolicy_opr.core_api, pod_label_dict, policy_namespace)
         if pods is None:
             return endpoint_name_list
         
@@ -392,7 +392,7 @@ class NetworkPolicyUtil:
             if networkpolicy is None:
                 logger.warn("In operator store, found affected networkpolicy {} by pod label change but cannot retrieve it from networkpolicies_store.".format(policy_name))
             else:
-                self.update_and_retrieve_endpoint_names(policy_name, networkpolicy.pod_label_dict, networkpolicy.policy_types)
+                self.update_and_retrieve_endpoint_names(policy_name, networkpolicy.namespace, networkpolicy.pod_label_dict, networkpolicy.policy_types)
                 policy_name_list.add(policy_name)
 
         self.handle_networkpolicy_change(policy_name_list)

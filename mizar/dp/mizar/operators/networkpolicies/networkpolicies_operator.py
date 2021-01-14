@@ -56,6 +56,6 @@ class NetworkPolicyOperator(object):
         splitted = name.split(":")
         return self.obj_api.get_namespaced_custom_object("networking.k8s.io", "v1", splitted[0], "networkpolicies", splitted[1])
 
-    def update_networkpolicy_to_store(self, name, spec):
-        networkpolicy = NetworkPolicy(name, self.obj_api, self.store, spec)
+    def update_networkpolicy_to_store(self, name, namespace, spec):
+        networkpolicy = NetworkPolicy(name, namespace, self.obj_api, self.store, spec)
         self.store.update_networkpolicy(networkpolicy)

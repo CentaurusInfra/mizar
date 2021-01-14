@@ -26,8 +26,9 @@ logger = logging.getLogger()
 
 
 class NetworkPolicy:
-    def __init__(self, name, obj_api, opr_store, spec=None):
-        self.name = name
+    def __init__(self, name, namespace, obj_api, opr_store, spec=None):
+        self.name = name,
+        self.namespace = namespace
         self.obj_api = obj_api
         self.store = opr_store
         self.pod_label_dict = {}
@@ -48,6 +49,9 @@ class NetworkPolicy:
 
     def get_name(self):
         return self.name
+
+    def get_namespace(self):
+        return self.namespace
 
     def get_plural(self):
         return "networkpolicies"
