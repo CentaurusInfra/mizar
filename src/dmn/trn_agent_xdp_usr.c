@@ -603,37 +603,29 @@ int trn_delete_agent_network_policy_map(int fd,
 
 int trn_update_agent_network_policy_enforcement_map(struct agent_user_metadata_t *md,
 						      struct vsip_enforce_t *local,
-						      __u8 *isenforce,
-						      int counter)
+						      __u8 *isenforce)
 {
-	for (int i = 0; i < counter; i++)
-	{
-		int err = bpf_map_update_elem(md->eg_vsip_enforce_map_fd, &local[i], &isenforce[i], 0);
+	int err = bpf_map_update_elem(md->eg_vsip_enforce_map_fd, &local, &isenforce, 0);
 
-		if (err) {
-			TRN_LOG_ERROR("Update Enforcement egress map failed (err:%d) for ip address 0x%x. \n",
-					err, local[i].local_ip);
-			return 1;
-		}
+	if (err) {
+		TRN_LOG_ERROR("Update Enforcement egress map failed (err:%d) for ip address 0x%x. \n",
+				err, local->local_ip);
+		return 1;
 	}
 
 	return 0;
 }
 
 int trn_delete_agent_network_policy_enforcement_map(struct agent_user_metadata_t *md,
-						      struct vsip_enforce_t *local,
-						      int counter)
+						      struct vsip_enforce_t *local)
 {
-	for (int i = 0; i < counter; i++)
-	{
-		int err = bpf_map_delete_elem(md->eg_vsip_enforce_map_fd, &local[i]);
-
-		if (err) {
-			TRN_LOG_ERROR("Delete Enforcement egress map failed (err:%d) for ip address 0x%x. ",
-					err, local[i].local_ip);
-			return 1;
-		}
+	int err = bpf_map_delete_elem(md->eg_vsip_enforce_map_fd, &local);
+	if (err) {
+		TRN_LOG_ERROR("Delete Enforcement egress map failed (err:%d) for ip address 0x%x. ",
+				err, local->local_ip);
+		return 1;
 	}
+
 	return 0;
 }
 
