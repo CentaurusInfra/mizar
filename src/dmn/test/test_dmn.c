@@ -741,22 +741,15 @@ static void test_update_transit_network_policy_enforcement_1_svc(void **state)
 	UNUSED(state);
 	char itf[] = "lo";
 
-	struct rpc_trn_vsip_enforce_t enforce1[2] = {{
+	struct rpc_trn_vsip_enforce_t enforce1 = {
 		.interface = itf,
 		.tunid = 3,
-		.local_ip = 0x100000a,
-		.count = 2
-	},
-	{
-		.interface = itf,
-		.tunid = 3,
-		.local_ip = 0x100000a,
-		.count = 2
-	}};
+		.local_ip = 0x100000a
+	};
 
 	int *rc;
-	expect_function_calls(__wrap_bpf_map_update_elem, 2);
-	rc = update_transit_network_policy_enforcement_1_svc(enforce1, NULL);
+	expect_function_call(__wrap_bpf_map_update_elem);
+	rc = update_transit_network_policy_enforcement_1_svc(&enforce1, NULL);
 	assert_int_equal(*rc, 0);
 }
 
@@ -765,22 +758,15 @@ static void test_update_agent_network_policy_enforcement_1_svc(void **state)
 	UNUSED(state);
 	char itf[] = "lo";
 
-	struct rpc_trn_vsip_enforce_t enforce1[2] = {{
+	struct rpc_trn_vsip_enforce_t enforce1 = {
 		.interface = itf,
 		.tunid = 3,
-		.local_ip = 0x100000a,
-		.count = 2
-	},
-	{
-		.interface = itf,
-		.tunid = 3,
-		.local_ip = 0x100000a,
-		.count = 2
-	}};
+		.local_ip = 0x100000a
+	};
 
 	int *rc;
-	expect_function_calls(__wrap_bpf_map_update_elem, 2);
-	rc = update_agent_network_policy_enforcement_1_svc(enforce1, NULL);
+	expect_function_call(__wrap_bpf_map_update_elem);
+	rc = update_agent_network_policy_enforcement_1_svc(&enforce1, NULL);
 	assert_int_equal(*rc, 0);
 }
 
@@ -789,39 +775,29 @@ static void test_delete_transit_network_policy_enforcement_1_svc(void **state)
 	UNUSED(state);
 	char itf[] = "lo";
 
-	struct rpc_trn_vsip_enforce_t enforce_keys[2] = {{
+	struct rpc_trn_vsip_enforce_t enforce_key = {
 		.interface = itf,
 		.tunid = 3,
-		.local_ip = 0x100000a,
-		.count = 2
-	},
-	{
-		.interface = itf,
-		.tunid = 3,
-		.local_ip = 0x100000a,
-		.count = 2
-	}};
+		.local_ip = 0x100000a
+	};
 
 	int *rc;
 
 	/* Test delete_transit_network_policy_enforcement_1 with valid enforce_key */
 	will_return(__wrap_bpf_map_delete_elem, TRUE);
-	will_return(__wrap_bpf_map_delete_elem, TRUE);
 	expect_function_call(__wrap_bpf_map_delete_elem);
-	expect_function_call(__wrap_bpf_map_delete_elem);
-	rc = delete_transit_network_policy_enforcement_1_svc(enforce_keys, NULL);
+	rc = delete_transit_network_policy_enforcement_1_svc(&enforce_key, NULL);
 	assert_int_equal(*rc, 0);
 
 	/* Test delete_transit_network_policy_enforcement_1 with invalid enforce_key */
 	will_return(__wrap_bpf_map_delete_elem, FALSE);
 	expect_function_call(__wrap_bpf_map_delete_elem);
-	rc = delete_transit_network_policy_enforcement_1_svc(enforce_keys, NULL);
+	rc = delete_transit_network_policy_enforcement_1_svc(&enforce_key, NULL);
 	assert_int_equal(*rc, RPC_TRN_FATAL);
 
 	/* Test delete_transit_network_policy_enforcement_1 with invalid interface*/
-	enforce_keys[0].interface = "";
-	enforce_keys[1].interface = "";
-	rc = delete_transit_network_policy_enforcement_1_svc(enforce_keys, NULL);
+	enforce_key.interface = "";
+	rc = delete_transit_network_policy_enforcement_1_svc(&enforce_key, NULL);
 	assert_int_equal(*rc, RPC_TRN_ERROR);
 }
 
@@ -830,39 +806,29 @@ static void test_delete_agent_network_policy_enforcement_1_svc(void **state)
 	UNUSED(state);
 	char itf[] = "lo";
 
-	struct rpc_trn_vsip_enforce_t enforce_keys[2] = {{
+	struct rpc_trn_vsip_enforce_t enforce_key = {
 		.interface = itf,
 		.tunid = 3,
-		.local_ip = 0x100000a,
-		.count = 2
-	},
-	{
-		.interface = itf,
-		.tunid = 3,
-		.local_ip = 0x100000a,
-		.count = 2
-	}};
+		.local_ip = 0x100000a
+	};
 
 	int *rc;
 
-	/* Test delete_transit_network_policy_enforcement_1 with valid enforce_key */
-	will_return(__wrap_bpf_map_delete_elem, TRUE);
+	/* Test delete_agent_network_policy_enforcement_1 with valid enforce_key */
 	will_return(__wrap_bpf_map_delete_elem, TRUE);
 	expect_function_call(__wrap_bpf_map_delete_elem);
-	expect_function_call(__wrap_bpf_map_delete_elem);
-	rc = delete_agent_network_policy_enforcement_1_svc(enforce_keys, NULL);
+	rc = delete_agent_network_policy_enforcement_1_svc(&enforce_key, NULL);
 	assert_int_equal(*rc, 0);
 
-	/* Test delete_transit_network_policy_enforcement_1 with invalid enforce_key */
+	/* Test delete_agent_network_policy_enforcement_1 with invalid enforce_key */
 	will_return(__wrap_bpf_map_delete_elem, FALSE);
 	expect_function_call(__wrap_bpf_map_delete_elem);
-	rc = delete_agent_network_policy_enforcement_1_svc(enforce_keys, NULL);
+	rc = delete_agent_network_policy_enforcement_1_svc(&enforce_key, NULL);
 	assert_int_equal(*rc, RPC_TRN_FATAL);
 
-	/* Test delete_transit_network_policy_enforcement_1 with invalid interface*/
-	enforce_keys[0].interface = "";
-	enforce_keys[1].interface = "";
-	rc = delete_agent_network_policy_enforcement_1_svc(enforce_keys, NULL);
+	/* Test delete_agent_network_policy_enforcement_1 with invalid interface*/
+	enforce_key.interface = "";
+	rc = delete_agent_network_policy_enforcement_1_svc(&enforce_key, NULL);
 	assert_int_equal(*rc, RPC_TRN_ERROR);
 }
 

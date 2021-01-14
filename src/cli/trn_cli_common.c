@@ -742,7 +742,7 @@ int trn_cli_parse_network_policy_enforcement(const cJSON *jsonobj,
 	if (ip != NULL && cJSON_IsString(ip)) {
 		enforce->local_ip = parse_ip_address(ip);
 	} else {
-		print_err("Error: Network policy enforcement local IP is missing or non-string\n");
+		print_err("Error: Network policy enforcement IP is missing or non-string\n");
 		return -EINVAL;
 	}
 
