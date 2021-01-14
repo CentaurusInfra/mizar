@@ -289,12 +289,14 @@ def kube_list_namespaces_by_labels(core_api, label_dict):
     except:
         return None
 
-def kube_list_pods_by_labels(core_api, label_dict):
+def kube_list_pods_by_labels(core_api, label_dict, namespace=None):
     try:
+        field_selector = "" if namespace is None else "metadata.namespace={}".format(namespace)
         label_filter = build_label_filter(label_dict)
         response = core_api.list_pod_for_all_namespaces(
             watch=False,
-            label_selector=label_filter
+            label_selector=label_filter,
+            field_selector=field_selector
         )
         return response
     except:
