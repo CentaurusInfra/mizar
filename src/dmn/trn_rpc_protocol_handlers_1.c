@@ -1548,7 +1548,7 @@ int *update_transit_network_policy_enforcement_1_svc(rpc_trn_vsip_enforce_t *pol
 	enforce.local_ip = policy->local_ip;
 	val = 1;
 
-	rc = trn_update_transit_network_policy_enforcement_map(md, &enforce, &val);
+	rc = trn_update_transit_network_policy_enforcement_map(md, &enforce, val);
 
 	if (rc != 0) {
 		TRN_LOG_ERROR("Failure updating transit network policy enforcement map ip address: 0x%x, for interface %s",
@@ -1586,7 +1586,7 @@ int *update_agent_network_policy_enforcement_1_svc(rpc_trn_vsip_enforce_t *polic
 	enforce.local_ip = policy->local_ip;
 	val = 1;
 
-	rc = trn_update_agent_network_policy_enforcement_map(md, &enforce, &val);
+	rc = trn_update_agent_network_policy_enforcement_map(md, &enforce, val);
 
 	if (rc != 0) {
 		TRN_LOG_ERROR("Failure updating agnet network policy enforcement map ip address: 0x%x, for interface %s",
