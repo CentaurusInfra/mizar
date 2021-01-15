@@ -782,7 +782,7 @@ int trn_cli_parse_network_policy_protocol_port(const cJSON *jsonobj,
 	}
 
 	if (cJSON_IsString(port)) {
-		ppo->port = atoi(port->valuestring);
+		ppo->port = htons(atoi(port->valuestring));
 	} else {
 		print_err("Error: Network policy port Error\n");
 		return -EINVAL;
@@ -830,7 +830,7 @@ int trn_cli_parse_network_policy_protocol_port_key(const cJSON *jsonobj,
 	}
 
 	if (cJSON_IsString(port)) {
-		ppo_key->port = atoi(port->valuestring);
+		ppo_key->port = htons(atoi(port->valuestring));
 	} else {
 		print_err("Error: Network policy port Error\n");
 		return -EINVAL;
