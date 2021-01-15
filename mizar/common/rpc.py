@@ -23,12 +23,14 @@ import logging
 import json
 from mizar.common.common import run_cmd, conf_list_has_max_elements
 from mizar.common.constants import *
+from mizar.get_interface import get_itf
 
+net_itf = get_itf()
 logger = logging.getLogger()
 
 
 class TrnRpc:
-    def __init__(self, ip, mac, itf='eth0', benchmark=False):
+    def __init__(self, ip, mac, itf=net_itf, benchmark=False):
         self.ip = ip
         self.mac = mac
         self.phy_itf = itf
