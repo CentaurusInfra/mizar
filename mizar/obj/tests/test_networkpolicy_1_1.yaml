@@ -21,7 +21,7 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: test-network-policy_1
+  name: test-network-policy-1.1
   namespace: default
 spec:
   podSelector:
