@@ -215,34 +215,26 @@ class NetworkPolicyUtil:
     def fill_data_from_directional_traffic_rules(self, data, direction, networkpolicy_spec):
         policy_name = "{}:{}".format(networkpolicy_spec["metadata"]["namespace"], networkpolicy_spec["metadata"]["name"])
         if direction in networkpolicy_spec["spec"]:
-            if len(networkpolicy_spec["spec"][direction]) == 0:
-                indexed_policy_name = "{}_{}_{}".format(policy_name, direction, 0)
+            for index, directional_traffic_rules in enumerate(networkpolicy_spec["spec"][direction]):
+                indexed_policy_name = "{}_{}_{}".format(policy_name, direction, index)
                 if policy_name not in data["networkpolicy_map"]:
                     data["networkpolicy_map"][policy_name] = set()
                 if indexed_policy_name not in data["networkpolicy_map"][policy_name]:
                     data["networkpolicy_map"][policy_name].add(indexed_policy_name)
                     data["indexed_policy_count"] += 1
 
-                self.fill_cidrs_from_directional_traffic_rules(data, policy_name, indexed_policy_name, direction, None)
-            else:
-                for index, directional_traffic_rules in enumerate(networkpolicy_spec["spec"][direction]):
-                    indexed_policy_name = "{}_{}_{}".format(policy_name, direction, index)
-                    if policy_name not in data["networkpolicy_map"]:
-                        data["networkpolicy_map"][policy_name] = set()
-                    if indexed_policy_name not in data["networkpolicy_map"][policy_name]:
-                        data["networkpolicy_map"][policy_name].add(indexed_policy_name)
-                        data["indexed_policy_count"] += 1
-
-                    self.fill_cidrs_from_directional_traffic_rules(data, policy_name, indexed_policy_name, direction, directional_traffic_rules)
+                self.fill_cidrs_from_directional_traffic_rules(data, policy_name, indexed_policy_name, direction, directional_traffic_rules)
 
     def fill_cidrs_from_directional_traffic_rules(self, data, policy_name, indexed_policy_name, direction, directional_traffic_rules):
         if indexed_policy_name not in data["cidrs_map_no_except"]:
             data["cidrs_map_no_except"][indexed_policy_name] = []
-        if directional_traffic_rules is None: # In such case, it means "Default to allow all triaffic"
-            data["cidrs_map_no_except"][indexed_policy_name].append("0.0.0.0/0")
-        else:
-            if indexed_policy_name not in data["ports_map"]:
+        if indexed_policy_name not in data["ports_map"]:
                 data["ports_map"][indexed_policy_name] = []
+
+        if len(directional_traffic_rules) == 0: # In such case, it means "Default to allow all triaffic"
+            data["cidrs_map_no_except"][indexed_policy_name].append("0.0.0.0/0")
+            data["ports_map"][indexed_policy_name].append("any:0")
+        else:            
             for port in directional_traffic_rules["ports"]:
                 data["ports_map"][indexed_policy_name].append("{}:{}".format(port["protocol"], port["port"]))
             

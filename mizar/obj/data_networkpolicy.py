@@ -52,6 +52,8 @@ class PortNetworkPolicy:
             return "17"
         elif protocol == "sctp":
             return "132"
+        elif protocol == "any":
+            return "0"
         else:
             return "-1"
 
