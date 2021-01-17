@@ -37,7 +37,7 @@ class NetworkPolicy:
             self.set_obj_spec(spec)
 
     def set_obj_spec(self, spec):
-        self.pod_label_dict = spec["podSelector"]["matchLabels"]
+        self.pod_label_dict = spec["podSelector"]["matchLabels"] if "matchLabels" in spec["podSelector"] else {}
         self.policy_types = spec["policyTypes"]
 
     @property

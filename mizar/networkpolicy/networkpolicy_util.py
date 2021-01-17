@@ -214,69 +214,75 @@ class NetworkPolicyUtil:
 
     def fill_data_from_directional_traffic_rules(self, data, direction, networkpolicy_spec):
         policy_name = "{}:{}".format(networkpolicy_spec["metadata"]["namespace"], networkpolicy_spec["metadata"]["name"])
-        for index, directional_traffic_rules in enumerate(networkpolicy_spec["spec"][direction]):
-            indexed_policy_name = "{}_{}_{}".format(policy_name, direction, index)
-            if policy_name not in data["networkpolicy_map"]:
-                data["networkpolicy_map"][policy_name] = set()
-            if indexed_policy_name not in data["networkpolicy_map"][policy_name]:
-                data["networkpolicy_map"][policy_name].add(indexed_policy_name)
-                data["indexed_policy_count"] += 1
+        if direction in networkpolicy_spec["spec"]:
+            for index, directional_traffic_rules in enumerate(networkpolicy_spec["spec"][direction]):
+                indexed_policy_name = "{}_{}_{}".format(policy_name, direction, index)
+                if policy_name not in data["networkpolicy_map"]:
+                    data["networkpolicy_map"][policy_name] = set()
+                if indexed_policy_name not in data["networkpolicy_map"][policy_name]:
+                    data["networkpolicy_map"][policy_name].add(indexed_policy_name)
+                    data["indexed_policy_count"] += 1
 
-            self.fill_cidrs_from_directional_traffic_rules(data, policy_name, indexed_policy_name, direction, directional_traffic_rules)
+                self.fill_cidrs_from_directional_traffic_rules(data, policy_name, indexed_policy_name, direction, directional_traffic_rules)
 
     def fill_cidrs_from_directional_traffic_rules(self, data, policy_name, indexed_policy_name, direction, directional_traffic_rules):
-        if indexed_policy_name not in data["ports_map"]:
-            data["ports_map"][indexed_policy_name] = []
-        for port in directional_traffic_rules["ports"]:
-            data["ports_map"][indexed_policy_name].append("{}:{}".format(port["protocol"], port["port"]))
-
         if indexed_policy_name not in data["cidrs_map_no_except"]:
             data["cidrs_map_no_except"][indexed_policy_name] = []
-        if indexed_policy_name not in data["cidrs_map_with_except"]:
-            data["cidrs_map_with_except"][indexed_policy_name] = []
-        if indexed_policy_name not in data["cidrs_map_except"]:
-            data["cidrs_map_except"][indexed_policy_name] = []
-        for rule_item in directional_traffic_rules["from" if direction == "ingress" else "to"]:
-            if "ipBlock" in rule_item:
-                if "except" in rule_item["ipBlock"]:
-                    data["cidrs_map_with_except"][indexed_policy_name].append(rule_item["ipBlock"]["cidr"])
-                    for except_cidr in rule_item["ipBlock"]["except"]:
-                        data["cidrs_map_except"][indexed_policy_name].append(except_cidr)
-                else:
-                    data["cidrs_map_no_except"][indexed_policy_name].append(rule_item["ipBlock"]["cidr"])
-            elif "namespaceSelector" in rule_item and "podSelector" in rule_item:
-                self.add_label_networkpolicy(data, rule_item["podSelector"]["matchLabels"], policy_name)
-                self.add_namespace_label_networkpolicy(data, rule_item["namespaceSelector"]["matchLabels"], policy_name)
-                namespaces = kube_list_namespaces_by_labels(networkpolicy_opr.core_api, rule_item["namespaceSelector"]["matchLabels"])
-                if namespaces is not None:
-                    namespace_set = set()
-                    for namespace in namespaces.items:
-                        namespace_set.add(namespace.metadata.name)
+        if indexed_policy_name not in data["ports_map"]:
+                data["ports_map"][indexed_policy_name] = []
 
+        if len(directional_traffic_rules) == 0: # In such case, it means "Default to allow all triaffic"
+            data["cidrs_map_no_except"][indexed_policy_name].append("0.0.0.0/0")
+            data["ports_map"][indexed_policy_name].append("any:0")
+        else:            
+            for port in directional_traffic_rules["ports"]:
+                data["ports_map"][indexed_policy_name].append("{}:{}".format(port["protocol"], port["port"]))
+            
+            if indexed_policy_name not in data["cidrs_map_with_except"]:
+                data["cidrs_map_with_except"][indexed_policy_name] = []
+            if indexed_policy_name not in data["cidrs_map_except"]:
+                data["cidrs_map_except"][indexed_policy_name] = []
+            for rule_item in directional_traffic_rules["from" if direction == "ingress" else "to"]:
+                if "ipBlock" in rule_item:
+                    if "except" in rule_item["ipBlock"]:
+                        data["cidrs_map_with_except"][indexed_policy_name].append(rule_item["ipBlock"]["cidr"])
+                        for except_cidr in rule_item["ipBlock"]["except"]:
+                            data["cidrs_map_except"][indexed_policy_name].append(except_cidr)
+                    else:
+                        data["cidrs_map_no_except"][indexed_policy_name].append(rule_item["ipBlock"]["cidr"])
+                elif "namespaceSelector" in rule_item and "podSelector" in rule_item:
+                    self.add_label_networkpolicy(data, rule_item["podSelector"]["matchLabels"], policy_name)
+                    self.add_namespace_label_networkpolicy(data, rule_item["namespaceSelector"]["matchLabels"], policy_name)
+                    namespaces = kube_list_namespaces_by_labels(networkpolicy_opr.core_api, rule_item["namespaceSelector"]["matchLabels"])
+                    if namespaces is not None:
+                        namespace_set = set()
+                        for namespace in namespaces.items:
+                            namespace_set.add(namespace.metadata.name)
+
+                        pods = kube_list_pods_by_labels(networkpolicy_opr.core_api, rule_item["podSelector"]["matchLabels"])
+                        if pods is not None:
+                            for pod in pods.items:
+                                if pod.metadata.namespace in namespace_set and pod.status.pod_ip is not None:
+                                    data["cidrs_map_no_except"][indexed_policy_name].append("{}/32".format(pod.status.pod_ip))
+                elif "namespaceSelector" in rule_item:
+                    self.add_namespace_label_networkpolicy(data, rule_item["namespaceSelector"]["matchLabels"], policy_name)
+                    namespaces = kube_list_namespaces_by_labels(networkpolicy_opr.core_api, rule_item["namespaceSelector"]["matchLabels"])
+                    if namespaces is not None:
+                        for namespace in namespaces.items:
+                            pods = kube_list_pods_by_namespace(networkpolicy_opr.core_api, namespace.metadata.name)
+                            if pods is not None:
+                                for pod in pods.items:
+                                    if pod.status.pod_ip is not None:
+                                        data["cidrs_map_no_except"][indexed_policy_name].append("{}/32".format(pod.status.pod_ip))
+                elif "podSelector" in rule_item:
+                    self.add_label_networkpolicy(data, rule_item["podSelector"]["matchLabels"], policy_name)
                     pods = kube_list_pods_by_labels(networkpolicy_opr.core_api, rule_item["podSelector"]["matchLabels"])
                     if pods is not None:
                         for pod in pods.items:
-                            if pod.metadata.namespace in namespace_set and pod.status.pod_ip is not None:
+                            if pod.status.pod_ip is not None:
                                 data["cidrs_map_no_except"][indexed_policy_name].append("{}/32".format(pod.status.pod_ip))
-            elif "namespaceSelector" in rule_item:
-                self.add_namespace_label_networkpolicy(data, rule_item["namespaceSelector"]["matchLabels"], policy_name)
-                namespaces = kube_list_namespaces_by_labels(networkpolicy_opr.core_api, rule_item["namespaceSelector"]["matchLabels"])
-                if namespaces is not None:
-                    for namespace in namespaces.items:
-                        pods = kube_list_pods_by_namespace(networkpolicy_opr.core_api, namespace.metadata.name)
-                        if pods is not None:
-                            for pod in pods.items:
-                                if pod.status.pod_ip is not None:
-                                    data["cidrs_map_no_except"][indexed_policy_name].append("{}/32".format(pod.status.pod_ip))
-            elif "podSelector" in rule_item:
-                self.add_label_networkpolicy(data, rule_item["podSelector"]["matchLabels"], policy_name)
-                pods = kube_list_pods_by_labels(networkpolicy_opr.core_api, rule_item["podSelector"]["matchLabels"])
-                if pods is not None:
-                    for pod in pods.items:
-                        if pod.status.pod_ip is not None:
-                            data["cidrs_map_no_except"][indexed_policy_name].append("{}/32".format(pod.status.pod_ip))
-            else:
-                raise NotImplementedError("Not implemented for {}".format(rule_item))
+                else:
+                    raise NotImplementedError("Not implemented for {}".format(rule_item))
 
     def add_label_networkpolicy(self, data, label_dict, policy_name):
         for key in label_dict:
