@@ -481,7 +481,7 @@ class Endpoint:
 
     def update_network_policy_enforcement_map_egress(self):
         endpointEnforced = EndpointEnforced(self.vni, self.ip)
-        self.rpc.update_network_policy_enforcement_map_egress(endpointEnforced)
+        self.rpc.update_network_policy_enforcement_map_egress(self, endpointEnforced)
 
     def delete_network_policy_enforcement_map_ingress(self):
         endpointEnforced = EndpointEnforced(self.vni, self.ip)
@@ -489,4 +489,4 @@ class Endpoint:
 
     def delete_network_policy_enforcement_map_egress(self):
         endpointEnforced = EndpointEnforced(self.vni, self.ip)
-        self.rpc.delete_network_policy_enforcement_map_egress(endpointEnforced)
+        self.rpc.delete_network_policy_enforcement_map_egress(self, endpointEnforced)

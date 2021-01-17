@@ -56,9 +56,9 @@ class TrnRpc:
         self.trn_cli_delete_network_policy_ingress = f'''{self.trn_cli} delete-net-policy-in -i {self.phy_itf} -j'''
         self.trn_cli_delete_network_policy_egress = f'''{self.trn_cli} delete-net-policy-out -j'''
         self.trn_cli_update_network_policy_enforcement_map_ingress = f'''{self.trn_cli} update-net-policy-enforce-in -i {self.phy_itf} -j'''
-        self.trn_cli_update_network_policy_enforcement_map_egress = f'''{self.trn_cli} update-net-policy-enforce-out -i {self.phy_itf} -j'''
+        self.trn_cli_update_network_policy_enforcement_map_egress = f'''{self.trn_cli} update-net-policy-enforce-out -j'''
         self.trn_cli_delete_network_policy_enforcement_map_ingress = f'''{self.trn_cli} delete-net-policy-enforce-in -i {self.phy_itf} -j'''
-        self.trn_cli_delete_network_policy_enforcement_map_egress = f'''{self.trn_cli} delete-net-policy-enforce-out -i {self.phy_itf} -j'''
+        self.trn_cli_delete_network_policy_enforcement_map_egress = f'''{self.trn_cli} delete-net-policy-enforce-out -j'''
         self.trn_cli_update_network_policy_protocol_port_ingress = f'''{self.trn_cli} update-net-policy-protocol-port-in -i {self.phy_itf} -j'''
         self.trn_cli_update_network_policy_protocol_port_egress = f'''{self.trn_cli} update-net-policy-protocol-port-out -j'''
         self.trn_cli_delete_network_policy_protocol_port_ingress = f'''{self.trn_cli} delete-net-policy-protocol-port-in -i {self.phy_itf} -j'''
@@ -535,13 +535,14 @@ class TrnRpc:
         returncode, text = run_cmd(cmd)
         logger.info("update_network_policy_enforcement_map_ingress returns {} {}".format(returncode, text))
 
-    def update_network_policy_enforcement_map_egress(self, endpointEnforced):
+    def update_network_policy_enforcement_map_egress(self, ep, endpointEnforced):
+        itf = ep.get_veth_peer()
         jsonconf = {
             "tunnel_id": endpointEnforced.vni,
             "ip": endpointEnforced.ip,
         }
         jsonconf = json.dumps(jsonconf)
-        cmd = f'''{self.trn_cli_update_network_policy_enforcement_map_egress} \'{jsonconf}\''''
+        cmd = f'''{self.trn_cli_update_network_policy_enforcement_map_egress} \'{jsonconf}\' -i \'{itf}\''''
         logger.info("update_network_policy_enforcement_map_egress: {}".format(cmd))
         returncode, text = run_cmd(cmd)
         logger.info("update_network_policy_enforcement_map_egress returns {} {}".format(returncode, text))
@@ -557,13 +558,14 @@ class TrnRpc:
         returncode, text = run_cmd(cmd)
         logger.info("delete_network_policy_enforcement_map_ingress returns {} {}".format(returncode, text))
 
-    def delete_network_policy_enforcement_map_egress(self, endpointEnforced):
+    def delete_network_policy_enforcement_map_egress(self, ep, endpointEnforced):
+        itf = ep.get_veth_peer()
         jsonconf = {
             "tunnel_id": endpointEnforced.vni,
             "ip": endpointEnforced.ip,
         }
         jsonconf = json.dumps(jsonconf)
-        cmd = f'''{self.trn_cli_delete_network_policy_enforcement_map_egress} \'{jsonconf}\''''
+        cmd = f'''{self.trn_cli_delete_network_policy_enforcement_map_egress} \'{jsonconf}\' -i \'{itf}\''''
         logger.info("delete_network_policy_enforcement_map_egress: {}".format(cmd))
         returncode, text = run_cmd(cmd)
         logger.info("delete_network_policy_enforcement_map_egress returns {} {}".format(returncode, text))
