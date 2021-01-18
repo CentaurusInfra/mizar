@@ -234,9 +234,12 @@ class NetworkPolicyUtil:
         if len(directional_traffic_rules) == 0: # In such case, it means "Default to allow all triaffic"
             data["cidrs_map_no_except"][indexed_policy_name].append("0.0.0.0/0")
             data["ports_map"][indexed_policy_name].append("any:0")
-        else:            
-            for port in directional_traffic_rules["ports"]:
-                data["ports_map"][indexed_policy_name].append("{}:{}".format(port["protocol"], port["port"]))
+        else:
+            if "ports" in directional_traffic_rules:
+                for port in directional_traffic_rules["ports"]:
+                    data["ports_map"][indexed_policy_name].append("{}:{}".format(port["protocol"], port["port"]))
+            else:
+                data["ports_map"][indexed_policy_name].append("any:0")
             
             if indexed_policy_name not in data["cidrs_map_with_except"]:
                 data["cidrs_map_with_except"][indexed_policy_name] = []
