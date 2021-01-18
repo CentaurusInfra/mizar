@@ -653,7 +653,7 @@ int trn_delete_agent_network_policy_protocol_port_map(struct agent_user_metadata
 {
 	for (int i = 0; i < counter; i++)
 	{
-		int err = bpf_map_delete_elem(md->ing_vsip_ppo_map_fd, &policy[i]);
+		int err = bpf_map_delete_elem(md->eg_vsip_ppo_map_fd, &policy[i]);
 
 		if (err) {
 			TRN_LOG_ERROR("Delete Protocol-Port egress map failed (err:%d).for ip address 0x%x with protocol %d and port %d. \n",
