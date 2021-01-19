@@ -327,6 +327,8 @@ class NetworkPolicyUtil:
             for found_cidr_tuple in found_cidr_map:
                 if indexed_policy_names != found_cidr_tuple[1]:
                     for foundPolicyName in found_cidr_tuple[1]:
+                        # In the trie, there could be matched cidr but whose policies are from other direction (ingress/egress).
+                        # So in following line adds a condition to limit the scope of the matched policies.
                         if cidr in access_rules[cidr_and_policies_map_name] and foundPolicyName in access_rules[cidr_and_policies_map_name][cidr]:
                             indexed_policy_names.add(foundPolicyName)
 
