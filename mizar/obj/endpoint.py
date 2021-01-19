@@ -462,6 +462,8 @@ class Endpoint:
     def delete_network_policy_protocol_port_ingress(self, port_table):
         cidr_networkpolicy_list = []
         for item in port_table:
+            if item["protocol"] == "any" and item["port"] == "0":
+                continue
             cidr_networkpolicy = PortNetworkPolicy(
                 item["vni"], item["local_ip"], item["protocol"], item["port"], item["bit_value"])
             cidr_networkpolicy_list.append(cidr_networkpolicy)
@@ -470,6 +472,8 @@ class Endpoint:
     def delete_network_policy_protocol_port_egress(self, port_table):
         cidr_networkpolicy_list = []
         for item in port_table:
+            if item["protocol"] == "any" and item["port"] == "0":
+                continue
             cidr_networkpolicy = PortNetworkPolicy(
                 item["vni"], item["local_ip"], item["protocol"], item["port"], item["bit_value"])
             cidr_networkpolicy_list.append(cidr_networkpolicy)

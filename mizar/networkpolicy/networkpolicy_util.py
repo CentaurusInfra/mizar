@@ -152,7 +152,7 @@ class NetworkPolicyUtil:
             old_data_for_networkpolicy["old"] = {}
             data_for_networkpolicy["old"] = old_data_for_networkpolicy
 
-        logger.info("data_for_networkpolicy: {}".format(data_for_networkpolicy))
+        logger.info("ep: {}, data_for_networkpolicy: {}".format(ep.name, data_for_networkpolicy))
         ep.set_data_for_networkpolicy(data_for_networkpolicy)
         ep.update_networkpolicy_per_endpoint(data_for_networkpolicy)
         for label in data_for_networkpolicy["ingress"]["label_networkpolicies_map"]:
@@ -327,7 +327,8 @@ class NetworkPolicyUtil:
             for found_cidr_tuple in found_cidr_map:
                 if indexed_policy_names != found_cidr_tuple[1]:
                     for foundPolicyName in found_cidr_tuple[1]:
-                        indexed_policy_names.add(foundPolicyName)
+                        if cidr in access_rules[cidr_and_policies_map_name] and foundPolicyName in access_rules[cidr_and_policies_map_name][cidr]:
+                            indexed_policy_names.add(foundPolicyName)
 
     def build_port_and_policies_map(self, access_rules):
         for indexed_policy_name, ports in access_rules["ports_map"].items():
