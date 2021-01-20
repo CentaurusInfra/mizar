@@ -631,35 +631,27 @@ int trn_delete_agent_network_policy_enforcement_map(struct agent_user_metadata_t
 
 int trn_update_agent_network_policy_protocol_port_map(struct agent_user_metadata_t *md,
 						        struct vsip_ppo_t *policy,
-						        __u64 *bitmap,
-							int counter)
+						        __u64 bitmap)
 {
-	for (int i = 0; i < counter; i++)
-	{
-		int err = bpf_map_update_elem(md->eg_vsip_ppo_map_fd, &policy[i], &bitmap[i], 0);
+	int err = bpf_map_update_elem(md->eg_vsip_ppo_map_fd, policy, &bitmap, 0);
 
-		if (err) {
-			TRN_LOG_ERROR("Update Protocol-Port egress map failed (err:%d) for ip address 0x%x with protocol %d and port %d. \n",
-					err, policy[i].local_ip, policy[i].proto, policy[i].port);
-			return 1;
-		}
+	if (err) {
+		TRN_LOG_ERROR("Update Protocol-Port egress map failed (err:%d) for ip address 0x%x with protocol %d and port %d. \n",
+				err, policy->local_ip, policy->proto, policy->port);
+		return 1;
 	}
+
 	return 0;
 }
 
 int trn_delete_agent_network_policy_protocol_port_map(struct agent_user_metadata_t *md,
-						        struct vsip_ppo_t *policy,
-							int counter)
+						        struct vsip_ppo_t *policy)
 {
-	for (int i = 0; i < counter; i++)
-	{
-		int err = bpf_map_delete_elem(md->eg_vsip_ppo_map_fd, &policy[i]);
-
-		if (err) {
-			TRN_LOG_ERROR("Delete Protocol-Port egress map failed (err:%d).for ip address 0x%x with protocol %d and port %d. \n",
-					err, policy[i].local_ip, policy[i].proto, policy[i].port);
-			return 1;
-		}
+	int err = bpf_map_delete_elem(md->eg_vsip_ppo_map_fd, policy);
+	if (err) {
+		TRN_LOG_ERROR("Delete Protocol-Port egress map failed (err:%d).for ip address 0x%x with protocol %d and port %d. \n",
+				err, policy->local_ip, policy->proto, policy->port);
+		return 1;
 	}
 	return 0;
 }

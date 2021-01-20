@@ -230,9 +230,7 @@ int trn_delete_transit_network_policy_enforcement_map(struct user_metadata_t *md
 
 int trn_update_transit_network_policy_protocol_port_map(struct user_metadata_t *md,
 						        struct vsip_ppo_t *policy,
-						        __u64 *bitmap,
-							int counter);
+						        __u64 bitmap);
 
 int trn_delete_transit_network_policy_protocol_port_map(struct user_metadata_t *md,
-						        struct vsip_ppo_t *policy,
-							int counter);
+						        struct vsip_ppo_t *policy);

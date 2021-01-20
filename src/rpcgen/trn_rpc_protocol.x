@@ -198,7 +198,6 @@ struct rpc_trn_vsip_ppo_t {
        uint8_t proto;
        uint16_t port;
        uint64_t bit_val;
-       int count;
 };
 
 /* Defines a network policy protocol port table key */
@@ -208,7 +207,6 @@ struct rpc_trn_vsip_ppo_key_t {
        uint32_t local_ip;
        uint8_t proto;
        uint16_t port;
-       int count;
 };
 
 /*----- Protocol. -----*/
