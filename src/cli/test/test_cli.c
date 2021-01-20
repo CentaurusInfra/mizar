@@ -2816,7 +2816,7 @@ static void test_trn_cli_update_transit_network_policy_protocol_port_subcmd(void
 		.tunid = 3,
 		.local_ip = 0x300000a,
 		.proto = 6,
-		.port = 6379,
+		.port = 60184,
 		.bit_val = 10
 	},
 	{
@@ -2824,7 +2824,7 @@ static void test_trn_cli_update_transit_network_policy_protocol_port_subcmd(void
 		.tunid = 3,
 		.local_ip = 0x300000a,
 		.proto = 6,
-		.port = 6379,
+		.port = 60184,
 		.bit_val = 10
 	}};
 
@@ -2907,7 +2907,7 @@ static void test_trn_cli_update_agent_network_policy_protocol_port_subcmd(void *
 		.tunid = 3,
 		.local_ip = 0x300000a,
 		.proto = 6,
-		.port = 6379,
+		.port = 60184,
 		.bit_val = 10
 	},
 	{
@@ -2915,7 +2915,7 @@ static void test_trn_cli_update_agent_network_policy_protocol_port_subcmd(void *
 		.tunid = 3,
 		.local_ip = 0x300000a,
 		.proto = 6,
-		.port = 6379,
+		.port = 60184,
 		.bit_val = 10
 	}};
 
@@ -2994,14 +2994,14 @@ static void test_trn_cli_delete_transit_network_policy_protocol_port_subcmd(void
 		.tunid = 3,
 		.local_ip = 0x300000a,
 		.proto = 6,
-		.port = 6379
+		.port = 60184
 	},
 	{
 		.interface = itf,
 		.tunid = 2,
 		.local_ip = 0x200000a,
 		.proto = 6,
-		.port = 6379
+		.port = 60184
 	}};
 
 	/* Test call delete_transit_network_policy_protocol_port successfully */
@@ -3079,14 +3079,14 @@ static void test_trn_cli_delete_agent_network_policy_protocol_port_subcmd(void *
 		.tunid = 3,
 		.local_ip = 0x300000a,
 		.proto = 6,
-		.port = 6379
+		.port = 60184
 	},
 	{
 		.interface = itf,
 		.tunid = 2,
 		.local_ip = 0x200000a,
 		.proto = 6,
-		.port = 6379
+		.port = 60184
 	}};
 
 	/* Test call delete_agent_network_policy_protocol_port successfully */

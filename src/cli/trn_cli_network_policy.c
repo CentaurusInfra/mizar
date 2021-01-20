@@ -677,6 +677,16 @@ int trn_cli_delete_transit_network_policy_protocol_port_subcmd(CLIENT *clnt, int
 	}
 	cJSON_Delete(json_str);
 
+	for (int k = 0; k < counter; k++)
+	{
+		if (&ppo_keys[k] == NULL){
+			print_err("delete_transit_network_policy_protocol_port_1 Expected %d elements to be updated into network policy map, but only has %d elements. \n",
+					counter, k-1);
+			return -EINVAL; 
+		}
+		dump_protocol_port_policy_key(&ppo_keys[k]);
+	}
+
 	rc = delete_transit_network_policy_protocol_port_1(ppo_keys, clnt);
 	if (rc == (int *)NULL) {
 		print_err("RPC Error: client call failed: delete_transit_network_policy_protocol_port_1 \n");
@@ -738,6 +748,16 @@ int trn_cli_delete_agent_network_policy_protocol_port_subcmd(CLIENT *clnt, int a
 	}
 	cJSON_Delete(json_str);
 
+	for (int k = 0; k < counter; k++)
+	{
+		if (&ppo_keys[k] == NULL){
+			print_err("delete_transit_network_policy_protocol_port_1 Expected %d elements to be updated into network policy map, but only has %d elements. \n",
+					counter, k-1);
+			return -EINVAL; 
+		}
+		dump_protocol_port_policy_key(&ppo_keys[k]);
+	}
+
 	rc = delete_agent_network_policy_protocol_port_1(ppo_keys, clnt);
 	if (rc == (int *)NULL) {
 		print_err("RPC Error: client call failed: delete_agent_network_policy_protocol_port_1 \n");
@@ -783,4 +803,14 @@ void dump_protocol_port_policy(struct rpc_trn_vsip_ppo_t *ppo)
 	print_msg("Protocol: %d\n", ppo->proto);
 	print_msg("Port: %x\n", ppo->port);
 	print_msg("bit value: %ld\n", ppo->bit_val);
+}
+
+void dump_protocol_port_policy_key(struct rpc_trn_vsip_ppo_key_t *ppo)
+{
+	print_msg("Interface: %s\n", ppo->interface);
+	print_msg("Tunnel ID: %ld\n", ppo->tunid);
+	print_msg("Local IP: %x\n", ppo->local_ip);
+	print_msg("Protocol: %d\n", ppo->proto);
+	print_msg("Port: %x\n", ppo->port);
+	print_msg("Count: %d\n", ppo->count);
 }

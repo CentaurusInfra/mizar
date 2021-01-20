@@ -131,4 +131,5 @@ void dump_agent_md(struct rpc_trn_agent_metadata_t *agent_md);
 void dump_network_policy(struct rpc_trn_vsip_cidr_t *policy);
 void dump_enforced_policy(struct rpc_trn_vsip_enforce_t *enforce);
 void dump_protocol_port_policy(struct rpc_trn_vsip_ppo_t *ppo);
+void dump_protocol_port_policy_key(struct rpc_trn_vsip_ppo_key_t *ppo);
 uint32_t parse_ip_address(const cJSON *ipobj);
