@@ -146,7 +146,7 @@ class NetworkPolicyUtil:
         
         old_data_for_networkpolicy = ep.get_data_for_networkpolicy()
         if len(old_data_for_networkpolicy) > 0:
-            if len(old_data_for_networkpolicy["old"]) > 0 and old_data_for_networkpolicy["old"]["ingress"] == data_for_networkpolicy_ingress and old_data_for_networkpolicy["old"]["egress"] == data_for_networkpolicy_egress:
+            if old_data_for_networkpolicy["ingress"] == data_for_networkpolicy_ingress and old_data_for_networkpolicy["egress"] == data_for_networkpolicy_egress:
                 return
 
             old_data_for_networkpolicy["old"] = {}
