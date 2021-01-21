@@ -842,18 +842,16 @@ static void test_update_transit_network_policy_protocol_port_1_svc(void **state)
 		.tunid = 3,
 		.local_ip = 0x300000a,
 		.proto = 6,
-		.port = 6379,
-		.bit_val = 10,
-		.count = 2
+		.port = 60184,
+		.bit_val = 10
 	},
 	{
 		.interface = itf,
 		.tunid = 3,
 		.local_ip = 0x300000a,
 		.proto = 6,
-		.port = 6379,
-		.bit_val = 10,
-		.count = 2
+		.port = 60184,
+		.bit_val = 10
 	}};
 
 	int *rc;
@@ -872,18 +870,16 @@ static void test_update_agent_network_policy_protocol_port_1_svc(void **state)
 		.tunid = 3,
 		.local_ip = 0x300000a,
 		.proto = 6,
-		.port = 6379,
-		.bit_val = 10,
-		.count = 2
+		.port = 60184,
+		.bit_val = 10
 	},
 	{
 		.interface = itf,
 		.tunid = 3,
 		.local_ip = 0x300000a,
 		.proto = 6,
-		.port = 6379,
-		.bit_val = 10,
-		.count = 2
+		.port = 60184,
+		.bit_val = 10
 	}};
 
 	int *rc;
@@ -902,16 +898,14 @@ static void test_delete_transit_network_policy_protocol_port_1_svc(void **state)
 		.tunid = 3,
 		.local_ip = 0x300000a,
 		.proto = 6,
-		.port = 6379,
-		.count = 2
+		.port = 60184
 	},
 	{
 		.interface = itf,
 		.tunid = 2,
 		.local_ip = 0x200000a,
 		.proto = 6,
-		.port = 6379,
-		.count = 2
+		.port = 60184
 	}};
 
 	int *rc;
@@ -946,16 +940,14 @@ static void test_delete_agent_network_policy_protocol_port_1_svc(void **state)
 		.tunid = 3,
 		.local_ip = 0x300000a,
 		.proto = 6,
-		.port = 6379,
-		.count = 2
+		.port = 60184
 	},
 	{
 		.interface = itf,
 		.tunid = 2,
 		.local_ip = 0x200000a,
 		.proto = 6,
-		.port = 6379,
-		.count = 2
+		.port = 60184
 	}};
 
 	int *rc;

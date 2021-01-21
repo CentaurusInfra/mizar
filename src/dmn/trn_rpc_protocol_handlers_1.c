@@ -1292,15 +1292,16 @@ int *update_transit_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc
 
 	for (int i = 0; i < counter; i++)
 	{
-		cidr[i].tunnel_id = policy->tunid;
+		cidr[i].tunnel_id = policy[i].tunid;
 		// cidr-related maps have tunnel-id(64 bits),
 		// local-ip(32 bits) prior to destination cidr;
 		// hence the final prefix length is 64+32+{cidr prefix}
-		cidr[i].prefixlen = policy->cidr_prefixlen + 96;
-		cidr[i].local_ip = policy->local_ip;
-		cidr[i].remote_ip = policy->cidr_ip;
-		bitmap[i] = policy->bit_val;
-		policy++;
+		cidr[i].prefixlen = policy[i].cidr_prefixlen + 96;
+		cidr[i].local_ip = policy[i].local_ip;
+		cidr[i].remote_ip = policy[i].cidr_ip;
+		bitmap[i] = policy[i].bit_val;
+		TRN_LOG_INFO("policy %d: tunnel_id  %ld; local ip  0x%x; cidr ip  0x%x; count  %d\n", 
+				i, policy[i].tunid, policy[i].local_ip, policy[i].cidr_ip, policy[i].count);
 	}
 
 	if (type == PRIMARY) {
@@ -1361,15 +1362,16 @@ int *update_agent_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc_r
 
 	for (int i = 0; i < counter; i++)
 	{
-		cidr[i].tunnel_id = policy->tunid;
+		cidr[i].tunnel_id = policy[i].tunid;
 		// cidr-related maps have tunnel-id(64 bits),
 		// local-ip(32 bits) prior to destination cidr;
 		// hence the final prefix length is 64+32+{cidr prefix}
-		cidr[i].prefixlen = policy->cidr_prefixlen + 96;
-		cidr[i].local_ip = policy->local_ip;
-		cidr[i].remote_ip = policy->cidr_ip;
-		bitmap[i] = policy->bit_val;
-		policy++;
+		cidr[i].prefixlen = policy[i].cidr_prefixlen + 96;
+		cidr[i].local_ip = policy[i].local_ip;
+		cidr[i].remote_ip = policy[i].cidr_ip;
+		bitmap[i] = policy[i].bit_val;
+		TRN_LOG_INFO("policy %d: tunnel_id  %ld; local ip  0x%x; cidr ip  0x%x; count  %d\n", 
+				i, policy[i].tunid, policy[i].local_ip, policy[i].cidr_ip, policy[i].count);
 	}
 
 	if (type == PRIMARY) {
@@ -1433,6 +1435,8 @@ int *delete_transit_network_policy_1_svc(rpc_trn_vsip_cidr_key_t *policy_key, st
 		cidr[i].prefixlen = policy_key[i].cidr_prefixlen + 96;
 		cidr[i].local_ip = policy_key[i].local_ip;
 		cidr[i].remote_ip = policy_key[i].cidr_ip;
+		TRN_LOG_INFO("policy %d: tunnel_id  %ld; local ip  0x%x; cidr ip  0x%x; count  %d\n", 
+				i, policy_key[i].tunid, policy_key[i].local_ip, policy_key[i].cidr_ip, policy_key[i].count);
 	}
 
 	if (type == PRIMARY) {
@@ -1497,6 +1501,8 @@ int *delete_agent_network_policy_1_svc(rpc_trn_vsip_cidr_key_t *policy_key, stru
 		cidr[i].prefixlen = policy_key[i].cidr_prefixlen + 96;
 		cidr[i].local_ip = policy_key[i].local_ip;
 		cidr[i].remote_ip = policy_key[i].cidr_ip;
+		TRN_LOG_INFO("policy %d: tunnel_id  %ld; local ip  0x%x; cidr ip  0x%x; count  %d\n", 
+				i, policy_key[i].tunid, policy_key[i].local_ip, policy_key[i].cidr_ip, policy_key[i].count);
 	}
 
 	if (type == PRIMARY) {
@@ -1680,17 +1686,9 @@ int *update_transit_network_policy_protocol_port_1_svc(rpc_trn_vsip_ppo_t *ppo, 
 	static int result = -1;
 	int rc;
 	char *itf = ppo->interface;
-	int counter = ppo->count;
 	
 	TRN_LOG_INFO("update_transit_network_policy_protocol_port_1_svc service");
-	if (counter == 0){
-		TRN_LOG_INFO("policy list has length of 0. Nothing to do");
-		result = 0;
-		return &result;
-	}
-	struct vsip_ppo_t policies[counter];
-	__u64 bitmap[counter];
-
+	struct vsip_ppo_t policy;
 	struct user_metadata_t *md = trn_itf_table_find(itf);
 	if (!md) {
 		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
@@ -1698,19 +1696,17 @@ int *update_transit_network_policy_protocol_port_1_svc(rpc_trn_vsip_ppo_t *ppo, 
 		goto error;
 	}
 
-	for (int i = 0; i < counter; i++)
-	{
-		policies[i].tunnel_id = ppo[i].tunid;
-		policies[i].local_ip = ppo[i].local_ip;
-		policies[i].proto = ppo[i].proto;
-		policies[i].port = ppo[i].port;
-		bitmap[i] = ppo[i].bit_val;
-	}
+	policy.tunnel_id = ppo->tunid;
+	policy.local_ip = ppo->local_ip;
+	policy.proto = ppo->proto;
+	policy.port = ppo->port;
+	TRN_LOG_INFO("ppo: tunnel_id  %ld; local ip  0x%x; protocol  %d; port  %d\n", 
+				ppo->tunid, ppo->local_ip, ppo->proto, ppo->port);
 
-	rc = trn_update_transit_network_policy_protocol_port_map(md, policies, bitmap, counter);
+	rc = trn_update_transit_network_policy_protocol_port_map(md, &policy, ppo->bit_val);
 
 	if (rc != 0) {
-		TRN_LOG_ERROR("Failure updating transit network policy enforcement map\n");
+		TRN_LOG_ERROR("Failure updating transit network policy protocol port map\n");
 		result = RPC_TRN_FATAL;
 		goto error;
 	}
@@ -1728,17 +1724,9 @@ int *update_agent_network_policy_protocol_port_1_svc(rpc_trn_vsip_ppo_t *ppo, st
 	static int result = -1;
 	int rc;
 	char *itf = ppo->interface;
-	int counter = ppo->count;
 
 	TRN_LOG_INFO("update_agent_network_policy_protocol_port_1_svc service");
-	if (counter == 0){
-		TRN_LOG_INFO("policy list has length of 0. Nothing to do");
-		result = 0;
-		return &result;
-	}
-	struct vsip_ppo_t policies[counter];
-	__u64 bitmap[counter];
-
+	struct vsip_ppo_t policy;
 	struct agent_user_metadata_t *md = trn_vif_table_find(itf);
 	if (!md) {
 		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
@@ -1746,19 +1734,17 @@ int *update_agent_network_policy_protocol_port_1_svc(rpc_trn_vsip_ppo_t *ppo, st
 		goto error;
 	}
 
-	for (int i = 0; i < counter; i++)
-	{
-		policies[i].tunnel_id = ppo[i].tunid;
-		policies[i].local_ip = ppo[i].local_ip;
-		policies[i].proto = ppo[i].proto;
-		policies[i].port = ppo[i].port;
-		bitmap[i] = ppo[i].bit_val;
-	}
+	policy.tunnel_id = ppo->tunid;
+	policy.local_ip = ppo->local_ip;
+	policy.proto = ppo->proto;
+	policy.port = ppo->port;
+	TRN_LOG_INFO("ppo: tunnel_id  %ld; local ip  0x%x; protocol  %d; port  %d\n", 
+				ppo->tunid, ppo->local_ip, ppo->proto, ppo->port);
 
-	rc = trn_update_agent_network_policy_protocol_port_map(md, policies, bitmap, counter);
+	rc = trn_update_agent_network_policy_protocol_port_map(md, &policy, ppo->bit_val);
 
 	if (rc != 0) {
-		TRN_LOG_ERROR("Failure updating agent network policy enforcement map\n");
+		TRN_LOG_ERROR("Failure updating agent network policy protocol port map\n");
 		result = RPC_TRN_FATAL;
 		goto error;
 	}
@@ -1776,17 +1762,9 @@ int *delete_transit_network_policy_protocol_port_1_svc(rpc_trn_vsip_ppo_key_t *p
 	static int result = -1;
 	int rc;
 	char *itf = ppo_key->interface;
-	int counter = ppo_key->count;
-
+	
 	TRN_LOG_INFO("delete_transit_network_policy_protocol_port_1 service");
-
-	if (counter == 0){
-		TRN_LOG_INFO("policy list has length of 0. Nothing to do");
-		result = 0;
-		return &result;
-	}
-	struct vsip_ppo_t policies[counter];
-
+	struct vsip_ppo_t policy;
 	struct user_metadata_t *md = trn_itf_table_find(itf);
 	if (!md) {
 		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
@@ -1794,17 +1772,17 @@ int *delete_transit_network_policy_protocol_port_1_svc(rpc_trn_vsip_ppo_key_t *p
 		goto error;
 	}
 
-	for (int i = 0; i < counter; i++){
-		policies[i].tunnel_id = ppo_key[i].tunid;
-		policies[i].local_ip = ppo_key[i].local_ip;
-		policies[i].proto = ppo_key[i].proto;
-		policies[i].port = ppo_key[i].port;
-	}
+	policy.tunnel_id = ppo_key->tunid;
+	policy.local_ip = ppo_key->local_ip;
+	policy.proto = ppo_key->proto;
+	policy.port = ppo_key->port;
+	TRN_LOG_INFO("ppo: tunnel_id  %ld; local ip  0x%x; protocol  %d; port  %d\n", 
+				ppo_key->tunid, ppo_key->local_ip, ppo_key->proto, ppo_key->port);
 
-	rc = trn_delete_transit_network_policy_protocol_port_map(md, policies, counter);
+	rc = trn_delete_transit_network_policy_protocol_port_map(md, &policy);
 
 	if (rc != 0) {
-		TRN_LOG_ERROR("Failure updating transit network policy enforcement map \n");
+		TRN_LOG_ERROR("Failure deleting transit network policy protocol port map\n");
 		result = RPC_TRN_FATAL;
 		goto error;
 	}
@@ -1822,17 +1800,9 @@ int *delete_agent_network_policy_protocol_port_1_svc(rpc_trn_vsip_ppo_key_t *ppo
 	static int result = -1;
 	int rc;
 	char *itf = ppo_key->interface;
-	int counter = ppo_key->count;
 
 	TRN_LOG_INFO("delete_agent_network_policy_protocol_port_1 service");
-
-	if (counter == 0){
-		TRN_LOG_INFO("policy list has length of 0. Nothing to do");
-		result = 0;
-		return &result;
-	}
-	struct vsip_ppo_t policies[counter];
-
+	struct vsip_ppo_t policy;
 	struct agent_user_metadata_t *md = trn_vif_table_find(itf);
 	if (!md) {
 		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
@@ -1840,17 +1810,18 @@ int *delete_agent_network_policy_protocol_port_1_svc(rpc_trn_vsip_ppo_key_t *ppo
 		goto error;
 	}
 
-	for (int i = 0; i < counter; i++){
-		policies[i].tunnel_id = ppo_key[i].tunid;
-		policies[i].local_ip = ppo_key[i].local_ip;
-		policies[i].proto = ppo_key[i].proto;
-		policies[i].port = ppo_key[i].port;
-	}
+	policy.tunnel_id = ppo_key->tunid;
+	policy.local_ip = ppo_key->local_ip;
+	policy.proto = ppo_key->proto;
+	policy.port = ppo_key->port;
 
-	rc = trn_delete_agent_network_policy_protocol_port_map(md, policies, counter);
+	TRN_LOG_INFO("ppo: tunnel_id  %ld; local ip  0x%x; protocol  %d; port  %d \n", 
+				ppo_key->tunid, ppo_key->local_ip, ppo_key->proto, ppo_key->port);
+
+	rc = trn_delete_agent_network_policy_protocol_port_map(md, &policy);
 
 	if (rc != 0) {
-		TRN_LOG_ERROR("Failure updating agent network policy enforcement map \n");
+		TRN_LOG_ERROR("Failure updating agent network policy protocol port map \n");
 		result = RPC_TRN_FATAL;
 		goto error;
 	}
