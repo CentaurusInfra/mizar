@@ -169,7 +169,6 @@ struct rpc_trn_vsip_cidr_t {
        uint32_t cidr_prefixlen;
        int cidr_type;
        uint64_t bit_val;
-       int count;
 };
 
 /* Defines a network policy table key */
@@ -180,7 +179,6 @@ struct rpc_trn_vsip_cidr_key_t {
        uint32_t cidr_ip;
        uint32_t cidr_prefixlen;
        int cidr_type;
-       int count;
 };
 
 /* Defines a network policy enforcement table key */

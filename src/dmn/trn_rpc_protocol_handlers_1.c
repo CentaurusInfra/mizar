@@ -1269,17 +1269,7 @@ int *update_transit_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc
 	int rc;
 	char *itf = policy->interface;
 	int type = policy->cidr_type;
-
-	int counter = policy->count;
-	if (counter == 0)
-	{
-		TRN_LOG_INFO("policy has length of 0. Nothing to do");
-		result = 0;
-		return &result;
-	}
-
-	struct vsip_cidr_t cidr[counter];
-	__u64 bitmap[counter];
+	struct vsip_cidr_t cidr;
 
 	TRN_LOG_INFO("update_transit_network_policy_1_svc service");
 
@@ -1290,19 +1280,15 @@ int *update_transit_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc
 		goto error;
 	}
 
-	for (int i = 0; i < counter; i++)
-	{
-		cidr[i].tunnel_id = policy[i].tunid;
-		// cidr-related maps have tunnel-id(64 bits),
-		// local-ip(32 bits) prior to destination cidr;
-		// hence the final prefix length is 64+32+{cidr prefix}
-		cidr[i].prefixlen = policy[i].cidr_prefixlen + 96;
-		cidr[i].local_ip = policy[i].local_ip;
-		cidr[i].remote_ip = policy[i].cidr_ip;
-		bitmap[i] = policy[i].bit_val;
-		TRN_LOG_INFO("policy %d: tunnel_id  %ld; local ip  0x%x; cidr ip  0x%x; count  %d\n", 
-				i, policy[i].tunid, policy[i].local_ip, policy[i].cidr_ip, policy[i].count);
-	}
+	cidr.tunnel_id = policy->tunid;
+	// cidr-related maps have tunnel-id(64 bits),
+	// local-ip(32 bits) prior to destination cidr;
+	// hence the final prefix length is 64+32+{cidr prefix}
+	cidr.prefixlen = policy->cidr_prefixlen + 96;
+	cidr.local_ip = policy->local_ip;
+	cidr.remote_ip = policy->cidr_ip;
+	TRN_LOG_INFO("policy: tunnel_id  %ld; local ip  0x%x; cidr ip  0x%x\n", 
+			policy->tunid, policy->local_ip, policy->cidr_ip);
 
 	if (type == PRIMARY) {
 		map_fd = md->ing_vsip_prim_map_fd;
@@ -1316,7 +1302,7 @@ int *update_transit_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc
 		goto error;
 	}
 
-	rc = trn_update_transit_network_policy_map(map_fd, cidr, bitmap, counter);
+	rc = trn_update_transit_network_policy_map(map_fd, &cidr, policy->bit_val);
 
 	if (rc != 0) {
 		TRN_LOG_ERROR("Failure updating transit network policy map cidr.");
@@ -1337,19 +1323,9 @@ int *update_agent_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc_r
 	static int result = -1;
 	int rc;
 	int map_fd = -1;
-	char *itf = policy[0].interface;
-	int type = policy[0].cidr_type;
-
-	int counter = policy[0].count;
-	if (counter == 0)
-	{
-		TRN_LOG_INFO("policy has length of 0. Nothing to do");
-		result = 0;
-		return &result;
-	}
-
-	struct vsip_cidr_t cidr[counter];
-	__u64 bitmap[counter];
+	char *itf = policy->interface;
+	int type = policy->cidr_type;
+	struct vsip_cidr_t cidr;
 
 	TRN_LOG_INFO("update_agent_network_policy_1_svc service");
 
@@ -1360,19 +1336,15 @@ int *update_agent_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc_r
 		goto error;
 	}
 
-	for (int i = 0; i < counter; i++)
-	{
-		cidr[i].tunnel_id = policy[i].tunid;
-		// cidr-related maps have tunnel-id(64 bits),
-		// local-ip(32 bits) prior to destination cidr;
-		// hence the final prefix length is 64+32+{cidr prefix}
-		cidr[i].prefixlen = policy[i].cidr_prefixlen + 96;
-		cidr[i].local_ip = policy[i].local_ip;
-		cidr[i].remote_ip = policy[i].cidr_ip;
-		bitmap[i] = policy[i].bit_val;
-		TRN_LOG_INFO("policy %d: tunnel_id  %ld; local ip  0x%x; cidr ip  0x%x; count  %d\n", 
-				i, policy[i].tunid, policy[i].local_ip, policy[i].cidr_ip, policy[i].count);
-	}
+	cidr.tunnel_id = policy->tunid;
+	// cidr-related maps have tunnel-id(64 bits),
+	// local-ip(32 bits) prior to destination cidr;
+	// hence the final prefix length is 64+32+{cidr prefix}
+	cidr.prefixlen = policy->cidr_prefixlen + 96;
+	cidr.local_ip = policy->local_ip;
+	cidr.remote_ip = policy->cidr_ip;
+	TRN_LOG_INFO("policy: tunnel_id  %ld; local ip  0x%x; cidr ip  0x%x \n", 
+			policy->tunid, policy->local_ip, policy->cidr_ip);
 
 	if (type == PRIMARY) {
 		map_fd = md->eg_vsip_prim_map_fd;
@@ -1386,7 +1358,7 @@ int *update_agent_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc_r
 		goto error;
 	}
 
-	rc = trn_update_agent_network_policy_map(map_fd, cidr, bitmap, counter);
+	rc = trn_update_agent_network_policy_map(map_fd, &cidr, policy->bit_val);
 	if (rc != 0) {
 		TRN_LOG_ERROR("Failure updating agent network policy map cidr.");
 		result = RPC_TRN_FATAL;
@@ -1408,14 +1380,7 @@ int *delete_transit_network_policy_1_svc(rpc_trn_vsip_cidr_key_t *policy_key, st
 	int map_fd = -1;
 	char *itf = policy_key->interface;
 	int type = policy_key->cidr_type;
-	int counter = policy_key->count;
-
-	if (counter == 0){
-		TRN_LOG_INFO("policy list has length of 0. Nothing to do");
-		result = 0;
-		return &result;
-	}
-	struct vsip_cidr_t cidr[counter];
+	struct vsip_cidr_t cidr;
 
 	TRN_LOG_INFO("delete_transit_network_policy_1_svc service");
 
@@ -1426,18 +1391,15 @@ int *delete_transit_network_policy_1_svc(rpc_trn_vsip_cidr_key_t *policy_key, st
 		goto error;
 	}
 
-	for (int i = 0; i < counter; i++)
-	{
-		cidr[i].tunnel_id = policy_key[i].tunid;
-		// cidr-related maps have tunnel-id(64 bits),
-		// local-ip(32 bits) prior to destination cidr;
-		// hence the final prefix length is 64+32+{cidr prefix}
-		cidr[i].prefixlen = policy_key[i].cidr_prefixlen + 96;
-		cidr[i].local_ip = policy_key[i].local_ip;
-		cidr[i].remote_ip = policy_key[i].cidr_ip;
-		TRN_LOG_INFO("policy %d: tunnel_id  %ld; local ip  0x%x; cidr ip  0x%x; count  %d\n", 
-				i, policy_key[i].tunid, policy_key[i].local_ip, policy_key[i].cidr_ip, policy_key[i].count);
-	}
+	cidr.tunnel_id = policy_key->tunid;
+	// cidr-related maps have tunnel-id(64 bits),
+	// local-ip(32 bits) prior to destination cidr;
+	// hence the final prefix length is 64+32+{cidr prefix}
+	cidr.prefixlen = policy_key->cidr_prefixlen + 96;
+	cidr.local_ip = policy_key->local_ip;
+	cidr.remote_ip = policy_key->cidr_ip;
+	TRN_LOG_INFO("policy: tunnel_id  %ld; local ip  0x%x; cidr ip  0x%x\n", 
+			policy_key->tunid, policy_key->local_ip, policy_key->cidr_ip);
 
 	if (type == PRIMARY) {
 		map_fd = md->ing_vsip_prim_map_fd;
@@ -1451,7 +1413,7 @@ int *delete_transit_network_policy_1_svc(rpc_trn_vsip_cidr_key_t *policy_key, st
 		goto error;
 	}
 
-	rc = trn_delete_transit_network_policy_map(map_fd, cidr, counter);
+	rc = trn_delete_transit_network_policy_map(map_fd, &cidr);
 
 	if (rc != 0) {
 		TRN_LOG_ERROR("Failure deleting transit network policy map cidr");
@@ -1474,17 +1436,9 @@ int *delete_agent_network_policy_1_svc(rpc_trn_vsip_cidr_key_t *policy_key, stru
 	int map_fd = -1;
 	char *itf = policy_key->interface;
 	int type = policy_key->cidr_type;
-	int counter = policy_key->count;
+	TRN_LOG_INFO("delete_agent_network_policy_1_svc service");
 
-	if (counter == 0){
-		TRN_LOG_INFO("policy list has length of 0. Nothing to do");
-		result = 0;
-		return &result;
-	}
-	struct vsip_cidr_t cidr[counter];
-
-	TRN_LOG_INFO("delete_transit_network_policy_1_svc service");
-
+	struct vsip_cidr_t cidr;
 	struct agent_user_metadata_t *md = trn_vif_table_find(itf);
 	if (!md) {
 		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
@@ -1492,18 +1446,15 @@ int *delete_agent_network_policy_1_svc(rpc_trn_vsip_cidr_key_t *policy_key, stru
 		goto error;
 	}
 
-	for (int i = 0; i < counter; i++)
-	{
-		cidr[i].tunnel_id = policy_key[i].tunid;
-		// cidr-related maps have tunnel-id(64 bits),
-		// local-ip(32 bits) prior to destination cidr;
-		// hence the final prefix length is 64+32+{cidr prefix}
-		cidr[i].prefixlen = policy_key[i].cidr_prefixlen + 96;
-		cidr[i].local_ip = policy_key[i].local_ip;
-		cidr[i].remote_ip = policy_key[i].cidr_ip;
-		TRN_LOG_INFO("policy %d: tunnel_id  %ld; local ip  0x%x; cidr ip  0x%x; count  %d\n", 
-				i, policy_key[i].tunid, policy_key[i].local_ip, policy_key[i].cidr_ip, policy_key[i].count);
-	}
+	cidr.tunnel_id = policy_key->tunid;
+	// cidr-related maps have tunnel-id(64 bits),
+	// local-ip(32 bits) prior to destination cidr;
+	// hence the final prefix length is 64+32+{cidr prefix}
+	cidr.prefixlen = policy_key->cidr_prefixlen + 96;
+	cidr.local_ip = policy_key->local_ip;
+	cidr.remote_ip = policy_key->cidr_ip;
+	TRN_LOG_INFO("policy: tunnel_id  %ld; local ip  0x%x; cidr ip  0x%x\n", 
+			policy_key->tunid, policy_key->local_ip, policy_key->cidr_ip);
 
 	if (type == PRIMARY) {
 		map_fd = md->eg_vsip_prim_map_fd;
@@ -1517,10 +1468,10 @@ int *delete_agent_network_policy_1_svc(rpc_trn_vsip_cidr_key_t *policy_key, stru
 		goto error;
 	}
 
-	rc = trn_delete_agent_network_policy_map(map_fd, cidr, counter);
+	rc = trn_delete_agent_network_policy_map(map_fd, &cidr);
 
 	if (rc != 0) {
-		TRN_LOG_ERROR("Failure deleting transit network policy map cidr");
+		TRN_LOG_ERROR("Failure deleting agent network policy map cidr");
 		result = RPC_TRN_FATAL;
 		goto error;
 	}
