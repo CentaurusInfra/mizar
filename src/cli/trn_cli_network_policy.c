@@ -48,14 +48,12 @@ int trn_cli_update_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *a
 		return -EINVAL;
 	}
 
-	struct rpc_trn_vsip_cidr_t cidrs[counter];
 	char rpc[] = "update_transit_network_policy_1";
 
 	for (int i = 0; i < counter; i++)
 	{
 		struct rpc_trn_vsip_cidr_t cidrval;
 		cidrval.interface = conf.intf;
-		cidrval.count = counter;
 		cJSON *policy = cJSON_GetArrayItem(json_str, i);
 		int err = trn_cli_parse_network_policy_cidr(policy, &cidrval);
 
@@ -64,32 +62,22 @@ int trn_cli_update_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *a
 			return -EINVAL;
 		}
 
-		cidrs[i] = cidrval;
+		rc = update_transit_network_policy_1(&cidrval, clnt);
+		if (rc == (int *)NULL) {
+			print_err("RPC Error: client call failed: update_transit_network_policy_1.\n");
+			return -EINVAL;
+		}
+
+		if (*rc != 0) {
+			print_err(
+				"Error: %s fatal daemon error, see transitd logs for details.\n",
+				rpc);
+			return -EINVAL;
+		}
+		dump_network_policy(&cidrval);
 	}
 	cJSON_Delete(json_str);
 
-	rc = update_transit_network_policy_1(cidrs, clnt);
-	if (rc == (int *)NULL) {
-		print_err("RPC Error: client call failed: update_transit_network_policy_1.\n");
-		return -EINVAL;
-	}
-
-	if (*rc != 0) {
-		print_err(
-			"Error: %s fatal daemon error, see transitd logs for details.\n",
-			rpc);
-		return -EINVAL;
-	}
-
-	for (int k = 0; k < counter; k++)
-	{
-		if (&cidrs[k] == NULL){
-			print_err("update_transit_network_policy_1 Expected %d elements to be updated into network policy map, but only has %d elements. \n",
-					counter, k-1);
-			return -EINVAL; 
-		}
-		dump_network_policy(&cidrs[k]);
-	}
 	print_msg("update_transit_network_policy_1 successfully updated network policy\n");
 	
 	return 0;
@@ -118,15 +106,12 @@ int trn_cli_update_agent_network_policy_subcmd(CLIENT *clnt, int argc, char *arg
 		print_err("Input policy size is less than or equal to zero. Please check your input. \n");
 		return -EINVAL;
 	}
-
-	struct rpc_trn_vsip_cidr_t cidrs[counter];
 	char rpc[] = "update_agent_network_policy_1";
 
 	for (int i = 0; i < counter; i++)
 	{
 		struct rpc_trn_vsip_cidr_t cidrval;
 		cidrval.interface = conf.intf;
-		cidrval.count = counter;
 		cJSON *policy = cJSON_GetArrayItem(json_str, i);
 		int err = trn_cli_parse_network_policy_cidr(policy, &cidrval);
 
@@ -135,32 +120,22 @@ int trn_cli_update_agent_network_policy_subcmd(CLIENT *clnt, int argc, char *arg
 			return -EINVAL;
 		}
 
-		cidrs[i] = cidrval;
+		rc = update_agent_network_policy_1(&cidrval, clnt);
+		if (rc == (int *)NULL) {
+			print_err("RPC Error: client call failed: update_agent_network_policy_1.\n");
+			return -EINVAL;
+		}
+
+		if (*rc != 0) {
+			print_err(
+				"Error: %s fatal daemon error, see agentd logs for details.\n",
+				rpc);
+			return -EINVAL;
+		}
+		dump_network_policy(&cidrval);
 	}
 	cJSON_Delete(json_str);
 
-	rc = update_agent_network_policy_1(cidrs, clnt);
-	if (rc == (int *)NULL) {
-		print_err("RPC Error: client call failed: update_agent_network_policy_1.\n");
-		return -EINVAL;
-	}
-
-	if (*rc != 0) {
-		print_err(
-			"Error: %s fatal daemon error, see agentd logs for details.\n",
-			rpc);
-		return -EINVAL;
-	}
-
-	for (int k = 0; k < counter; k++)
-	{
-		if (&cidrs[k] == NULL){
-			print_err("update_agent_network_policy_1 Expected %d elements to be updated into network policy map, but only has %d elements. \n",
-					counter, k-1);
-			return -EINVAL; 
-		}
-		dump_network_policy(&cidrs[k]);
-	}
 	print_msg("update_agent_network_policy_1 successfully updated network policy\n");
 	
 	return 0;
@@ -171,7 +146,6 @@ int trn_cli_delete_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *a
 	ketopt_t om = KETOPT_INIT;
 	struct cli_conf_data_t conf;
 	cJSON *json_str = NULL;
-
 	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
 		return -EINVAL;
 	}
@@ -183,21 +157,18 @@ int trn_cli_delete_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *a
 	}
 
 	int *rc;
-
 	int counter = cJSON_GetArraySize(json_str); 
 	if (counter <= 0) {
 		print_err("Input policy size is less than or equal to zero. Please check your input. \n");
 		return -EINVAL;
 	}
 
-	struct rpc_trn_vsip_cidr_key_t cidrkeys[counter];
 	char rpc[] = "delete_transit_network_policy_1";
 
 	for (int i = 0; i < counter; i++)
 	{
 		struct rpc_trn_vsip_cidr_key_t cidrkey;
 		cidrkey.interface = conf.intf;
-		cidrkey.count = counter;
 		cJSON *policy = cJSON_GetArrayItem(json_str, i);
 		int err = trn_cli_parse_network_policy_cidr_key(policy, &cidrkey);
 
@@ -205,22 +176,21 @@ int trn_cli_delete_transit_network_policy_subcmd(CLIENT *clnt, int argc, char *a
 			print_err("Error: parsing network policy config.\n");
 			return -EINVAL;
 		}
-		cidrkeys[i] = cidrkey;
+
+		rc = delete_transit_network_policy_1(&cidrkey, clnt);
+		if (rc == (int *)NULL) {
+			print_err("RPC Error: client call failed: delete_transit_network_policy_1.\n");
+			return -EINVAL;
+		}
+
+		if (*rc != 0) {
+			print_err(
+				"Error: %s fatal daemon error, see transitd logs for details.\n",
+				rpc);
+			return -EINVAL;
+		}
 	}
 	cJSON_Delete(json_str);
-
-	rc = delete_transit_network_policy_1(cidrkeys, clnt);
-	if (rc == (int *)NULL) {
-		print_err("RPC Error: client call failed: delete_transit_network_policy_1.\n");
-		return -EINVAL;
-	}
-
-	if (*rc != 0) {
-		print_err(
-			"Error: %s fatal daemon error, see transitd logs for details.\n",
-			rpc);
-		return -EINVAL;
-	}
 
 	print_msg("delete_transit_network_policy_1 successfully deleted network policy cidr.\n");
 
@@ -250,15 +220,12 @@ int trn_cli_delete_agent_network_policy_subcmd(CLIENT *clnt, int argc, char *arg
 		print_err("Input policy size is less than or equal to zero. Please check your input. \n");
 		return -EINVAL;
 	}
-
-	struct rpc_trn_vsip_cidr_key_t cidrkeys[counter];
 	char rpc[] = "delete_agent_network_policy_1";
 
 	for (int i = 0; i < counter; i++)
 	{
 		struct rpc_trn_vsip_cidr_key_t cidrkey;
 		cidrkey.interface = conf.intf;
-		cidrkey.count = counter;
 		cJSON *policy = cJSON_GetArrayItem(json_str, i);
 		int err = trn_cli_parse_network_policy_cidr_key(policy, &cidrkey);
 
@@ -266,22 +233,21 @@ int trn_cli_delete_agent_network_policy_subcmd(CLIENT *clnt, int argc, char *arg
 			print_err("Error: parsing network policy config.\n");
 			return -EINVAL;
 		}
-		cidrkeys[i] = cidrkey;
+
+		rc = delete_agent_network_policy_1(&cidrkey, clnt);
+		if (rc == (int *)NULL) {
+			print_err("RPC Error: client call failed: delete_agent_network_policy_1.\n");
+			return -EINVAL;
+		}
+
+		if (*rc != 0) {
+			print_err(
+				"Error: %s fatal daemon error, see transitd logs for details.\n",
+				rpc);
+			return -EINVAL;
+		}
 	}
 	cJSON_Delete(json_str);
-
-	rc = delete_agent_network_policy_1(cidrkeys, clnt);
-	if (rc == (int *)NULL) {
-		print_err("RPC Error: client call failed: delete_agent_network_policy_1.\n");
-		return -EINVAL;
-	}
-
-	if (*rc != 0) {
-		print_err(
-			"Error: %s fatal daemon error, see transitd logs for details.\n",
-			rpc);
-		return -EINVAL;
-	}
 
 	print_msg("delete_agent_network_policy_1 successfully deleted network policy cidr.\n");
 
@@ -728,7 +694,6 @@ void dump_network_policy(struct rpc_trn_vsip_cidr_t *policy)
 	print_msg("CIDR IP: %x\n", policy->cidr_ip);
 	print_msg("CIDR Type: %d\n", policy->cidr_type);
 	print_msg("bit value: %ld\n", policy->bit_val);
-	print_msg("counter: %d\n", policy->count);
 }
 
 void dump_enforced_policy(struct rpc_trn_vsip_enforce_t *enforce)

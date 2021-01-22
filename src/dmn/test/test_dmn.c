@@ -596,8 +596,7 @@ static void test_update_transit_network_policy_1_svc(void **state)
 		.cidr_prefixlen = 16,
 		.cidr_ip = 0xac00012,
 		.cidr_type = 1,
-		.bit_val = 4,
-		.count = 2
+		.bit_val = 4
 	},
 	{
 		.interface = itf,
@@ -606,12 +605,11 @@ static void test_update_transit_network_policy_1_svc(void **state)
 		.cidr_prefixlen = 16,
 		.cidr_ip = 0xac00012,
 		.cidr_type = 2,
-		.bit_val = 4,
-		.count = 2
+		.bit_val = 4
 	}};
 
 	int *rc;
-	expect_function_calls(__wrap_bpf_map_update_elem, 2);
+	expect_function_call(__wrap_bpf_map_update_elem);
 	rc = update_transit_network_policy_1_svc(policies, NULL);
 	assert_int_equal(*rc, 0);
 }
@@ -628,8 +626,7 @@ static void test_update_agent_network_policy_1_svc(void **state)
 		.cidr_prefixlen = 16,
 		.cidr_ip = 0xac00012,
 		.cidr_type = 1,
-		.bit_val = 4,
-		.count = 2
+		.bit_val = 4
 	},
 	{
 		.interface = itf,
@@ -638,12 +635,11 @@ static void test_update_agent_network_policy_1_svc(void **state)
 		.cidr_prefixlen = 16,
 		.cidr_ip = 0xac00012,
 		.cidr_type = 2,
-		.bit_val = 4,
-		.count = 2
+		.bit_val = 4
 	}};
 
 	int *rc;
-	expect_function_calls(__wrap_bpf_map_update_elem, 2);
+	expect_function_call(__wrap_bpf_map_update_elem);
 	rc = update_agent_network_policy_1_svc(policies, NULL);
 	assert_int_equal(*rc, 0);
 }
@@ -658,8 +654,7 @@ static void test_delete_transit_network_policy_1_svc(void **state)
 		.local_ip = 0x100000a,
 		.cidr_prefixlen = 16,
 		.cidr_ip = 0xac00012,
-		.cidr_type = 1,
-		.count = 2
+		.cidr_type = 1
 	},
 	{
 		.interface = itf,
@@ -667,15 +662,12 @@ static void test_delete_transit_network_policy_1_svc(void **state)
 		.local_ip = 0x900000a,
 		.cidr_prefixlen = 16,
 		.cidr_ip = 0xac00012,
-		.cidr_type = 1,
-		.count = 2
+		.cidr_type = 1
 	}};
 	int *rc;
 
 	/* Test delete_transit_network_policy_1 with valid vp_ckey */
 	will_return(__wrap_bpf_map_delete_elem, TRUE);
-	will_return(__wrap_bpf_map_delete_elem, TRUE);
-	expect_function_call(__wrap_bpf_map_delete_elem);
 	expect_function_call(__wrap_bpf_map_delete_elem);
 	rc = delete_transit_network_policy_1_svc(policy_keys, NULL);
 	assert_int_equal(*rc, 0);
@@ -702,8 +694,7 @@ static void test_delete_agent_network_policy_1_svc(void **state)
 		.local_ip = 0x100000a,
 		.cidr_prefixlen = 16,
 		.cidr_ip = 0xac00012,
-		.cidr_type = 1,
-		.count = 2
+		.cidr_type = 1
 	},
 	{
 		.interface = itf,
@@ -711,15 +702,12 @@ static void test_delete_agent_network_policy_1_svc(void **state)
 		.local_ip = 0x900000a,
 		.cidr_prefixlen = 16,
 		.cidr_ip = 0xac00012,
-		.cidr_type = 1,
-		.count = 2
+		.cidr_type = 1
 	}};
 	int *rc;
 
 	/* Test delete_transit_network_policy_1 with valid vp_ckey */
 	will_return(__wrap_bpf_map_delete_elem, TRUE);
-	will_return(__wrap_bpf_map_delete_elem, TRUE);
-	expect_function_call(__wrap_bpf_map_delete_elem);
 	expect_function_call(__wrap_bpf_map_delete_elem);
 	rc = delete_agent_network_policy_1_svc(policy_keys, NULL);
 	assert_int_equal(*rc, 0);
@@ -855,7 +843,7 @@ static void test_update_transit_network_policy_protocol_port_1_svc(void **state)
 	}};
 
 	int *rc;
-	expect_function_calls(__wrap_bpf_map_update_elem, 2);
+	expect_function_call(__wrap_bpf_map_update_elem);
 	rc = update_transit_network_policy_protocol_port_1_svc(ppo1, NULL);
 	assert_int_equal(*rc, 0);
 }
@@ -883,7 +871,7 @@ static void test_update_agent_network_policy_protocol_port_1_svc(void **state)
 	}};
 
 	int *rc;
-	expect_function_calls(__wrap_bpf_map_update_elem, 2);
+	expect_function_call(__wrap_bpf_map_update_elem);
 	rc = update_agent_network_policy_protocol_port_1_svc(ppo1, NULL);
 	assert_int_equal(*rc, 0);
 }
@@ -910,8 +898,6 @@ static void test_delete_transit_network_policy_protocol_port_1_svc(void **state)
 
 	int *rc;
 	/* Test delete_transit_network_policy_protocol_port_1 with valid ppo_keys */
-	will_return(__wrap_bpf_map_delete_elem, TRUE);
-	expect_function_call(__wrap_bpf_map_delete_elem);
 	will_return(__wrap_bpf_map_delete_elem, TRUE);
 	expect_function_call(__wrap_bpf_map_delete_elem);
 	rc = delete_transit_network_policy_protocol_port_1_svc(ppo_keys, NULL);
@@ -952,8 +938,6 @@ static void test_delete_agent_network_policy_protocol_port_1_svc(void **state)
 
 	int *rc;
 	/* Test delete_agent_network_policy_protocol_port_1 with valid ppo_keys */
-	will_return(__wrap_bpf_map_delete_elem, TRUE);
-	expect_function_call(__wrap_bpf_map_delete_elem);
 	will_return(__wrap_bpf_map_delete_elem, TRUE);
 	expect_function_call(__wrap_bpf_map_delete_elem);
 	rc = delete_agent_network_policy_protocol_port_1_svc(ppo_keys, NULL);

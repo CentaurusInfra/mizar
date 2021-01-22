@@ -639,34 +639,27 @@ uint32_t trn_get_interface_ipv4(int itf_idx)
 
 int trn_update_transit_network_policy_map(int fd,
 					   struct vsip_cidr_t *ipcidr,
-					   __u64 *bitmap,
-					   int counter)
+					   __u64 bitmap)
 {
-	for (int i = 0; i < counter; i++)
-	{
-		int err = bpf_map_update_elem(fd, &ipcidr[i], &bitmap[i], 0);
-		if (err) {
-			TRN_LOG_ERROR("Store ingress CIDR map failed (err:%d) for ip address 0x%x wit remote cidr 0x%x / %d ",
-				err, ipcidr[i].local_ip, ipcidr[i].remote_ip, ipcidr[i].prefixlen);
-			return 1;
-		}
+	int err = bpf_map_update_elem(fd, ipcidr, &bitmap, 0);
+	if (err) {
+		TRN_LOG_ERROR("Store ingress CIDR map failed (err:%d) for ip address 0x%x wit remote cidr 0x%x / %d ",
+			err, ipcidr->local_ip, ipcidr->remote_ip, ipcidr->prefixlen);
+		return 1;
 	}
 	return 0;
 }
 
 int trn_delete_transit_network_policy_map(int fd,
-					   struct vsip_cidr_t *ipcidr,
-					   int counter)
+					   struct vsip_cidr_t *ipcidr)
 {
-	for (int i = 0; i < counter; i++)
-	{
-		int err = bpf_map_delete_elem(fd, &ipcidr[i]);
-		if (err) {
-			TRN_LOG_ERROR("Delete ingress CIDR map failed (err:%d) for ip address 0x%x wit remote cidr 0x%x / %d ",
-				err, ipcidr[i].local_ip, ipcidr[i].remote_ip, ipcidr[i].prefixlen);
-			return 1;
-		}
+	int err = bpf_map_delete_elem(fd, ipcidr);
+	if (err) {
+		TRN_LOG_ERROR("Delete ingress CIDR map failed (err:%d) for ip address 0x%x wit remote cidr 0x%x / %d ",
+			err, ipcidr->local_ip, ipcidr->remote_ip, ipcidr->prefixlen);
+		return 1;
 	}
+
 	return 0;
 }
 
