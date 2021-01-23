@@ -316,11 +316,13 @@ class NetworkPolicyUtil:
         cidr_map_name = "cidrs_map_" + cidr_type
         cidr_and_policies_map_name = "cidr_and_policies_map_" + cidr_type
         trie = PatriciaTrie()
+        policy_name_set = set()
         for indexed_policy_name, cidrs in access_rules[cidr_map_name].items():
             for cidr in cidrs:
                 if cidr not in access_rules[cidr_and_policies_map_name]:
                     access_rules[cidr_and_policies_map_name][cidr] = set()
                 access_rules[cidr_and_policies_map_name][cidr].add(indexed_policy_name)
+                policy_name_set.add(indexed_policy_name)
                 trie.insert(cidr, access_rules[cidr_and_policies_map_name][cidr])
         for cidr, indexed_policy_names in access_rules[cidr_and_policies_map_name].items():
             found_cidr_map = trie.find_all(cidr)
@@ -329,7 +331,7 @@ class NetworkPolicyUtil:
                     for foundPolicyName in found_cidr_tuple[1]:
                         # In the trie, there could be matched cidr but whose policies are from other direction (ingress/egress).
                         # So in following line adds a condition to limit the scope of the matched policies.
-                        if cidr in access_rules[cidr_and_policies_map_name] and foundPolicyName in access_rules[cidr_and_policies_map_name][cidr]:
+                        if cidr in access_rules[cidr_and_policies_map_name] and foundPolicyName in policy_name_set:
                             indexed_policy_names.add(foundPolicyName)
 
     def build_port_and_policies_map(self, access_rules):
