@@ -37,6 +37,6 @@ class k8sNamespaceCreate(WorkflowTask):
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
 
-        networkpolicy_util.handle_pod_change_for_networkpolicy(self.param.diff)
+        networkpolicy_util.handle_namespace_change_for_networkpolicy(self.param.diff)
 
         self.finalize()
