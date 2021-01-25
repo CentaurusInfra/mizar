@@ -31,7 +31,7 @@ logger = logging.getLogger()
 
 class NetworkPolicyUtil:
     def update_and_retrieve_endpoint_names(self, policy_name, policy_namespace, pod_label_dict, policy_types):
-        endpoint_names = set()
+        endpoint_names_to_be_handled = set()
 
         self.update_pod_label_networkpolicy_mapping_in_store(policy_name, pod_label_dict)
         
@@ -40,31 +40,32 @@ class NetworkPolicyUtil:
         if policy_name not in networkpolicy_opr.store.networkpolicy_endpoints_store:
             networkpolicy_opr.store.networkpolicy_endpoints_store[policy_name] = set()
 
-        for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_store[policy_name]:
-            if endpoint_name in endpoint_name_list:
-                endpoint_name_list.remove(endpoint_name)
-            else:                
-                endpoint_names.add(endpoint_name)
-                ep = networkpolicy_opr.store.get_ep(endpoint_name)
-                if ep is None:
-                    logger.warn("In operator store, found endpoint {} in networkpolicy_endpoints_store but cannot retrieve it from eps_store.".format(endpoint_name))
-                else:
-                    ep.remove_ingress_networkpolicy(policy_name)
-                    ep.remove_egress_networkpolicy(policy_name)
-
-        for endpoint_name in endpoint_names:
-            networkpolicy_opr.store.networkpolicy_endpoints_store[policy_name].remove(endpoint_name)
-
+        # Find newly added endpoint and add it into store.networkpolicy_endpoints_store
         for endpoint_name in endpoint_name_list:
-            networkpolicy_opr.store.add_networkpolicy_endpoint(policy_name, endpoint_name)
-            endpoint_names.add(endpoint_name)
+            endpoint_names_to_be_handled.add(endpoint_name) 
+            if endpoint_name not in networkpolicy_opr.store.networkpolicy_endpoints_store[policy_name]:                
+                networkpolicy_opr.store.add_networkpolicy_endpoint(policy_name, endpoint_name)                       
 
+        # Find deleted endpoint and remove it from store.networkpolicy_endpoints_store
+        endpoint_names_to_be_removed = set()
+        for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_store[policy_name]:
+            if endpoint_name not in endpoint_name_list:
+                endpoint_names_to_be_handled.add(endpoint_name)
+                endpoint_names_to_be_removed.add(endpoint_name)
+        for endpoint_name in endpoint_names_to_be_removed:            
+            networkpolicy_opr.store.networkpolicy_endpoints_store[policy_name].remove(endpoint_name)
+            ep = networkpolicy_opr.store.get_ep(endpoint_name)
+            if ep is None:
+                logger.warn("In operator store, found endpoint {} in networkpolicy_endpoints_store but cannot retrieve it from eps_store.".format(endpoint_name))
+            else:
+                ep.remove_ingress_networkpolicy(policy_name)
+                ep.remove_egress_networkpolicy(policy_name)
         if len(networkpolicy_opr.store.networkpolicy_endpoints_store[policy_name]) == 0:
             networkpolicy_opr.store.networkpolicy_endpoints_store.pop(policy_name)
 
         self.add_networkpolicy_for_endpoint(policy_name, policy_types)
 
-        return endpoint_names
+        return endpoint_names_to_be_handled
 
     def update_pod_label_networkpolicy_mapping_in_store(self, policy_name, pod_label_dict):
         if pod_label_dict is None:
