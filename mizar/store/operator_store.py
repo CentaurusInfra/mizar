@@ -63,7 +63,8 @@ class OprStore(object):
         # label of namespaces in networkpolicy egress rules
         self.namespace_label_networkpolicies_egress_store = {}
 
-        self.networkpolicy_endpoints_store = {}
+        self.networkpolicy_endpoints_ingress_store = {}
+        self.networkpolicy_endpoints_egress_store = {}
 
         self.dividers_store = {}
         self.dividers_vpc_store = {}
@@ -298,15 +299,25 @@ class OprStore(object):
         for policy_name in policy_name_list:
             self.namespace_label_networkpolicies_egress_store[label].add(policy_name)
 
-    def get_endpoints_by_networkpolicy(self, policy_name):
-        if policy_name in self.networkpolicy_endpoints_store:
-            return self.networkpolicy_endpoints_store[policy_name]
+    def get_endpoints_by_networkpolicy_ingress(self, policy_name):
+        if policy_name in self.networkpolicy_endpoints_ingress_store:
+            return self.networkpolicy_endpoints_ingress_store[policy_name]
         return None
 
-    def add_networkpolicy_endpoint(self, policy_name, endpoint_name):
-        if policy_name not in self.networkpolicy_endpoints_store:
-            self.networkpolicy_endpoints_store[policy_name] = set()
-        self.networkpolicy_endpoints_store[policy_name].add(endpoint_name)
+    def add_networkpolicy_endpoint_ingress(self, policy_name, endpoint_name):
+        if policy_name not in self.networkpolicy_endpoints_ingress_store:
+            self.networkpolicy_endpoints_ingress_store[policy_name] = set()
+        self.networkpolicy_endpoints_ingress_store[policy_name].add(endpoint_name)
+
+    def get_endpoints_by_networkpolicy_egress(self, policy_name):
+        if policy_name in self.networkpolicy_endpoints_egress_store:
+            return self.networkpolicy_endpoints_egress_store[policy_name]
+        return None
+
+    def add_networkpolicy_endpoint_egress(self, policy_name, endpoint_name):
+        if policy_name not in self.networkpolicy_endpoints_egress_store:
+            self.networkpolicy_endpoints_egress_store[policy_name] = set()
+        self.networkpolicy_endpoints_egress_store[policy_name].add(endpoint_name)
 
     def update_droplet(self, droplet):
         self.droplets_store[droplet.name] = droplet
