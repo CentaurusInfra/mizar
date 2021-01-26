@@ -32,37 +32,62 @@ logger = logging.getLogger()
 
 class NetworkPolicyUtil:
     def update_and_retrieve_endpoint_names(self, policy_name, policy_namespace, pod_label_dict, policy_types):
-        endpoint_names_to_be_handled = set()
-
         self.update_pod_label_networkpolicy_mapping_in_store(policy_name, pod_label_dict)
         
         endpoint_name_list = self.retrieve_endpoints_for_networkpolicy(policy_name, policy_namespace, pod_label_dict)
+        endpoint_names_to_be_handled = set()
 
-        if policy_name not in networkpolicy_opr.store.networkpolicy_endpoints_store:
-            networkpolicy_opr.store.networkpolicy_endpoints_store[policy_name] = set()
+        if "Ingress" in policy_types:
+            if policy_name not in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store:
+                networkpolicy_opr.store.networkpolicy_endpoints_ingress_store[policy_name] = set()
 
-        # Find newly added endpoint and add it into store.networkpolicy_endpoints_store
-        for endpoint_name in endpoint_name_list:
-            endpoint_names_to_be_handled.add(endpoint_name) 
-            if endpoint_name not in networkpolicy_opr.store.networkpolicy_endpoints_store[policy_name]:                
-                networkpolicy_opr.store.add_networkpolicy_endpoint(policy_name, endpoint_name)                       
+            # Find newly added endpoint and add it into store.networkpolicy_endpoints_ingress_store
+            for endpoint_name in endpoint_name_list:
+                endpoint_names_to_be_handled.add(endpoint_name) 
+                if endpoint_name not in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store[policy_name]:                
+                    networkpolicy_opr.store.add_networkpolicy_endpoint_ingress(policy_name, endpoint_name)                       
 
-        # Find deleted endpoint and remove it from store.networkpolicy_endpoints_store
-        endpoint_names_to_be_removed = set()
-        for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_store[policy_name]:
-            if endpoint_name not in endpoint_name_list:
-                endpoint_names_to_be_handled.add(endpoint_name)
-                endpoint_names_to_be_removed.add(endpoint_name)
-        for endpoint_name in endpoint_names_to_be_removed:            
-            networkpolicy_opr.store.networkpolicy_endpoints_store[policy_name].remove(endpoint_name)
-            ep = networkpolicy_opr.store.get_ep(endpoint_name)
-            if ep is None:
-                logger.warn("In operator store, found endpoint {} in networkpolicy_endpoints_store but cannot retrieve it from eps_store.".format(endpoint_name))
-            else:
-                ep.remove_ingress_networkpolicy(policy_name)
-                ep.remove_egress_networkpolicy(policy_name)
-        if len(networkpolicy_opr.store.networkpolicy_endpoints_store[policy_name]) == 0:
-            networkpolicy_opr.store.networkpolicy_endpoints_store.pop(policy_name)
+            # Find deleted endpoint and remove it from store.networkpolicy_endpoints_ingress_store
+            endpoint_names_to_be_removed_ingress = set()
+            for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store[policy_name]:
+                if endpoint_name not in endpoint_name_list:
+                    endpoint_names_to_be_handled.add(endpoint_name)
+                    endpoint_names_to_be_removed_ingress.add(endpoint_name)
+            for endpoint_name in endpoint_names_to_be_removed_ingress:            
+                networkpolicy_opr.store.networkpolicy_endpoints_ingress_store[policy_name].remove(endpoint_name)
+                ep = networkpolicy_opr.store.get_ep(endpoint_name)
+                if ep is None:
+                    logger.warn("In operator store, found endpoint {} in networkpolicy_endpoints_ingress_store but cannot retrieve it from eps_store.".format(endpoint_name))
+                else:
+                    ep.remove_ingress_networkpolicy(policy_name)
+            if len(networkpolicy_opr.store.networkpolicy_endpoints_ingress_store[policy_name]) == 0:
+                networkpolicy_opr.store.networkpolicy_endpoints_ingress_store.pop(policy_name)
+
+        if "Egress" in policy_types:
+            if policy_name not in networkpolicy_opr.store.networkpolicy_endpoints_egress_store:
+                networkpolicy_opr.store.networkpolicy_endpoints_egress_store[policy_name] = set()
+
+            # Find newly added endpoint and add it into store.networkpolicy_endpoints_egress_store
+            for endpoint_name in endpoint_name_list:
+                endpoint_names_to_be_handled.add(endpoint_name) 
+                if endpoint_name not in networkpolicy_opr.store.networkpolicy_endpoints_egress_store[policy_name]:                
+                    networkpolicy_opr.store.add_networkpolicy_endpoint_egress(policy_name, endpoint_name)                       
+
+            # Find deleted endpoint and remove it from store.networkpolicy_endpoints_egress_store
+            endpoint_names_to_be_removed_egress = set()
+            for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_egress_store[policy_name]:
+                if endpoint_name not in endpoint_name_list:
+                    endpoint_names_to_be_handled.add(endpoint_name)
+                    endpoint_names_to_be_removed_egress.add(endpoint_name)
+            for endpoint_name in endpoint_names_to_be_removed_egress:            
+                networkpolicy_opr.store.networkpolicy_endpoints_egress_store[policy_name].remove(endpoint_name)
+                ep = networkpolicy_opr.store.get_ep(endpoint_name)
+                if ep is None:
+                    logger.warn("In operator store, found endpoint {} in networkpolicy_endpoints_egress_store but cannot retrieve it from eps_store.".format(endpoint_name))
+                else:
+                    ep.remove_egress_networkpolicy(policy_name)
+            if len(networkpolicy_opr.store.networkpolicy_endpoints_egress_store[policy_name]) == 0:
+                networkpolicy_opr.store.networkpolicy_endpoints_egress_store.pop(policy_name)
 
         self.add_networkpolicy_for_endpoint(policy_name, policy_types)
 
@@ -95,39 +120,45 @@ class NetworkPolicyUtil:
         return endpoint_name_list
 
     def add_networkpolicy_for_endpoint(self, policy_name, policy_types):
-        if policy_types is None:
-            self.remove_networkpolicy_from_endpoint(policy_name)
-            return
+        if "Ingress" in policy_types:
+            if policy_name in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store:
+                for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store[policy_name]:
+                    ep = networkpolicy_opr.store.get_ep(endpoint_name)
+                    if ep is None:
+                        logger.warn("In operator store, found endpoint {} in networkpolicy_endpoints_ingress_store but cannot retrieve it from eps_store.".format(endpoint_name))
+                    else:
+                        ep.add_ingress_networkpolicy(policy_name)
+        else:
+            self.remove_networkpolicy_from_endpoint_ingress(policy_name)
+            
+        if "Egress" in policy_types:
+            if policy_name in networkpolicy_opr.store.networkpolicy_endpoints_egress_store:
+                for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_egress_store[policy_name]:
+                    ep = networkpolicy_opr.store.get_ep(endpoint_name)
+                    if ep is None:
+                        logger.warn("In operator store, found endpoint {} in networkpolicy_endpoints_egress_store but cannot retrieve it from eps_store.".format(endpoint_name))
+                    else:
+                        ep.add_egress_networkpolicy(policy_name)
+        else:
+            self.remove_networkpolicy_from_endpoint_egress(policy_name)
 
-        has_ingress = "Ingress" in policy_types
-        has_egress = "Egress" in policy_types
+    def remove_networkpolicy_from_endpoint_ingress(self, policy_name):
+        if policy_name in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store:
+            for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store[policy_name]:
+                ep = networkpolicy_opr.store.get_ep(endpoint_name)
+                if ep is None:
+                    logger.warn("In operator store, found endpoint {} in networkpolicy_endpoints_ingress_store but cannot retrieve it from eps_store.".format(endpoint_name))
+                else:
+                    ep.remove_ingress_networkpolicy(policy_name)
 
-        if not has_ingress and not has_egress:
-            return
-
-        if policy_name not in networkpolicy_opr.store.networkpolicy_endpoints_store:
-            return
-        
-        for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_store[policy_name]:
-            ep = networkpolicy_opr.store.get_ep(endpoint_name)
-            if ep is None:
-                logger.warn("In operator store, found endpoint {} in networkpolicy_endpoints_store but cannot retrieve it from eps_store.".format(endpoint_name))
-            else:
-                if has_ingress:
-                    ep.add_ingress_networkpolicy(policy_name)
-                if has_egress:
-                    ep.add_egress_networkpolicy(policy_name)
-
-    def remove_networkpolicy_from_endpoint(self, policy_name):
-        if policy_name not in networkpolicy_opr.store.networkpolicy_endpoints_store:
-            return
-        for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_store[policy_name]:
-            ep = networkpolicy_opr.store.get_ep(endpoint_name)
-            if ep is None:
-                logger.warn("In operator store, found endpoint {} in networkpolicy_endpoints_store but cannot retrieve it from eps_store.".format(endpoint_name))
-            else:
-                ep.remove_ingress_networkpolicy(policy_name)
-                ep.remove_egress_networkpolicy(policy_name)
+    def remove_networkpolicy_from_endpoint_egress(self, policy_name):
+        if policy_name in networkpolicy_opr.store.networkpolicy_endpoints_egress_store:
+            for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_egress_store[policy_name]:
+                ep = networkpolicy_opr.store.get_ep(endpoint_name)
+                if ep is None:
+                    logger.warn("In operator store, found endpoint {} in networkpolicy_endpoints_egress_store but cannot retrieve it from eps_store.".format(endpoint_name))
+                else:
+                    ep.remove_egress_networkpolicy(policy_name)
 
     def handle_networkpolicy_update_delete(self, endpoint_name_list):
         for endpoint_name in endpoint_name_list:
@@ -465,14 +496,17 @@ class NetworkPolicyUtil:
 
         endpoint_name_list = set()
         for policy_name in policy_name_list:
-            if policy_name in networkpolicy_opr.store.networkpolicy_endpoints_store:
-                for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_store[policy_name]:
+            if policy_name in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store:
+                for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store[policy_name]:
+                    endpoint_name_list.add(endpoint_name)
+            if policy_name in networkpolicy_opr.store.networkpolicy_endpoints_egress_store:
+                for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_egress_store[policy_name]:
                     endpoint_name_list.add(endpoint_name)
         
         for endpoint_name in endpoint_name_list:
             ep = endpoint_opr.store_get(endpoint_name)
             if ep is None:
-                logger.warn("In operator store, found endpoint {} in networkpolicy_endpoints_store but cannot retrieve it from eps_store.".format(endpoint_name))
+                logger.warn("In operator store, found endpoint {} in networkpolicy_endpoints_(ingress/egress)_store but cannot retrieve it from eps_store.".format(endpoint_name))
             else:
                 if ep.ip == "":
                     logger.info("Endpoint {} hasn't been assigned ip yet. Will update networkpolicy data for the endpoint later.".format(endpoint_name))
