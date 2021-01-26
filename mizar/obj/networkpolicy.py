@@ -27,7 +27,7 @@ logger = logging.getLogger()
 
 class NetworkPolicy:
     def __init__(self, name, namespace, obj_api, opr_store, spec=None):
-        self.name = name,
+        self.name = name
         self.namespace = namespace
         self.obj_api = obj_api
         self.store = opr_store

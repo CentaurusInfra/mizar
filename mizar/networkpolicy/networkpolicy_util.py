@@ -19,6 +19,7 @@
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import logging
+import time
 from cidr_trie import PatriciaTrie
 from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
 from mizar.dp.mizar.operators.networkpolicies.networkpolicies_operator import *
@@ -266,8 +267,8 @@ class NetworkPolicyUtil:
                         pods = kube_list_pods_by_labels(networkpolicy_opr.core_api, rule_item["podSelector"]["matchLabels"])
                         if pods is not None:
                             for pod in pods.items:
-                                if pod.metadata.namespace in namespace_set and pod.status.pod_ip is not None:
-                                    data["cidrs_map_no_except"][indexed_policy_name].append("{}/32".format(pod.status.pod_ip))
+                                if pod.metadata.namespace in namespace_set:
+                                    self.add_pod_ip_into_cidrs_map(pod, policy_name, data["cidrs_map_no_except"][indexed_policy_name])
                 elif "namespaceSelector" in rule_item:
                     self.add_namespace_label_networkpolicy(data, rule_item["namespaceSelector"]["matchLabels"], policy_name)
                     namespaces = kube_list_namespaces_by_labels(networkpolicy_opr.core_api, rule_item["namespaceSelector"]["matchLabels"])
@@ -276,17 +277,22 @@ class NetworkPolicyUtil:
                             pods = kube_list_pods_by_namespace(networkpolicy_opr.core_api, namespace.metadata.name)
                             if pods is not None:
                                 for pod in pods.items:
-                                    if pod.status.pod_ip is not None:
-                                        data["cidrs_map_no_except"][indexed_policy_name].append("{}/32".format(pod.status.pod_ip))
+                                    self.add_pod_ip_into_cidrs_map(pod, policy_name, data["cidrs_map_no_except"][indexed_policy_name])
                 elif "podSelector" in rule_item:
                     self.add_label_networkpolicy(data, rule_item["podSelector"]["matchLabels"], policy_name)
                     pods = kube_list_pods_by_labels(networkpolicy_opr.core_api, rule_item["podSelector"]["matchLabels"])
                     if pods is not None:
-                        for pod in pods.items:
-                            if pod.status.pod_ip is not None:
-                                data["cidrs_map_no_except"][indexed_policy_name].append("{}/32".format(pod.status.pod_ip))
+                        for pod in pods.items:                            
+                            self.add_pod_ip_into_cidrs_map(pod, policy_name, data["cidrs_map_no_except"][indexed_policy_name])
                 else:
                     raise NotImplementedError("Not implemented for {}".format(rule_item))
+
+    def add_pod_ip_into_cidrs_map(self, pod, policy_name, pod_ip_set):
+        if pod.status.pod_ip is None:
+            logger.info("pod {} hasn't been assigned ip yet. Will update networkpolicy data for the pod later.".format(pod.metadata.name))
+            networkpolicy_opr.store.add_networkpolicies_to_be_updated(pod.metadata.name, policy_name)
+        else:
+            pod_ip_set.append("{}/32".format(pod.status.pod_ip))
 
     def add_label_networkpolicy(self, data, label_dict, policy_name):
         for key in label_dict:
@@ -301,6 +307,15 @@ class NetworkPolicyUtil:
             if label not in data["namespace_label_networkpolicies_map"]:
                 data["namespace_label_networkpolicies_map"][label] = set()
             data["namespace_label_networkpolicies_map"][label].add(policy_name)
+
+    def wait_until_pod_has_ip(self, pod_name):
+        timeout = 60
+        while timeout > 0:
+            pod = kube_get_pod(networkpolicy_opr.core_api, pod_name)
+            if pod is not None and pod.status.pod_ip is not None:
+                return
+            time.sleep(1)
+            timeout -= 1
 
     def build_access_rules(self, access_rules, ep):
         self.build_cidr_and_policies_map(access_rules, "no_except")
@@ -459,8 +474,12 @@ class NetworkPolicyUtil:
             if ep is None:
                 logger.warn("In operator store, found endpoint {} in networkpolicy_endpoints_store but cannot retrieve it from eps_store.".format(endpoint_name))
             else:
-                logger.info("Update networkpolicy data for endpoint {}".format(ep.name))
-                self.handle_endpoint_for_networkpolicy(ep)
+                if ep.ip == "":
+                    logger.info("Endpoint {} hasn't been assigned ip yet. Will update networkpolicy data for the endpoint later.".format(endpoint_name))
+                    networkpolicy_opr.store.eps_store_to_be_updated_networkpolicy.add(endpoint_name)
+                else:
+                    logger.info("Update networkpolicy data for endpoint {}".format(ep.name))
+                    self.handle_endpoint_for_networkpolicy(ep)
 
     def add_affected_networkpolicy_by_namespace_label(self, policy_name_list, label):
         if label in networkpolicy_opr.store.namespace_label_networkpolicies_ingress_store:

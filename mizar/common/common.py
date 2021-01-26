@@ -323,6 +323,17 @@ def build_label_filter(label_dict):
         str_list.pop()
     return "".join(str_list)
 
+def kube_get_pod(core_api, name):
+    try:
+        response = core_api.list_pod_for_all_namespaces(
+            watch=False,
+            field_selector="metadata.name={}".format(name)
+        )
+        if response is not None and len(response.items) > 0:
+            return response.items[0]
+    except:
+        return None
+
 def get_spec_val(key, spec, default=""):
     return default if key not in spec else spec[key]
 
