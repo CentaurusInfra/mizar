@@ -47,8 +47,6 @@ class k8sPodCreate(WorkflowTask):
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
 
-        networkpolicy_util.handle_pod_change_for_networkpolicy(self.param.diff)
-
         if "hostIP" not in self.param.body['status']:
             self.raise_temporary_error("Pod spec not ready.")
         spec = {
@@ -111,5 +109,7 @@ class k8sPodCreate(WorkflowTask):
                 "Endpoint {} already exists!".format(spec["name"]))
         # Create the corresponding simple endpoint objects
         endpoint_opr.create_simple_endpoints(interfaces, spec)
+
+        networkpolicy_util.handle_pod_change_for_networkpolicy(self.param.diff)
 
         self.finalize()

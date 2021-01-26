@@ -337,7 +337,7 @@ class Endpoint:
             return
         self.ingress_networkpolicies.append(policy_name)
         self.ingress_networkpolicies.sort()
-        if len(self.ingress_networkpolicies) == 1:
+        if len(self.ingress_networkpolicies) == 1 and self.ip != "":
             self.update_network_policy_enforcement_map_ingress()
         self.store_update_obj()
 
@@ -346,7 +346,7 @@ class Endpoint:
             return
         self.egress_networkpolicies.append(policy_name)
         self.egress_networkpolicies.sort()
-        if len(self.egress_networkpolicies) == 1:
+        if len(self.egress_networkpolicies) == 1 and self.ip != "":
             self.update_network_policy_enforcement_map_egress()
         self.store_update_obj()
 

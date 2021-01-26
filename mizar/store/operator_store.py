@@ -48,6 +48,8 @@ class OprStore(object):
         self.eps_pod_store = {}
 
         self.networkpolicies_store = {}
+        self.eps_store_to_be_updated_networkpolicy = set()
+        self.networkpolicies_to_be_updated_store = {}
 
         # label of pods in networkpolicy.spec.podSelector
         self.label_networkpolicies_store = {}
@@ -141,6 +143,16 @@ class OprStore(object):
 
     def update_ep(self, ep):
         logger.info("Store update ep {}".format(ep.name))
+
+        old_ep = self.get_ep(ep.name)
+        if old_ep is not None:
+            if len(old_ep.ingress_networkpolicies) > 0 and len(ep.ingress_networkpolicies) == 0:
+                ep.ingress_networkpolicies = old_ep.ingress_networkpolicies
+            if len(old_ep.egress_networkpolicies) > 0 and len(ep.egress_networkpolicies) == 0:
+                ep.egress_networkpolicies = old_ep.egress_networkpolicies
+            if len(old_ep.data_for_networkpolicy) > 0 and len(ep.data_for_networkpolicy) == 0:
+                ep.data_for_networkpolicy = old_ep.data_for_networkpolicy
+
         # logger.info('caller name:{}'.format(inspect.stack()[1][3]))
         self.eps_store[ep.name] = ep
         if ep.net not in self.eps_net_store:
@@ -221,6 +233,16 @@ class OprStore(object):
 
         for label in label_list:
             label_policy_store.pop(label)
+
+    def get_networkpolicies_to_be_updated_by_pod(self, pod_name):
+        if pod_name in self.networkpolicies_to_be_updated_store:
+            return self.networkpolicies_to_be_updated_store[pod_name]
+        return None
+
+    def add_networkpolicies_to_be_updated(self, pod_name, policy_name):
+        if pod_name not in self.networkpolicies_to_be_updated_store:
+            self.networkpolicies_to_be_updated_store[pod_name] = set()
+        self.networkpolicies_to_be_updated_store[pod_name].add(policy_name)
 
     def get_networkpolicies_by_label(self, label):
         if label in self.label_networkpolicies_store:
