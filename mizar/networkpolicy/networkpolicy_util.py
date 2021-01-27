@@ -425,10 +425,8 @@ class NetworkPolicyUtil:
                 "bit_value": self.calculate_policy_bit_value(access_rules, indexed_policy_names),
             })
 
-    def handle_pod_change_for_networkpolicy(self, diff):
+    def handle_pod_change_for_networkpolicy(self, pod_name, namespace, diff):
         data = self.extract_label_change(diff)
-        if len(data["add"]) == 0 and len(data["remove"]) == 0:
-            return
 
         # Followed code piece is to calculate how many policy are affected by the label change, and form data of policy_name_list.
         # Either label is added or removed, policy is affected, so for both data["add"] and data["remove"] we call same function add_affected_networkpolicy_by_pod_label.
@@ -456,7 +454,23 @@ class NetworkPolicyUtil:
                 self.update_and_retrieve_endpoint_names(policy_name, networkpolicy.namespace, networkpolicy.pod_label_dict, networkpolicy.policy_types)
                 policy_name_list.add(policy_name)
 
+        # Followed code piece is to detect how many policies are affect by a pod change through namespace.
+        # Policy rules have namespaceSelector. So if there is pod created in the namespace, it should affect policy map data.
+        namespace_obj = kube_get_namespace(networkpolicy_opr.core_api, namespace)
+        if namespace_obj is not None and namespace_obj.metadata.labels is not None:
+            self.add_affected_networkpolicy_by_namespace_labels(policy_name_list, namespace_obj.metadata.labels)
+
         self.handle_networkpolicy_change(policy_name_list)
+
+    def add_affected_networkpolicy_by_namespace_labels(self, policy_name_list, label_dict):
+        for key in label_dict:
+            label = "{}={}".format(key, label_dict[key])
+            if label in networkpolicy_opr.store.namespace_label_networkpolicies_ingress_store:
+                for policy_name in networkpolicy_opr.store.namespace_label_networkpolicies_ingress_store[label]:
+                    policy_name_list.add(policy_name)
+            if label in networkpolicy_opr.store.namespace_label_networkpolicies_egress_store:
+                for policy_name in networkpolicy_opr.store.namespace_label_networkpolicies_egress_store[label]:
+                    policy_name_list.add(policy_name)
 
     def add_affected_networkpolicy_by_pod_label(self, policy_name_list, label):
         if label in networkpolicy_opr.store.label_networkpolicies_ingress_store:

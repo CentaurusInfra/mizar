@@ -334,6 +334,17 @@ def kube_get_pod(core_api, name):
     except:
         return None
 
+def kube_get_namespace(core_api, name):
+    try:
+        response = core_api.list_namespace(
+            watch=False,
+            field_selector="metadata.name={}".format(name)
+        )
+        if response is not None and len(response.items) > 0:
+            return response.items[0]
+    except:
+        return None
+
 def get_spec_val(key, spec, default=""):
     return default if key not in spec else spec[key]
 
