@@ -46,6 +46,8 @@ class Cni:
         self.interface = os.environ.get("CNI_IFNAME")
         self.cni_path = os.environ.get("CNI_PATH")
         self.cni_args = os.environ.get("CNI_ARGS")
+        if self.command == "VERSION":
+            return
         self.cni_args_dict = dict(i.split("=")
                                   for i in self.cni_args.split(";"))
         self.k8s_namespace = self.cni_args_dict.get('K8S_POD_NAMESPACE', '')
@@ -73,8 +75,9 @@ class Cni:
         self.iproute = IPRoute()
 
     def __del__(self):
-        logger.info("Closing IPRoute")
-        self.iproute.close()
+        if self.command != "VERSION":
+            logger.info("Closing IPRoute")
+            self.iproute.close()
 
     def run(self):
         logging.info("CNI ARGS {}".format(self.cni_args_dict))
