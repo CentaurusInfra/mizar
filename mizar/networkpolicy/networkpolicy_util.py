@@ -20,7 +20,6 @@
 
 import logging
 import time
-import epdb
 from mizar.common.ipv4_trie import IPv4Trie
 from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
 from mizar.dp.mizar.operators.networkpolicies.networkpolicies_operator import *
@@ -39,7 +38,6 @@ class NetworkPolicyUtil:
         endpoint_names_to_be_handled = set()
 
         if policy_types is None:
-            #epdb.serve(port=8888)
             if policy_name in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store:
                 for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store[policy_name]:                    
                     ep = networkpolicy_opr.store.get_ep(endpoint_name)
