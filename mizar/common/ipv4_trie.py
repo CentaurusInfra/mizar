@@ -22,7 +22,7 @@ class IPv4Trie:
     def __init__(self):
         self.head = IPv4Node()        
 
-    def insert(self, cidr):
+    def insert(self, cidr, obj):
         bit_array = IPv4Util.get_bit_array_from_ipv4_cidr(cidr)
 
         node = self.head
@@ -32,6 +32,7 @@ class IPv4Trie:
             node = node.children[bit]
         node.is_end = True
         node.cidr = IPv4Util.get_standard_cidr(cidr)
+        node.obj = obj
 
     def find_all(self, cidr):
         result = []
@@ -39,13 +40,13 @@ class IPv4Trie:
 
         node = self.head
         if node.is_end:
-            result.append(node.cidr)
+            result.append((node.cidr, node.obj))
         for bit in bit_array:
             if bit not in node.children:
                 return result
             node = node.children[bit]
             if node.is_end:
-                result.append(node.cidr)
+                result.append((node.cidr, node.obj))
         return result
 
 class IPv4Node:
@@ -54,6 +55,7 @@ class IPv4Node:
         self.is_end = False
         self.value = value
         self.cidr = ""
+        self.obj = None
 
 class IPv4Util:
     @staticmethod
