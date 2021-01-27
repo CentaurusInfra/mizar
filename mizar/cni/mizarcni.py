@@ -46,7 +46,6 @@ class Cni:
         self.interface = os.environ.get("CNI_IFNAME")
         self.cni_path = os.environ.get("CNI_PATH")
         self.cni_args = os.environ.get("CNI_ARGS")
-        self.cni_args_dict = {}
         if self.command == "VERSION":
             return
         self.cni_args_dict = dict(i.split("=")
