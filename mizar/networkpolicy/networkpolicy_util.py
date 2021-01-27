@@ -20,7 +20,7 @@
 
 import logging
 import time
-from cidr_trie import PatriciaTrie
+from mizar.common.ipv4_trie import IPv4Trie
 from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
 from mizar.dp.mizar.operators.networkpolicies.networkpolicies_operator import *
 
@@ -37,59 +37,79 @@ class NetworkPolicyUtil:
         endpoint_name_list = self.retrieve_endpoints_for_networkpolicy(policy_name, policy_namespace, pod_label_dict)
         endpoint_names_to_be_handled = set()
 
-        if "Ingress" in policy_types:
-            if policy_name not in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store:
-                networkpolicy_opr.store.networkpolicy_endpoints_ingress_store[policy_name] = set()
-
-            # Find newly added endpoint and add it into store.networkpolicy_endpoints_ingress_store
-            for endpoint_name in endpoint_name_list:
-                endpoint_names_to_be_handled.add(endpoint_name) 
-                if endpoint_name not in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store[policy_name]:                
-                    networkpolicy_opr.store.add_networkpolicy_endpoint_ingress(policy_name, endpoint_name)                       
-
-            # Find deleted endpoint and remove it from store.networkpolicy_endpoints_ingress_store
-            endpoint_names_to_be_removed_ingress = set()
-            for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store[policy_name]:
-                if endpoint_name not in endpoint_name_list:
+        if policy_types is None:
+            if policy_name in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store:
+                for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store[policy_name]:                    
+                    ep = networkpolicy_opr.store.get_ep(endpoint_name)
+                    if ep is None:
+                        logger.warn("In operator store, found endpoint {} in networkpolicy_endpoints_ingress_store but cannot retrieve it from eps_store.".format(endpoint_name))
+                    else:
+                        ep.remove_ingress_networkpolicy(policy_name)
                     endpoint_names_to_be_handled.add(endpoint_name)
-                    endpoint_names_to_be_removed_ingress.add(endpoint_name)
-            for endpoint_name in endpoint_names_to_be_removed_ingress:            
-                networkpolicy_opr.store.networkpolicy_endpoints_ingress_store[policy_name].remove(endpoint_name)
-                ep = networkpolicy_opr.store.get_ep(endpoint_name)
-                if ep is None:
-                    logger.warn("In operator store, found endpoint {} in networkpolicy_endpoints_ingress_store but cannot retrieve it from eps_store.".format(endpoint_name))
-                else:
-                    ep.remove_ingress_networkpolicy(policy_name)
-            if len(networkpolicy_opr.store.networkpolicy_endpoints_ingress_store[policy_name]) == 0:
                 networkpolicy_opr.store.networkpolicy_endpoints_ingress_store.pop(policy_name)
-
-        if "Egress" in policy_types:
-            if policy_name not in networkpolicy_opr.store.networkpolicy_endpoints_egress_store:
-                networkpolicy_opr.store.networkpolicy_endpoints_egress_store[policy_name] = set()
-
-            # Find newly added endpoint and add it into store.networkpolicy_endpoints_egress_store
-            for endpoint_name in endpoint_name_list:
-                endpoint_names_to_be_handled.add(endpoint_name) 
-                if endpoint_name not in networkpolicy_opr.store.networkpolicy_endpoints_egress_store[policy_name]:                
-                    networkpolicy_opr.store.add_networkpolicy_endpoint_egress(policy_name, endpoint_name)                       
-
-            # Find deleted endpoint and remove it from store.networkpolicy_endpoints_egress_store
-            endpoint_names_to_be_removed_egress = set()
-            for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_egress_store[policy_name]:
-                if endpoint_name not in endpoint_name_list:
+            if policy_name in networkpolicy_opr.store.networkpolicy_endpoints_egress_store:
+                for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_egress_store[policy_name]:
+                    ep = networkpolicy_opr.store.get_ep(endpoint_name)
+                    if ep is None:
+                        logger.warn("In operator store, found endpoint {} in networkpolicy_endpoints_egress_store but cannot retrieve it from eps_store.".format(endpoint_name))
+                    else:
+                        ep.remove_egress_networkpolicy(policy_name)
                     endpoint_names_to_be_handled.add(endpoint_name)
-                    endpoint_names_to_be_removed_egress.add(endpoint_name)
-            for endpoint_name in endpoint_names_to_be_removed_egress:            
-                networkpolicy_opr.store.networkpolicy_endpoints_egress_store[policy_name].remove(endpoint_name)
-                ep = networkpolicy_opr.store.get_ep(endpoint_name)
-                if ep is None:
-                    logger.warn("In operator store, found endpoint {} in networkpolicy_endpoints_egress_store but cannot retrieve it from eps_store.".format(endpoint_name))
-                else:
-                    ep.remove_egress_networkpolicy(policy_name)
-            if len(networkpolicy_opr.store.networkpolicy_endpoints_egress_store[policy_name]) == 0:
                 networkpolicy_opr.store.networkpolicy_endpoints_egress_store.pop(policy_name)
+        else:
+            if "Ingress" in policy_types:
+                if policy_name not in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store:
+                    networkpolicy_opr.store.networkpolicy_endpoints_ingress_store[policy_name] = set()
 
-        self.add_networkpolicy_for_endpoint(policy_name, policy_types)
+                # Find newly added endpoint and add it into store.networkpolicy_endpoints_ingress_store
+                for endpoint_name in endpoint_name_list:
+                    endpoint_names_to_be_handled.add(endpoint_name) 
+                    if endpoint_name not in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store[policy_name]:                
+                        networkpolicy_opr.store.add_networkpolicy_endpoint_ingress(policy_name, endpoint_name)                       
+
+                # Find deleted endpoint and remove it from store.networkpolicy_endpoints_ingress_store
+                endpoint_names_to_be_removed_ingress = set()
+                for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store[policy_name]:
+                    if endpoint_name not in endpoint_name_list:
+                        endpoint_names_to_be_handled.add(endpoint_name)
+                        endpoint_names_to_be_removed_ingress.add(endpoint_name)
+                for endpoint_name in endpoint_names_to_be_removed_ingress:            
+                    networkpolicy_opr.store.networkpolicy_endpoints_ingress_store[policy_name].remove(endpoint_name)
+                    ep = networkpolicy_opr.store.get_ep(endpoint_name)
+                    if ep is None:
+                        logger.warn("In operator store, found endpoint {} in networkpolicy_endpoints_ingress_store but cannot retrieve it from eps_store.".format(endpoint_name))
+                    else:
+                        ep.remove_ingress_networkpolicy(policy_name)
+                if len(networkpolicy_opr.store.networkpolicy_endpoints_ingress_store[policy_name]) == 0:
+                    networkpolicy_opr.store.networkpolicy_endpoints_ingress_store.pop(policy_name)
+
+            if "Egress" in policy_types:
+                if policy_name not in networkpolicy_opr.store.networkpolicy_endpoints_egress_store:
+                    networkpolicy_opr.store.networkpolicy_endpoints_egress_store[policy_name] = set()
+
+                # Find newly added endpoint and add it into store.networkpolicy_endpoints_egress_store
+                for endpoint_name in endpoint_name_list:
+                    endpoint_names_to_be_handled.add(endpoint_name) 
+                    if endpoint_name not in networkpolicy_opr.store.networkpolicy_endpoints_egress_store[policy_name]:                
+                        networkpolicy_opr.store.add_networkpolicy_endpoint_egress(policy_name, endpoint_name)                       
+
+                # Find deleted endpoint and remove it from store.networkpolicy_endpoints_egress_store
+                endpoint_names_to_be_removed_egress = set()
+                for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_egress_store[policy_name]:
+                    if endpoint_name not in endpoint_name_list:
+                        endpoint_names_to_be_handled.add(endpoint_name)
+                        endpoint_names_to_be_removed_egress.add(endpoint_name)
+                for endpoint_name in endpoint_names_to_be_removed_egress:            
+                    networkpolicy_opr.store.networkpolicy_endpoints_egress_store[policy_name].remove(endpoint_name)
+                    ep = networkpolicy_opr.store.get_ep(endpoint_name)
+                    if ep is None:
+                        logger.warn("In operator store, found endpoint {} in networkpolicy_endpoints_egress_store but cannot retrieve it from eps_store.".format(endpoint_name))
+                    else:
+                        ep.remove_egress_networkpolicy(policy_name)
+                if len(networkpolicy_opr.store.networkpolicy_endpoints_egress_store[policy_name]) == 0:
+                    networkpolicy_opr.store.networkpolicy_endpoints_egress_store.pop(policy_name)
+
+        self.set_networkpolicy_for_endpoint(policy_name, policy_types)
 
         return endpoint_names_to_be_handled
 
@@ -119,8 +139,8 @@ class NetworkPolicyUtil:
 
         return endpoint_name_list
 
-    def add_networkpolicy_for_endpoint(self, policy_name, policy_types):
-        if "Ingress" in policy_types:
+    def set_networkpolicy_for_endpoint(self, policy_name, policy_types):
+        if policy_types is not None and "Ingress" in policy_types:
             if policy_name in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store:
                 for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store[policy_name]:
                     ep = networkpolicy_opr.store.get_ep(endpoint_name)
@@ -131,7 +151,7 @@ class NetworkPolicyUtil:
         else:
             self.remove_networkpolicy_from_endpoint_ingress(policy_name)
             
-        if "Egress" in policy_types:
+        if policy_types is not None and "Egress" in policy_types:
             if policy_name in networkpolicy_opr.store.networkpolicy_endpoints_egress_store:
                 for endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_egress_store[policy_name]:
                     ep = networkpolicy_opr.store.get_ep(endpoint_name)
@@ -362,24 +382,19 @@ class NetworkPolicyUtil:
     def build_cidr_and_policies_map(self, access_rules, cidr_type):
         cidr_map_name = "cidrs_map_" + cidr_type
         cidr_and_policies_map_name = "cidr_and_policies_map_" + cidr_type
-        trie = PatriciaTrie()
-        policy_name_set = set()
+        trie = IPv4Trie()
         for indexed_policy_name, cidrs in access_rules[cidr_map_name].items():
             for cidr in cidrs:
                 if cidr not in access_rules[cidr_and_policies_map_name]:
                     access_rules[cidr_and_policies_map_name][cidr] = set()
                 access_rules[cidr_and_policies_map_name][cidr].add(indexed_policy_name)
-                policy_name_set.add(indexed_policy_name)
                 trie.insert(cidr, access_rules[cidr_and_policies_map_name][cidr])
         for cidr, indexed_policy_names in access_rules[cidr_and_policies_map_name].items():
             found_cidr_map = trie.find_all(cidr)
             for found_cidr_tuple in found_cidr_map:
                 if indexed_policy_names != found_cidr_tuple[1]:
                     for foundPolicyName in found_cidr_tuple[1]:
-                        # In the trie, there could be matched cidr but whose policies are from other direction (ingress/egress).
-                        # So in following line adds a condition to limit the scope of the matched policies.
-                        if cidr in access_rules[cidr_and_policies_map_name] and foundPolicyName in policy_name_set:
-                            indexed_policy_names.add(foundPolicyName)
+                        indexed_policy_names.add(foundPolicyName)
 
     def build_port_and_policies_map(self, access_rules):
         for indexed_policy_name, ports in access_rules["ports_map"].items():

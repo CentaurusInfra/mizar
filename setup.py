@@ -20,7 +20,6 @@ setup(
         'luigi==2.8.12',
         'grpcio',
         'protobuf',
-        'fs',
-        'cidr-trie'
+        'fs'
     ]
 )
