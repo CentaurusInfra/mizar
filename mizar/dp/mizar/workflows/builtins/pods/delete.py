@@ -38,7 +38,7 @@ class k8sPodDelete(WorkflowTask):
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
 
-        networkpolicy_util.handle_pod_change_for_networkpolicy(self.param.diff)
+        networkpolicy_util.handle_pod_change_for_networkpolicy(self.param.name, self.param.namespace, self.param.diff)
 
         eps = endpoints_opr.store.get_eps_in_pod(self.param.name)
         logger.info("Deleting Pod {}".format(self.param.name))

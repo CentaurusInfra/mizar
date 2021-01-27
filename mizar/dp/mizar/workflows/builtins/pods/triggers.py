@@ -36,6 +36,7 @@ logger = logging.getLogger()
 async def builtins_on_pod(body, spec, **kwargs):
     param = HandlerParam()
     param.name = kwargs['name']
+    param.namespace = kwargs['namespace']
     param.body = body
     param.spec = spec
     param.diff = kwargs['diff']
@@ -46,6 +47,7 @@ async def builtins_on_pod(body, spec, **kwargs):
 async def builtins_on_pod_delete(body, spec, **kwargs):
     param = HandlerParam()
     param.name = kwargs['name']
+    param.namespace = kwargs['namespace']
     param.body = body
     param.spec = spec
     param.diff = kwargs['diff']
