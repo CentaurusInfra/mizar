@@ -343,7 +343,8 @@ class NetworkPolicyUtil:
             logger.info("pod {} hasn't been assigned ip yet. Will update networkpolicy data for the pod later.".format(pod.metadata.name))
             networkpolicy_opr.store.add_networkpolicies_to_be_updated(pod.metadata.name, policy_name)
         else:
-            pod_ip_set.append("{}/32".format(pod.status.pod_ip))
+            if pod.metadata.name not in networkpolicy_opr.store.pod_names_to_be_ignored_by_networkpolicy:
+                pod_ip_set.append("{}/32".format(pod.status.pod_ip))
 
     def add_label_networkpolicy(self, data, label_dict, policy_name):
         for key in label_dict:
@@ -474,6 +475,32 @@ class NetworkPolicyUtil:
         namespace_obj = kube_get_namespace(networkpolicy_opr.core_api, namespace)
         if namespace_obj is not None and namespace_obj.metadata.labels is not None:
             self.add_affected_networkpolicy_by_namespace_labels(policy_name_list, namespace_obj.metadata.labels)
+
+        self.handle_networkpolicy_change(policy_name_list)
+
+    def handle_pod_delete_for_networkpolicy(self, pod_name, namespace, diff, eps):
+        data = self.extract_label_change(diff)
+
+        policy_name_list = set()
+        for label in data["remove"]:
+            self.add_affected_networkpolicy_by_pod_label(policy_name_list, label)
+
+        endpoint_affected_policy_name_list = set()
+        for label in data["remove"]:
+            self.add_endpoint_affected_networkpolicy_by_pod_label(endpoint_affected_policy_name_list, label)
+
+        for policy_name in endpoint_affected_policy_name_list:
+            policy_name_list.add(policy_name)
+            for ep in eps.values():
+                ep.remove_ingress_networkpolicy(policy_name)
+                ep.remove_egress_networkpolicy(policy_name)
+
+        for policy_name in policy_name_list:
+            for endpoint_name in eps:
+                if policy_name in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store and endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store[policy_name]:
+                    networkpolicy_opr.store.networkpolicy_endpoints_ingress_store[policy_name].remove(endpoint_name)
+                if policy_name in networkpolicy_opr.store.networkpolicy_endpoints_egress_store and endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_egress_store[policy_name]:
+                    networkpolicy_opr.store.networkpolicy_endpoints_egress_store[policy_name].remove(endpoint_name)
 
         self.handle_networkpolicy_change(policy_name_list)
 
