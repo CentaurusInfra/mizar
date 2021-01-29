@@ -415,3 +415,10 @@ def conf_list_has_max_elements(conf, conf_list):
     if (counter + item_len > CONSTANTS.MAX_CLI_CHAR_LENGTH):
         return True
     return False
+
+def bindmount_netns(src_netns_path, dst_netns_path):
+    import os
+    import subprocess
+    os.mknod(dst_netns_path)
+    bindmount = subprocess.run(["mount", "--bind", src_netns_path, dst_netns_path])
+    return bindmount.returncode

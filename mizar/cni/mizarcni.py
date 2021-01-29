@@ -144,7 +144,17 @@ class Cni:
         the GW.
         """
 
-        head, netns = os.path.split(self.netns)
+        netns_folder = "/var/run/netns/"
+        if not self.netns.startswith(netns_folder):
+            dst_netns = self.netns.replace('/', '_')
+            dst_netns_path = os.path.join(netns_folder, dst_netns)
+            if bindmount_netns(self.netns, dst_netns_path) == 0:
+                self.netns = dst_netns_path
+            else:
+                logger.error("failed to bind mount {} to {}".format(self.netns, dst_netns_path))
+                raise OSError("failed to bind mount netns")
+
+        _, netns = os.path.split(self.netns)
         iproute_ns = NetNS(netns)
         veth_index = get_iface_index(interface.veth.name, self.iproute)
 
