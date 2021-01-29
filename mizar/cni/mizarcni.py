@@ -148,11 +148,12 @@ class Cni:
         if not self.netns.startswith(netns_folder):
             dst_netns = self.netns.replace('/', '_')
             dst_netns_path = os.path.join(netns_folder, dst_netns)
-            if bindmount_netns(self.netns, dst_netns_path) == 0:
+            errorcode = bindmount_netns(self.netns, dst_netns_path)
+            if errorcode == 0:
                 self.netns = dst_netns_path
             else:
-                logger.error("failed to bind mount {} to {}".format(self.netns, dst_netns_path))
-                raise OSError("failed to bind mount netns")
+                logger.error("failed to bind mount {} to {}: error code {}".format(self.netns, dst_netns_path, errorcode))
+                raise OSError("failed to bind mount netns {} to {}, error code: {}".format(self.netns, dst_netns_path, errorcode))
 
         _, netns = os.path.split(self.netns)
         iproute_ns = NetNS(netns)
