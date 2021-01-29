@@ -50,5 +50,5 @@ async def builtins_on_pod_delete(body, spec, **kwargs):
     param.namespace = kwargs['namespace']
     param.body = body
     param.spec = spec
-    param.diff = kwargs['diff']
+    param.diff = [("remove", (), body, None)]   
     run_workflow(wffactory().k8sPodDelete(param=param))

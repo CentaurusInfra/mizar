@@ -49,6 +49,7 @@ class OprStore(object):
 
         self.networkpolicies_store = {}
         self.eps_store_to_be_updated_networkpolicy = set()
+        self.pod_names_to_be_ignored_by_networkpolicy = set()
         self.networkpolicies_to_be_updated_store = {}
 
         # label of pods in networkpolicy.spec.podSelector
