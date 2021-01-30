@@ -497,6 +497,10 @@ class NetworkPolicyUtil:
                 endpoint_names = self.update_and_retrieve_endpoint_names(policy_name, networkpolicy.namespace, None, None)
                 self.handle_networkpolicy_update_delete(endpoint_names)
 
+        namespace_obj = kube_get_namespace(networkpolicy_opr.core_api, namespace)
+        if namespace_obj is not None and namespace_obj.metadata.labels is not None:
+            self.add_affected_networkpolicy_by_namespace_labels(policy_name_list, namespace_obj.metadata.labels)
+
         for policy_name in policy_name_list:
             for endpoint_name in eps:
                 if policy_name in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store and endpoint_name in networkpolicy_opr.store.networkpolicy_endpoints_ingress_store[policy_name]:
