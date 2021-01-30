@@ -490,10 +490,16 @@ class NetworkPolicyUtil:
             self.add_endpoint_affected_networkpolicy_by_pod_label(endpoint_affected_policy_name_list, label)
 
         for policy_name in endpoint_affected_policy_name_list:
-            policy_name_list.add(policy_name)
-            for ep in eps.values():
-                ep.remove_ingress_networkpolicy(policy_name)
-                ep.remove_egress_networkpolicy(policy_name)
+            networkpolicy = networkpolicy_opr.store.get_networkpolicy(policy_name)
+            if networkpolicy is None:
+                logger.warn("In operator store, found affected networkpolicy {} by pod label change but cannot retrieve it from networkpolicies_store.".format(policy_name))
+            else:
+                endpoint_names = self.update_and_retrieve_endpoint_names(policy_name, networkpolicy.namespace, None, None)
+                self.handle_networkpolicy_update_delete(endpoint_names)
+
+        namespace_obj = kube_get_namespace(networkpolicy_opr.core_api, namespace)
+        if namespace_obj is not None and namespace_obj.metadata.labels is not None:
+            self.add_affected_networkpolicy_by_namespace_labels(policy_name_list, namespace_obj.metadata.labels)
 
         for policy_name in policy_name_list:
             for endpoint_name in eps:
