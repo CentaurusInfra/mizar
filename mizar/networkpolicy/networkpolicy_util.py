@@ -18,6 +18,7 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+import copy
 import logging
 import time
 from mizar.common.ipv4_trie import IPv4Trie
@@ -207,7 +208,11 @@ class NetworkPolicyUtil:
 
         logger.info("ep: {}, data_for_networkpolicy: {}".format(ep.name, data_for_networkpolicy))
         ep.set_data_for_networkpolicy(data_for_networkpolicy)
-        ep.update_networkpolicy_per_endpoint(data_for_networkpolicy)
+
+        copied_data = copy.deepcopy(data_for_networkpolicy)
+        self.remove_dup_data_from_old(copied_data)
+        ep.update_networkpolicy_per_endpoint(copied_data)
+
         for label in data_for_networkpolicy["ingress"]["label_networkpolicies_map"]:
             networkpolicy_opr.store.add_label_networkpolicy_ingress(label, data_for_networkpolicy["ingress"]["label_networkpolicies_map"][label])
         for label in data_for_networkpolicy["egress"]["label_networkpolicies_map"]:
@@ -216,6 +221,31 @@ class NetworkPolicyUtil:
             networkpolicy_opr.store.add_namespace_label_networkpolicy_ingress(label, data_for_networkpolicy["ingress"]["namespace_label_networkpolicies_map"][label])
         for label in data_for_networkpolicy["egress"]["namespace_label_networkpolicies_map"]:
             networkpolicy_opr.store.add_namespace_label_networkpolicy_egress(label, data_for_networkpolicy["egress"]["namespace_label_networkpolicies_map"][label])
+
+    def remove_dup_data_from_old(self, data):
+        if "old" not in data:
+            return
+
+        old_data = data["old"]
+        if "ingress" in data and len(data["ingress"]) > 0 and "ingress" in old_data and len(old_data["ingress"]) > 0:
+            self.remove_dup_directional_data_from_old(data["ingress"], old_data["ingress"])
+        if "egress" in data and len(data["egress"]) > 0 and "egress" in old_data and len(old_data["egress"]) > 0:
+            self.remove_dup_directional_data_from_old(data["egress"], old_data["egress"])
+
+    def remove_dup_directional_data_from_old(self, data, old_data):
+        self.remove_items_from_old(data["cidr_table_no_except"], old_data["cidr_table_no_except"])
+        self.remove_items_from_old(data["cidr_table_with_except"], old_data["cidr_table_with_except"])
+        self.remove_items_from_old(data["cidr_table_except"], old_data["cidr_table_except"])
+        self.remove_items_from_old(data["port_table"], old_data["port_table"])
+
+    def remove_items_from_old(self, items, old_items):
+        to_be_removed = []
+        for item in items:
+            if item in old_items:
+                to_be_removed.append(item)
+        for item in to_be_removed:
+            items.remove(item)
+            old_items.remove(item)
 
     def generate_data_for_networkpolicy_ingress(self, ep):
         data = self.init_data_for_networkpolicy()
