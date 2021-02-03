@@ -158,6 +158,7 @@ function common:build_docker_images {
     docker image push $docker_account/endpointopr:latest
     docker image build -t $docker_account/testpod:latest -f etc/docker/test.Dockerfile .
     docker image push $docker_account/testpod:latest
+    docker image build -t mizarnet/mizarcni:latest -f etc/docker/mizarcni.Dockerfile .
 }
 
 function common:check_pod_by_image {
