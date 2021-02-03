@@ -46,6 +46,7 @@ class Cni:
         self.interface = os.environ.get("CNI_IFNAME")
         self.cni_path = os.environ.get("CNI_PATH")
         self.cni_args = os.environ.get("CNI_ARGS")
+        self.cni_args_dict = {}
         if self.command == "VERSION":
             return
 
@@ -92,7 +93,8 @@ class Cni:
             self.iproute.close()
 
     def run(self):
-        logging.info("CNI ARGS {}".format(self.cni_args_dict))
+        if len(self.cni_args_dict) != 0:
+            logging.info("CNI ARGS {}".format(self.cni_args_dict))
         val = "Unsuported cni command!"
         switcher = {
             'ADD': self.do_add,
