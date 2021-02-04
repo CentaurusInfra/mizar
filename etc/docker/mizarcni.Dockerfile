@@ -18,6 +18,5 @@
 
 FROM debian
 COPY . /var/mizar
-COPY etc/docker/install-mizarcni.sh /
 ENTRYPOINT ["bash"]
-CMD ["/install-mizarcni.sh"]
+CMD ["/var/mizar/etc/docker/install-mizarcni.sh"]
