@@ -443,11 +443,23 @@ spec:
       terminationGracePeriodSeconds: 0
       hostNetwork: true
       hostPID: true
+      initContainers:
+        - name: mizar-cni
+          image: mizarnet/mizarcni:0.7
+          volumeMounts:
+            - name: var
+              mountPath: /install/var
+          securityContext:
+            privileged: true
       containers:
         - image: fwnetworking/dropletd:0.7
           name: mizar-daemon
           securityContext:
             privileged: true
+      volumes:
+        - name: var
+          hostPath:
+            path: /var
 ---
 # mizar deployment of operator
 apiVersion: apps/v1
