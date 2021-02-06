@@ -87,13 +87,6 @@ GO111MODULE="on" go get sigs.k8s.io/kind@v0.7.0
 
 ####################
 
-echo Setup: Enlist Mizar
-
-cd ~
-git clone https://github.com/CentaurusInfra/mizar
-
-####################
-
 echo Setup: Mizar Related
 
 cd ~/mizar
