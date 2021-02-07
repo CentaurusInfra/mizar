@@ -38,16 +38,13 @@ function environment_adaptor:deploy_mizar {
     # Indicate the system is from Arktos
     kubectl create configmap system-source --namespace=kube-system --from-literal=name=arktos --from-literal=company=futurewei
 
+    kubectl apply -f etc/account/serviceaccount.yaml
+    kubectl apply -f etc/account/binding.yaml
     # Deploy daemon first, then deploy operator after daemon pod is running. We hold operator, wait until daemon is running. Mizar won't work correctly if directly deploying operator without waiting for daemon. 
-    kubectl apply -f etc/deploy/deploy.daemon.yaml
-    echo "Wait 30 seconds"
-    sleep 30
-    kubectl delete daemonset.apps/mizar-daemon
     kubectl apply -f etc/deploy/daemon.deploy.yaml
-    echo "Wait 30 seconds"
-    sleep 30 # Wait when daemon pod is being created
-    echo "Waiting for daemon pod running. It may cost up to 30 minutes because it needs to setup pip3 modules such as grpcio which needs quite some time for the first time."
-    kubectl wait --for=condition=Ready pod -l job=mizar-daemon --timeout=30m
+    sleep 5 # Wait when daemon pod is being created
+    echo "Waiting for daemon pod running."
+    kubectl wait --for=condition=Ready pod -l job=mizar-daemon --timeout=1m
     
     kubectl apply -f etc/deploy/deploy.operator.yaml
 
