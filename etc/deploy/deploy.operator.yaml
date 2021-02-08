@@ -40,7 +40,7 @@ spec:
         - operator: Exists
           effect: NoSchedule
       containers:
-        - image: fwnetworking/endpointopr:latest
+        - image: mizarnet/endpointopr:latest
           name: mizar-operator
           securityContext:
             privileged: true

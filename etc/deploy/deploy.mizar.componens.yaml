@@ -452,7 +452,7 @@ spec:
           securityContext:
             privileged: true
       containers:
-        - image: fwnetworking/dropletd:0.7
+        - image: mizarnet/dropletd:0.7
           name: mizar-daemon
           securityContext:
             privileged: true
@@ -484,7 +484,7 @@ spec:
       terminationGracePeriodSeconds: 0
       hostNetwork: true
       containers:
-        - image: fwnetworking/endpointopr:0.7
+        - image: mizarnet/endpointopr:0.7
           name: mizar-operator
           securityContext:
             privileged: true

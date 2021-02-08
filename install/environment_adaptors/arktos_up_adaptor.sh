@@ -23,7 +23,7 @@
 source install/common.sh
 
 function environment_adaptor:prepare_binary {
-    # Current for arktos-up env, we use images from fwnetworking instead of localhost:5000
+    # Current for arktos-up env, we use images from mizarnet instead of localhost:5000
     # So skip invoking common:build_docker_images
     # common:build_docker_images 
     :
