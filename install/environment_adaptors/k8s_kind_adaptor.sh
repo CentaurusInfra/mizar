@@ -30,7 +30,7 @@ function environment_adaptor:prepare_binary {
         local docker_account="localhost:5000"
     else
         local user="prod"
-        local docker_account="fwnetworking"
+        local docker_account="mizarnet"
     fi
 
     local cwd=$(pwd)

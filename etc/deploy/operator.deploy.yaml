@@ -38,7 +38,7 @@ spec:
       terminationGracePeriodSeconds: 0
       hostNetwork: true
       containers:
-        - image: fwnetworking/endpointopr:latest
+        - image: mizarnet/endpointopr:latest
           name: mizar-operator
           securityContext:
             privileged: true

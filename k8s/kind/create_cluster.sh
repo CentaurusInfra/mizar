@@ -53,7 +53,7 @@ if [[ $USER == "dev" ]]; then
   REPO="localhost:5000"
 else
   PATCH=""
-  REPO="fwnetworking"
+  REPO="mizarnet"
 fi
 
 NODE_TEMPLATE="  - role: worker

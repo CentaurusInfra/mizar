@@ -43,7 +43,7 @@ spec:
       hostNetwork: true
       hostPID: true
       containers:
-        - image: fwnetworking/dropletd:latest
+        - image: mizarnet/dropletd:latest
           name: mizar-daemon
           securityContext:
             privileged: true

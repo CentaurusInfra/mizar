@@ -27,7 +27,7 @@ DOCKER_ACC=${3:-"localhost:5000"}
 YAML_FILE="dev.daemon.deploy.yaml"
 
 if [[ "$USER" == "user" || "$USER" == "final" ]]; then
-    DOCKER_ACC="fwnetworking"
+    DOCKER_ACC="mizarnet"
     YAML_FILE="daemon.deploy.yaml"
 fi
 

@@ -28,7 +28,7 @@ YAML_FILE="dev.operator.deploy.yaml"
 . install/common.sh
 
 if [[ "$USER" == "user" || "$USER" == "final" ]]; then
-    DOCKER_ACC="fwnetworking"
+    DOCKER_ACC="mizarnet"
     YAML_FILE="operator.deploy.yaml"
 fi
 
