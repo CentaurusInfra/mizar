@@ -60,7 +60,6 @@ class k8sPodCreate(WorkflowTask):
             'phase': self.param.body['status']['phase'],
             'interfaces': [{'name': 'eth0'}]
         }
-        logger.info("Pod spec {}".format(spec))
 
         spec['vni'] = vpc_opr.store_get(spec['vpc']).vni
         spec['droplet'] = droplet_opr.store_get_by_ip(spec['hostIP'])
@@ -87,6 +86,12 @@ class k8sPodCreate(WorkflowTask):
                 net_config = self.param.extra["interfaces"]
                 configs = json.loads(net_config)
                 spec['interfaces'] = configs
+
+        n = net_opr.store.get_net(spec['subnet'])
+        ip = n.allocate_ip()
+        spec['ip'] = ip
+
+        logger.info("Pod spec {}".format(spec))
 
         # make sure not to trigger init or create simple endpoint
         # if Arktos network is already marked ready (Needs to confirm with Arktos team)
