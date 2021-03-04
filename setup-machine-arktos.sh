@@ -74,8 +74,22 @@ sudo systemctl restart containerd
 
 echo Setup: Install miscellaneous
 
+sudo apt-get install libreadline-gplv2-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev
+wget -O /home/ubuntu/Python-3.8.8.tgz https://www.python.org/ftp/python/3.8.8/Python-3.8.8.tgz
+tar -xzf /home/ubuntu/Python-3.8.8.tgz
+cd /home/ubuntu/Python-3.8.8
+sudo ./configure
+sudo make
+sudo make install
+sudo ln -sfn /usr/local/bin/python3.8 /usr/bin/python3
+sudo apt remove -fy python3-apt
+sudo apt install -fy python3-apt
+sudo apt update
+sudo apt install python3-pip
+sudo sed -i '1c\#!/usr/bin/python3.8 -Es' /usr/bin/lsb_release
+sudo usr/local/bin/python3.8 -m pip install --upgrade pip
+
 sudo apt install awscli -y -q
-sudo apt install python-pip -y -q
 sudo apt install jq -y -q
 
 ####################
@@ -119,18 +133,18 @@ curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s http
 chmod +x ./kubectl
 sudo mv ./kubectl /usr/local/bin/kubectl
 
-pip3 install fs
-pip3 install protobuf
-pip3 install grpcio
-pip3 install grpcio-tools
-pip3 install luigi==2.8.12
-pip3 install kubernetes==11.0.0
-pip3 install rpyc
-pip3 install pyroute2
-pip3 install ipaddress
-pip3 install netaddr
-pip3 install kopf
-pip3 install PyYAML
+sudo pip3 install fs
+sudo pip3 install protobuf
+sudo pip3 install grpcio
+sudo pip3 install grpcio-tools
+sudo pip3 install luigi==2.8.12
+sudo pip3 install kubernetes==11.0.0
+sudo pip3 install rpyc
+sudo pip3 install pyroute2
+sudo pip3 install ipaddress
+sudo pip3 install netaddr
+sudo pip3 install kopf
+sudo pip3 install PyYAML
 
 ####################
 
