@@ -74,9 +74,9 @@ sudo systemctl restart containerd
 
 echo Setup: Install miscellaneous
 
-sudo apt-get install libreadline-gplv2-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev
+sudo apt-get install -y -q libreadline-gplv2-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev
 wget -O /home/ubuntu/Python-3.8.8.tgz https://www.python.org/ftp/python/3.8.8/Python-3.8.8.tgz
-tar -xzf /home/ubuntu/Python-3.8.8.tgz
+tar -C /home/ubuntu -xzf /home/ubuntu/Python-3.8.8.tgz
 cd /home/ubuntu/Python-3.8.8
 sudo ./configure
 sudo make
@@ -85,9 +85,9 @@ sudo ln -sfn /usr/local/bin/python3.8 /usr/bin/python3
 sudo apt remove -fy python3-apt
 sudo apt install -fy python3-apt
 sudo apt update
-sudo apt install python3-pip
+sudo apt install -fy python3-pip
 sudo sed -i '1c\#!/usr/bin/python3.8 -Es' /usr/bin/lsb_release
-sudo usr/local/bin/python3.8 -m pip install --upgrade pip
+sudo usr/local/bin/python3.8 -m pip install --upgrade pip -y -q
 
 sudo apt install awscli -y -q
 sudo apt install jq -y -q
