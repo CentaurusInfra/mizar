@@ -44,7 +44,7 @@ function common:check_cluster_ready {
         kubectl cluster-info
     fi
 
-    local cluster_status=`kubectl cluster-info | grep Kubernetes | grep master | grep is | grep running`
+    local cluster_status=`kubectl cluster-info | grep Kubernetes | grep is | grep running`
     if [[ -z "$cluster_status" ]]; then
         return 0
     else

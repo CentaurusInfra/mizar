@@ -49,6 +49,7 @@ class k8sPodCreate(WorkflowTask):
 
         if "hostIP" not in self.param.body['status']:
             self.raise_temporary_error("Pod spec not ready.")
+
         spec = {
             'hostIP': self.param.body['status']['hostIP'],
             'name': self.param.name,
@@ -63,6 +64,9 @@ class k8sPodCreate(WorkflowTask):
 
         spec['vni'] = vpc_opr.store_get(spec['vpc']).vni
         spec['droplet'] = droplet_opr.store_get_by_ip(spec['hostIP'])
+        # Preexisting pods triggered when droplet objects are not yet created.
+        if not spec['droplet']:
+            self.raise_temporary_error("Droplet not yet created.")
 
         if self.param.extra:
             spec['type'] = COMPUTE_PROVIDER.arktos
@@ -103,9 +107,6 @@ class k8sPodCreate(WorkflowTask):
             networkpolicy_util.handle_pod_change_for_networkpolicy(self.param.name, self.param.namespace, self.param.diff)
             self.finalize()
             return
-        # Preexisting pods triggered when droplet objects are not yet created.
-        if not spec['droplet']:
-            self.raise_temporary_error("Droplet not yet created.")
 
         # Init all interfaces on the host
         interfaces = endpoint_opr.init_simple_endpoint_interfaces(
