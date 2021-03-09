@@ -5,6 +5,7 @@
 echo Setup: Install go \(currently limited to version 1.13.9\)
 
 sudo apt-get update -y -q
+sudo apt-get install libreadline-gplv2-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev -y -q
 
 cd /tmp
 wget https://dl.google.com/go/go1.13.9.linux-amd64.tar.gz
@@ -74,7 +75,6 @@ sudo systemctl restart containerd
 
 echo Setup: Install miscellaneous
 
-sudo apt-get install -y -q libreadline-gplv2-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev
 wget -O /home/ubuntu/Python-3.8.8.tgz https://www.python.org/ftp/python/3.8.8/Python-3.8.8.tgz
 tar -C /home/ubuntu -xzf /home/ubuntu/Python-3.8.8.tgz
 cd /home/ubuntu/Python-3.8.8
