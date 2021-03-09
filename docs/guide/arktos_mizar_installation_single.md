@@ -48,6 +48,7 @@ The lab machine will be rebooted once above script is completed, you will be aut
 
 ```bash
 cd ~/mizar
+sudo su
 make
 make proto
 ```
@@ -103,6 +104,7 @@ You also want make sure the default kubernetes bridge network configuration file
 sudo ls /etc/cni/net.d
 (you should see two config files, one is mizar cni config and another one is bridge config)
 sudo rm /etc/cni/net.d/bridge.conf
+sudo ln -snf /var/mizar/etc/cni/10-mizarcni.conf /etc/cni/net.d/10-mizarcni.conf
 ```
 
 To make sure containerd is running as expected, run: 
