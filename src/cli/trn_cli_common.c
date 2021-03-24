@@ -193,6 +193,7 @@ int trn_cli_parse_xdp(const cJSON *jsonobj, rpc_trn_xdp_intf_t *xdp_intf)
 {
 	cJSON *xdp_path = cJSON_GetObjectItem(jsonobj, "xdp_path");
 	cJSON *pcapfile = cJSON_GetObjectItem(jsonobj, "pcapfile");
+	cJSON *xdp_flag = cJSON_GetObjectItem(jsonobj, "xdp_flag");
 
 	if (xdp_path == NULL) {
 		print_err("Missing path for xdp program to load.\n");
@@ -207,6 +208,13 @@ int trn_cli_parse_xdp(const cJSON *jsonobj, rpc_trn_xdp_intf_t *xdp_intf)
 			"Warning: Missing pcapfile. Packet capture will not be available for the interface.\n");
 	} else if (cJSON_IsString(pcapfile)) {
 		strcpy(xdp_intf->pcapfile, pcapfile->valuestring);
+	}
+	if (xdp_flag == NULL) {
+		print_err(
+			"Warning: Missing XDP program load mode.\n");
+		return -EINVAL;
+	} else if (cJSON_IsString(xdp_flag)) {
+		xdp_intf->xdp_flag = atoi(xdp_flag->valuestring);
 	}
 	return 0;
 }

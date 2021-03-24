@@ -116,6 +116,7 @@ struct rpc_trn_xdp_intf_t {
        string interface<20>;
        string xdp_path<256>;
        string pcapfile<256>;
+       uint8_t xdp_flag;
 };
 
 /* Defines an interface */
