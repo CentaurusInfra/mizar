@@ -638,20 +638,7 @@ int *load_transit_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf, struct svc_req *rqstp)
 
 	strcpy(md->pcapfile, xdp_intf->pcapfile);
 	md->pcapfile[255] = '\0';
-	if (xdp_intf->xdp_flag == 2) {
-		md->xdp_flags = XDP_FLAGS_SKB_MODE;
-	} else if (xdp_intf->xdp_flag == 4) {
-		md->xdp_flags = XDP_FLAGS_DRV_MODE;
-	} else if (xdp_intf->xdp_flag == 8) {
-		md->xdp_flags = XDP_FLAGS_HW_MODE;
-	}
-	else {
-		TRN_LOG_ERROR(
-			"Failure: Bad XDP flag %s",
-			itf);
-		result = RPC_TRN_FATAL;
-		goto error;
-	}
+	md->xdp_flags = xdp_intf->xdp_flag;
 
 	TRN_LOG_DEBUG("load_transit_xdp_1 path: %s, pcap: %s",
 		      xdp_intf->xdp_path, xdp_intf->pcapfile);
@@ -753,20 +740,7 @@ int *load_transit_agent_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf,
 
 	strcpy(md->pcapfile, xdp_intf->pcapfile);
 	md->pcapfile[255] = '\0';
-	if (xdp_intf->xdp_flag == 2) {
-		md->xdp_flags = XDP_FLAGS_SKB_MODE;
-	} else if (xdp_intf->xdp_flag == 4) {
-		md->xdp_flags = XDP_FLAGS_DRV_MODE;
-	} else if (xdp_intf->xdp_flag == 8) {
-		md->xdp_flags = XDP_FLAGS_HW_MODE;
-	}
-	else {
-		TRN_LOG_ERROR(
-			"Failure: Bad XDP flag %s",
-			itf);
-		result = RPC_TRN_FATAL;
-		goto error;
-	}
+	md->xdp_flags = xdp_intf->xdp_flag;
 
 	TRN_LOG_DEBUG("load_transit_agent_xdp_1 path: %s, pcap: %s",
 		      xdp_intf->xdp_path, xdp_intf->pcapfile);

@@ -31,6 +31,7 @@
 #include <stdint.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#include <linux/if_link.h>
 #include "extern/cJSON.h"
 #include "extern/ketopt.h"
 #include "rpcgen/trn_rpc_protocol.h"
