@@ -65,7 +65,7 @@ echo timeout: 10 >> /tmp/crictl.yaml
 echo debug: true >> /tmp/crictl.yaml
 sudo mv /tmp/crictl.yaml /etc/crictl.yaml
 
-mkdir -p /etc/containerd
+sudo mkdir -p /etc/containerd
 sudo rm -rf /etc/containerd/config.toml
 sudo containerd config default > /tmp/config.toml
 sudo mv /tmp/config.toml /etc/containerd/config.toml
@@ -75,9 +75,9 @@ sudo systemctl restart containerd
 
 echo Setup: Install miscellaneous
 
-wget -O /home/ubuntu/Python-3.8.8.tgz https://www.python.org/ftp/python/3.8.8/Python-3.8.8.tgz
-tar -C /home/ubuntu -xzf /home/ubuntu/Python-3.8.8.tgz
-cd /home/ubuntu/Python-3.8.8
+wget -O $HOME/Python-3.8.8.tgz https://www.python.org/ftp/python/3.8.8/Python-3.8.8.tgz
+tar -C $HOME -xzf $HOME/Python-3.8.8.tgz
+cd $HOME/Python-3.8.8
 sudo ./configure
 sudo make
 sudo make install
