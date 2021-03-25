@@ -40,6 +40,7 @@ class OprStore(object):
 
         self.vpcs_store = {}
         self.arktosnet_vpc_store = {}
+        self.arktosnet_pod_store = set()
         self.nets_vpc_store = {}
         self.nets_store = {}
 
@@ -94,6 +95,21 @@ class OprStore(object):
         if name in self.arktosnet_vpc_store:
             return self.arktosnet_vpc_store[name]
         return None
+
+    def update_arktosnet_pod(self, name):
+        if name in self.arktosnet_pod_store:
+            return
+        self.arktosnet_pod_store.add(name)
+
+    def contains_pod(self, name):
+        if name in self.arktosnet_pod_store:
+            return True
+        return False
+
+    def delete_arktosnet_pod(self, name):
+        if name in self.arktosnet_pod_store:
+            self.arktosnet_pod_store.remove(name)
+        return
 
     def contains_vpc(self, name):
         if name in self.vpcs_store:

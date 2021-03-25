@@ -51,6 +51,13 @@ class ArktosService(BuiltinsServiceServicer):
         param.body['status']['phase'] = request.phase
         param.body['metadata']['tenant'] = request.tenant
         param.extra = {}
+        pod_name = param.name + "-" + param.namespace + "-" + param.body['metadata']['tenant']
+        if vpc_opr.store.contains_pod(pod_name):
+            return ReturnCode(
+                code=CodeType.TEMP_ERROR,
+                message="Pod already exist"
+            )
+        vpc_opr.store.update_arktosnet_pod(pod_name)
         if request.arktos_network != "":
             param.extra["arktos_network"] = request.arktos_network
         if len(request.interfaces) > 0:
@@ -181,6 +188,14 @@ class ArktosService(BuiltinsServiceServicer):
         param = reset_param(HandlerParam())
         param.name = request.name
         param.namespace = request.namespace        
+        param.body['metadata']['tenant'] = request.tenant
+        pod_name = param.name + "-" + param.namespace + "-" + param.body['metadata']['tenant']
+        if not vpc_opr.store.contains_pod(pod_name):
+            return ReturnCode(
+                code=CodeType.TEMP_ERROR,
+                message="Pod is already deleted"
+            )
+        vpc_opr.store.delete_arktosnet_pod(pod_name)
         return run_arktos_workflow(wffactory().k8sPodDelete(param=param))
 
     def DeleteService(self, request, context):
