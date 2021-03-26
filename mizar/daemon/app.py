@@ -2,10 +2,12 @@
 import grpc
 import time
 import subprocess
+import json
 from google.protobuf import empty_pb2
 from concurrent import futures
 from mizar.daemon.interface_service import InterfaceServer
 from mizar.daemon.droplet_service import DropletServer
+from mizar.common.constants import CONSTANTS
 import mizar.proto.interface_pb2_grpc as interface_pb2_grpc
 import mizar.proto.interface_pb2 as interface_pb2
 import mizar.proto.droplet_pb2_grpc as droplet_pb2_grpc
@@ -13,6 +15,7 @@ import mizar.proto.droplet_pb2 as droplet_pb2
 import os
 import logging
 import sys
+
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
@@ -46,7 +49,12 @@ def init():
     r = subprocess.Popen(cmd, shell=True)
     logging.info("Running transitd")
     time.sleep(1)
-    config = '{"xdp_path": "/trn_xdp/trn_transit_xdp_ebpf_debug.o", "pcapfile": "/bpffs/transit_xdp.pcap"}'
+    config = {
+        "xdp_path": "/trn_xdp/trn_transit_xdp_ebpf_debug.o",
+        "pcapfile": "/bpffs/transit_xdp.pcap",
+        "xdp_flag": CONSTANTS.XDP_GENERIC
+        }
+    config = json.dumps(config)
     cmd = (
         f'''nsenter -t 1 -m -u -n -i /trn_bin/transit -s {ip} load-transit-xdp -i eth0 -j '{config}' ''')
 

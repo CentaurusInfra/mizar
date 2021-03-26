@@ -366,7 +366,8 @@ class LocalTransitRpc:
         agent_pcap_file = itf + '.pcap'
         jsonconf = {
             "xdp_path": self.agent_xdp_path,
-            "pcapfile": agent_pcap_file
+            "pcapfile": agent_pcap_file,
+            "xdp_flag": CONSTANTS.XDP_GENERIC
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_load_transit_agent_xdp} -i \'{itf}\' -j \'{jsonconf}\' '''

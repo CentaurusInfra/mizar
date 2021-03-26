@@ -37,6 +37,9 @@ class CONSTANTS:
     IPPROTO_TCP = "6"
     IPROTO_UDP = "17"
     MAX_CLI_CHAR_LENGTH = 2000
+    XDP_GENERIC = "2"
+    XDP_DRIVER = "4"
+    XDP_OFFLOAD = "8"
 
 class OBJ_STATUS:
     obj_init = 'Init'

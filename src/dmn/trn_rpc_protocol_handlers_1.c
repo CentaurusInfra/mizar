@@ -610,6 +610,7 @@ int *load_transit_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf, struct svc_req *rqstp)
 	int rc;
 	bool unload_error = false;
 	char *itf = xdp_intf->interface;
+	int xdp_flag = xdp_intf->xdp_flag;
 	char *kern_path = xdp_intf->xdp_path;
 	struct user_metadata_t empty_md;
 	struct user_metadata_t *md = trn_itf_table_find(itf);
@@ -637,7 +638,7 @@ int *load_transit_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf, struct svc_req *rqstp)
 
 	strcpy(md->pcapfile, xdp_intf->pcapfile);
 	md->pcapfile[255] = '\0';
-	md->xdp_flags = XDP_FLAGS_SKB_MODE;
+	md->xdp_flags = xdp_intf->xdp_flag;
 
 	TRN_LOG_DEBUG("load_transit_xdp_1 path: %s, pcap: %s",
 		      xdp_intf->xdp_path, xdp_intf->pcapfile);
@@ -720,6 +721,7 @@ int *load_transit_agent_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf,
 	/* The transit agent always runs on vif */
 	char *itf = xdp_intf->interface;
 	char *kern_path = xdp_intf->xdp_path;
+	int xdp_flag = xdp_intf->xdp_flag;
 
 	struct agent_user_metadata_t *md = trn_vif_table_find(itf);
 	if (md) {
@@ -738,7 +740,7 @@ int *load_transit_agent_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf,
 
 	strcpy(md->pcapfile, xdp_intf->pcapfile);
 	md->pcapfile[255] = '\0';
-	md->xdp_flags = XDP_FLAGS_SKB_MODE;
+	md->xdp_flags = xdp_intf->xdp_flag;
 
 	TRN_LOG_DEBUG("load_transit_agent_xdp_1 path: %s, pcap: %s",
 		      xdp_intf->xdp_path, xdp_intf->pcapfile);
