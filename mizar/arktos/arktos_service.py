@@ -35,7 +35,9 @@ logger = logging.getLogger()
 class ArktosService(BuiltinsServiceServicer):
 
     def CreatePod(self, request, context):
-        logger.info("Creating pod from Arktos Service {}".format(request.name))
+        # Comment out logging for now to reduce noise in the logging
+        # Needs to make changes in Arktos so that it does not send update requests constantly
+        # logger.info("Creating pod from Arktos Service {}".format(request.name))
         param = reset_param(HandlerParam())
         param.name = request.name
         param.namespace = request.namespace
