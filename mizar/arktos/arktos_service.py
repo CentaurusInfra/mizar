@@ -35,11 +35,6 @@ logger = logging.getLogger()
 class ArktosService(BuiltinsServiceServicer):
 
     def CreatePod(self, request, context):
-        if request.host_ip == '':
-            return ReturnCode(
-                code=CodeType.TEMP_ERROR,
-                message="Missing hostIP during pod create or update"
-            )
         logger.info("Creating pod from Arktos Service {}".format(request.name))
         param = reset_param(HandlerParam())
         param.name = request.name
@@ -51,6 +46,11 @@ class ArktosService(BuiltinsServiceServicer):
         param.body['status']['phase'] = request.phase
         param.body['metadata']['tenant'] = request.tenant
         param.extra = {}
+        if param.body['status']['hostIP'] == '':
+            return ReturnCode(
+                code=CodeType.TEMP_ERROR,
+                message="Missing hostIP during pod create or update"
+            )
         pod_name = param.name + "-" + param.namespace + "-" + param.body['metadata']['tenant']
         if vpc_opr.store.contains_pod(pod_name):
             return ReturnCode(
