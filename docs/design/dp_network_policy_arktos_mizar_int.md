@@ -34,9 +34,10 @@ handle_networkpolicy_update_delete
 
 ## Design Consideration and Challenges  
 
-Previously, with kind cluster, mizar can call kubernete API server directly and access operator store at the same time. However, with arktos integration, arktos API server and network policy operator (in red) does not communication with each other directly. 
+Previously, with kind cluster, mizar can call kubernete API server directly and access operator store at the same time. However, with arktos integration, mizar network policy operator (in red) cannot call arktos API server directly. 
 
-* The communication between arktos API server and mizar network policy operator is one directional. Mizar network policy operator cannot send requests back to arktos API server. 
+* Previously, we have added mizar controllers (pod controller, node controller etc) into Arktos's code repository to watch and listen object events (such as pod creation and deletion). Once mizar controller detects an event (e.g. pod create), it then sends a gRPC message through gRPC client (in arktos). Then, the gRPC server(in mizar) receives this message and triggers this event in mizar (e.g. pod create). Please note that in mizar it is called "workflows" (e.g. pod creation workflow) where it is executed by "operator". After the workflow finishes, mizar then replies back a gRPC message with the execution results (e.g. replies back "OK" if workflow completes successfully). 
+
 * As mentioned in section “network policy create/update”, network policy creation process needs access both mizar operator store and arktos API server. If we were to move the entire network policy calculation process (currently managed by network policy operator in red) into network policy controller (in yellow), we can now send request to arktos API server. However, by doing so, we then lost access to mizar operator store and stored endpoint object information. 
 
 ## Proposal
@@ -68,10 +69,26 @@ Are we going to have race condition here??? How to avoid race condition
 
 * Watch namespace events such as create, update and delete
 * Compose network policy's metadata information into GRPC message and send through GRPC client
-
-### 3. Add Label Information into GRPC messages for pods and namespaces (C2C)
+```
+BuiltinsNamespaceMessage{
+        Name:          namespace.Name,
+        Labels:        []string{},
+        Phase:         string(pod.Status.Phase)
+}
+```
+### 4. Add Label Information into GRPC messages for pods (C2C)
 * List all labels' key/value sets into GRPC message for pod events
-
-### 4. Remove all kubenetes API Calls During Network Policy Calculation 
+```
+BuiltinsPodMessage{
+	Name:          pod.Name,
+	HostIp:        pod.Status.HostIP,
+	Namespace:     pod.Namespace,
+	Tenant:        pod.Tenant,
+        Labels:        []string{},
+	ArktosNetwork: network,
+	Phase:         string(pod.Status.Phase)
+}
+```
+### 5. Remove all kubenetes API Calls During Network Policy Calculation 
 * Remove kubernetes API calls
 * Replace with mizar operator store queries. 
