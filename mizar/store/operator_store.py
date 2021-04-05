@@ -67,6 +67,13 @@ class OprStore(object):
         self.networkpolicy_endpoints_ingress_store = {}
         self.networkpolicy_endpoints_egress_store = {}
 
+        self.pod_label_value_store = {
+            "": 0
+        }
+        self.namespace_label_value_store = {
+            "": 0
+        }
+
         self.dividers_store = {}
         self.dividers_vpc_store = {}
 
@@ -320,6 +327,18 @@ class OprStore(object):
             self.networkpolicy_endpoints_egress_store[policy_name] = set()
         self.networkpolicy_endpoints_egress_store[policy_name].add(endpoint_name)
 
+    def get_or_add_pod_label_value(self, label_combination):
+        if label_combination not in self.pod_label_value_store:
+            self.pod_label_value_store[label_combination] = len(self.pod_label_value_store)
+            # todo update the value to daemon
+        return self.pod_label_value_store[label_combination]
+
+    def get_or_add_namespace_label_value(self, label_combination):
+        if label_combination not in self.namespace_label_value_store:
+            self.namespace_label_value_store[label_combination] = len(self.namespace_label_value_store)
+            # todo update the value to daemon
+        return self.namespace_label_value_store[label_combination]
+    
     def update_droplet(self, droplet):
         self.droplets_store[droplet.name] = droplet
 
