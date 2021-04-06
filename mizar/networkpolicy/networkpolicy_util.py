@@ -520,7 +520,7 @@ class NetworkPolicyUtil:
         self.handle_networkpolicy_change(policy_name_list)
 
     def get_label_combination(self, labels):
-        if labels is None or len(labels) == 0:
+        if not labels:
             return ""
 
         label_list = []
