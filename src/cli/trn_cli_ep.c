@@ -192,4 +192,6 @@ void dump_ep(struct rpc_trn_endpoint_t *ep)
 			print_msg(", ");
 	}
 	print_msg("]\n");
+	print_msg("Pod Label Value: %d\n", ep->pod_label_value);
+	print_msg("Namespace Label Value: %d\n", ep->namespace_label_value);
 }

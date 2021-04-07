@@ -220,9 +220,10 @@ int *update_ep_1_svc(rpc_trn_endpoint_t *ep, struct svc_req *rqstp)
 	struct endpoint_t epval;
 
 	TRN_LOG_DEBUG("update_ep_1 ep tunid: %ld, ip: 0x%x,"
-		      " type: %d, veth: %s, hosted_interface:%s",
+		      " type: %d, veth: %s, hosted_interface:%s,"
+			  " pod_label_value: %d, namespace_label_value: %d",
 		      ep->tunid, ep->ip, ep->eptype, ep->veth,
-		      ep->hosted_interface);
+		      ep->hosted_interface, ep->pod_label_value, ep->namespace_label_value);
 
 	struct user_metadata_t *md = trn_itf_table_find(itf);
 
@@ -235,6 +236,8 @@ int *update_ep_1_svc(rpc_trn_endpoint_t *ep, struct svc_req *rqstp)
 	memcpy(epkey.tunip, &ep->tunid, sizeof(ep->tunid));
 	epkey.tunip[2] = ep->ip;
 	epval.eptype = ep->eptype;
+	epval.pod_label_value = ep->pod_label_value;
+	epval.namespace_label_value = ep->namespace_label_value;
 
 	epval.nremote_ips = ep->remote_ips.remote_ips_len;
 	if (epval.nremote_ips > TRAN_MAX_REMOTES) {
@@ -839,6 +842,8 @@ int *update_agent_ep_1_svc(rpc_trn_endpoint_t *ep, struct svc_req *rqstp)
 	memcpy(epkey.tunip, &ep->tunid, sizeof(ep->tunid));
 	epkey.tunip[2] = ep->ip;
 	epval.eptype = ep->eptype;
+	epval.pod_label_value = ep->pod_label_value;
+	epval.namespace_label_value = ep->namespace_label_value;
 
 	epval.nremote_ips = ep->remote_ips.remote_ips_len;
 

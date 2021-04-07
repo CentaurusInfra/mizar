@@ -910,7 +910,9 @@ static void test_trn_cli_update_ep_subcmd(void **state)
 				  "mac": "1:2:3:4:5:6",
 				  "veth": "veth0",
 				  "remote_ips": ["10.0.0.2"],
-				  "hosted_iface": "peer"
+				  "hosted_iface": "peer",
+				  "pod_label_value": "10",
+				  "namespace_label_value": "1"
 			  }) };
 
 	char *argv2[] = { "update-ep", "-i", "eth0", "-j", QUOTE({
@@ -953,6 +955,8 @@ static void test_trn_cli_update_ep_subcmd(void **state)
 		.hosted_interface = hosted_itf,
 		.veth = vitf,
 		.tunid = 3,
+		.pod_label_value = 10,
+		.namespace_label_value = 1
 	};
 
 	memcpy(exp_ep.mac, mac, sizeof(char) * 6);

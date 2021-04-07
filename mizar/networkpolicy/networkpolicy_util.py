@@ -516,6 +516,7 @@ class NetworkPolicyUtil:
         for ep in eps.values():
             ep.pod_label_value = pod_label_value
             ep.namespace_label_value = namespace_label_value
+            ep.update_ep_rpc()
 
         self.handle_networkpolicy_change(policy_name_list)
 

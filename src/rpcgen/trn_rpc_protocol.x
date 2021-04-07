@@ -70,6 +70,8 @@ struct rpc_trn_endpoint_t {
        string hosted_interface<20>;
        string veth<20>;
        uint64_t tunid;
+       uint32_t pod_label_value;
+       uint32_t namespace_label_value;
 };
 
 /* Defines a unique key to get/delete an RP (in DP) */

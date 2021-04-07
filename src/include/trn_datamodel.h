@@ -78,6 +78,8 @@ struct endpoint_t {
 	__u32 remote_ips[TRAN_MAX_REMOTES];
 	int hosted_iface;
 	unsigned char mac[6];
+	int pod_label_value;
+	int namespace_label_value;
 } __attribute__((packed, aligned(4)));
 
 struct network_key_t {

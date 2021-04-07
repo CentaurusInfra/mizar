@@ -388,6 +388,9 @@ class Endpoint:
     def delete_agent_substrate(self, ep, bouncer):
         self.rpc.delete_agent_substrate_ep(ep, bouncer.ip)
 
+    def update_ep_rpc(self):
+        self.rpc.update_ep(self)
+
     def update_networkpolicy_per_endpoint(self, data):
         if len(data["old"]) > 0:
             self.delete_network_policy_ingress("no_except", data["old"]["ingress"]["cidr_table_no_except"])
@@ -493,3 +496,9 @@ class Endpoint:
     def delete_network_policy_enforcement_map_egress(self):
         endpointEnforced = EndpointEnforced(self.vni, self.ip)
         self.rpc.delete_network_policy_enforcement_map_egress(self, endpointEnforced)
+
+    def get_pod_label_value(self):
+        return str(self.pod_label_value)
+
+    def get_namespace_label_value(self):
+        return str(self.namespace_label_value)

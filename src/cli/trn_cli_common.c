@@ -326,6 +326,8 @@ int trn_cli_parse_ep(const cJSON *jsonobj, struct rpc_trn_endpoint_t *ep)
 	cJSON *remote_ips = cJSON_GetObjectItem(jsonobj, "remote_ips");
 	cJSON *remote_ip = NULL;
 	cJSON *hosted_iface = cJSON_GetObjectItem(jsonobj, "hosted_iface");
+	cJSON *pod_label_value = cJSON_GetObjectItem(jsonobj, "pod_label_value");
+	cJSON *namespace_label_value = cJSON_GetObjectItem(jsonobj, "namespace_label_value");
 
 	if (veth == NULL) {
 		ep->veth = NULL;
@@ -386,6 +388,24 @@ int trn_cli_parse_ep(const cJSON *jsonobj, struct rpc_trn_endpoint_t *ep)
 		}
 	} else {
 		print_err("MAC is missing or non-string\n");
+		return -EINVAL;
+	}
+
+	if (pod_label_value == NULL) {
+		ep->pod_label_value = 0;
+	} else if (cJSON_IsString(pod_label_value)) {
+		ep->pod_label_value = atoi(pod_label_value->valuestring);
+	} else {
+		print_err("Error: Pod Label Value Error\n");
+		return -EINVAL;
+	}
+
+	if (namespace_label_value == NULL) {
+		ep->namespace_label_value = 0;
+	} else if (cJSON_IsString(namespace_label_value)) {
+		ep->namespace_label_value = atoi(namespace_label_value->valuestring);
+	} else {
+		print_err("Error: Namespace Label Value Error\n");
 		return -EINVAL;
 	}
 
