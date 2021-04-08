@@ -532,6 +532,8 @@ static void test_update_agent_ep_1_svc(void **state)
 		.hosted_interface = hosted_itf,
 		.veth = vitf,
 		.tunid = 3,
+		.pod_label_value = 10,
+		.namespace_label_value = 1
 	};
 
 	memcpy(ep1.mac, mac, sizeof(char) * 6);
@@ -563,7 +565,9 @@ static void test_update_agent_md_1_svc(void **state)
 			.veth = vitf,
 			.tunid = 3,
 			.remote_ips = { .remote_ips_len = 1,
-					.remote_ips_val = remote } },
+					.remote_ips_val = remote },
+			.pod_label_value = 10,
+			.namespace_label_value = 1 },			
 		.net = { .interface = itf,
 			 .prefixlen = 16,
 			 .tunid = 3,

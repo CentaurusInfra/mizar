@@ -922,7 +922,9 @@ static void test_trn_cli_update_ep_subcmd(void **state)
 				  "mac": "1:2:3:4:5:6",
 				  "veth": "veth0",
 				  "remote_ips": ["10.0.0.2"],
-				  "hosted_iface": "peer"
+				  "hosted_iface": "peer",
+				  "pod_label_value": "10",
+				  "namespace_label_value": "1"
 			  }) };
 
 	char *argv3[] = { "update-ep", "-i", "eth0", "-j", QUOTE({
@@ -930,7 +932,9 @@ static void test_trn_cli_update_ep_subcmd(void **state)
 				  "mac": "1:2:3:4:5:6",
 				  "veth": "veth0",
 				  "remote_ips": ["10.0.0.2"],
-				  "hosted_iface": "peer"
+				  "hosted_iface": "peer",
+				  "pod_label_value": "10",
+				  "namespace_label_value": "1"
 			  }) };
 
 	char *argv4[] = { "update-ep", "-i", "eth0", "-j", QUOTE({
@@ -938,7 +942,9 @@ static void test_trn_cli_update_ep_subcmd(void **state)
 				  "mac": "1:2:3:4:5:6",
 				  "veth": "veth0",
 				  "remote_ips": [10.0.0.2],
-				  "hosted_iface": "peer"
+				  "hosted_iface": "peer",
+				  "pod_label_value": "10",
+				  "namespace_label_value": "1"
 			  }) };
 
 	char itf[] = "eth0";
@@ -1310,7 +1316,9 @@ static void test_trn_cli_update_agent_md_subcmd(void **state)
 					  "mac": "1:2:3:4:5:6",
 					  "veth": "veth0",
 					  "remote_ips": ["10.0.0.2"],
-					  "hosted_iface": "eth0"
+					  "hosted_iface": "eth0",
+					  "pod_label_value": "10",
+					  "namespace_label_value": "1"
 				  },
 				  "net": {
 					  "tunnel_id": "3",
@@ -1335,7 +1343,9 @@ static void test_trn_cli_update_agent_md_subcmd(void **state)
 				"mac": "1:2:3:4:5:6",
 				"veth": "veth0",
 				"remote_ips": ["10.0.0.2"],
-				"hosted_iface": "eth0"
+				"hosted_iface": "eth0",
+				"pod_label_value": "10",
+				"namespace_label_value": "1"
 			},
 			"net": {
 				"tunnel_id": "3",
@@ -1355,7 +1365,9 @@ static void test_trn_cli_update_agent_md_subcmd(void **state)
 					  "mac": "1:2:3:4:5:6",
 					  "veth": "veth0",
 					  "remote_ips": ["10.0.0.2"],
-					  "hosted_iface": "eth0"
+					  "hosted_iface": "eth0",
+					  "pod_label_value": "10",
+					  "namespace_label_value": "1"
 				  },
 				  "net": {
 					  "tunnel_id": "3",
@@ -1388,7 +1400,9 @@ static void test_trn_cli_update_agent_md_subcmd(void **state)
 			.veth = vitf,
 			.tunid = 3,
 			.remote_ips = { .remote_ips_len = 1,
-					.remote_ips_val = remote } },
+					.remote_ips_val = remote },
+			.pod_label_value = 10,
+			.namespace_label_value = 1 },
 		.net = { .interface = itf,
 			 .prefixlen = 16,
 			 .tunid = 3,
@@ -1608,6 +1622,8 @@ static void test_trn_cli_get_ep_subcmd(void **state)
 		.hosted_interface = hosted_itf,
 		.veth = vitf,
 		.tunid = 3,
+		.pod_label_value = 10,
+		.namespace_label_value = 1
 	};
 	memcpy(get_ep_1_ret_val.mac, mac, sizeof(char) * 6);
 
@@ -1694,6 +1710,8 @@ static void test_trn_cli_get_agent_ep_subcmd(void **state)
 		.hosted_interface = hosted_itf,
 		.veth = vitf,
 		.tunid = 3,
+		.pod_label_value = 10,
+		.namespace_label_value = 1
 	};
 	memcpy(get_agent_ep_1_ret_val.mac, mac, sizeof(char) * 6);
 
@@ -1783,7 +1801,9 @@ static void test_trn_cli_get_agent_md_subcmd(void **state)
 			.veth = vitf,
 			.tunid = 3,
 			.remote_ips = { .remote_ips_len = 1,
-					.remote_ips_val = remote } },
+					.remote_ips_val = remote },
+			.pod_label_value = 10,
+			.namespace_label_value = 1 },
 		.net = { .interface = itf,
 			 .prefixlen = 16,
 			 .tunid = 3,
