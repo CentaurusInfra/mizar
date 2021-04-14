@@ -87,17 +87,13 @@ sudo apt install -fy python3-apt
 sudo apt update
 sudo apt install -fy python3-pip
 sudo sed -i '1c\#!/usr/bin/python3.8 -Es' /usr/bin/lsb_release
-sudo usr/local/bin/python3.8 -m pip install --upgrade pip -y -q
+sudo /usr/local/bin/python3.8 -m pip install --upgrade pip -y -q
+
+sudo rm -rf $HOME/Python-3.8.8.tgz
+sudo rm -rf $HOME/Python-3.8.8
 
 sudo apt install awscli -y -q
 sudo apt install jq -y -q
-
-####################
-
-echo Setup: Install Kind
-
-cd ~/go/src/
-GO111MODULE="on" go get sigs.k8s.io/kind@v0.7.0
 
 ####################
 
@@ -146,6 +142,26 @@ sudo pip3 install netaddr
 sudo pip3 install kopf
 sudo pip3 install PyYAML
 
+#####################
+
+echo Setup: Install Containerd
+
+cd $HOME
+wget https://github.com/containerd/containerd/releases/download/v1.4.2/containerd-1.4.2-linux-amd64.tar.gz
+cd /usr
+sudo tar xvf $HOME/containerd-1.4.2-linux-amd64.tar.gz
+
+cd $HOME/go/src/k8s.io/arktos
+wget -qO- https://github.com/futurewei-cloud/containerd/releases/download/tenant-cni-args/containerd.zip | zcat > /tmp/containerd
+sudo chmod +x /tmp/containerd
+sudo systemctl stop containerd
+sudo mv /usr/bin/containerd /usr/bin/containerd.bak
+sudo mv /tmp/containerd /usr/bin/
+sudo systemctl restart containerd
+sudo systemctl restart docker
+
+sudo rm -rf $HOME/containerd-1.4.2-linux-amd64.tar.gz
+
 ####################
 
 echo Setup: Setup profile
@@ -162,12 +178,23 @@ echo alias status=\"git status\" >> ~/.profile
 echo alias pods=\"kubectl get pods -A -o wide\" >> ~/.profile
 echo alias nets=\"echo 'kubectl get subnets'\; kubectl get subnets\; echo\; echo 'kubectl get droplets'\; kubectl get droplets\; echo\; echo 'kubectl get bouncers'\; kubectl get bouncers\; echo\; echo 'kubectl get dividers'\; kubectl get dividers\; echo\; echo 'kubectl get vpcs'\; kubectl get vpcs\; echo\; echo 'kubectl get eps'\; kubectl get eps\; echo\; echo 'kubectl get networks'\; kubectl get networks\" >> ~/.profile
 
+echo alias kubectl=\'$HOME/go/src/k8s.io/arktos/cluster/kubectl.sh\'  >> ~/.profile
+echo alias kubeop=\"kubectl get pods \|\ grep mizar-operator \|\ awk \'{print \$1}\' \|\ xargs -i kubectl logs {}\"  >> ~/.profile
+echo alias kubed=\"kubectl get pods \|\ grep mizar-daemon \|\ awk \'{print \$1}\' \|\ xargs -i kubectl logs {}\"  >> ~/.profile
+echo export CONTAINER_RUNTIME_ENDPOINT=\"\containerRuntime,container,/run/containerd/containerd.sock\" >> ~/.profile
 echo export PYTHONPATH=\"\$HOME/mizar/\" >> ~/.profile
 echo export GPG_TTY=\$\(tty\) >> ~/.profile
 
 echo cd \$HOME/go/src/k8s.io/arktos >> ~/.profile
 
 source "$HOME/.profile"
+
+####################
+
+echo Setup: Install Kind
+
+cd ~/go/src/
+GO111MODULE="on" go get sigs.k8s.io/kind@v0.7.0
 
 ####################
 
@@ -180,6 +207,21 @@ GO111MODULE=on go install ./kubetest
 GO111MODULE=on go mod vendor
 
 ####################
+
+echo Setup: Basic settings
+
+sudo systemctl stop ufw
+sudo systemctl disable ufw
+sudo swapoff -a
+sudo sed -i '/swap/s/^/#/g' /etc/fstab
+sudo partprobe
+IP_ADDR=$(hostname -I | awk '{print $1}')
+HOSTNAME=$(hostname)
+sudo sed -i '2s/.*/'$IP_ADDR' '$HOSTNAME'/' /etc/hosts
+sudo rm -f /etc/resolv.conf
+sudo ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
+
+#####################
 
 echo Setup: Machine setup completed!
 
