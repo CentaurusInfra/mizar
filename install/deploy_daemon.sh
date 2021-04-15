@@ -22,21 +22,21 @@
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 DIR=${1:-.}
-USER=${2:-dev}
+MODE=${2:-dev}
 DOCKER_ACC=${3:-"localhost:5000"}
 YAML_FILE="dev.daemon.deploy.yaml"
 
-if [[ "$USER" == "user" || "$USER" == "final" ]]; then
+if [[ "$MODE" == "user" || "$MODE" == "final" ]]; then
     DOCKER_ACC="mizarnet"
     YAML_FILE="daemon.deploy.yaml"
 fi
 
 # Build the daemon image
-if [[ "$USER" == "dev" || "$USER" == "final" ]]; then
-    docker image build -t $DOCKER_ACC/dropletd:latest -f $DIR/etc/docker/daemon.Dockerfile $DIR
-    docker image push $DOCKER_ACC/dropletd:latest
+if [[ "$MODE" == "dev" || "$MODE" == "final" ]]; then
+    sudo docker image build -t $DOCKER_ACC/dropletd:latest -f $DIR/etc/docker/daemon.Dockerfile $DIR
+    sudo docker image push $DOCKER_ACC/dropletd:latest
 fi
 
 # Delete existing deployment and deploy
-kubectl delete daemonset.apps/mizar-daemon 2> /tmp/kubetctl.err
-kubectl apply -f $DIR/etc/deploy/$YAML_FILE
+sudo kubectl delete daemonset.apps/mizar-daemon 2> ${KUBECTL_LOG}
+sudo kubectl apply -f $DIR/etc/deploy/$YAML_FILE

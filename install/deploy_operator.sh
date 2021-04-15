@@ -22,22 +22,22 @@
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 DIR=${1:-.}
-USER=${2:-dev}
+MODE=${2:-dev}
 DOCKER_ACC=${3:-"localhost:5000"}
 YAML_FILE="dev.operator.deploy.yaml"
 . install/common.sh
 
-if [[ "$USER" == "user" || "$USER" == "final" ]]; then
+if [[ "$MODE" == "user" || "$MODE" == "final" ]]; then
     DOCKER_ACC="mizarnet"
     YAML_FILE="operator.deploy.yaml"
 fi
 
 # Build the operator image
-if [[ "$USER" == "dev" || "$USER" == "final" ]]; then
-    docker image build -t $DOCKER_ACC/endpointopr:latest -f $DIR/etc/docker/operator.Dockerfile $DIR
-    docker image push $DOCKER_ACC/endpointopr:latest
+if [[ "$MODE" == "dev" || "$MODE" == "final" ]]; then
+    sudo docker image build -t $DOCKER_ACC/endpointopr:latest -f $DIR/etc/docker/operator.Dockerfile $DIR
+    sudo docker image push $DOCKER_ACC/endpointopr:latest
 fi
 
 # Delete existing deployment and deploy
 delete_pods mizar-operator deployment
-kubectl apply -f $DIR/etc/deploy/$YAML_FILE
+sudo kubectl apply -f $DIR/etc/deploy/$YAML_FILE

@@ -25,7 +25,7 @@
 function get_status() {
     OBJECT=$1
 
-    kubectl get $OBJECT 2> /tmp/kubetctl.err | awk '
+    sudo kubectl get $OBJECT 2> ${KUBECTL_LOG} | awk '
     NR==1 {
         for (i=1; i<=NF; i++) {
             f[$i] = i
@@ -58,42 +58,46 @@ function check_ready() {
 CWD=$(pwd)
 KINDCONF="${HOME}/mizar/build/tests/kind/config"
 MIZARCONF="${HOME}/mizar/build/tests/mizarcni.config"
-KINDHOME="${HOME}/.kube/config"
-USER=${1:-user}
+KINDUSERCONFDIR="${HOME}/.kube"
+KINDUSERCONF="${KINDUSERCONFDIR}/config"
+KUBECTL_LOG="/tmp/${USER}_kubetctl.err"
+MODE=${1:-user}
 NODES=${2:-3}
 timeout=240
 
-kind delete cluster
-docker network rm kind 2> /dev/null
+sudo kind delete cluster
+sudo docker network rm kind 2> /dev/null
 # All interfaces in the network have an MTU of 9000 to
 # simulate a real datacenter. Since all container traffic
 # goes through the docker bridge, we must ensure the bridge
 # interfaces also has the same MTU to prevent ip fragmentation.
-docker network create -d bridge \
+sudo docker network create -d bridge \
   --subnet=172.18.0.0/16 \
   --gateway=172.18.0.1 \
   --opt com.docker.network.driver.mtu=9000 \
   kind
 
-if [[ "$USER" == "dev" ]]; then
+if [[ "$MODE" == "dev" ]]; then
     DOCKER_ACC="localhost:5000"
 else
-    DOCKER_ACC="fwnetworking"
+    DOCKER_ACC="mizarnet"
 fi
-docker image build -t $DOCKER_ACC/kindnode:latest -f k8s/kind/Dockerfile .
+sudo docker image build -t $DOCKER_ACC/kindnode:latest -f k8s/kind/Dockerfile .
 
-source k8s/kind/create_cluster.sh $KINDCONF $USER $NODES
+source k8s/kind/create_cluster.sh $KINDCONF $MODE $NODES
 
 api_ip=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' kind-control-plane`
-sed "s/server: https:\/\/127.0.0.1:[[:digit:]]\+/server: https:\/\/$api_ip:6443/" $KINDCONF > $MIZARCONF
-ln -snf $KINDCONF $KINDHOME
+sudo sed "s/server: https:\/\/127.0.0.1:[[:digit:]]\+/server: https:\/\/$api_ip:6443/" $KINDCONF > $MIZARCONF
+sudo ln -snf ${KINDCONF} ${KINDUSERCONF}
+sudo chown -R -L ${USER}:${USER} ${KINDUSERCONFDIR}
+sudo chown -R -L ${USER}:${USER} ./build
 
 source install/create_crds.sh $CWD
-source install/create_service_account.sh $CWD $USER
+source install/create_service_account.sh $CWD
 
-source install/deploy_daemon.sh $CWD $USER $DOCKER_ACC
-source install/deploy_operator.sh $CWD $USER $DOCKER_ACC
-source install/create_testimage.sh $CWD $USER $DOCKER_ACC
+source install/deploy_daemon.sh $CWD $MODE $DOCKER_ACC
+source install/deploy_operator.sh $CWD $MODE $DOCKER_ACC
+source install/create_testimage.sh $CWD $DOCKER_ACC
 
 end=$((SECONDS + $timeout))
 echo -n "Waiting for cluster to come up."

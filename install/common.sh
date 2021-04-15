@@ -24,13 +24,13 @@
 function delete_pods {
     NAME=$1
     TYPE=$2
-    kubectl delete $TYPE.apps/$NAME 2> /tmp/kubetctl.err
+    sudo kubectl delete $TYPE.apps/$NAME 2> ${KUBECTL_LOG}
     echo -n "Waiting for ${NAME} pods to terminate."
-    kubectl get pods | grep $NAME > /dev/null
+    sudo kubectl get pods | grep $NAME > /dev/null
     while [[ $? -eq 0 ]]; do
         echo -n "."
         sleep 1
-        kubectl get pods | grep $NAME > /dev/null
+        sudo kubectl get pods | grep $NAME > /dev/null
     done
     echo
 }
@@ -41,10 +41,10 @@ function common:check_cluster_ready {
     local function_name="common:check_cluster_ready"
     echo "[$function_name] Checking cluster readyness by getting node status."
     if [[ $show_cluster_status == 1 ]]; then
-        kubectl cluster-info
+        sudo kubectl cluster-info
     fi
 
-    local cluster_status=`kubectl cluster-info | grep Kubernetes | grep is | grep running`
+    local cluster_status=`sudo kubectl cluster-info | grep Kubernetes | grep is | grep running`
     if [[ -z "$cluster_status" ]]; then
         return 0
     else
@@ -56,7 +56,7 @@ function common:check_cluster_ready {
 function common:get_object_status {
     local object=$1
 
-    kubectl get $object 2> /tmp/kubetctl.err | awk '
+    kubectl get $object 2> ${KUBECTL_LOG} | awk '
     NR==1 {
         for (i=1; i<=NF; i++) {
             f[$i] = i
@@ -145,21 +145,21 @@ function common:build_docker_images {
     local docker_account="localhost:5000"
     local reg_name='local-registry'
 
-    local registry_running="$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)"
+    local registry_running="$(sudo docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)"
     if [ "${registry_running}" != "true" ]; then
-        docker run -d --restart=always -p "5000:5000" --name "${reg_name}" registry:2
+        sudo docker run -d --restart=always -p "5000:5000" --name "${reg_name}" registry:2
     fi
 
-    docker image build -t $docker_account/mizar:latest -f etc/docker/mizar.Dockerfile .
-    docker image build -t $docker_account/dropletd:latest -f etc/docker/daemon.Dockerfile .
-    docker image build -t $docker_account/endpointopr:latest -f etc/docker/operator.Dockerfile .
-    docker image build -t $docker_account/testpod:latest -f etc/docker/test.Dockerfile .
-    docker image build -t $docker_account/mizarcni:latest -f etc/docker/mizarcni.Dockerfile .
+    sudo docker image build -t $docker_account/mizar:latest -f etc/docker/mizar.Dockerfile .
+    sudo docker image build -t $docker_account/dropletd:latest -f etc/docker/daemon.Dockerfile .
+    sudo docker image build -t $docker_account/endpointopr:latest -f etc/docker/operator.Dockerfile .
+    sudo docker image build -t $docker_account/testpod:latest -f etc/docker/test.Dockerfile .
+    sudo docker image build -t $docker_account/mizarcni:latest -f etc/docker/mizarcni.Dockerfile .
 }
 
 function common:check_pod_by_image {
     local image_name=$1
-    local pod_name=$(kubectl get pods -l run=$image_name | grep "$image_name" | awk '{print $1}')
+    local pod_name=$(sudo kubectl get pods -l run=$image_name | grep "$image_name" | awk '{print $1}')
     if [[ -z $pod_name ]]; then
         return 0
     else
@@ -170,12 +170,12 @@ function common:check_pod_by_image {
 function common:check_pod_running_in_mizar {
     local image_name="pod-test"
     
-    kubectl run $image_name --image=localhost:5000/testpod
+    sudo kubectl run $image_name --image=localhost:5000/testpod
     sleep 2
-    kubectl wait --for=condition=Ready pod -l run=$image_name --timeout=60s
+    sudo kubectl wait --for=condition=Ready pod -l run=$image_name --timeout=60s
 
-    local pod_name=$(kubectl get pods -l run=$image_name -o wide | grep " 10.0." | awk '{print $1}')
-    kubectl delete deploy $image_name
+    local pod_name=$(sudo kubectl get pods -l run=$image_name -o wide | grep " 10.0." | awk '{print $1}')
+    sudo kubectl delete deploy $image_name
     common:execute_and_retry "common:check_pod_by_image $image_name" 0 "" "" 60 0
     if [[ -z $pod_name ]]; then
         return 0
