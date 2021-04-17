@@ -22,8 +22,15 @@
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 DIR=${1:-.}
-DOCKER_ACC=${2:-"localhost:5000"}
+MODE=${2:-dev}
+DOCKER_ACC=${3:-"localhost:5000"}
+
+if [[ "$MODE" == "user" || "$MODE" == "final" ]]; then
+    DOCKER_ACC="mizarnet"
+fi
 
 # Build the daemon image
-sudo docker image build -t $DOCKER_ACC/testpod:latest -f $DIR/etc/docker/test.Dockerfile $DIR
-sudo docker image push $DOCKER_ACC/testpod:latest
+if [[ "$MODE" == "dev" || "$MODE" == "final" ]]; then
+  sudo docker image build -t $DOCKER_ACC/testpod:latest -f $DIR/etc/docker/test.Dockerfile $DIR
+  sudo docker image push $DOCKER_ACC/testpod:latest
+fi

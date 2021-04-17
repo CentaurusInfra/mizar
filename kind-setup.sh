@@ -65,6 +65,11 @@ MODE=${1:-user}
 NODES=${2:-3}
 timeout=240
 
+if [[ "$MODE" == "dev" ]]; then
+  make clean
+  make all
+fi
+
 sudo kind delete cluster
 sudo docker network rm kind 2> /dev/null
 # All interfaces in the network have an MTU of 9000 to
@@ -97,7 +102,7 @@ source install/create_service_account.sh $CWD
 
 source install/deploy_daemon.sh $CWD $MODE $DOCKER_ACC
 source install/deploy_operator.sh $CWD $MODE $DOCKER_ACC
-source install/create_testimage.sh $CWD $DOCKER_ACC
+source install/create_testimage.sh $CWD $MODE $DOCKER_ACC
 
 end=$((SECONDS + $timeout))
 echo -n "Waiting for cluster to come up."
