@@ -24,7 +24,7 @@
 DIR=${1:-.}
 
 # Create the service account
-sudo kubectl apply -f $DIR/etc/account/serviceaccount.yaml
+kubectl apply -f $DIR/etc/account/serviceaccount.yaml
 
 # Bind the service account to cluster admin
-sudo kubectl apply -f $DIR/etc/account/binding.yaml
+kubectl apply -f $DIR/etc/account/binding.yaml

@@ -40,4 +40,4 @@ fi
 
 # Delete existing deployment and deploy
 delete_pods mizar-operator deployment
-sudo kubectl apply -f $DIR/etc/deploy/$YAML_FILE
+kubectl apply -f $DIR/etc/deploy/$YAML_FILE

@@ -24,13 +24,13 @@
 function delete_pods {
     NAME=$1
     TYPE=$2
-    sudo kubectl delete $TYPE.apps/$NAME 2> ${KUBECTL_LOG}
+    kubectl delete $TYPE.apps/$NAME 2> ${KUBECTL_LOG}
     echo -n "Waiting for ${NAME} pods to terminate."
-    sudo kubectl get pods | grep $NAME > /dev/null
+    kubectl get pods | grep $NAME > /dev/null
     while [[ $? -eq 0 ]]; do
         echo -n "."
         sleep 1
-        sudo kubectl get pods | grep $NAME > /dev/null
+        kubectl get pods | grep $NAME > /dev/null
     done
     echo
 }
@@ -41,10 +41,10 @@ function common:check_cluster_ready {
     local function_name="common:check_cluster_ready"
     echo "[$function_name] Checking cluster readyness by getting node status."
     if [[ $show_cluster_status == 1 ]]; then
-        sudo kubectl cluster-info
+        kubectl cluster-info
     fi
 
-    local cluster_status=`sudo kubectl cluster-info | grep Kubernetes | grep is | grep running`
+    local cluster_status=`kubectl cluster-info | grep Kubernetes | grep is | grep running`
     if [[ -z "$cluster_status" ]]; then
         return 0
     else
@@ -159,7 +159,7 @@ function common:build_docker_images {
 
 function common:check_pod_by_image {
     local image_name=$1
-    local pod_name=$(sudo kubectl get pods -l run=$image_name | grep "$image_name" | awk '{print $1}')
+    local pod_name=$(kubectl get pods -l run=$image_name | grep "$image_name" | awk '{print $1}')
     if [[ -z $pod_name ]]; then
         return 0
     else
@@ -170,12 +170,12 @@ function common:check_pod_by_image {
 function common:check_pod_running_in_mizar {
     local image_name="pod-test"
     
-    sudo kubectl run $image_name --image=localhost:5000/testpod
+    kubectl run $image_name --image=localhost:5000/testpod
     sleep 2
-    sudo kubectl wait --for=condition=Ready pod -l run=$image_name --timeout=60s
+    kubectl wait --for=condition=Ready pod -l run=$image_name --timeout=60s
 
-    local pod_name=$(sudo kubectl get pods -l run=$image_name -o wide | grep " 10.0." | awk '{print $1}')
-    sudo kubectl delete deploy $image_name
+    local pod_name=$(kubectl get pods -l run=$image_name -o wide | grep " 10.0." | awk '{print $1}')
+    kubectl delete deploy $image_name
     common:execute_and_retry "common:check_pod_by_image $image_name" 0 "" "" 60 0
     if [[ -z $pod_name ]]; then
         return 0

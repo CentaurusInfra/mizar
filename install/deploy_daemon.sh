@@ -38,5 +38,5 @@ if [[ "$MODE" == "dev" || "$MODE" == "final" ]]; then
 fi
 
 # Delete existing deployment and deploy
-sudo kubectl delete daemonset.apps/mizar-daemon 2> ${KUBECTL_LOG}
-sudo kubectl apply -f $DIR/etc/deploy/$YAML_FILE
+kubectl delete daemonset.apps/mizar-daemon 2> ${KUBECTL_LOG}
+kubectl apply -f $DIR/etc/deploy/$YAML_FILE

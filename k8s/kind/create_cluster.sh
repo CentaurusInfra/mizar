@@ -82,6 +82,6 @@ EOF
 if [[ $reg_network == "kind" ]]; then
   sudo docker network connect $reg_network "${reg_name}"
   for node in $(sudo kind get nodes); do
-    sudo kubectl annotate node "${node}" "kind.x-k8s.io/registry=localhost:${reg_port}";
+    kubectl annotate node "${node}" "kind.x-k8s.io/registry=localhost:${reg_port}";
   done
 fi

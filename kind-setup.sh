@@ -25,7 +25,7 @@
 function get_status() {
     OBJECT=$1
 
-    sudo kubectl get $OBJECT 2> ${KUBECTL_LOG} | awk '
+    kubectl get $OBJECT 2> ${KUBECTL_LOG} | awk '
     NR==1 {
         for (i=1; i<=NF; i++) {
             f[$i] = i

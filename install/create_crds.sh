@@ -24,16 +24,16 @@
 DIR=${1:-.}
 
 # Create the CRDs
-sudo kubectl delete bouncers.mizar.com --all 2> ${KUBECTL_LOG}
-sudo kubectl delete dividers.mizar.com --all 2> ${KUBECTL_LOG}
-sudo kubectl delete droplets.mizar.com --all 2> ${KUBECTL_LOG}
-sudo kubectl delete endpoints.mizar.com --all 2> ${KUBECTL_LOG}
-sudo kubectl delete subnets.mizar.com --all 2> ${KUBECTL_LOG}
-sudo kubectl delete vpcs.mizar.com --all 2> ${KUBECTL_LOG}
+kubectl delete bouncers.mizar.com --all 2> ${KUBECTL_LOG}
+kubectl delete dividers.mizar.com --all 2> ${KUBECTL_LOG}
+kubectl delete droplets.mizar.com --all 2> ${KUBECTL_LOG}
+kubectl delete endpoints.mizar.com --all 2> ${KUBECTL_LOG}
+kubectl delete subnets.mizar.com --all 2> ${KUBECTL_LOG}
+kubectl delete vpcs.mizar.com --all 2> ${KUBECTL_LOG}
 
-sudo kubectl apply -f $DIR/etc/crds/bouncers.crd.yaml
-sudo kubectl apply -f $DIR/etc/crds/dividers.crd.yaml
-sudo kubectl apply -f $DIR/etc/crds/droplets.crd.yaml
-sudo kubectl apply -f $DIR/etc/crds/endpoints.crd.yaml
-sudo kubectl apply -f $DIR/etc/crds/subnets.crd.yaml
-sudo kubectl apply -f $DIR/etc/crds/vpcs.crd.yaml
+kubectl apply -f $DIR/etc/crds/bouncers.crd.yaml
+kubectl apply -f $DIR/etc/crds/dividers.crd.yaml
+kubectl apply -f $DIR/etc/crds/droplets.crd.yaml
+kubectl apply -f $DIR/etc/crds/endpoints.crd.yaml
+kubectl apply -f $DIR/etc/crds/subnets.crd.yaml
+kubectl apply -f $DIR/etc/crds/vpcs.crd.yaml
