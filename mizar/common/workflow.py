@@ -23,6 +23,7 @@ from __future__ import annotations
 import luigi
 from abc import ABC, abstractmethod
 from mizar.common.wf_param import *
+from mizar.common.constants import OBJ_DEFAULTS
 
 
 class WorkflowTask(luigi.Task):
@@ -30,7 +31,7 @@ class WorkflowTask(luigi.Task):
     temporary_error_status = False
     permanent_error_status = False
     error_message = ""
-    delay = 5
+    delay = OBJ_DEFAULTS.kopf_retry_delay
     param = HandlerParam()
 
     def finalize(self):

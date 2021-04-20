@@ -103,12 +103,13 @@ class DropletOperator(object):
 
     def on_delete(self, body, spec, **kwargs):
         name = kwargs['name']
-        logger.info("*delete_droplet {}".format(name))
-        # self.ds.delete(name)
 
     def create_droplet(self, ip):
-        clnt = DropletClient(ip)
-        info = clnt.GetDropletInfo()
+        try :
+            clnt = DropletClient(ip)
+            info = clnt.GetDropletInfo()
+        except:
+            return False
         spec = {
             'ip': info.ip,
             'mac': info.mac,
@@ -117,3 +118,4 @@ class DropletOperator(object):
         }
         droplet = Droplet(info.name, self.obj_api, self.store, spec)
         droplet.create_obj()
+        return True

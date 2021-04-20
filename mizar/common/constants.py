@@ -104,6 +104,7 @@ class OBJ_DEFAULTS:
     arktos_pod_label = "arktos.futurewei.com/network"
     arktos_pod_annotation = "arktos.futurewei.com/nic"
     kopf_max_retries = 10
+    kopf_retry_delay = 30
 
 
 class RESOURCES:
