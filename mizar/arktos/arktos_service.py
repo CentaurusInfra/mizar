@@ -208,7 +208,7 @@ class ArktosService(BuiltinsServiceServicer):
         param.name = request.name
         param.body['metadata'] = {}
         param.body["metadata"]["namespace"] = request.namespace
-        param.extra = request.tenant
+        param.body['metadata']['tenant'] = request.tenant
         return run_arktos_workflow(wffactory().k8sServiceDelete(param=param))
 
     def DeleteNetworkPolicy(self, request, context):
