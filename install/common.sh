@@ -24,7 +24,7 @@
 function delete_pods {
     NAME=$1
     TYPE=$2
-    kubectl delete $TYPE.apps/$NAME 2> /tmp/kubetctl.err
+    kubectl delete $TYPE.apps/$NAME 2> ${KUBECTL_LOG}
     echo -n "Waiting for ${NAME} pods to terminate."
     kubectl get pods | grep $NAME > /dev/null
     while [[ $? -eq 0 ]]; do
@@ -56,7 +56,7 @@ function common:check_cluster_ready {
 function common:get_object_status {
     local object=$1
 
-    kubectl get $object 2> /tmp/kubetctl.err | awk '
+    kubectl get $object 2> ${KUBECTL_LOG} | awk '
     NR==1 {
         for (i=1; i<=NF; i++) {
             f[$i] = i

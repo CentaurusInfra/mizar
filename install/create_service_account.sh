@@ -22,7 +22,6 @@
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 DIR=${1:-.}
-USER=${2:-dev}
 
 # Create the service account
 kubectl apply -f $DIR/etc/account/serviceaccount.yaml

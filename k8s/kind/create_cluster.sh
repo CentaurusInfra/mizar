@@ -22,7 +22,7 @@
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 KINDCONF=${1:-"${PWD}/build/tests/kind/config"}
-USER=${2:-dev}
+MODE=${2:-dev}
 NODES=${3:-1}
 
 # create registry container unless it already exists
@@ -45,7 +45,7 @@ case "${kind_version}" in
     ;;
 esac
 
-if [[ $USER == "dev" ]]; then
+if [[ $MODE == "dev" ]]; then
   PATCH="containerdConfigPatches:
 - |-
   [plugins.\"io.containerd.grpc.v1.cri\".registry.mirrors.\"localhost:${reg_port}\"]
