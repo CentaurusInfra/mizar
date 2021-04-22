@@ -271,6 +271,7 @@ program RPC_TRANSIT_REMOTE_PROTOCOL {
 
                 int UPDATE_PACKET_METADATA(rpc_trn_packet_metadata_t) = 35;
                 int DELETE_PACKET_METADATA(rpc_trn_packet_metadata_key_t) = 36;
+                rpc_trn_packet_metadata_t GET_PACKET_METADATA(rpc_trn_packet_metadata_key_t) = 37;
 
           } = 1;
 

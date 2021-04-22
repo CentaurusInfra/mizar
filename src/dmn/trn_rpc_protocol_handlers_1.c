@@ -686,6 +686,52 @@ error:
 	return &result;
 }
 
+rpc_trn_packet_metadata_t *get_packet_metadata_1_svc(rpc_trn_packet_metadata_key_t *argp,
+				 struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static rpc_trn_packet_metadata_t result;
+	int rc;
+	struct packet_metadata_key_t key;
+	struct packet_metadata_t value;
+
+	TRN_LOG_DEBUG("get_packet_metadata_1 packet_metadata tunid: %ld, ip: 0x%x,"
+		      " on interface: %s",
+		      argp->tunid, argp->ip, argp->interface);
+
+	struct user_metadata_t *md = trn_itf_table_find(argp->interface);
+
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s",
+			      argp->interface);
+		goto error;
+	}
+
+	memcpy(key.tunip, &argp->tunid, sizeof(argp->tunid));
+	key.tunip[2] = argp->ip;
+
+	rc = trn_get_packet_metadata(md, &key, &value);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR(
+			"Cannot get transit XDP with packet_metadata %d on interface %s",
+			key.tunip[2], argp->interface);
+		goto error;
+	}
+
+	result.interface = argp->interface;
+	char buf[IF_NAMESIZE];
+	result.tunid = argp->tunid;
+	result.ip = argp->ip;
+	result.pod_label_value = value.pod_label_value;
+	result.namespace_label_value = value.namespace_label_value;
+	return &result;
+
+error:
+	result.interface = "";
+	return &result;
+}
+
 int *load_transit_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
