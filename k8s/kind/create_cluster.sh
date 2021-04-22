@@ -29,18 +29,18 @@ NODES=${3:-1}
 reg_name='local-kind-registry'
 reg_port='5000'
 reg_network='kind'
-running="$(sudo docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)"
+running="$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)"
 reg_url=$reg_name
-kind_version=$(sudo kind version)
+kind_version=$(kind version)
 if [ "${running}" != 'true' ]; then
-  sudo docker run \
+  docker run \
     -d --restart=always -p "${reg_port}:5000" --name "${reg_name}" \
     registry:2
 fi
 
 case "${kind_version}" in
   "kind v0.7."* | "kind v0.6."* | "kind v0.5."*)
-    reg_url="$(sudo docker inspect -f '{{.NetworkSettings.IPAddress}}' "${reg_name}")"
+    reg_url="$(docker inspect -f '{{.NetworkSettings.IPAddress}}' "${reg_name}")"
     reg_network='bridge'
     ;;
 esac
@@ -67,7 +67,7 @@ do
 done
 
 # create a cluster with the local registry enabled in containerd and n Nodes.
-cat <<EOF | sudo kind create cluster --name kind --kubeconfig ${KINDCONF} --config=-
+cat <<EOF | kind create cluster --name kind --kubeconfig ${KINDCONF} --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 networking:
@@ -80,8 +80,8 @@ ${FINAL_NODES}
 EOF
 
 if [[ $reg_network == "kind" ]]; then
-  sudo docker network connect $reg_network "${reg_name}"
-  for node in $(sudo kind get nodes); do
+  docker network connect $reg_network "${reg_name}"
+  for node in $(kind get nodes); do
     kubectl annotate node "${node}" "kind.x-k8s.io/registry=localhost:${reg_port}";
   done
 fi

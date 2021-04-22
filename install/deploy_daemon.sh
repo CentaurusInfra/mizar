@@ -33,8 +33,8 @@ fi
 
 # Build the daemon image
 if [[ "$MODE" == "dev" || "$MODE" == "final" ]]; then
-    sudo docker image build -t $DOCKER_ACC/dropletd:latest -f $DIR/etc/docker/daemon.Dockerfile $DIR
-    sudo docker image push $DOCKER_ACC/dropletd:latest
+    docker image build -t $DOCKER_ACC/dropletd:latest -f $DIR/etc/docker/daemon.Dockerfile $DIR
+    docker image push $DOCKER_ACC/dropletd:latest
 fi
 
 # Delete existing deployment and deploy

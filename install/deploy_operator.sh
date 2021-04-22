@@ -34,8 +34,8 @@ fi
 
 # Build the operator image
 if [[ "$MODE" == "dev" || "$MODE" == "final" ]]; then
-    sudo docker image build -t $DOCKER_ACC/endpointopr:latest -f $DIR/etc/docker/operator.Dockerfile $DIR
-    sudo docker image push $DOCKER_ACC/endpointopr:latest
+    docker image build -t $DOCKER_ACC/endpointopr:latest -f $DIR/etc/docker/operator.Dockerfile $DIR
+    docker image push $DOCKER_ACC/endpointopr:latest
 fi
 
 # Delete existing deployment and deploy

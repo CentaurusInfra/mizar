@@ -145,16 +145,16 @@ function common:build_docker_images {
     local docker_account="localhost:5000"
     local reg_name='local-registry'
 
-    local registry_running="$(sudo docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)"
+    local registry_running="$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)"
     if [ "${registry_running}" != "true" ]; then
-        sudo docker run -d --restart=always -p "5000:5000" --name "${reg_name}" registry:2
+        docker run -d --restart=always -p "5000:5000" --name "${reg_name}" registry:2
     fi
 
-    sudo docker image build -t $docker_account/mizar:latest -f etc/docker/mizar.Dockerfile .
-    sudo docker image build -t $docker_account/dropletd:latest -f etc/docker/daemon.Dockerfile .
-    sudo docker image build -t $docker_account/endpointopr:latest -f etc/docker/operator.Dockerfile .
-    sudo docker image build -t $docker_account/testpod:latest -f etc/docker/test.Dockerfile .
-    sudo docker image build -t $docker_account/mizarcni:latest -f etc/docker/mizarcni.Dockerfile .
+    docker image build -t $docker_account/mizar:latest -f etc/docker/mizar.Dockerfile .
+    docker image build -t $docker_account/dropletd:latest -f etc/docker/daemon.Dockerfile .
+    docker image build -t $docker_account/endpointopr:latest -f etc/docker/operator.Dockerfile .
+    docker image build -t $docker_account/testpod:latest -f etc/docker/test.Dockerfile .
+    docker image build -t $docker_account/mizarcni:latest -f etc/docker/mizarcni.Dockerfile .
 }
 
 function common:check_pod_by_image {

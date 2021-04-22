@@ -70,13 +70,14 @@ if [[ "$MODE" == "dev" ]]; then
   make all
 fi
 
-sudo kind delete cluster
-sudo docker network rm kind 2> /dev/null
+kind delete cluster
+docker rm -f local-kind-registry 2> /dev/null
+docker network rm kind 2> /dev/null
 # All interfaces in the network have an MTU of 9000 to
 # simulate a real datacenter. Since all container traffic
 # goes through the docker bridge, we must ensure the bridge
 # interfaces also has the same MTU to prevent ip fragmentation.
-sudo docker network create -d bridge \
+docker network create -d bridge \
   --subnet=172.18.0.0/16 \
   --gateway=172.18.0.1 \
   --opt com.docker.network.driver.mtu=9000 \
@@ -87,15 +88,23 @@ if [[ "$MODE" == "dev" ]]; then
 else
     DOCKER_ACC="mizarnet"
 fi
-sudo docker image build -t $DOCKER_ACC/kindnode:latest -f k8s/kind/Dockerfile .
+docker image build -t $DOCKER_ACC/kindnode:latest -f k8s/kind/Dockerfile .
 
 source k8s/kind/create_cluster.sh $KINDCONF $MODE $NODES
 
+# Install kubectl
+which kubectl
+if [ $? -ne 0 ]; then
+    k8s_ver="$(docker exec -t kind-control-plane kubelet --version | cut -d'v' -f2 | tr -d '\r')-00"
+    curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+    echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+    sudo apt-get update -y
+    sudo apt-get install -y kubectl="${k8s_ver}"
+fi
+
 api_ip=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' kind-control-plane`
-sudo sed "s/server: https:\/\/127.0.0.1:[[:digit:]]\+/server: https:\/\/$api_ip:6443/" $KINDCONF > $MIZARCONF
-sudo ln -snf ${KINDCONF} ${KINDUSERCONF}
-sudo chown -R -L ${USER}:${USER} ${KINDUSERCONFDIR}
-sudo chown -R -L ${USER}:${USER} ./build
+sed "s/server: https:\/\/127.0.0.1:[[:digit:]]\+/server: https:\/\/$api_ip:6443/" $KINDCONF > $MIZARCONF
+ln -snf ${KINDCONF} ${KINDUSERCONF}
 
 source install/create_crds.sh $CWD
 source install/create_service_account.sh $CWD
