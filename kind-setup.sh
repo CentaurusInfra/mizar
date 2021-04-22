@@ -66,13 +66,25 @@ NODES=${2:-3}
 timeout=240
 
 if [[ "$MODE" == "dev" ]]; then
+    DOCKER_ACC="localhost:5000"
+else
+    DOCKER_ACC="mizarnet"
+fi
+
+# Delete old kind cluser, kind docker network, and images.
+kind delete cluster
+imgs=$(docker images -a | grep $DOCKER_ACC | awk '{print $3}')
+for img in ${imgs[@]}; do
+  docker rmi -f $img
+done
+docker rm -f local-kind-registry 2> /dev/null
+docker network rm kind 2> /dev/null
+
+if [[ "$MODE" == "dev" ]]; then
   make clean
   make all
 fi
 
-kind delete cluster
-docker rm -f local-kind-registry 2> /dev/null
-docker network rm kind 2> /dev/null
 # All interfaces in the network have an MTU of 9000 to
 # simulate a real datacenter. Since all container traffic
 # goes through the docker bridge, we must ensure the bridge
@@ -83,11 +95,6 @@ docker network create -d bridge \
   --opt com.docker.network.driver.mtu=9000 \
   kind
 
-if [[ "$MODE" == "dev" ]]; then
-    DOCKER_ACC="localhost:5000"
-else
-    DOCKER_ACC="mizarnet"
-fi
 docker image build -t $DOCKER_ACC/kindnode:latest -f k8s/kind/Dockerfile .
 
 source k8s/kind/create_cluster.sh $KINDCONF $MODE $NODES
