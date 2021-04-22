@@ -55,6 +55,15 @@ struct bpf_map_def SEC("maps") endpoints_map = {
 };
 BPF_ANNOTATE_KV_PAIR(endpoints_map, struct endpoint_key_t, struct endpoint_t);
 
+struct bpf_map_def SEC("maps") packet_metadata_map = {
+	.type = BPF_MAP_TYPE_HASH,
+	.key_size = sizeof(struct packet_metadata_key_t),
+	.value_size = sizeof(struct packet_metadata_t),
+	.max_entries = TRAN_MAX_NEP,
+	.map_flags = 0,
+};
+BPF_ANNOTATE_KV_PAIR(packet_metadata_map, struct packet_metadata_key_t, struct packet_metadata_t);
+
 struct bpf_map_def SEC("maps") interfaces_map = {
 	.type = BPF_MAP_TYPE_DEVMAP,
 	.key_size = sizeof(int),

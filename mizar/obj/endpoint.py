@@ -493,3 +493,6 @@ class Endpoint:
     def delete_network_policy_enforcement_map_egress(self):
         endpointEnforced = EndpointEnforced(self.vni, self.ip)
         self.rpc.delete_network_policy_enforcement_map_egress(self, endpointEnforced)
+
+    def update_packet_metadata(self):
+        self.rpc.update_packet_metadata(self)

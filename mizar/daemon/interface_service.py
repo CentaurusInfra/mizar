@@ -329,6 +329,8 @@ class LocalTransitRpc:
         self.trn_cli_update_ep = f'''{self.trn_cli} update-ep -i {self.phy_itf} -j'''
         self.trn_cli_get_ep = f'''{self.trn_cli} get-ep -i {self.phy_itf} -j'''
         self.trn_cli_delete_ep = f'''{self.trn_cli} delete-ep -i {self.phy_itf} -j'''
+        self.trn_cli_update_packet_metadata = f'''{self.trn_cli} update-packet-metadata -i {self.phy_itf} -j'''
+        self.trn_cli_delete_packet_metadata = f'''{self.trn_cli} delete-packet-metadata -i {self.phy_itf} -j'''
         self.trn_cli_load_pipeline_stage = f'''{self.trn_cli} load-pipeline-stage -i {self.phy_itf} -j'''
         self.trn_cli_unload_pipeline_stage = f'''{self.trn_cli} unload-pipeline-stage -i {self.phy_itf} -j'''
 

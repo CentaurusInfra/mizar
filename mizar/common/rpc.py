@@ -48,6 +48,8 @@ class TrnRpc:
         self.trn_cli_update_ep = f'''{self.trn_cli} update-ep -i {self.phy_itf} -j'''
         self.trn_cli_get_ep = f'''{self.trn_cli} get-ep -i {self.phy_itf} -j'''
         self.trn_cli_delete_ep = f'''{self.trn_cli} delete-ep -i {self.phy_itf} -j'''
+        self.trn_cli_update_packet_metadata = f'''{self.trn_cli} update-packet-metadata -i {self.phy_itf} -j'''
+        self.trn_cli_delete_packet_metadata = f'''{self.trn_cli} delete-packet-metadata -i {self.phy_itf} -j'''
         self.trn_cli_update_port = f'''{self.trn_cli} update-port -i {self.phy_itf} -j'''
         self.trn_cli_load_pipeline_stage = f'''{self.trn_cli} load-pipeline-stage -i {self.phy_itf} -j'''
         self.trn_cli_unload_pipeline_stage = f'''{self.trn_cli} unload-pipeline-stage -i {self.phy_itf} -j'''
@@ -148,6 +150,27 @@ class TrnRpc:
         for i in range(len(remote_ports)):
             self.update_port(ep.get_tunnel_id(), ep.get_ip(),
                              frontend_ports[i], remote_ports[i], protocols[i])
+
+    def update_packet_metadata(self, ep):
+        peer = ""
+        droplet_ip = ep.get_droplet_ip()
+        # Only detail veth info if the droplet is also a host
+        if (droplet_ip and self.ip == droplet_ip):
+            peer = ep.get_veth_peer()
+
+        jsonconf = {
+            "tunnel_id": ep.get_tunnel_id(),
+            "ip": ep.get_ip(),
+            "hosted_iface": peer,
+            "pod_label_value": ep.pod_label_value,
+            "namespace_label_value": ep.namespace_label_value
+        }
+
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_update_packet_metadata} \'{jsonconf}\''''
+        logger.info("update_packet_metadata: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("returns {} {}".format(returncode, text))
 
     def update_port(self, tunid, ip, port, target_port, protocol):
         jsonconf = {
@@ -252,6 +275,19 @@ class TrnRpc:
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_delete_ep} \'{jsonconf}\''''
         log_string = "delete_ep for a {} {}".format(ep.type, ep.ip)
+        logger.info(log_string)
+        returncode, text = run_cmd(cmd)
+        logger.info("returns {} {}".format(returncode, text))
+        self.delete_packet_metadata(ep)
+
+    def delete_packet_metadata(self, ep):
+        jsonconf = {
+            "tunnel_id": ep.get_tunnel_id(),
+            "ip": ep.get_ip(),
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_delete_packet_metadata} \'{jsonconf}\''''
+        log_string = "delete_packet_metadata for endpoint {}".format(ep.name)
         logger.info(log_string)
         returncode, text = run_cmd(cmd)
         logger.info("returns {} {}".format(returncode, text))

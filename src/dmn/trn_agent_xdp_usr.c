@@ -251,12 +251,51 @@ int trn_agent_delete_endpoint(struct agent_user_metadata_t *umd,
 	return 0;
 }
 
+int trn_agent_update_packet_metadata(struct agent_user_metadata_t *umd,
+			      struct packet_metadata_key_t *key,
+			      struct packet_metadata_t *packet_metadata)
+{
+	int err = bpf_map_update_elem(umd->packet_metadata_map_fd, key, packet_metadata, 0);
+	if (err) {
+		TRN_LOG_ERROR("Store packet metadata mapping failed (err:%d).", err);
+		return 1;
+	}
+	return 0;
+}
+
+int trn_agent_get_packet_metadata(struct agent_user_metadata_t *umd,
+			   struct packet_metadata_key_t *key, struct packet_metadata_t *packet_metadata)
+{
+	int err = bpf_map_lookup_elem(umd->packet_metadata_map_fd, key, packet_metadata);
+	if (err) {
+		TRN_LOG_ERROR(
+			"Querying agent packet metadata mapping failed (err:%d).",
+			err);
+		return 1;
+	}
+	return 0;
+}
+
+int trn_agent_delete_packet_metadata(struct agent_user_metadata_t *umd,
+			      struct packet_metadata_key_t *key)
+{
+	int err = bpf_map_delete_elem(umd->packet_metadata_map_fd, key);
+	if (err) {
+		TRN_LOG_ERROR(
+			"Deleting agent packet metadata mapping failed (err:%d).",
+			err);
+		return 1;
+	}
+	return 0;
+}
+
 int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 {
 	md->jmp_table_map = bpf_map__next(NULL, md->obj);
 	md->agentmetadata_map = bpf_map__next(md->jmp_table_map, md->obj);
 	md->endpoints_map = bpf_map__next(md->agentmetadata_map, md->obj);
-	md->interfaces_map = bpf_map__next(md->endpoints_map, md->obj);
+	md->packet_metadata_map = bpf_map__next(md->endpoints_map, md->obj);
+	md->interfaces_map = bpf_map__next(md->packet_metadata_map, md->obj);
 	md->xdpcap_hook_map = bpf_map__next(md->interfaces_map, md->obj);
 	md->fwd_flow_mod_cache_ref =
 		bpf_map__next(md->xdpcap_hook_map, md->obj);
@@ -279,7 +318,7 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 	md->conn_track_cache = bpf_map__next(md->ing_vsip_except_map, md->obj);
 
 	if (!md->jmp_table_map || !md->agentmetadata_map ||
-	    !md->endpoints_map || !md->xdpcap_hook_map ||
+	    !md->endpoints_map || !md->packet_metadata_map || !md->xdpcap_hook_map ||
 	    !md->fwd_flow_mod_cache_ref || !md->rev_flow_mod_cache_ref ||
 	    !md->ep_flow_host_cache_ref || !md->ep_host_cache_ref ||
 	    !md->eg_vsip_enforce_map || !md->eg_vsip_prim_map ||
@@ -295,6 +334,7 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 	md->jmp_table_fd = bpf_map__fd(md->jmp_table_map);
 	md->agentmetadata_map_fd = bpf_map__fd(md->agentmetadata_map);
 	md->endpoints_map_fd = bpf_map__fd(md->endpoints_map);
+	md->packet_metadata_map_fd = bpf_map__fd(md->packet_metadata_map);
 	md->interfaces_map_fd = bpf_map__fd(md->interfaces_map);
 	md->fwd_flow_mod_cache_ref_fd = bpf_map__fd(md->fwd_flow_mod_cache_ref);
 	md->rev_flow_mod_cache_ref_fd = bpf_map__fd(md->rev_flow_mod_cache_ref);

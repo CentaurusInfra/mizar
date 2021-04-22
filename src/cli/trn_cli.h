@@ -63,6 +63,9 @@ int trn_cli_parse_net_key(const cJSON *jsonobj,
 int trn_cli_parse_ep(const cJSON *jsonobj, struct rpc_trn_endpoint_t *ep);
 int trn_cli_parse_ep_key(const cJSON *jsonobj,
 			 struct rpc_trn_endpoint_key_t *ep);
+int trn_cli_parse_packet_metadata(const cJSON *jsonobj, struct rpc_trn_packet_metadata_t *packet_metadata);
+int trn_cli_parse_packet_metadata_key(const cJSON *jsonobj,
+			 struct rpc_trn_packet_metadata_key_t *packet_metadata);
 int trn_cli_parse_port(const cJSON *jsonobj, struct rpc_trn_port_t *ep);
 int trn_cli_parse_port_key(const cJSON *jsonobj, struct rpc_trn_port_key_t *ep);
 int trn_cli_parse_xdp(const cJSON *jsonobj,
@@ -90,9 +93,11 @@ int trn_cli_update_port_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_update_vpc_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_update_net_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_update_ep_subcmd(CLIENT *clnt, int argc, char *argv[]);
+int trn_cli_update_packet_metadata_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_delete_vpc_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_delete_net_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_delete_ep_subcmd(CLIENT *clnt, int argc, char *argv[]);
+int trn_cli_delete_packet_metadata_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_get_vpc_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_get_net_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_get_ep_subcmd(CLIENT *clnt, int argc, char *argv[]);
@@ -127,6 +132,7 @@ int trn_cli_delete_agent_network_policy_protocol_port_subcmd(CLIENT *clnt, int a
 void dump_vpc(struct rpc_trn_vpc_t *vpc);
 void dump_net(struct rpc_trn_network_t *net);
 void dump_ep(struct rpc_trn_endpoint_t *ep);
+void dump_packet_metadata(struct rpc_trn_packet_metadata_t *packet_metadata);
 void dump_port(struct rpc_trn_port_t *port);
 void dump_agent_md(struct rpc_trn_agent_metadata_t *agent_md);
 void dump_network_policy(struct rpc_trn_vsip_cidr_t *policy);

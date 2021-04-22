@@ -63,6 +63,7 @@ struct agent_user_metadata_t {
 	int jmp_table_fd;
 	int agentmetadata_map_fd;
 	int endpoints_map_fd;
+	int packet_metadata_map_fd;
 	int interfaces_map_fd;
 	int fwd_flow_mod_cache_ref_fd;
 	int rev_flow_mod_cache_ref_fd;
@@ -88,6 +89,7 @@ struct agent_user_metadata_t {
 	struct bpf_map *jmp_table_map;
 	struct bpf_map *agentmetadata_map;
 	struct bpf_map *endpoints_map;
+	struct bpf_map *packet_metadata_map;
 	struct bpf_map *interfaces_map;
 	struct bpf_map *fwd_flow_mod_cache_ref;
 	struct bpf_map *rev_flow_mod_cache_ref;
@@ -130,6 +132,16 @@ int trn_agent_get_endpoint(struct agent_user_metadata_t *umd,
 
 int trn_agent_delete_endpoint(struct agent_user_metadata_t *umd,
 			      struct endpoint_key_t *epkey);
+
+int trn_agent_update_packet_metadata(struct agent_user_metadata_t *umd,
+			      struct packet_metadata_key_t *key,
+			      struct packet_metadata_t *packet_metadata);
+
+int trn_agent_get_packet_metadata(struct agent_user_metadata_t *umd,
+			   struct packet_metadata_key_t *key, struct packet_metadata_t *packet_metadata);
+
+int trn_agent_delete_packet_metadata(struct agent_user_metadata_t *umd,
+			      struct packet_metadata_key_t *key);
 
 int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md);
 

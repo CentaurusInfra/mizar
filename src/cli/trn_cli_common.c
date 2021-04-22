@@ -442,6 +442,59 @@ int trn_cli_parse_ep_key(const cJSON *jsonobj,
 	return 0;
 }
 
+int trn_cli_parse_packet_metadata(const cJSON *jsonobj, struct rpc_trn_packet_metadata_t *packet_metadata)
+{
+	cJSON *pod_label_value = cJSON_GetObjectItem(jsonobj, "pod_label_value");
+	cJSON *namespace_label_value = cJSON_GetObjectItem(jsonobj, "namespace_label_value");
+
+	if (pod_label_value == NULL) {
+		packet_metadata->pod_label_value = 0;
+	} else if (cJSON_IsString(pod_label_value)) {
+		packet_metadata->pod_label_value = atoi(pod_label_value->valuestring);
+	} else {
+		packet_metadata->pod_label_value = 0;
+	}
+
+	if (namespace_label_value == NULL) {
+		packet_metadata->namespace_label_value = 0;
+	} else if (cJSON_IsString(namespace_label_value)) {
+		packet_metadata->namespace_label_value = atoi(namespace_label_value->valuestring);
+	} else {
+		packet_metadata->namespace_label_value = 0;
+	}
+
+	return 0;
+}
+
+int trn_cli_parse_packet_metadata_key(const cJSON *jsonobj,
+			 struct rpc_trn_packet_metadata_key_t *packet_metadata)
+{
+	cJSON *tunnel_id = cJSON_GetObjectItem(jsonobj, "tunnel_id");
+	cJSON *ip = cJSON_GetObjectItem(jsonobj, "ip");
+
+	if (tunnel_id == NULL) {
+		packet_metadata->tunid = 0;
+		print_err("Warning: Tunnel ID default is used: %ld\n",
+			  packet_metadata->tunid);
+	} else if (cJSON_IsString(tunnel_id)) {
+		packet_metadata->tunid = atoi(tunnel_id->valuestring);
+	} else {
+		print_err("Error: Tunnel ID Error\n");
+		return -EINVAL;
+	}
+
+	if (ip != NULL && cJSON_IsString(ip)) {
+		struct sockaddr_in sa;
+		inet_pton(AF_INET, ip->valuestring, &(sa.sin_addr));
+		packet_metadata->ip = sa.sin_addr.s_addr;
+	} else {
+		print_err("Error: IP is missing or non-string\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 int trn_cli_parse_tun_intf(const cJSON *jsonobj, rpc_trn_tun_intf_t *itf)
 {
 	cJSON *ip = cJSON_GetObjectItem(jsonobj, "ip");

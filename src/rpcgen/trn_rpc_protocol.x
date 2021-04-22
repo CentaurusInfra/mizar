@@ -79,6 +79,22 @@ struct rpc_trn_endpoint_key_t {
        uint32_t ip;
 };
 
+/* Defines an packet metadata */
+struct rpc_trn_packet_metadata_t {
+       string interface<20>;
+       uint32_t ip;
+       uint64_t tunid;
+       uint32_t pod_label_value;
+       uint32_t namespace_label_value;
+};
+
+/* Defines a unique key to get/delete an packet metadata */
+struct rpc_trn_packet_metadata_key_t {
+       string interface<20>;
+       uint64_t tunid;
+       uint32_t ip;
+};
+
 /* Defines a port */
 struct rpc_trn_port_t {
        string interface<20>;
@@ -252,6 +268,9 @@ program RPC_TRANSIT_REMOTE_PROTOCOL {
                 int DELETE_AGENT_NETWORK_POLICY_ENFORCEMENT(rpc_trn_vsip_enforce_t) = 32;
                 int UPDATE_AGENT_NETWORK_POLICY_PROTOCOL_PORT(rpc_trn_vsip_ppo_t) = 33;
                 int DELETE_AGENT_NETWORK_POLICY_PROTOCOL_PORT(rpc_trn_vsip_ppo_key_t) = 34;
+
+                int UPDATE_PACKET_METADATA(rpc_trn_packet_metadata_t) = 35;
+                int DELETE_PACKET_METADATA(rpc_trn_packet_metadata_key_t) = 36;
 
           } = 1;
 
