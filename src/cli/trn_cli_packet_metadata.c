@@ -74,6 +74,50 @@ int trn_cli_update_packet_metadata_subcmd(CLIENT *clnt, int argc, char *argv[])
 	return 0;
 }
 
+int trn_cli_get_packet_metadata_subcmd(CLIENT *clnt, int argc, char *argv[])
+{
+	ketopt_t om = KETOPT_INIT;
+	struct cli_conf_data_t conf;
+	cJSON *json_str = NULL;
+
+	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
+		return -EINVAL;
+	}
+
+	char *buf = conf.conf_str;
+	json_str = trn_cli_parse_json(buf);
+
+	if (json_str == NULL) {
+		return -EINVAL;
+	}
+
+	rpc_trn_packet_metadata_key_t key;
+	rpc_trn_packet_metadata_t *packet_metadata;
+	char rpc[] = "get_ep_1";
+	key.interface = conf.intf;
+
+	int err = trn_cli_parse_packet_metadata_key(json_str, &key);
+	cJSON_Delete(json_str);
+
+	if (err != 0) {
+		print_err("Error: parsing packet metadata config.\n");
+		return -EINVAL;
+	}
+
+	packet_metadata = get_packet_metadata_1(&key, clnt);
+	if (packet_metadata == NULL || strlen(packet_metadata->interface) == 0) {
+		print_err("RPC Error: client call failed: get_packet_metadata_1.\n");
+		return -EINVAL;
+	}
+
+	dump_packet_metadata(packet_metadata);
+	print_msg(
+		"get_packet_metadata_1 successfully queried packet metadata %d on interface %s.\n",
+		packet_metadata->ip, packet_metadata->interface);
+
+	return 0;
+}
+
 int trn_cli_delete_packet_metadata_subcmd(CLIENT *clnt, int argc, char *argv[])
 {
 	ketopt_t om = KETOPT_INIT;

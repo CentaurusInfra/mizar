@@ -101,6 +101,7 @@ int trn_cli_delete_packet_metadata_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_get_vpc_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_get_net_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_get_ep_subcmd(CLIENT *clnt, int argc, char *argv[]);
+int trn_cli_get_packet_metadata_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_load_transit_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_unload_transit_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_load_agent_subcmd(CLIENT *clnt, int argc, char *argv[]);
