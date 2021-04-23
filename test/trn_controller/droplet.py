@@ -59,6 +59,8 @@ class droplet:
         self.trn_cli_update_ep = f'''{self.trn_cli} update-ep -i {self.phy_itf} -j'''
         self.trn_cli_get_ep = f'''{self.trn_cli} get-ep -i {self.phy_itf} -j'''
         self.trn_cli_delete_ep = f'''{self.trn_cli} delete-ep -i {self.phy_itf} -j'''
+        self.trn_cli_update_packet_metadata = f'''{self.trn_cli} update-packet-metadata -i {self.phy_itf} -j'''
+        self.trn_cli_delete_packet_metadata = f'''{self.trn_cli} delete-packet-metadata -i {self.phy_itf} -j'''
         self.trn_cli_load_pipeline_stage = f'''{self.trn_cli} load-pipeline-stage -i {self.phy_itf} -j'''
 
         self.trn_cli_load_transit_agent_xdp = f'''{self.trn_cli} load-agent-xdp'''
@@ -434,6 +436,50 @@ ip netns del {ep.ns} \' ''')
                     self.id, ep.ip)
             self.do_delete_decrement(
                 log_string, cmd, expect_fail, key, self.endpoint_updates)
+
+    def update_packet_metadata(self, ep, expect_fail=False):
+        if ep.host is not None:
+            log_string = "[DROPLET {}]: update_packet_metadata {} hosted at {}".format(
+                self.id, ep.ip, ep.host.id)
+        else:
+            log_string = "[DROPLET {}]: update_packet_metadata for a phantom ep {}".format(
+                self.id, ep.ip)        
+
+        jsonconf = {
+            "tunnel_id": ep.get_tunnel_id(),
+            "ip": ep.get_ip(),
+            "pod_label_value": ep.pod_label_value,
+            "namespace_label_value": ep.namespace_label_value
+        }
+        jsonconf = json.dumps(jsonconf)
+        jsonkey = {
+            "tunnel_id": ep.get_tunnel_id(),
+            "ip": ep.get_ip(),
+        }
+        key = ("packet_metadata " + self.phy_itf, json.dumps(jsonkey))
+        cmd = f'''{self.trn_cli_update_packet_metadata} \'{jsonconf}\''''
+
+    def delete_packet_metadata(self, ep, agent=False, expect_fail=False):
+
+        jsonconf = {
+            "tunnel_id": ep.get_tunnel_id(),
+            "ip": ep.get_ip(),
+        }
+        jsonconf = json.dumps(jsonconf)
+        if agent:
+            log_string = "[DROPLET {}]: delete_agent_packet_metadata {} hosted at {}".format(
+                self.id, ep.ip, ep.host.id)
+            cmd = f'''{self.trn_cli_delete_agent_packet_metadata} \'{jsonconf}\''''
+            self.exec_cli_rpc(log_string, cmd, expect_fail)
+        else:
+            cmd = f'''{self.trn_cli_delete_packet_metadata} \'{jsonconf}\''''
+            key = ("packet_metadata " + self.phy_itf, jsonconf)
+            if ep.host is not None:
+                log_string = "[DROPLET {}]: delete_packet_metadata {} hosted at {}".format(
+                    self.id, ep.ip, ep.host.id)
+            else:
+                log_string = "[DROPLET {}]: delete_packet_metadata for a phantom ep {}".format(
+                    self.id, ep.ip)
 
     def get_agent_ep(self, ep, expect_fail=False):
         self.get_ep(ep, agent=True, expect_fail=expect_fail)
