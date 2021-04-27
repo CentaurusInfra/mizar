@@ -152,18 +152,11 @@ class TrnRpc:
                              frontend_ports[i], remote_ports[i], protocols[i])
 
     def update_packet_metadata(self, ep):
-        peer = ""
-        droplet_ip = ep.get_droplet_ip()
-        # Only detail veth info if the droplet is also a host
-        if (droplet_ip and self.ip == droplet_ip):
-            peer = ep.get_veth_peer()
-
         jsonconf = {
             "tunnel_id": ep.get_tunnel_id(),
             "ip": ep.get_ip(),
-            "hosted_iface": peer,
-            "pod_label_value": ep.pod_label_value,
-            "namespace_label_value": ep.namespace_label_value
+            "pod_label_value": ep.get_pod_label_value(),
+            "namespace_label_value": ep.get_namespace_label_value()
         }
 
         jsonconf = json.dumps(jsonconf)

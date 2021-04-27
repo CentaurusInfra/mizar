@@ -449,11 +449,7 @@ int trn_cli_parse_packet_metadata(const cJSON *jsonobj, struct rpc_trn_packet_me
 	cJSON *pod_label_value = cJSON_GetObjectItem(jsonobj, "pod_label_value");
 	cJSON *namespace_label_value = cJSON_GetObjectItem(jsonobj, "namespace_label_value");
 
-	if (tunnel_id == NULL) {
-		packet_metadata->tunid = 0;
-		print_err("Warning: Tunnel ID default is used: %ld\n",
-			  packet_metadata->tunid);
-	} else if (cJSON_IsString(tunnel_id)) {
+	if (cJSON_IsString(tunnel_id)) {
 		packet_metadata->tunid = atoi(tunnel_id->valuestring);
 	} else {
 		print_err("Error: Tunnel ID Error\n");
@@ -500,11 +496,7 @@ int trn_cli_parse_packet_metadata_key(const cJSON *jsonobj,
 	cJSON *tunnel_id = cJSON_GetObjectItem(jsonobj, "tunnel_id");
 	cJSON *ip = cJSON_GetObjectItem(jsonobj, "ip");
 
-	if (tunnel_id == NULL) {
-		packet_metadata->tunid = 0;
-		print_err("Warning: Tunnel ID default is used: %ld\n",
-			  packet_metadata->tunid);
-	} else if (cJSON_IsString(tunnel_id)) {
+	if (cJSON_IsString(tunnel_id)) {
 		packet_metadata->tunid = atoi(tunnel_id->valuestring);
 	} else {
 		print_err("Error: Tunnel ID Error\n");

@@ -296,7 +296,9 @@ int *update_packet_metadata_1_svc(rpc_trn_packet_metadata_t *packet_metadata, st
 
 	TRN_LOG_DEBUG("update_packet_metadata_1 packet_metadata tunid: %ld, ip: 0x%x,"
 		      " pod_label_value: %d, namespace_label_value: %d",
-		      packet_metadata->tunid, packet_metadata->ip, packet_metadata->pod_label_value, packet_metadata->namespace_label_value);
+		      packet_metadata->tunid, packet_metadata->ip, 
+			  packet_metadata->pod_label_value, 
+			  packet_metadata->namespace_label_value);
 
 	struct user_metadata_t *md = trn_itf_table_find(itf);
 
@@ -720,7 +722,6 @@ rpc_trn_packet_metadata_t *get_packet_metadata_1_svc(rpc_trn_packet_metadata_key
 	}
 
 	result.interface = argp->interface;
-	char buf[IF_NAMESIZE];
 	result.tunid = argp->tunid;
 	result.ip = argp->ip;
 	result.pod_label_value = value.pod_label_value;

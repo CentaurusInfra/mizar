@@ -448,8 +448,8 @@ ip netns del {ep.ns} \' ''')
         jsonconf = {
             "tunnel_id": ep.get_tunnel_id(),
             "ip": ep.get_ip(),
-            "pod_label_value": ep.pod_label_value,
-            "namespace_label_value": ep.namespace_label_value
+            "pod_label_value": ep.get_pod_label_value(),
+            "namespace_label_value": ep.get_namespace_label_value()
         }
         jsonconf = json.dumps(jsonconf)
         jsonkey = {

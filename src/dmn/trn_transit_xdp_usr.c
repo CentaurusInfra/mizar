@@ -130,7 +130,7 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	md->ing_vsip_except_map = bpf_map__next(md->ing_vsip_supp_map, md->obj);
 	md->conn_track_cache = bpf_map__next(md->ing_vsip_except_map, md->obj);
 
-	if (!md->networks_map || !md->vpc_map || !md->endpoints_map || !md->packet_metadata_map ||
+	if (!md->networks_map || !md->vpc_map || !md->endpoints_map ||
 	    !md->port_map || !md->hosted_endpoints_iface_map ||
 	    !md->interface_config_map || !md->interfaces_map ||
 	    !md->fwd_flow_mod_cache || !md->rev_flow_mod_cache ||
@@ -141,7 +141,7 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	    !md->ing_vsip_except_map || !md->eg_vsip_enforce_map ||
 	    !md->eg_vsip_prim_map || !md->eg_vsip_ppo_map ||
 	    !md->eg_vsip_supp_map || !md->eg_vsip_except_map ||
-	    !md->conn_track_cache) {
+	    !md->conn_track_cache || !md->packet_metadata_map) {
 		TRN_LOG_ERROR("Failure finding maps objects.");
 		return 1;
 	}
@@ -323,8 +323,7 @@ int trn_get_packet_metadata(struct user_metadata_t *md, struct packet_metadata_k
 {
 	int err = bpf_map_lookup_elem(md->packet_metadata_map_fd, key, packet_metadata);
 	if (err) {
-		TRN_LOG_ERROR("Querying packet metadata mapping failed (err:%d).",
-			      err);
+		TRN_LOG_ERROR("Querying packet metadata mapping failed (err:%d).", err);
 		return 1;
 	}
 	return 0;
@@ -535,15 +534,13 @@ int trn_delete_packet_metadata(struct user_metadata_t *md,
 	int err = bpf_map_lookup_elem(md->packet_metadata_map_fd, key, &packet_metadata);
 
 	if (err) {
-		TRN_LOG_ERROR("Querying packet metadata for delete failed (err:%d).",
-			      err);
+		TRN_LOG_ERROR("Querying packet metadata for delete failed (err:%d).", err);
 		return 1;
 	}
 
 	err = bpf_map_delete_elem(md->packet_metadata_map_fd, key);
 	if (err) {
-		TRN_LOG_ERROR("Deleting packet metadata mapping failed (err:%d).",
-			      err);
+		TRN_LOG_ERROR("Deleting packet metadata mapping failed (err:%d).", err);
 		return 1;
 	}
 

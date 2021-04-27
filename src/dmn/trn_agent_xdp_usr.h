@@ -138,7 +138,8 @@ int trn_agent_update_packet_metadata(struct agent_user_metadata_t *umd,
 			      struct packet_metadata_t *packet_metadata);
 
 int trn_agent_get_packet_metadata(struct agent_user_metadata_t *umd,
-			   struct packet_metadata_key_t *key, struct packet_metadata_t *packet_metadata);
+			   struct packet_metadata_key_t *key,
+			   struct packet_metadata_t *packet_metadata);
 
 int trn_agent_delete_packet_metadata(struct agent_user_metadata_t *umd,
 			      struct packet_metadata_key_t *key);

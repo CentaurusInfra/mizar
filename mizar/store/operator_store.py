@@ -161,9 +161,9 @@ class OprStore(object):
                 ep.egress_networkpolicies = old_ep.egress_networkpolicies
             if len(old_ep.data_for_networkpolicy) > 0 and len(ep.data_for_networkpolicy) == 0:
                 ep.data_for_networkpolicy = old_ep.data_for_networkpolicy
-            if old_ep.pod_label_value > 0 and ep.pod_label_value == 0:
+            if old_ep.pod_label_value >= 0 and ep.pod_label_value == -1:
                 ep.pod_label_value = old_ep.pod_label_value
-            if old_ep.namespace_label_value > 0 and ep.namespace_label_value == 0:
+            if old_ep.namespace_label_value >= 0 and ep.namespace_label_value == -1:
                 ep.namespace_label_value = old_ep.namespace_label_value
 
         # logger.info('caller name:{}'.format(inspect.stack()[1][3]))

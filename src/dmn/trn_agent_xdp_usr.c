@@ -318,8 +318,7 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 	md->conn_track_cache = bpf_map__next(md->ing_vsip_except_map, md->obj);
 
 	if (!md->jmp_table_map || !md->agentmetadata_map ||
-	    !md->endpoints_map || !md->packet_metadata_map || 
-		!md->xdpcap_hook_map ||
+	    !md->endpoints_map  || !md->xdpcap_hook_map ||	    
 	    !md->fwd_flow_mod_cache_ref || !md->rev_flow_mod_cache_ref ||
 	    !md->ep_flow_host_cache_ref || !md->ep_host_cache_ref ||
 	    !md->eg_vsip_enforce_map || !md->eg_vsip_prim_map ||
@@ -327,7 +326,7 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 	    !md->eg_vsip_except_map ||  !md->ing_vsip_enforce_map ||
 	    !md->ing_vsip_prim_map || !md->ing_vsip_ppo_map ||
 	    !md->ing_vsip_supp_map || !md->ing_vsip_except_map ||
-	    !md->conn_track_cache) {
+	    !md->conn_track_cache || !md->packet_metadata_map) {
 		TRN_LOG_ERROR("Failure finding maps objects for trn agent.");
 		return 1;
 	}
