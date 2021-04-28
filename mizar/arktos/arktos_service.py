@@ -138,6 +138,18 @@ class ArktosService(BuiltinsServiceServicer):
             vpc_opr.store.update_arktosnet_vpc(request.name, request.vpc)
         return rc
 
+    def CreateNetworkPolicy(self, request, context):
+        logger.info("Creating network policy from Arktos Service {}".format(request.name))
+        param = reset_param(HandlerParam())
+        param.name = request.name
+        param.namespace = request.namespace
+        param.body['status'] = {}
+        param.body['metadata'] = {}
+        param.body['metadata']['namespace'] = request.namespace
+        param.body['metadata']['tenant'] = request.tenant
+        param.extra = {}
+        return run_arktos_workflow(wffactory().k8sNetworkPolicyCreate(param=param))
+
     def UpdateArktosNetwork(self, request, context):
         return self.CreateArktosNetwork(request, context)
 
@@ -156,6 +168,9 @@ class ArktosService(BuiltinsServiceServicer):
     def ResumeServiceEndpoint(self, request, context):
         return self.CreateServiceEndpoint(request, context)
 
+    def ResumeNetworkPolicy(self, request, context):
+        return self.CreateNetworkPolicy(request, context)
+
     def UpdatePod(self, request, context):
         return self.CreatePod(request, context)
 
@@ -167,6 +182,9 @@ class ArktosService(BuiltinsServiceServicer):
 
     def UpdateServiceEndpoint(self, request, context):
         return self.CreateServiceEndpoint(request, context)
+
+    def UpdateNetworkPolicy(self, request, context):
+        return self.CreateNetworkPolicy(request, context)
 
     def DeleteNode(self, request, context):
         logger.info(
@@ -190,9 +208,18 @@ class ArktosService(BuiltinsServiceServicer):
         param.name = request.name
         param.body['metadata'] = {}
         param.body["metadata"]["namespace"] = request.namespace
-        param.extra = request.tenant
+        param.body['metadata']['tenant'] = request.tenant
         return run_arktos_workflow(wffactory().k8sServiceDelete(param=param))
 
+    def DeleteNetworkPolicy(self, request, context):
+        logger.info(
+            "Deleting network policy from Network Controller {}".format(request.name))
+        param = reset_param(HandlerParam())
+        param.name = request.name
+        param.body['metadata'] = {}
+        param.body["metadata"]["namespace"] = request.namespace
+        param.extra = request.tenant
+        return run_arktos_workflow(wffactory().k8sNetworkPolicyDelete(param=param))
 
 class ArktosServiceClient():
     def __init__(self, ip):
@@ -215,6 +242,10 @@ class ArktosServiceClient():
         resp = self.stub_builtins.CreateArktosNetwork(BuiltinsArktosMessage)
         return resp
 
+    def CreateNetworkPolicy(self, BuiltinsNetworkPolicyMessage):
+        resp = self.stub_builtins.CreateNetworkPolicy(BuiltinsNetworkPolicyMessage)
+        return resp
+
     def UpdatePod(self, BuiltinsPodMessage):
         resp = self.stub_builtins.UpdatePod(BuiltinsPodMessage)
         return resp
@@ -229,6 +260,10 @@ class ArktosServiceClient():
 
     def UpdateArktosNetwork(self, BuiltinsArktosMessage):
         resp = self.stub_builtins.UpdateArktosNetwork(BuiltinsArktosMessage)
+        return resp
+
+    def UpdateNetworkPolicy(self, BuiltinsNetworkPolicyMessage):
+        resp = self.stub_builtins.UpdateNetworkPolicy(BuiltinsNetworkPolicyMessage)
         return resp
 
     def ResumePod(self, BuiltinsPodMessage):
@@ -247,6 +282,10 @@ class ArktosServiceClient():
         resp = self.stub_builtins.ResumeArktosNetwork(BuiltinsArktosMessage)
         return resp
 
+    def ResumeNetworkPolicy(self, BuiltinsNetworkPolicyMessage):
+        resp = self.stub_builtins.ResumeNetworkPolicy(BuiltinsNetworkPolicyMessage)
+        return resp
+
     def DeleteNode(self, BuiltinsNodeMessage):
         resp = self.stub_builtins.DeleteNode(BuiltinsNodeMessage)
         return resp
@@ -257,4 +296,8 @@ class ArktosServiceClient():
 
     def DeletePod(self, BuiltinsPodMessage):
         resp = self.stub_builtins.DeletePod(BuiltinsPodMessage)
+        return resp
+
+    def DeleteNetworkPolicy(self, BuiltinsNetworkPolicyMessage):
+        resp = self.stub_builtins.DeleteNetworkPolicy(BuiltinsNetworkPolicyMessage)
         return resp

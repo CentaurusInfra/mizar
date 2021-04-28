@@ -98,6 +98,7 @@ sudo apt remove -fy python3-apt
 sudo apt install -fy python3-apt
 sudo apt update
 sudo apt install -fy python3-pip
+
 sudo sed -i '1c\#!/usr/bin/python3.6 -Es' /usr/bin/lsb_release
 sudo /usr/local/bin/python3.8 -m pip install --upgrade pip
 
