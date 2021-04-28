@@ -514,6 +514,26 @@ static void test_update_ep_1_svc(void **state)
 	assert_int_equal(*rc, 0);
 }
 
+static void test_update_packet_metadata_1_svc(void **state)
+{
+	UNUSED(state);
+
+	char itf[] = "lo";
+
+	struct rpc_trn_packet_metadata_t packet_metadata1 = {
+		.interface = itf,
+		.ip = 0x100000a,
+		.tunid = 3,
+		.pod_label_value = 11,
+		.namespace_label_value = 1,
+	};
+
+	int *rc;
+	expect_function_calls(__wrap_bpf_map_update_elem, 1);
+	rc = update_packet_metadata_1_svc(&packet_metadata1, NULL);
+	assert_int_equal(*rc, 0);
+}
+
 static void test_update_agent_ep_1_svc(void **state)
 {
 	UNUSED(state);
@@ -1458,6 +1478,52 @@ static void test_delete_ep_1_svc(void **state)
 	assert_int_equal(*rc, RPC_TRN_ERROR);
 }
 
+static void test_delete_packet_metadata_1_svc(void **state)
+{
+	UNUSED(state);
+	char itf[] = "lo";
+	struct rpc_trn_packet_metadata_key_t key = {
+		.interface = itf,
+		.ip = 0x100000a,
+		.tunid = 3,
+	};
+	int *rc;
+
+	uint32_t remote[] = { 0x200000a };
+	char mac[6] = { 1, 2, 3, 4, 5, 6 };
+
+	struct packet_metadata_t value;
+	value.pod_label_value = 11;
+	value.namespace_label_value = 1;
+
+	/* Test delete_packet_metadata_1 with valid key */
+	will_return(__wrap_bpf_map_lookup_elem, &value);
+	will_return(__wrap_bpf_map_lookup_elem, NULL);
+	will_return(__wrap_bpf_map_lookup_elem, NULL);
+	will_return(__wrap_bpf_map_lookup_elem, NULL);
+	will_return(__wrap_bpf_map_delete_elem, TRUE);
+	expect_function_call(__wrap_bpf_map_lookup_elem);
+	expect_function_call(__wrap_bpf_map_delete_elem);
+	rc = delete_packet_metadata_1_svc(&key, NULL);
+	assert_int_equal(*rc, 0);
+
+	/* Test delete_packet_metadata_1 with invalid key */
+	will_return(__wrap_bpf_map_lookup_elem, &value);
+	will_return(__wrap_bpf_map_lookup_elem, NULL);
+	will_return(__wrap_bpf_map_lookup_elem, NULL);
+	will_return(__wrap_bpf_map_lookup_elem, NULL);
+	will_return(__wrap_bpf_map_delete_elem, FALSE);
+	expect_function_call(__wrap_bpf_map_lookup_elem);
+	expect_function_call(__wrap_bpf_map_delete_elem);
+	rc = delete_packet_metadata_1_svc(&key, NULL);
+	assert_int_equal(*rc, RPC_TRN_ERROR);
+
+	/* Test delete_packet_metadata_1 with invalid interface*/
+	key.interface = "";
+	rc = delete_packet_metadata_1_svc(&key, NULL);
+	assert_int_equal(*rc, RPC_TRN_ERROR);
+}
+
 static void test_delete_agent_ep_1_svc(void **state)
 {
 	UNUSED(state);
@@ -1537,6 +1603,7 @@ int main()
 		cmocka_unit_test(test_update_vpc_1_svc),
 		cmocka_unit_test(test_update_net_1_svc),
 		cmocka_unit_test(test_update_ep_1_svc),
+		cmocka_unit_test(test_update_packet_metadata_1_svc),
 		cmocka_unit_test(test_update_agent_md_1_svc),
 		cmocka_unit_test(test_update_agent_ep_1_svc),
 		cmocka_unit_test(test_get_vpc_1_svc),
@@ -1547,6 +1614,7 @@ int main()
 		cmocka_unit_test(test_delete_vpc_1_svc),
 		cmocka_unit_test(test_delete_net_1_svc),
 		cmocka_unit_test(test_delete_ep_1_svc),
+		cmocka_unit_test(test_delete_packet_metadata_1_svc),
 		cmocka_unit_test(test_delete_agent_ep_1_svc),
 		cmocka_unit_test(test_delete_agent_md_1_svc),
 		cmocka_unit_test(test_update_transit_network_policy_1_svc),
