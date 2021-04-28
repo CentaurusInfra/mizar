@@ -60,8 +60,26 @@ cd $HOME/go/src/k8s.io/arktos
 sudo ./hack/setup-dev-node.sh
 make all WHAT=cmd/arktos-network-controller
 ```
+Also, please ensure the hostname and its ip address in /etc/hosts. For instance, if the hostname is ip-172-31-41-177, ip address is 172.31.41.177:
+```text
+127.0.0.1 localhost
+172.31.41.177 ip-172-31-41-177
+```
 
-5. Before deploying Mizar, you will need first start up Arktos API server: 
+5. Replace the Arktos containerd:
+
+```bash
+cd $HOME/mizar
+./replace-containerd.sh
+```
+
+To make sure containerd is running as expected, run: 
+
+```bash
+sudo systemctl status containerd.service
+```
+
+6. Before deploying Mizar, you will need first start up Arktos API server: 
 
 ```bash
 cd $HOME/go/src/k8s.io/arktos
@@ -90,7 +108,13 @@ Alternatively, you can write to the default kubeconfig:
   cluster/kubectl.sh
 ```
 
-6. Once you see above text, your arktos server is now running. 
+7. Deploy Mizar. Open a new terminal window, and run: 
+```bash
+cd $HOME/mizar
+./deploy-mizar.sh
+```
+
+8. Once your arktos server and mizar are running. 
 To verify, you can open a new terminal and run ```kubectl get nodes```, you should see a node running with the name starts with "ip" followed by the private ip address of your lab machine. 
 
 You also want make sure the default kubernetes bridge network configuration file is deleted: 
@@ -100,7 +124,7 @@ sudo ls /etc/cni/net.d
 sudo rm /etc/cni/net.d/bridge.conf
 ```
 
-7. Start Arktos network controller. From a new terminal window, run:
+9. Start Arktos network controller. From a new terminal window, run:
 
 ```bash
 cd $HOME/go/src/k8s.io/arktos
@@ -108,25 +132,7 @@ cd $HOME/go/src/k8s.io/arktos
 ```
 where the ```kube-apiserver-ip``` is your lab machine's **private ip address**
 
-8. Deploy Mizar. Open a new terminal window, and run: 
-```bash
-cd $HOME/mizar
-./deploy-mizar.sh
-```
-
 Please refer to [Running Mizar Management Plane](https://mizar.readthedocs.io/en/latest/user/getting_started/#running-mizar-management-plane) for how to inspect resources. 
-
-9. Restart containerd 
-
-```bash
-sudo systemctl restart containerd.service
-```
-
-To make sure containerd is running as expected, run: 
-
-```bash
-sudo systemctl status containerd.service
-```
 
 ## Test
 
