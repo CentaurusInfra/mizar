@@ -81,6 +81,9 @@ class InterfaceServer(InterfaceServiceServicer):
         veth_peer = interface.veth.peer
         veth_index = get_iface_index(veth_name, self.iproute)
 
+        if veth_index != -1 and interface.veth.name == "eth-hostep":
+             self.iproute.link('delete', index=veth_index)
+             veth_index = -1
         if veth_index == -1:
             self.iproute.link('add', ifname=veth_name,
                               peer=veth_peer, kind='veth')
@@ -110,6 +113,7 @@ class InterfaceServer(InterfaceServiceServicer):
     def _QueueInterface(self, interface):
         pod_name = get_pod_name(interface.interface_id.pod_id)
         logger.info("Producing interface {}".format(interface))
+        logger.info("Current queued interfaces {}".format(self.interfaces))
         with self.interfaces_lock:
             # Append the interface to the pod's interfaces (important in
             # multi-interfaces case)

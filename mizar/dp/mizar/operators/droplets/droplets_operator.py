@@ -111,6 +111,7 @@ class DropletOperator(object):
         except:
             return False
         spec = {
+            'main_ip': ip,
             'ip': info.ip,
             'mac': info.mac,
             'itf': info.itf,

@@ -421,3 +421,10 @@ def bindmount_netns(src_netns_path, dst_netns_path):
     os.mknod(dst_netns_path)
     bindmount = subprocess.run(["mount", "--bind", src_netns_path, dst_netns_path])
     return bindmount.returncode
+
+def get_itf():
+    default_itf = os.popen("route | grep '^default' | grep -o '[^ ]*$'").read().split('\n')[0]
+    if "MIZAR_ITF" in os.environ:
+        return os.getenv("MIZAR_ITF")
+    else:
+        return "eth0"

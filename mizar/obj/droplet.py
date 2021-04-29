@@ -25,9 +25,7 @@ from mizar.common.rpc import TrnRpc
 from mizar.common.constants import *
 from mizar.common.common import *
 from mizar.common.common import run_cmd
-from mizar.get_interface import get_itf
 
-net_itf = get_itf()
 logger = logging.getLogger()
 
 
@@ -37,9 +35,10 @@ class Droplet(object):
         self.name = name
         self.obj_api = obj_api
         self.store = opr_store
+        self.main_ip = ""
         self.ip = ""
         self.mac = ""
-        self.phy_itf = net_itf
+        self.phy_itf = ""
         self.status = OBJ_STATUS.droplet_status_init
         self.known_substrates = {}
         self.known_bouncers = {}
@@ -54,6 +53,7 @@ class Droplet(object):
 
     def get_obj_spec(self):
         self.obj = {
+            "main_ip": self.main_ip,
             "mac": self.mac,
             "ip": self.ip,
             "status": self.status,
@@ -67,6 +67,7 @@ class Droplet(object):
         self.mac = get_spec_val('mac', spec)
         self.ip = get_spec_val('ip', spec)
         self.phy_itf = get_spec_val('itf', spec)
+        self.main_ip = get_spec_val('main_ip', spec)
 
     # K8s APIs
     def get_name(self):

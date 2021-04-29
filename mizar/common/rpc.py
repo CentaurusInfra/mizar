@@ -21,9 +21,9 @@
 
 import logging
 import json
-from mizar.common.common import run_cmd, conf_list_has_max_elements
+from mizar.common.common import run_cmd, conf_list_has_max_elements, get_itf
 from mizar.common.constants import *
-from mizar.get_interface import get_itf
+
 
 net_itf = get_itf()
 logger = logging.getLogger()

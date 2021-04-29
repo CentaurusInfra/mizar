@@ -336,7 +336,7 @@ class OprStore(object):
         if label_combination not in self.namespace_label_value_store:
             self.namespace_label_value_store[label_combination] = len(self.namespace_label_value_store)
         return self.namespace_label_value_store[label_combination]
-    
+
     def update_droplet(self, droplet):
         self.droplets_store[droplet.name] = droplet
 
@@ -351,7 +351,7 @@ class OprStore(object):
 
     def get_droplet_by_ip(self, ip):
         for d in self.droplets_store:
-            if self.droplets_store[d].ip == ip:
+            if self.droplets_store[d].ip == ip or self.droplets_store[d].main_ip:
                 return self.droplets_store[d]
         return None
 

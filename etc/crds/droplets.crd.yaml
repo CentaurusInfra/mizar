@@ -42,12 +42,17 @@ spec:
       type: string
       priority: 0
       JSONPath: .spec.mac
-      description: The mac address of the endpoint
+      description: The mac address of the droplet
     - name: Ip
       type: string
       priority: 0
       JSONPath: .spec.ip
-      description: The IP of the endpoint
+      description: The IP of the droplet
+    - name: MainIp
+      type: string
+      priority: 0
+      JSONPath: .spec.mainip
+      description: The IP of the main interface
     - name: Status
       type: string
       priority: 0

@@ -301,10 +301,10 @@ class EndpointOperator(object):
         if ep.type == OBJ_DEFAULTS.ep_type_host:
             interfaces_list[0].status = InterfaceStatus.consumed
             interfaces = InterfaceServiceClient(
-                ep.get_droplet_ip()).ActivateHostInterface(interfaces_list[0])
+                ep.droplet_obj.main_ip).ActivateHostInterface(interfaces_list[0])
         else:
             interfaces = InterfaceServiceClient(
-                ep.get_droplet_ip()).ProduceInterfaces(InterfacesList(interfaces=interfaces_list))
+                ep.droplet_obj.main_ip).ProduceInterfaces(InterfacesList(interfaces=interfaces_list))
 
         logger.info("Produced {}".format(interfaces))
 
@@ -434,9 +434,9 @@ class EndpointOperator(object):
             status=InterfaceStatus.init
         ))
         interfaces = InterfacesList(interfaces=interfaces_list)
-        return InterfaceServiceClient(droplet.ip).InitializeInterfaces(interfaces)
+        return InterfaceServiceClient(droplet.main_ip).InitializeInterfaces(interfaces)
 
     def delete_simple_endpoint(self, ep):
         logger.info(
-            "Delete endpoint object assicated with interface {}".format(ep.name))
+            "Delete endpoint object associated with interface {}".format(ep.name))
         ep.delete_obj()
