@@ -103,8 +103,11 @@ class k8sPodCreate(WorkflowTask):
         #     self.finalize()
         #     return
 
+        (policy_name_list, pod_label_value, namespace_label_value) = networkpolicy_util.retrieve_change_for_networkpolicy(self.param.name, self.param.namespace, self.param.body.metadata.labels, self.param.diff)
+        spec['pod_label_value'] = pod_label_value
+        spec['namespace_label_value'] = namespace_label_value
         if spec['phase'] != 'Pending':
-            networkpolicy_util.handle_pod_change_for_networkpolicy(self.param.name, self.param.namespace, self.param.body.metadata.labels, self.param.diff)
+            networkpolicy_util.handle_networkpolicy_change(policy_name_list)
             self.finalize()
             return
 
@@ -117,6 +120,6 @@ class k8sPodCreate(WorkflowTask):
         # Create the corresponding simple endpoint objects
         endpoint_opr.create_simple_endpoints(interfaces, spec)
 
-        networkpolicy_util.handle_pod_change_for_networkpolicy(self.param.name, self.param.namespace, self.param.body.metadata.labels, self.param.diff)
+        networkpolicy_util.handle_networkpolicy_change(policy_name_list)
 
         self.finalize()

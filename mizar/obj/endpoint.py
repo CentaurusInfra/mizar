@@ -68,8 +68,8 @@ class Endpoint:
         self.ingress_networkpolicies = []
         self.egress_networkpolicies = []
         self.data_for_networkpolicy = {}
-        self.pod_label_value = 0
-        self.namespace_label_value = 0
+        self.pod_label_value = -1
+        self.namespace_label_value = -1
         if spec is not None:
             self.set_obj_spec(spec)
 
@@ -112,7 +112,9 @@ class Endpoint:
             "hostmac": self.droplet_mac,
             "cnidelay": self.cnidelay,
             "provisiondelay": self.provisiondelay,
-            "pod": self.pod
+            "pod": self.pod,
+            "pod_label_value": self.pod_label_value,
+            "namespace_label_value": self.namespace_label_value
         }
 
         return self.obj
@@ -136,6 +138,8 @@ class Endpoint:
         self.cnidelay = get_spec_val('cnidelay', spec)
         self.provisiondelay = get_spec_val('provisiondelay', spec)
         self.pod = get_spec_val('pod', spec)
+        self.pod_label_value = get_spec_val('pod_label_value', spec)
+        self.namespace_label_value = get_spec_val('namespace_label_value', spec)
 
     def set_interface(self, interface):
         self.interface = interface
@@ -334,6 +338,12 @@ class Endpoint:
     def get_egress_networkpolicies(self):
         return self.egress_networkpolicies
 
+    def get_pod_label_value(self):
+        return self.pod_label_value if self.pod_label_value >= 0 else 0
+
+    def get_namespace_label_value(self):
+        return self.namespace_label_value if self.namespace_label_value >= 0 else 0
+
     def add_ingress_networkpolicy(self, policy_name):
         if policy_name in self.ingress_networkpolicies:
             return
@@ -493,3 +503,6 @@ class Endpoint:
     def delete_network_policy_enforcement_map_egress(self):
         endpointEnforced = EndpointEnforced(self.vni, self.ip)
         self.rpc.delete_network_policy_enforcement_map_egress(self, endpointEnforced)
+
+    def update_packet_metadata(self):
+        self.rpc.update_packet_metadata(self)

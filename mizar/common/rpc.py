@@ -71,6 +71,8 @@ class TrnRpc:
         self.trn_cli_update_agent_ep = f'''{self.trn_cli} update-agent-ep'''
         self.trn_cli_get_agent_ep = f'''{self.trn_cli} get-agent-ep'''
         self.trn_cli_delete_agent_ep = f'''{self.trn_cli} delete-agent-ep'''
+        self.trn_cli_update_packet_metadata = f'''{self.trn_cli} update-packet-metadata'''
+        self.trn_cli_delete_packet_metadata = f'''{self.trn_cli} delete-packet-metadata'''
 
         if benchmark:
             self.xdp_path = "/trn_xdp/trn_transit_xdp_ebpf.o"
@@ -108,6 +110,22 @@ class TrnRpc:
         logger.info(
             "update_agent_substrate_ep returns {} {}".format(returncode, text))
 
+    def update_packet_metadata(self, ep):
+        itf = ep.get_veth_peer()
+        jsonconf = {
+            "tunnel_id": ep.get_tunnel_id(),
+            "ip": ep.get_ip(),
+            "pod_label_value": ep.get_pod_label_value(),
+            "namespace_label_value": ep.get_namespace_label_value()
+        }
+
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_update_packet_metadata} -i \'{itf}\' -j \'{jsonconf}\''''
+        logger.info("update_packet_metadata: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info(
+            "packet_metadata returns {} {}".format(returncode, text))
+
     def delete_agent_substrate_ep(self, ep, ip):
         itf = ep.get_veth_peer()
         jsonconf = {
@@ -115,10 +133,22 @@ class TrnRpc:
             "ip": ip,
         }
         cmd = f'''{self.trn_cli_delete_agent_ep} -i \'{itf}\' -j \'{jsonconf}\''''
-        logger.info("update_agent_substrate_ep: {}".format(cmd))
+        logger.info("delete_agent_substrate_ep: {}".format(cmd))
         returncode, text = run_cmd(cmd)
         logger.info(
-            "update_agent_substrate_ep returns {} {}".format(returncode, text))
+            "delete_agent_substrate_ep returns {} {}".format(returncode, text))
+
+    def delete_packet_metadata(self, ep):
+        itf = ep.get_veth_peer()
+        jsonconf = {
+            "tunnel_id": ep.get_tunnel_id(),
+            "ip": ep.get_ip(),
+        }
+        cmd = f'''{self.trn_cli_delete_packet_metadata} -i \'{itf}\' -j \'{jsonconf}\''''
+        logger.info("delete_packet_metadata: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info(
+            "delete_packet_metadata returns {} {}".format(returncode, text))
 
     def update_ep(self, ep):
         peer = ""

@@ -116,6 +116,15 @@ int *__wrap_update_agent_ep_1(rpc_trn_endpoint_t *ep, CLIENT *clnt)
 	return retval;
 }
 
+int *__wrap_update_packet_metadata_1(rpc_trn_packet_metadata_t *packet_metadata, CLIENT *clnt)
+{
+	check_expected_ptr(packet_metadata);
+	check_expected_ptr(clnt);
+	int *retval = mock_ptr_type(int *);
+	function_called();
+	return retval;
+}
+
 int *__wrap_update_agent_md_1(rpc_trn_agent_metadata_t *md, CLIENT *clnt)
 {
 	check_expected_ptr(md);
@@ -298,6 +307,15 @@ int *__wrap_delete_agent_ep_1(rpc_trn_endpoint_key_t *argp, CLIENT *clnt)
 	return retval;
 }
 
+int *__wrap_delete_packet_metadata_1(rpc_trn_packet_metadata_key_t *argp, CLIENT *clnt)
+{
+	check_expected_ptr(argp);
+	check_expected_ptr(clnt);
+	int *retval = mock_ptr_type(int *);
+	function_called();
+	return retval;
+}
+
 int *__wrap_delete_agent_md_1(rpc_intf_t *argp, CLIENT *clnt)
 {
 	check_expected_ptr(argp);
@@ -467,6 +485,37 @@ static int check_ep_equal(const LargestIntegralType value,
 	return true;
 }
 
+static int check_packet_metadata_equal(const LargestIntegralType value,
+			  const LargestIntegralType check_value_data)
+{
+	struct rpc_trn_packet_metadata_t *packet_metadata = (struct rpc_trn_packet_metadata_t *)value;
+	struct rpc_trn_packet_metadata_t *c_packet_metadata =
+		(struct rpc_trn_packet_metadata_t *)check_value_data;
+	int i;
+
+	if (strcmp(packet_metadata->interface, c_packet_metadata->interface) != 0) {
+		return false;
+	}
+
+	if (packet_metadata->ip != c_packet_metadata->ip) {
+		return false;
+	}
+
+	if (packet_metadata->tunid != c_packet_metadata->tunid) {
+		return false;
+	}
+
+	if (packet_metadata->pod_label_value != c_packet_metadata->pod_label_value) {
+		return false;
+	}
+
+	if (packet_metadata->namespace_label_value != c_packet_metadata->namespace_label_value) {
+		return false;
+	}
+
+	return true;
+}
+
 static int check_md_equal(const LargestIntegralType value,
 			  const LargestIntegralType check_value_data)
 
@@ -597,6 +646,29 @@ static int check_ep_key_equal(const LargestIntegralType value,
 	}
 
 	if (ep_key->ip != c_ep_key->ip) {
+		return false;
+	}
+
+	return true;
+}
+
+static int check_packet_metadata_key_equal(const LargestIntegralType value,
+			      const LargestIntegralType check_value_data)
+{
+	struct rpc_trn_packet_metadata_key_t *key =
+		(struct rpc_trn_packet_metadata_key_t *)value;
+	struct rpc_trn_packet_metadata_key_t *c_key =
+		(struct rpc_trn_packet_metadata_key_t *)check_value_data;
+
+	if (strcmp(key->interface, c_key->interface) != 0) {
+		return false;
+	}
+
+	if (key->tunid != c_key->tunid) {
+		return false;
+	}
+
+	if (key->ip != c_key->ip) {
 		return false;
 	}
 
@@ -1286,6 +1358,98 @@ static void test_trn_cli_update_agent_ep_subcmd(void **state)
 	expect_any(__wrap_update_agent_ep_1, ep);
 	expect_any(__wrap_update_agent_ep_1, clnt);
 	rc = trn_cli_update_agent_ep_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+}
+
+static void test_trn_cli_update_packet_metadata_subcmd(void **state)
+{
+	UNUSED(state);
+	int rc;
+	int argc = 5;
+	int update_packet_metadata_1_ret_val = 0;
+
+	/* Test cases */
+	char *argv1[] = { "update-packet-metadata", "-i", "eth0", "-j", QUOTE({
+				  "tunnel_id": "0",
+				  "ip": "10.0.0.1",
+				  "pod_label_value": "11",
+				  "namespace_label_value": "1"
+			  }) };
+
+	char *argv2[] = { "update-packet-metadata", "-i", "eth0", "-j", QUOTE({
+				  "tunnel_id": 0,
+				  "ip": "10.0.0.1",
+				  "pod_label_value": "11",
+				  "namespace_label_value": "1"
+			  }) };
+
+	char *argv3[] = { "update-packet-metadata", "-i", "eth0", "-j", QUOTE({
+				  "tunnel_id": "0",
+				  "pod_label_value": "11",
+				  "namespace_label_value": "1"
+			  }) };
+
+	char *argv4[] = { "update-packet-metadata", "-i", "eth0", "-j", QUOTE({
+				  "tunnel_id": "0",
+				  "ip": "10.0.0.1",
+				  "pod_label_value": ,
+				  "namespace_label_value": "1"
+			  }) };
+
+	char itf[] = "eth0";
+
+	struct rpc_trn_packet_metadata_t exp_packet_metadata = {
+		.interface = itf,
+		.ip = 0x100000a,
+		.pod_label_value = 11,
+		.namespace_label_value = 1,
+		.tunid = 0,
+	};
+
+	/* Test call update_packet_metadata successfully */
+	TEST_CASE(
+		"update_packet_metadata succeed with well formed endpoint json input");
+	update_packet_metadata_1_ret_val = 0;
+	expect_function_call(__wrap_update_packet_metadata_1);
+	will_return(__wrap_update_packet_metadata_1, &update_packet_metadata_1_ret_val);
+	expect_check(__wrap_update_packet_metadata_1, packet_metadata, check_packet_metadata_equal, &exp_packet_metadata);
+	expect_any(__wrap_update_packet_metadata_1, clnt);
+	rc = trn_cli_update_packet_metadata_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, 0);
+
+	/* Test parse packet metadata input error*/
+	TEST_CASE("update_packet_metadata is not called with non-string field");
+	rc = trn_cli_update_packet_metadata_subcmd(NULL, argc, argv2);
+	assert_int_equal(rc, -EINVAL);
+
+	TEST_CASE("update_packet_metadata is not called with missing required field");
+	rc = trn_cli_update_packet_metadata_subcmd(NULL, argc, argv3);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test parse packet metadata input error 2*/
+	TEST_CASE("update_packet_metadata is not called malformed json");
+	rc = trn_cli_update_packet_metadata_subcmd(NULL, argc, argv4);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call update_packet_metadata_1 return error*/
+	TEST_CASE(
+		"update_packet_metadata subcommand fails if update_packet_metadata_1 returns error");
+	update_packet_metadata_1_ret_val = -EINVAL;
+	expect_function_call(__wrap_update_packet_metadata_1);
+	will_return(__wrap_update_packet_metadata_1, &update_packet_metadata_1_ret_val);
+	expect_any(__wrap_update_packet_metadata_1, packet_metadata);
+	expect_any(__wrap_update_packet_metadata_1, clnt);
+	rc = trn_cli_update_packet_metadata_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call update_packet_metadata_1 return NULL*/
+	TEST_CASE(
+		"update_packet_metadata subcommand fails if update_packet_metadata_1 returns NULl");
+	expect_function_call(__wrap_update_packet_metadata_1);
+	will_return(__wrap_update_packet_metadata_1, NULL);
+	expect_any(__wrap_update_packet_metadata_1, packet_metadata);
+	expect_any(__wrap_update_packet_metadata_1, clnt);
+	rc = trn_cli_update_packet_metadata_subcmd(NULL, argc, argv1);
 	assert_int_equal(rc, -EINVAL);
 }
 
@@ -2107,6 +2271,82 @@ static void test_trn_cli_delete_agent_ep_subcmd(void **state)
 	expect_any(__wrap_delete_agent_ep_1, argp);
 	expect_any(__wrap_delete_agent_ep_1, clnt);
 	rc = trn_cli_delete_agent_ep_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+}
+
+static void test_trn_cli_delete_packet_metadata_subcmd(void **state)
+{
+	UNUSED(state);
+	int rc;
+	int argc = 5;
+
+	char itf[] = "eth0";
+
+	/* Test cases */
+	char *argv1[] = { "delete-packet-metadata", "-i", "eth0", "-j",
+			  QUOTE({ "tunnel_id": "3", "ip": "10.0.0.1" }) };
+
+	char *argv2[] = { "delete-packet-metadata", "-i", "eth0", "-j",
+			  QUOTE({ "tunnel_id": 3, "ip": "10.0.0.1" }) };
+
+	char *argv3[] = { "delete-packet-metadata", "-i", "eth0", "-j",
+			  QUOTE({ "tunnel_id": "3" }) };
+
+	char *argv4[] = { "delete-packet-metadata", "-i", "eth0", "-j",
+			  QUOTE({ "tunnel_id": "3", "ip": [10.0.0.2] }) };
+
+	struct rpc_trn_packet_metadata_key_t exp_packet_metadata_key = {
+		.interface = itf,
+		.ip = 0x100000a,
+		.tunid = 3,
+	};
+
+	int delete_packet_metadata_1_ret_val = 0;
+	/* Test call delete_packet_metadata_1 successfully */
+	TEST_CASE(
+		"delete_packet_metadata_1 succeed with well formed endpoint json input");
+	expect_function_call(__wrap_delete_packet_metadata_1);
+	will_return(__wrap_delete_packet_metadata_1, &delete_packet_metadata_1_ret_val);
+	expect_check(__wrap_delete_packet_metadata_1, argp, check_packet_metadata_key_equal,
+		     &exp_packet_metadata_key);
+	expect_any(__wrap_delete_packet_metadata_1, clnt);
+	rc = trn_cli_delete_packet_metadata_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, 0);
+
+	/* Test parse ep input error*/
+	TEST_CASE("delete_packet_metadata_1 is not called with non-string field");
+	rc = trn_cli_delete_packet_metadata_subcmd(NULL, argc, argv2);
+	assert_int_equal(rc, -EINVAL);
+
+	TEST_CASE(
+		"delete_packet_metadata_1 is not called with missing required field");
+	rc = trn_cli_delete_packet_metadata_subcmd(NULL, argc, argv3);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test parse ep input error 2*/
+	TEST_CASE("delete_packet_metadata_1 is not called malformed json");
+	rc = trn_cli_delete_packet_metadata_subcmd(NULL, argc, argv4);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call delete_ep_1 return error*/
+	TEST_CASE(
+		"delete-packet-metadata subcommand fails if delete_packet_metadata_1 returns error");
+	delete_packet_metadata_1_ret_val = -EINVAL;
+	expect_function_call(__wrap_delete_packet_metadata_1);
+	will_return(__wrap_delete_packet_metadata_1, &delete_packet_metadata_1_ret_val);
+	expect_any(__wrap_delete_packet_metadata_1, argp);
+	expect_any(__wrap_delete_packet_metadata_1, clnt);
+	rc = trn_cli_delete_packet_metadata_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call delete_packet_metadata_1 return NULL*/
+	TEST_CASE(
+		"delete-packet-metadata subcommand fails if delete_packet_metadata_1 returns NULL");
+	expect_function_call(__wrap_delete_packet_metadata_1);
+	will_return(__wrap_delete_packet_metadata_1, NULL);
+	expect_any(__wrap_delete_packet_metadata_1, argp);
+	expect_any(__wrap_delete_packet_metadata_1, clnt);
+	rc = trn_cli_delete_packet_metadata_subcmd(NULL, argc, argv1);
 	assert_int_equal(rc, -EINVAL);
 }
 
@@ -3135,6 +3375,7 @@ int main()
 		cmocka_unit_test(test_trn_cli_load_agent_subcmd),
 		cmocka_unit_test(test_trn_cli_unload_agent_subcmd),
 		cmocka_unit_test(test_trn_cli_update_agent_ep_subcmd),
+		cmocka_unit_test(test_trn_cli_update_packet_metadata_subcmd),
 		cmocka_unit_test(test_trn_cli_update_agent_md_subcmd),
 		cmocka_unit_test(test_trn_cli_get_vpc_subcmd),
 		cmocka_unit_test(test_trn_cli_get_net_subcmd),
@@ -3145,6 +3386,7 @@ int main()
 		cmocka_unit_test(test_trn_cli_delete_net_subcmd),
 		cmocka_unit_test(test_trn_cli_delete_ep_subcmd),
 		cmocka_unit_test(test_trn_cli_delete_agent_ep_subcmd),
+		cmocka_unit_test(test_trn_cli_delete_packet_metadata_subcmd),
 		cmocka_unit_test(test_trn_cli_delete_agent_md_subcmd),
 		cmocka_unit_test(test_trn_cli_update_transit_network_policy_subcmd),
 		cmocka_unit_test(test_trn_cli_update_agent_network_policy_subcmd),

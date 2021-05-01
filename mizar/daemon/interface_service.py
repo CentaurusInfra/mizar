@@ -177,6 +177,7 @@ class InterfaceServer(InterfaceServiceServicer):
                 interface.veth.peer, bouncer.ip_address, bouncer.mac)
         self.rpc.update_agent_metadata(interface)
         self.rpc.update_ep(interface)
+        self.rpc.update_packet_metadata(interface.veth.peer, interface)
 
     def ConsumeInterfaces(self, request, context):
         """
@@ -340,6 +341,8 @@ class LocalTransitRpc:
         self.trn_cli_update_agent_ep = f'''{self.trn_cli} update-agent-ep'''
         self.trn_cli_get_agent_ep = f'''{self.trn_cli} get-agent-ep'''
         self.trn_cli_delete_agent_ep = f'''{self.trn_cli} delete-agent-ep'''
+        self.trn_cli_update_packet_metadata = f'''{self.trn_cli} update-packet-metadata'''
+        self.trn_cli_delete_packet_metadata = f'''{self.trn_cli} delete-packet-metadata'''
 
         if benchmark:
             self.xdp_path = "/trn_xdp/trn_transit_xdp_ebpf.o"
@@ -411,6 +414,21 @@ class LocalTransitRpc:
         returncode, text = run_cmd(cmd)
         logger.info(
             "update_agent_substrate_ep returns {} {}".format(returncode, text))
+
+    def update_packet_metadata(self, veth_peer, interface):
+        itf = veth_peer
+        jsonconf = {
+            "tunnel_id": interface.address.tunnel_id,
+            "ip": interface.address.ip_address,
+            "pod_label_value": interface.pod_label_value,
+            "namespace_label_value": interface.namespace_label_value
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_update_packet_metadata} -i \'{itf}\' -j \'{jsonconf}\''''
+        logger.info("update_packet_metadata: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info(
+            "update_packet_metadata returns {} {}".format(returncode, text))
 
     def update_agent_metadata(self, interface):
         itf = interface.veth.peer
