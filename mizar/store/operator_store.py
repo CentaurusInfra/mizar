@@ -161,10 +161,6 @@ class OprStore(object):
                 ep.egress_networkpolicies = old_ep.egress_networkpolicies
             if len(old_ep.data_for_networkpolicy) > 0 and len(ep.data_for_networkpolicy) == 0:
                 ep.data_for_networkpolicy = old_ep.data_for_networkpolicy
-            if old_ep.pod_label_value >= 0 and ep.pod_label_value == -1:
-                ep.pod_label_value = old_ep.pod_label_value
-            if old_ep.namespace_label_value >= 0 and ep.namespace_label_value == -1:
-                ep.namespace_label_value = old_ep.namespace_label_value
 
         # logger.info('caller name:{}'.format(inspect.stack()[1][3]))
         self.eps_store[ep.name] = ep
@@ -334,13 +330,11 @@ class OprStore(object):
     def get_or_add_pod_label_value(self, label_combination):
         if label_combination not in self.pod_label_value_store:
             self.pod_label_value_store[label_combination] = len(self.pod_label_value_store)
-            # todo update the value to daemon
         return self.pod_label_value_store[label_combination]
 
     def get_or_add_namespace_label_value(self, label_combination):
         if label_combination not in self.namespace_label_value_store:
             self.namespace_label_value_store[label_combination] = len(self.namespace_label_value_store)
-            # todo update the value to daemon
         return self.namespace_label_value_store[label_combination]
     
     def update_droplet(self, droplet):
