@@ -71,8 +71,6 @@ class TrnRpc:
         self.trn_cli_update_agent_ep = f'''{self.trn_cli} update-agent-ep'''
         self.trn_cli_get_agent_ep = f'''{self.trn_cli} get-agent-ep'''
         self.trn_cli_delete_agent_ep = f'''{self.trn_cli} delete-agent-ep'''
-        self.trn_cli_update_packet_metadata = f'''{self.trn_cli} update-packet-metadata'''
-        self.trn_cli_delete_packet_metadata = f'''{self.trn_cli} delete-packet-metadata'''
 
         if benchmark:
             self.xdp_path = "/trn_xdp/trn_transit_xdp_ebpf.o"
