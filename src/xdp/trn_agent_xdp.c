@@ -151,6 +151,20 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 		return XDP_DROP;
 	}
 
+	struct packet_metadata_key_t packet_metadata_key;
+	struct packet_metadata_t *packet_metadata;
+	packet_metadata_key.tunip[0] = metadata->epkey.tunip[0];
+	packet_metadata_key.tunip[1] = metadata->epkey.tunip[1];
+	packet_metadata_key.tunip[2] = metadata->epkey.tunip[2];
+
+	int pod_label_value = 0;
+	int namespace_label_value = 0;
+	packet_metadata = bpf_map_lookup_elem(&packet_metadata_map, &packet_metadata_key);
+	if(packet_metadata){
+		pod_label_value = packet_metadata->pod_label_value;
+		namespace_label_value = packet_metadata->namespace_label_value;
+	}
+
 	/* Readjust the packet size to fit the outer headers */
 	int gnv_rts_opt_size = sizeof(*pkt->rts_opt);
 	int gnv_scaled_ep_opt_size = sizeof(*pkt->scaled_ep_opt);
