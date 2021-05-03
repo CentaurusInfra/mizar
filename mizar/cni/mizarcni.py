@@ -47,9 +47,7 @@ class Cni:
         self.cni_path = os.environ.get("CNI_PATH")
         self.cni_args = os.environ.get("CNI_ARGS")
         self.cni_args_dict = {}
-        if self.command == "VERSION":
-            return
-
+        logger.info("BEGIN CNI COMMAND is {}".format(self.command))
         netns_folder = "/var/run/netns/"
         if not self.netns.startswith(netns_folder):
             dst_netns = self.netns.replace('/', '_')
@@ -57,33 +55,37 @@ class Cni:
             if self.command == "ADD":
                 errorcode = bindmount_netns(self.netns, dst_netns_path)
                 if errorcode != 0:
-                    logger.error("failed to bind mount {} to {}: error code {}".format(self.netns, dst_netns_path, errorcode))
-                    raise OSError("failed to bind mount netns {} to {}, error code: {}".format(self.netns, dst_netns_path, errorcode))
+                    logger.info("failed to bind mount {} to {}: error code {}".format(
+                        self.netns, dst_netns_path, errorcode))
+                    raise OSError("failed to bind mount netns {} to {}, error code: {}".format(
+                        self.netns, dst_netns_path, errorcode))
             self.netns = dst_netns_path
-
-        self.cni_args_dict = dict(i.split("=")
-                                  for i in self.cni_args.split(";"))
-        self.k8s_namespace = self.cni_args_dict.get('K8S_POD_NAMESPACE', '')
-        self.k8s_pod_name = self.cni_args_dict.get('K8S_POD_NAME', '')
-
+        logger.info("CNI_ARGS {}".format(self.cni_args))
         config_json = json.loads(stdin)
 
         # expected parameters in the CNI specification:
-        self.cni_version = config_json["cniVersion"]
-        self.network_name = config_json["name"]
-        self.plugin = config_json["type"]
+        self.cni_version = config_json.get("cniVersion")
+        self.network_name = config_json.get("name")
+        self.plugin = config_json.get("type")
 
-        # TODO: parse 'Arktos specific' CNI_ARGS
-        self.k8s_pod_tenant = self.cni_args_dict.get('K8S_POD_TENANT', '')
+        if len(self.cni_args) > 1:
+            self.cni_args_dict = dict(i.split("=")
+                                      for i in self.cni_args.split(";"))
+            self.k8s_namespace = self.cni_args_dict.get(
+                'K8S_POD_NAMESPACE', '')
+            self.k8s_pod_name = self.cni_args_dict.get('K8S_POD_NAME', '')
 
-        self.pod_id = PodId(
-            k8s_pod_name=self.k8s_pod_name,
-            k8s_namespace=self.k8s_namespace,
-            k8s_pod_tenant=self.k8s_pod_tenant
-        )
+            # TODO: parse 'Arktos specific' CNI_ARGS
+            self.k8s_pod_tenant = self.cni_args_dict.get('K8S_POD_TENANT', '')
 
-        self.interface_id = InterfaceId(
-            pod_id=self.pod_id, interface=self.interface)
+            self.pod_id = PodId(
+                k8s_pod_name=self.k8s_pod_name,
+                k8s_namespace=self.k8s_namespace,
+                k8s_pod_tenant=self.k8s_pod_tenant
+            )
+
+            self.interface_id = InterfaceId(
+                pod_id=self.pod_id, interface=self.interface)
 
         self.iproute = IPRoute()
 
@@ -95,6 +97,7 @@ class Cni:
     def run(self):
         if len(self.cni_args_dict) != 0:
             logging.info("CNI ARGS {}".format(self.cni_args_dict))
+        logger.info("RUN CNI COMMAND is {}".format(self.command))
         val = "Unsuported cni command!"
         switcher = {
             'ADD': self.do_add,
@@ -103,7 +106,7 @@ class Cni:
             'VERSION': self.do_version
         }
 
-        func = switcher.get(self.command, lambda: "Unsuported cni command")
+        func = switcher.get(self.command, lambda: "Unsupported cni command")
         if func:
             func()
         print(val)
@@ -115,7 +118,7 @@ class Cni:
         param = CniParameters(pod_id=self.pod_id,
                               netns=self.netns,
                               interface=self.interface)
-
+        logger.info("Doing CNI add for {}".format(self.pod_id))
         # Consume new (and existing) interfaces for this Pod
         interfaces = InterfaceServiceClient(
             "localhost").ConsumeInterfaces(param).interfaces
