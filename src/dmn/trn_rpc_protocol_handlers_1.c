@@ -993,6 +993,91 @@ error:
 	return &result;
 }
 
+int *update_packet_metadata_1_svc(rpc_trn_packet_metadata_t *packet_metadata, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result = -1;
+	result = 0;
+	int rc;
+	char *itf = packet_metadata->interface;
+	struct packet_metadata_key_t key;
+	struct packet_metadata_t value;
+
+	TRN_LOG_DEBUG("update_packet_metadata_1 packet metadata tunid: %ld, ip: 0x%x,"
+		      " pod_label_value: %d, namespace_label_value: %d",
+		      packet_metadata->tunid, packet_metadata->ip,
+		      packet_metadata->pod_label_value,
+			  packet_metadata->namespace_label_value);
+
+	struct agent_user_metadata_t *md = trn_vif_table_find(itf);
+
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find virtual interface metadata for %s",
+			      itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	memcpy(key.tunip, &packet_metadata->tunid, sizeof(packet_metadata->tunid));	
+	key.tunip[2] = packet_metadata->ip;
+	value.pod_label_value = packet_metadata->pod_label_value;
+	value.namespace_label_value = packet_metadata->namespace_label_value;	
+
+	rc = trn_agent_update_packet_metadata(md, &key, &value);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Cannot update agent with packet metadata %d on interface %s",
+			      key.tunip[2], itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	TRN_LOG_DEBUG("update_packet_metadata_1 Success!");
+
+	return &result;
+
+error:
+	return &result;
+}
+
+int *delete_packet_metadata_1_svc(rpc_trn_packet_metadata_key_t *argp, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result = -1;
+	result = 0;
+	struct packet_metadata_key_t key;
+	int rc;
+
+	TRN_LOG_DEBUG("delete_packet_metadata_1 ep tunid: %ld, ip: 0x%x,"
+		      " on interface:%s",
+		      argp->tunid, argp->ip, argp->interface);
+
+	struct agent_user_metadata_t *md = trn_vif_table_find(argp->interface);
+
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s",
+			      argp->interface);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	memcpy(key.tunip, &argp->tunid, sizeof(argp->tunid));
+	key.tunip[2] = argp->ip;
+
+	rc = trn_agent_delete_packet_metadata(md, &key);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Cannot delete agent packet metadata %d on interface %s",
+			      key.tunip[2], argp->interface);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	return &result;
+error:
+	return &result;
+}
+
 int *update_agent_md_1_svc(rpc_trn_agent_metadata_t *agent_md,
 			   struct svc_req *rqstp)
 {

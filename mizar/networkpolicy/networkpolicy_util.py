@@ -471,7 +471,7 @@ class NetworkPolicyUtil:
                 "bit_value": self.calculate_policy_bit_value(access_rules, indexed_policy_names),
             })
 
-    def handle_pod_change_for_networkpolicy(self, pod_name, namespace, pod_labels, diff):
+    def retrieve_change_for_networkpolicy(self, pod_name, namespace, pod_labels, diff):
         data = self.extract_label_change(diff)
 
         # Followed code piece is to calculate how many policy are affected by the label change, and form data of policy_name_list.
@@ -512,12 +512,7 @@ class NetworkPolicyUtil:
         namespace_label_combination = self.get_label_combination(namespace_obj.metadata.labels)
         namespace_label_value = networkpolicy_opr.store.get_or_add_namespace_label_value(namespace_label_combination)
 
-        eps = endpoint_opr.store.get_eps_in_pod(pod_name)
-        for ep in eps.values():
-            ep.pod_label_value = pod_label_value
-            ep.namespace_label_value = namespace_label_value
-
-        self.handle_networkpolicy_change(policy_name_list)
+        return (policy_name_list, pod_label_value, namespace_label_value)
 
     def get_label_combination(self, labels):
         if not labels:

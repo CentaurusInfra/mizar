@@ -80,6 +80,15 @@ struct endpoint_t {
 	unsigned char mac[6];
 } __attribute__((packed, aligned(4)));
 
+struct packet_metadata_key_t {
+	__u32 tunip[3];
+} __attribute__((packed));
+
+struct packet_metadata_t {
+	__u32 pod_label_value;
+	__u32 namespace_label_value;
+} __attribute__((packed, aligned(4)));
+
 struct network_key_t {
 	__u32 prefixlen; /* up to 32 for AF_INET, 128 for AF_INET6*/
 	__u32 nip[3];

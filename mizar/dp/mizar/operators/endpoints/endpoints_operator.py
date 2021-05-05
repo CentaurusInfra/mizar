@@ -293,7 +293,9 @@ class EndpointOperator(object):
             address=interface_address,
             droplet=droplet,
             bouncers=bouncers,
-            status=interface.status
+            status=interface.status,
+            pod_label_value=interface.pod_label_value,
+            namespace_label_value=interface.namespace_label_value
         )]
 
         if ep.type == OBJ_DEFAULTS.ep_type_host:
@@ -401,7 +403,9 @@ class EndpointOperator(object):
                 interface_type=InterfaceType.veth,
                 pod_provider=pod_provider,
                 veth=veth,
-                status=InterfaceStatus.init
+                status=InterfaceStatus.init,
+                pod_label_value=str(spec['pod_label_value']),
+                namespace_label_value=str(spec['namespace_label_value'])
             ))
         if len(interfaces_list) > 0:
             interfaces = InterfacesList(interfaces=interfaces_list)

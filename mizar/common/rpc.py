@@ -115,10 +115,10 @@ class TrnRpc:
             "ip": ip,
         }
         cmd = f'''{self.trn_cli_delete_agent_ep} -i \'{itf}\' -j \'{jsonconf}\''''
-        logger.info("update_agent_substrate_ep: {}".format(cmd))
+        logger.info("delete_agent_substrate_ep: {}".format(cmd))
         returncode, text = run_cmd(cmd)
         logger.info(
-            "update_agent_substrate_ep returns {} {}".format(returncode, text))
+            "delete_agent_substrate_ep returns {} {}".format(returncode, text))
 
     def update_ep(self, ep):
         peer = ""

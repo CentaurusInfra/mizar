@@ -68,8 +68,6 @@ class Endpoint:
         self.ingress_networkpolicies = []
         self.egress_networkpolicies = []
         self.data_for_networkpolicy = {}
-        self.pod_label_value = 0
-        self.namespace_label_value = 0
         if spec is not None:
             self.set_obj_spec(spec)
 

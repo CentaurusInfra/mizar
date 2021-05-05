@@ -74,6 +74,8 @@ message Interface {
   SubstrateAddress droplet = 6;
   repeated SubstrateAddress bouncers = 7;
   InterfaceStatus status = 8;
+  string pod_label_value = 9;
+  string namespace_label_value = 10;
 }
 
 message InterfacesList {
