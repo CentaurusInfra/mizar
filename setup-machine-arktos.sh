@@ -102,11 +102,11 @@ sudo apt install -fy python3-pip
 sudo sed -i '1c\#!/usr/bin/python3.6 -Es' /usr/bin/lsb_release
 sudo /usr/local/bin/python3.8 -m pip install --upgrade pip
 
-sudo rm -rf $HOME/Python-3.8.8.tgz
-sudo rm -rf $HOME/Python-3.8.8
-
 sudo apt install awscli -y -q
 sudo apt install jq -y -q
+
+sudo rm -rf $HOME/Python-3.8.8.tgz
+sudo rm -rf $HOME/Python-3.8.8
 
 ####################
 
@@ -185,6 +185,7 @@ echo alias kubeop=\"kubectl get pods \|\ grep mizar-operator \|\ awk \'{print \$
 echo alias kubed=\"kubectl get pods \|\ grep mizar-daemon \|\ awk \'{print \$1}\' \|\ xargs -i kubectl logs {}\"  >> ~/.profile
 echo export CONTAINER_RUNTIME_ENDPOINT=\"\containerRuntime,container,/run/containerd/containerd.sock\" >> ~/.profile
 echo export PYTHONPATH=\"\$HOME/mizar/\" >> ~/.profile
+echo export KUBECTL_LOG=\"\/tmp/${USER}_kubetctl.err\" >> ~/.profile
 echo export GPG_TTY=\$\(tty\) >> ~/.profile
 
 echo cd \$HOME/go/src/k8s.io/arktos >> ~/.profile
