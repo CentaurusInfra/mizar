@@ -25,7 +25,7 @@ handler = SysLogHandler(address='/dev/log')
 logger.addHandler(handler)
 logger = logging.getLogger()
 
-CONSUME_INTERFACE_TIMEOUT = 5
+CONSUME_INTERFACE_TIMEOUT = 120
 
 
 class InterfaceServer(InterfaceServiceServicer):
@@ -82,8 +82,8 @@ class InterfaceServer(InterfaceServiceServicer):
         veth_index = get_iface_index(veth_name, self.iproute)
 
         if veth_index != -1 and interface.veth.name == "eth-hostep":
-             self.iproute.link('delete', index=veth_index)
-             veth_index = -1
+            self.iproute.link('delete', index=veth_index)
+            veth_index = -1
         if veth_index == -1:
             self.iproute.link('add', ifname=veth_name,
                               peer=veth_peer, kind='veth')

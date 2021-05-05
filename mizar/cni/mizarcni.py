@@ -47,7 +47,6 @@ class Cni:
         self.cni_path = os.environ.get("CNI_PATH")
         self.cni_args = os.environ.get("CNI_ARGS")
         self.cni_args_dict = {}
-        logger.info("BEGIN CNI COMMAND is {}".format(self.command))
         netns_folder = "/var/run/netns/"
         if not self.netns.startswith(netns_folder):
             dst_netns = self.netns.replace('/', '_')
@@ -60,7 +59,6 @@ class Cni:
                     raise OSError("failed to bind mount netns {} to {}, error code: {}".format(
                         self.netns, dst_netns_path, errorcode))
             self.netns = dst_netns_path
-        logger.info("CNI_ARGS {}".format(self.cni_args))
         config_json = json.loads(stdin)
 
         # expected parameters in the CNI specification:
@@ -97,7 +95,6 @@ class Cni:
     def run(self):
         if len(self.cni_args_dict) != 0:
             logging.info("CNI ARGS {}".format(self.cni_args_dict))
-        logger.info("RUN CNI COMMAND is {}".format(self.command))
         val = "Unsuported cni command!"
         switcher = {
             'ADD': self.do_add,
