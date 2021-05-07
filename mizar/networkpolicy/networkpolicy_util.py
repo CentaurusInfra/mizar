@@ -281,6 +281,9 @@ class NetworkPolicyUtil:
             "cidrs_map_with_except": {},
             "cidrs_map_except": {},
             "ports_map": {},
+            "pod_label_map": {},
+            "namespace_label_map": {},
+            "pod_and_namespace_label_map": {},
             "label_networkpolicies_map": {},
             "namespace_label_networkpolicies_map": {},
             "cidr_and_policies_map_no_except": {},
@@ -292,6 +295,9 @@ class NetworkPolicyUtil:
             "cidr_table_with_except": [],
             "cidr_table_except": [],
             "port_table": [],
+            "pod_label_policy_table": [],
+            "namespace_label_policy_table": [],
+            "pod_and_namespace_label_policy_table": [],
         }
         return data
 
@@ -312,7 +318,7 @@ class NetworkPolicyUtil:
         if indexed_policy_name not in data["cidrs_map_no_except"]:
             data["cidrs_map_no_except"][indexed_policy_name] = []
         if indexed_policy_name not in data["ports_map"]:
-                data["ports_map"][indexed_policy_name] = []
+            data["ports_map"][indexed_policy_name] = []
 
         if len(directional_traffic_rules) == 0: # In such case, it means "Default to allow all triaffic"
             data["cidrs_map_no_except"][indexed_policy_name].append("0.0.0.0/0")
@@ -339,6 +345,12 @@ class NetworkPolicyUtil:
                 elif "namespaceSelector" in rule_item and "podSelector" in rule_item:
                     self.add_label_networkpolicy(data, rule_item["podSelector"]["matchLabels"], policy_name)
                     self.add_namespace_label_networkpolicy(data, rule_item["namespaceSelector"]["matchLabels"], policy_name)
+                    if direction == "ingress":
+                        data["pod_and_namespace_label_map"][indexed_policy_name] = {
+                            "pod_label_map": self.get_pod_label_values_by_label_dict(rule_item["podSelector"]["matchLabels"]),
+                            "namespace_label_map": self.get_namespace_label_values_by_label_dict(rule_item["namespaceSelector"]["matchLabels"])
+                        }
+
                     namespaces = kube_list_namespaces_by_labels(networkpolicy_opr.core_api, rule_item["namespaceSelector"]["matchLabels"])
                     if namespaces is not None:
                         namespace_set = set()
@@ -352,6 +364,9 @@ class NetworkPolicyUtil:
                                     self.add_pod_ip_into_cidrs_map(pod, policy_name, data["cidrs_map_no_except"][indexed_policy_name])
                 elif "namespaceSelector" in rule_item:
                     self.add_namespace_label_networkpolicy(data, rule_item["namespaceSelector"]["matchLabels"], policy_name)
+                    if direction == "ingress":
+                        data["namespace_label_map"][indexed_policy_name] = self.get_namespace_label_values_by_label_dict(rule_item["namespaceSelector"]["matchLabels"])
+
                     namespaces = kube_list_namespaces_by_labels(networkpolicy_opr.core_api, rule_item["namespaceSelector"]["matchLabels"])
                     if namespaces is not None:
                         for namespace in namespaces.items:
@@ -361,6 +376,9 @@ class NetworkPolicyUtil:
                                     self.add_pod_ip_into_cidrs_map(pod, policy_name, data["cidrs_map_no_except"][indexed_policy_name])
                 elif "podSelector" in rule_item:
                     self.add_label_networkpolicy(data, rule_item["podSelector"]["matchLabels"], policy_name)
+                    if direction == "ingress":
+                        data["pod_label_map"][indexed_policy_name] = self.get_pod_label_values_by_label_dict(rule_item["podSelector"]["matchLabels"])
+
                     pods = kube_list_pods_by_labels(networkpolicy_opr.core_api, rule_item["podSelector"]["matchLabels"])
                     if pods is not None:
                         for pod in pods.items:                            
@@ -375,6 +393,29 @@ class NetworkPolicyUtil:
         else:
             if pod.metadata.name not in networkpolicy_opr.store.pod_names_to_be_ignored_by_networkpolicy:
                 pod_ip_set.append("{}/32".format(pod.status.pod_ip))
+
+    def get_pod_label_values_by_label_dict(self, label_dict):
+        pod_label_values = []
+        query_list = self.get_label_query_list(label_dict)
+        for label_combination in networkpolicy_opr.store.pod_label_value_store:
+            if len([query for query in query_list if query in label_combination]) == len(query_list):
+                pod_label_values.append(networkpolicy_opr.store.pod_label_value_store[label_combination])
+        return pod_label_values
+
+    def get_namespace_label_values_by_label_dict(self, label_dict):
+        namespace_label_values = []
+        query_list = self.get_label_query_list(label_dict)
+        for label_combination in networkpolicy_opr.store.namespace_label_value_store:
+            if len([query for query in query_list if query in label_combination]) == len(query_list):
+                namespace_label_values.append(networkpolicy_opr.store.namespace_label_value_store[label_combination])
+        return namespace_label_values
+
+    def get_label_query_list(self, label_dict):
+        query_list = []
+        for key in label_dict:
+            label = "{}={}".format(key, label_dict[key])
+            query_list.append(",{},".format(label))
+        return query_list
 
     def add_label_networkpolicy(self, data, label_dict, policy_name):
         for key in label_dict:
@@ -409,6 +450,9 @@ class NetworkPolicyUtil:
         self.build_cidr_table(access_rules, ep, "with_except")
         self.build_cidr_table(access_rules, ep, "except")
         self.build_port_table(access_rules, ep)
+        self.build_pod_label_policy_table(access_rules)
+        self.build_namespace_label_policy_table(access_rules)
+        self.build_pod_and_namespace_label_policy_table(access_rules)
 
     def build_cidr_and_policies_map(self, access_rules, cidr_type):
         cidr_map_name = "cidrs_map_" + cidr_type
@@ -471,6 +515,58 @@ class NetworkPolicyUtil:
                 "bit_value": self.calculate_policy_bit_value(access_rules, indexed_policy_names),
             })
 
+    def build_pod_label_policy_table(self, access_rules):
+        label_value_policy_names_map = {}
+        for indexed_policy_name, label_values in access_rules["pod_label_map"].items():
+            for label_value in label_values:
+                if label_value not in label_value_policy_names_map:
+                    label_value_policy_names_map[label_value] = set()
+                label_value_policy_names_map[label_value].add(indexed_policy_name)
+        
+        for label_value in label_value_policy_names_map:
+            access_rules["pod_label_policy_table"].append({
+                "pod_label_value": label_value,
+                "bit_value": self.calculate_policy_bit_value(access_rules, label_value_policy_names_map[label_value]),
+            })
+
+    def build_namespace_label_policy_table(self, access_rules):
+        label_value_policy_names_map = {}
+        for indexed_policy_name, label_values in access_rules["namespace_label_map"].items():
+            for label_value in label_values:
+                if label_value not in label_value_policy_names_map:
+                    label_value_policy_names_map[label_value] = set()
+                label_value_policy_names_map[label_value].add(indexed_policy_name)
+        
+        for label_value in label_value_policy_names_map:
+            access_rules["namespace_label_policy_table"].append({
+                "namespace_label_value": label_value,
+                "bit_value": self.calculate_policy_bit_value(access_rules, label_value_policy_names_map[label_value]),
+            })
+
+    def build_pod_and_namespace_label_policy_table(self, access_rules):
+        if len(access_rules["pod_and_namespace_label_map"]) == 0:
+            return
+            
+        pod_label_value_policy_names_map = {}
+        namespace_label_value_policy_names_map = {}
+        for indexed_policy_name, label_value_data in access_rules["pod_and_namespace_label_map"].items():
+            for label_value in label_value_data["pod_label_map"]:
+                if label_value not in pod_label_value_policy_names_map:
+                    pod_label_value_policy_names_map[label_value] = set()
+                pod_label_value_policy_names_map[label_value].add(indexed_policy_name)
+            for label_value in label_value_data["namespace_label_map"]:
+                if label_value not in namespace_label_value_policy_names_map:
+                    namespace_label_value_policy_names_map[label_value] = set()
+                namespace_label_value_policy_names_map[label_value].add(indexed_policy_name)
+        
+        for pod_label_value in pod_label_value_policy_names_map:
+            for namespace_label_value in namespace_label_value_policy_names_map:
+                access_rules["pod_and_namespace_label_policy_table"].append({
+                    "pod_label_value": pod_label_value,
+                    "namespace_label_value": namespace_label_value,
+                    "bit_value": self.calculate_policy_bit_value(access_rules, pod_label_value_policy_names_map[pod_label_value]),
+                })
+
     def retrieve_change_for_networkpolicy(self, pod_name, namespace, pod_labels, diff):
         data = self.extract_label_change(diff)
 
@@ -521,7 +617,10 @@ class NetworkPolicyUtil:
         label_list = []
         for key in sorted(labels):
             label_list.append("{}={}".format(key, labels[key]))
-        return ','.join(label_list)
+        combination_str = ','.join(label_list)
+        # The label combination will looks like ",a,b,c,". It's to gurantee every label is surround by common then it's easy to be queried out from the combination.
+        # For example, to check whether "b" is inside ",a,b,c,", just need to check whether the combination contains ",b," or not.
+        return ",{},".format(combination_str) 
     
     def handle_pod_delete_for_networkpolicy(self, pod_name, namespace, diff, eps):
         data = self.extract_label_change(diff)
