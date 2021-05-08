@@ -25,7 +25,7 @@ handler = SysLogHandler(address='/dev/log')
 logger.addHandler(handler)
 logger = logging.getLogger()
 
-CONSUME_INTERFACE_TIMEOUT = 120
+CONSUME_INTERFACE_TIMEOUT = 5
 
 
 class InterfaceServer(InterfaceServiceServicer):
@@ -81,7 +81,7 @@ class InterfaceServer(InterfaceServiceServicer):
         veth_peer = interface.veth.peer
         veth_index = get_iface_index(veth_name, self.iproute)
 
-        if veth_index != -1 and interface.veth.name == "eth-hostep":
+        if veth_index != -1:
             self.iproute.link('delete', index=veth_index)
             veth_index = -1
         if veth_index == -1:
@@ -190,9 +190,11 @@ class InterfaceServer(InterfaceServiceServicer):
         cni_params = request
         requested_pod_id = cni_params.pod_id
         requested_pod_name = get_pod_name(requested_pod_id)
+        logger.info(
+            "Call from CNI Consume: cni_params/request: {}, cni_params.pod_id {}, pod_name {}".format(request, request.pod_id, requested_pod_name))
         logger.info("Consume Interfaces {}".format(request))
-        logger.debug(
-            "Consuming interfaces for pod {}".format(requested_pod_name))
+        logger.info("Consuming interfaces for pod: {} Current Queue: {}".format(
+            requested_pod_name, list(self.interfaces_q.queue)))
         start = time.time()
 
         # The following is a synchronization mechanism to make sure the
@@ -209,7 +211,7 @@ class InterfaceServer(InterfaceServiceServicer):
 
             if queued_pod_name == requested_pod_name:
                 # Interfaces for the Pod has been produced
-                return self._ConsumeInterfaces(queued_pod_name, cni_params)
+                return self._ConsumeInterfaces(queued_pod_name, request)
 
             # Update the wait time and break the wait if necessary
             self.interfaces_q.put(queued_pod_name)
@@ -220,8 +222,9 @@ class InterfaceServer(InterfaceServiceServicer):
 
         # If we are here, the endpoint operator has not produced any interfaces
         # for the Pod. Typically the CNI will retry to consume the interface.
-        logger.error("Timeout, no new interface to consume!")
-        return self._ConsumeInterfaces(requested_pod_name, cni_params)
+        logger.error("Timeout, no new interface to consume! {} {}".format(
+            requested_pod_name, list(self.interfaces_q.queue)))
+        return self._ConsumeInterfaces(requested_pod_name, request)
 
     def _DeleteVethInterface(self, interface):
         """
@@ -255,7 +258,8 @@ class InterfaceServer(InterfaceServiceServicer):
 
         # Provision host veth interface and load transit xdp agent.
         veth_peer_index = get_iface_index(interface.veth.peer, self.iproute)
-        self.iproute.link('set', index=veth_peer_index, state='up', mtu=9000)
+        self.iproute.link('set', index=veth_peer_index,
+                          state='up', mtu=9000)
         self.rpc.load_transit_agent_xdp(interface)
 
         veth_index = get_iface_index(interface.veth.name, self.iproute)

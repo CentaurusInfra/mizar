@@ -71,6 +71,9 @@ class DropletOperator(object):
     def store_get_by_ip(self, ip):
         return self.store.get_droplet_by_ip(ip)
 
+    def store_get_by_main_ip(self, ip):
+        return self.store.get_droplet_by_main_ip(ip)
+
     def set_droplet_provisioned(self, droplet):
         droplet.set_status(OBJ_STATUS.droplet_status_provisioned)
         droplet.update_obj()
@@ -105,7 +108,7 @@ class DropletOperator(object):
         name = kwargs['name']
 
     def create_droplet(self, ip):
-        try :
+        try:
             clnt = DropletClient(ip)
             info = clnt.GetDropletInfo()
         except:

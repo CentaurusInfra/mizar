@@ -378,7 +378,6 @@ class EndpointOperator(object):
         Construct the interface message and call the InitializeInterfaces gRPC on
         the hostIP
         """
-        logger.info("init_simple_endpoint_interface {}".format(worker_ip))
         pod_id = PodId(k8s_pod_name=spec['name'],
                        k8s_namespace=spec['namespace'],
                        k8s_pod_tenant=spec['tenant'])
@@ -412,6 +411,8 @@ class EndpointOperator(object):
 
             # The Interface service will create the veth peers for the interface and
             # allocate the mac addresses for us.
+            logger.info("init_simple_endpoint_interface on {} for {}".format(
+                worker_ip, spec['name']))
             return InterfaceServiceClient(worker_ip).InitializeInterfaces(interfaces)
         return None
 

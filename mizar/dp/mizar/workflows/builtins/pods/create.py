@@ -63,7 +63,7 @@ class k8sPodCreate(WorkflowTask):
         }
 
         spec['vni'] = vpc_opr.store_get(spec['vpc']).vni
-        spec['droplet'] = droplet_opr.store_get_by_ip(spec['hostIP'])
+        spec['droplet'] = droplet_opr.store_get_by_main_ip(spec['hostIP'])
         # Preexisting pods triggered when droplet objects are not yet created.
         if not spec['droplet']:
             self.raise_temporary_error("Droplet not yet created.")
@@ -103,7 +103,8 @@ class k8sPodCreate(WorkflowTask):
         #     self.finalize()
         #     return
 
-        (policy_name_list, pod_label_value, namespace_label_value) = networkpolicy_util.retrieve_change_for_networkpolicy(self.param.name, self.param.namespace, self.param.body.metadata.labels, self.param.diff)
+        (policy_name_list, pod_label_value, namespace_label_value) = networkpolicy_util.retrieve_change_for_networkpolicy(
+            self.param.name, self.param.namespace, self.param.body.metadata.labels, self.param.diff)
         spec['pod_label_value'] = pod_label_value
         spec['namespace_label_value'] = namespace_label_value
         if spec['phase'] != 'Pending':
@@ -112,6 +113,8 @@ class k8sPodCreate(WorkflowTask):
             return
 
         # Init all interfaces on the host
+        logger.info(
+            "Initing endpoint interface on for {} on host {}".format(self.param.name, spec['hostIP']))
         interfaces = endpoint_opr.init_simple_endpoint_interfaces(
             spec['hostIP'], spec)
         if not interfaces:

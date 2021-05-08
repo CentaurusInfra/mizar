@@ -16,7 +16,9 @@ sudo apt-get install -y \
     python3 \
     python3-pip \
     libcmocka-dev \
-    lcov
+    lcov \
+	python3.7-dev \
+	python-apt
 
 sudo apt-get install -y docker.io
 sudo pip3 install --upgrade pip
