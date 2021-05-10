@@ -730,18 +730,35 @@ static __inline int trn_process_geneve(struct transit_packet *pkt)
 	}
 
 	pkt->pod_label_value_opt = (void *)pkt->scaled_ep_opt + sizeof(*pkt->scaled_ep_opt);
+	
 	if (pkt->pod_label_value_opt + 1 > pkt->data_end) {
 		bpf_debug("[Scaled_EP:%d:0x%x] ABORTED: Bad offset\n", __LINE__,
 			  bpf_ntohl(pkt->itf_ipv4));
 		return XDP_ABORTED;
-	}	
+	}
+
+	if (pkt->pod_label_value_opt->opt_class != TRN_GNV_OPT_CLASS) {
+		bpf_debug(
+			"[Scaled_EP:%d:0x%x] ABORTED: Unsupported Geneve option class\n",
+			__LINE__, bpf_ntohl(pkt->itf_ipv4));
+		return XDP_ABORTED;
+	}
 
 	pkt->namespace_label_value_opt = (void *)pkt->pod_label_value_opt + sizeof(*pkt->pod_label_value_opt);
+
 	if (pkt->namespace_label_value_opt + 1 > pkt->data_end) {
 		bpf_debug("[Scaled_EP:%d:0x%x] ABORTED: Bad offset\n", __LINE__,
 			  bpf_ntohl(pkt->itf_ipv4));
 		return XDP_ABORTED;
 	}
+
+	if (pkt->namespace_label_value_opt->opt_class != TRN_GNV_OPT_CLASS) {
+		bpf_debug(
+			"[Scaled_EP:%d:0x%x] ABORTED: Unsupported Geneve option class\n",
+			__LINE__, bpf_ntohl(pkt->itf_ipv4));
+		return XDP_ABORTED;
+	}
+
 	// TODO: Handle label based policy from pod_label_value (pkt->pod_label_value_opt->label_value_data.value) 
 	// and namespace_label_value (pkt->namespace_label_value_opt->label_value_data.value)
 
