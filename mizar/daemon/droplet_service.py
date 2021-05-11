@@ -16,7 +16,7 @@ logger = logging.getLogger()
 class DropletServer(droplet_pb2_grpc.DropletServiceServicer):
 
     def __init__(self):
-        self.itf = "eth0"
+        self.itf = get_itf()
         cmd = 'ip addr show %s | grep "inet\\b" | awk \'{print $2}\' | cut -d/ -f1' % self.itf
         r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         self.ip = r.stdout.read().decode().strip()

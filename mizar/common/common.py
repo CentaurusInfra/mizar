@@ -435,9 +435,9 @@ def bindmount_netns(src_netns_path, dst_netns_path):
 
 
 def get_itf():
-    default_itf = os.popen(
-        "route | grep '^default' | grep -o '[^ ]*$'").read().split('\n')[0]
+    default_itf = "eth0"
     if "MIZAR_ITF" in os.environ:
+        logger.info("MIZAR_ITF env var found!")
         return os.getenv("MIZAR_ITF")
     else:
         return default_itf

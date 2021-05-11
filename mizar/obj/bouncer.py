@@ -52,7 +52,7 @@ class Bouncer(object):
 
     @property
     def rpc(self):
-        return TrnRpc(self.ip, self.mac)
+        return TrnRpc(self.ip, self.mac, self.droplet_obj.itf)
 
     def get_obj_spec(self):
         self.obj = {
