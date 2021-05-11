@@ -18,7 +18,7 @@ sudo apt-get install -y \
     libcmocka-dev \
     lcov \
 	python3.7-dev \
-	python-apt \
+	python3-apt \
 	docker.io
 
 sudo systemctl unmask docker.service

@@ -19,7 +19,6 @@ setup(
         'kubernetes==11.0.0',
         'luigi==2.8.12',
         'grpcio',
-        'gprcio-tools',
         'scapy',
         'protobuf',
         'fs'
