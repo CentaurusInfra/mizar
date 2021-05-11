@@ -744,6 +744,13 @@ static __inline int trn_process_geneve(struct transit_packet *pkt)
 		return XDP_ABORTED;
 	}
 
+	if (pkt->pod_label_value_opt->type != TRN_GNV_LABEL_VALUE_OPT_TYPE) {
+		bpf_debug(
+			"[Scaled_EP:%d:0x%x] ABORTED: Unsupported Geneve option type\n",
+			__LINE__, bpf_ntohl(pkt->itf_ipv4));
+		return XDP_ABORTED;
+	}
+
 	pkt->namespace_label_value_opt = (void *)pkt->pod_label_value_opt + sizeof(*pkt->pod_label_value_opt);
 
 	if (pkt->namespace_label_value_opt + 1 > pkt->data_end) {
@@ -755,6 +762,13 @@ static __inline int trn_process_geneve(struct transit_packet *pkt)
 	if (pkt->namespace_label_value_opt->opt_class != TRN_GNV_OPT_CLASS) {
 		bpf_debug(
 			"[Scaled_EP:%d:0x%x] ABORTED: Unsupported Geneve option class\n",
+			__LINE__, bpf_ntohl(pkt->itf_ipv4));
+		return XDP_ABORTED;
+	}
+
+	if (pkt->namespace_label_value_opt->type != TRN_GNV_LABEL_VALUE_OPT_TYPE) {
+		bpf_debug(
+			"[Scaled_EP:%d:0x%x] ABORTED: Unsupported Geneve option type\n",
 			__LINE__, bpf_ntohl(pkt->itf_ipv4));
 		return XDP_ABORTED;
 	}
