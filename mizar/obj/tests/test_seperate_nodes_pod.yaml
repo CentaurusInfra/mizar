@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: testpod1
+  labels:
+    podkey: testpodkey1
+spec:
+  restartPolicy: OnFailure
+  terminationGracePeriodSeconds: 2
+  containers:
+    - name: testpod3
+      image: phudtran/testpod
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: testpod2
+spec:
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: podkey
+                operator: In
+                values:
+                  - testpodkey1
+          topologyKey: kubernetes.io/hostname
+  restartPolicy: OnFailure
+  terminationGracePeriodSeconds: 2
+  containers:
+    - name: testpod2
+      image: phudtran/testpod
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: testpod3
+spec:
+  affinity:
+    podAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: podkey
+                operator: In
+                values:
+                  - testpodkey1
+          topologyKey: kubernetes.io/hostname
+  restartPolicy: OnFailure
+  terminationGracePeriodSeconds: 2
+  containers:
+    - name: testpod3
+      image: phudtran/testpod

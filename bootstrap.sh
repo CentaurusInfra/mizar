@@ -13,16 +13,14 @@ sudo apt-get update
 sudo apt-get install -y \
     build-essential clang-7 llvm-7 \
     libelf-dev \
-    python3 \
+    python3.7 \
     python3-pip \
     libcmocka-dev \
     lcov \
 	python3.7-dev \
-	python-apt
+	python-apt \
+	docker.io
 
-sudo apt-get install -y docker.io
-sudo pip3 install --upgrade pip
-sudo pip3 install netaddr docker scapy grpcio-tools
 sudo systemctl unmask docker.service
 sudo systemctl unmask docker.socket
 
@@ -34,6 +32,12 @@ fi
 
 sudo systemctl start docker
 sudo systemctl enable docker
+sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1
+sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 2
+sudo update-alternatives --set python3 /usr/bin/python3.7
+# Fix for apt-pkg missing when using python3.7
+sudo ln -s /usr/lib/python3/dist-packages/apt_pkg.cpython-36m-x86_64-linux-gnu.so /usr/lib/python3/dist-packages/apt_pkg.so
+sudo pip3 install netaddr docker
 
 # Install kind
 if [ ! -f /usr/local/bin/kind ]; then
