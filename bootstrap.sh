@@ -19,6 +19,7 @@ sudo apt-get install -y \
     lcov \
 	python3.7-dev \
 	python3-apt \
+	pkg-config \
 	docker.io
 
 sudo systemctl unmask docker.service
@@ -32,6 +33,7 @@ fi
 
 sudo systemctl start docker
 sudo systemctl enable docker
+# kopf no longer available in python3.6 via pip
 sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1
 sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 2
 sudo update-alternatives --set python3 /usr/bin/python3.7
@@ -59,8 +61,8 @@ if [ ! -f /usr/local/bin/kind ]; then
 fi
 
 sudo docker build -f ./test/Dockerfile -t buildbox:v2 ./test
-
 git submodule update --init --recursive
+make
 
 kernel_ver=`uname -r`
 echo "Running kernel version: $kernel_ver"
