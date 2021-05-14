@@ -19,7 +19,7 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-apiVersion: apiextensions.k8s.io/v1
+apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   name: droplets.mizar.com
@@ -48,11 +48,6 @@ spec:
       priority: 0
       JSONPath: .spec.ip
       description: The IP of the droplet
-    - name: MainIp
-      type: string
-      priority: 0
-      JSONPath: .spec.mainip
-      description: The IP of the main interface
     - name: Status
       type: string
       priority: 0
@@ -73,3 +68,8 @@ spec:
       priority: 0
       JSONPath: .spec.provisiondelay
       description: Time to provision an object from creation
+    - name: MainIp
+      type: string
+      priority: 0
+      JSONPath: .spec.mainip
+      description: The IP of the main interface

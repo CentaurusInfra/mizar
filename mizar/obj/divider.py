@@ -46,7 +46,7 @@ class Divider(object):
 
     @property
     def rpc(self):
-        return TrnRpc(self.ip, self.mac, self.droplet_obj.itf)
+        return TrnRpc(self.ip, self.mac, self.droplet_obj.phy_itf)
 
     def get_obj_spec(self):
         self.obj = {
