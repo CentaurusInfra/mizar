@@ -147,6 +147,7 @@ class ArktosService(BuiltinsServiceServicer):
         param.body['metadata'] = {}
         param.body['metadata']['namespace'] = request.namespace
         param.body['metadata']['tenant'] = request.tenant
+        param.spec = json.loads(request.policy)
         param.extra = {}
         return run_arktos_workflow(wffactory().k8sNetworkPolicyCreate(param=param))
 
