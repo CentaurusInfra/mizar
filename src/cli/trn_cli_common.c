@@ -920,6 +920,52 @@ int trn_cli_parse_network_policy_protocol_port_key(const cJSON *jsonobj,
 	return 0;
 }
 
+int trn_cli_parse_pod_label_policy(const cJSON *jsonobj,
+				      	       struct rpc_trn_pod_label_policy_t *policy)
+{
+	cJSON *pod_label_value = cJSON_GetObjectItem(jsonobj, "pod_label_value");
+	cJSON *bit_val = cJSON_GetObjectItem(jsonobj, "bit_value");
+
+	if (pod_label_value == NULL) {
+		policy->pod_label_value = 0;
+	} else if (cJSON_IsString(pod_label_value)) {
+		policy->pod_label_value = atoi(pod_label_value->valuestring);
+	} else if (cJSON_IsNumber(pod_label_value)) {
+		policy->pod_label_value = pod_label_value->valueint;
+	} else {
+		print_err("Error: pod_label_value Error\n");
+		return -EINVAL;
+	}
+
+	if (cJSON_IsString(bit_val)) {
+		policy->bit_val = atoi(bit_val->valuestring);
+	} else {
+		print_err("Error: Network policy bit map Error\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int trn_cli_parse_pod_label_policy_key(const cJSON *jsonobj,
+						   struct rpc_trn_pod_label_policy_key_t *key)
+{
+	cJSON *pod_label_value = cJSON_GetObjectItem(jsonobj, "pod_label_value");
+
+	if (pod_label_value == NULL) {
+		key->pod_label_value = 0;
+	} else if (cJSON_IsString(pod_label_value)) {
+		key->pod_label_value = atoi(pod_label_value->valuestring);
+	} else if (cJSON_IsNumber(pod_label_value)) {
+		key->pod_label_value = pod_label_value->valueint;
+	} else {
+		print_err("Error: pod_label_value Error\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 uint32_t parse_ip_address(const cJSON *ipobj)
 {
 	struct sockaddr_in sa;

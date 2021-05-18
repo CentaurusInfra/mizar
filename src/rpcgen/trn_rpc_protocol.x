@@ -224,6 +224,19 @@ struct rpc_trn_vsip_ppo_key_t {
        uint16_t port;
 };
 
+/* Defines a pod label policy table entry */
+struct rpc_trn_pod_label_policy_t {
+       string interface<20>;
+       uint32_t pod_label_value;
+       uint64_t bit_val;
+};
+
+/* Defines a pod label policy table key */
+struct rpc_trn_pod_label_policy_key_t {
+       string interface<20>;
+       uint32_t pod_label_value;
+};
+
 /*----- Protocol. -----*/
 
 program RPC_TRANSIT_REMOTE_PROTOCOL {
@@ -270,7 +283,10 @@ program RPC_TRANSIT_REMOTE_PROTOCOL {
                 int DELETE_AGENT_NETWORK_POLICY_PROTOCOL_PORT(rpc_trn_vsip_ppo_key_t) = 34;
 
                 int UPDATE_PACKET_METADATA(rpc_trn_packet_metadata_t) = 35;
-                int DELETE_PACKET_METADATA(rpc_trn_packet_metadata_key_t) = 36;                
+                int DELETE_PACKET_METADATA(rpc_trn_packet_metadata_key_t) = 36;
+
+                int UPDATE_TRANSIT_POD_LABEL_POLICY(rpc_trn_pod_label_policy_t) = 37;
+                int DELETE_TRANSIT_POD_LABEL_POLICY(rpc_trn_pod_label_policy_key_t) = 38;
 
           } = 1;
 

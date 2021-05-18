@@ -126,8 +126,9 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	md->ing_vsip_prim_map = bpf_map__next(md->ing_vsip_enforce_map, md->obj);
 	md->ing_vsip_ppo_map = bpf_map__next(md->ing_vsip_prim_map, md->obj);
 	md->ing_vsip_supp_map = bpf_map__next(md->ing_vsip_ppo_map, md->obj);
-	md->ing_vsip_except_map = bpf_map__next(md->ing_vsip_supp_map, md->obj);
+	md->ing_vsip_except_map = bpf_map__next(md->ing_vsip_supp_map, md->obj);	
 	md->conn_track_cache = bpf_map__next(md->ing_vsip_except_map, md->obj);
+	md->ing_pod_label_policy_map = bpf_map__next(md->conn_track_cache, md->obj);
 
 	if (!md->networks_map || !md->vpc_map || !md->endpoints_map ||
 	    !md->port_map || !md->hosted_endpoints_iface_map ||
@@ -139,10 +140,19 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	    !md->ing_vsip_ppo_map || !md->ing_vsip_supp_map ||
 	    !md->ing_vsip_except_map || !md->eg_vsip_enforce_map ||
 	    !md->eg_vsip_prim_map || !md->eg_vsip_ppo_map ||
-	    !md->eg_vsip_supp_map || !md->eg_vsip_except_map ||
-	    !md->conn_track_cache) {
+	    !md->eg_vsip_supp_map || !md->eg_vsip_except_map //||
+	    //!md->conn_track_cache || !md->ing_pod_label_policy_map
+		) {
 		TRN_LOG_ERROR("Failure finding maps objects.");
 		return 1;
+	}
+
+	TRN_LOG_INFO("hochan");
+	if (!md->conn_track_cache){
+		TRN_LOG_INFO("hochan1");
+	}
+	if (!md->ing_pod_label_policy_map){
+		TRN_LOG_INFO("hochan2");
 	}
 
 	md->jmp_table_fd = bpf_map__fd(md->jmp_table_map);
@@ -169,6 +179,7 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	md->ing_vsip_supp_map_fd = bpf_map__fd(md->ing_vsip_supp_map);
 	md->ing_vsip_except_map_fd = bpf_map__fd(md->ing_vsip_except_map);
 	md->conn_track_cache_fd = bpf_map__fd(md->conn_track_cache);
+	md->ing_pod_label_policy_map_fd = bpf_map__fd(md->ing_pod_label_policy_map);
 
 	if (bpf_map__unpin(md->xdpcap_hook_map, md->pcapfile) == 0) {
 		TRN_LOG_INFO("unpin exiting pcap map file: %s", md->pcapfile);
@@ -193,6 +204,7 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	bpf_map__pin(md->ing_vsip_supp_map, ing_vsip_supp_map_path);
 	bpf_map__pin(md->ing_vsip_except_map, ing_vsip_except_map_path);
 	bpf_map__pin(md->conn_track_cache, conn_track_cache_path);
+	bpf_map__pin(md->ing_pod_label_policy_map, ing_pod_label_policy_map_path);
 
 	return 0;
 }
@@ -384,6 +396,7 @@ int trn_add_prog(struct user_metadata_t *md, unsigned int prog_idx,
 	_SET_INNER_MAP(ing_vsip_supp_map);
 	_SET_INNER_MAP(ing_vsip_except_map);
 	_SET_INNER_MAP(conn_track_cache);
+	_SET_INNER_MAP(ing_pod_label_policy_map);
 
 	/* Only one prog is supported */
 	bpf_object__for_each_program(prog, stage->obj)
@@ -431,6 +444,7 @@ int trn_add_prog(struct user_metadata_t *md, unsigned int prog_idx,
 	_UPDATE_INNER_MAP(ing_vsip_supp_map);
 	_UPDATE_INNER_MAP(ing_vsip_except_map);
 	_UPDATE_INNER_MAP(conn_track_cache);
+	_UPDATE_INNER_MAP(ing_pod_label_policy_map);
 
 	return 0;
 error:
@@ -560,6 +574,7 @@ int trn_user_metadata_init(struct user_metadata_t *md, char *itf,
 	_REUSE_MAP_IF_PINNED(ing_vsip_supp_map);
 	_REUSE_MAP_IF_PINNED(ing_vsip_except_map);
 	_REUSE_MAP_IF_PINNED(conn_track_cache);
+	_REUSE_MAP_IF_PINNED(ing_pod_label_policy_map);
 
 	if (bpf_prog_load_xattr(&prog_load_attr, &md->obj, &md->prog_fd)) {
 		TRN_LOG_ERROR("Error loading bpf: %s", kern_path);
@@ -713,6 +728,33 @@ int trn_delete_transit_network_policy_protocol_port_map(struct user_metadata_t *
 	if (err) {
 		TRN_LOG_ERROR("Delete Protocol-Port ingress map failed (err:%d).for ip address 0x%x with protocol %d and port %d. \n",
 				err, policy->local_ip, policy->proto, policy->port);
+		return 1;
+	}
+
+	return 0;
+}
+
+int trn_update_transit_pod_label_policy_map(struct user_metadata_t *md,
+						        struct pod_label_policy_t *policy,
+						        __u64 bitmap)
+{
+	int err = bpf_map_update_elem(md->ing_pod_label_policy_map_fd, policy, &bitmap, 0);
+	if (err) {
+		TRN_LOG_ERROR("Update pod label policy ingress map failed (err:%d) for pod label value %d. \n",
+				err, policy->pod_label_value);
+		return 1;
+	}
+	return 0;
+}
+
+int trn_delete_transit_pod_label_policy_map(struct user_metadata_t *md,
+						        struct pod_label_policy_t *policy)
+{
+	int err = bpf_map_delete_elem(md->ing_pod_label_policy_map_fd, policy);
+
+	if (err) {
+		TRN_LOG_ERROR("Delete pod label policy ingress map failed (err:%d).for pod label value %d. \n",
+				err, policy->pod_label_value);
 		return 1;
 	}
 

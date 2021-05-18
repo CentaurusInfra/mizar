@@ -61,3 +61,9 @@ class EndpointEnforced:
     def __init__(self, vni, ip):
         self.vni = vni
         self.ip = ip
+
+class LabelPolicy:
+    def __init__(self, pod_label_value, namespace_label_value, policy_bit_value):
+        self.pod_label_value = pod_label_value
+        self.namespace_label_value = namespace_label_value
+        self.policy_bit_value = policy_bit_value

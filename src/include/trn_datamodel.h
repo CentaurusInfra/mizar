@@ -177,6 +177,10 @@ struct vsip_ppo_t {
 	__be16 port;
 } __attribute__((packed));
 
+struct pod_label_policy_t {
+	__u32 pod_label_value;
+} __attribute__((packed));
+
 struct ipv4_ct_tuple_t {
 	struct vpc_key_t vpc;
 	struct ipv4_tuple_t tuple;
