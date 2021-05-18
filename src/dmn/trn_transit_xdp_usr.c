@@ -204,7 +204,6 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	bpf_map__pin(md->ing_vsip_supp_map, ing_vsip_supp_map_path);
 	bpf_map__pin(md->ing_vsip_except_map, ing_vsip_except_map_path);
 	bpf_map__pin(md->conn_track_cache, conn_track_cache_path);
-	bpf_map__pin(md->ing_pod_label_policy_map, ing_pod_label_policy_map_path);
 
 	return 0;
 }
@@ -574,7 +573,6 @@ int trn_user_metadata_init(struct user_metadata_t *md, char *itf,
 	_REUSE_MAP_IF_PINNED(ing_vsip_supp_map);
 	_REUSE_MAP_IF_PINNED(ing_vsip_except_map);
 	_REUSE_MAP_IF_PINNED(conn_track_cache);
-	_REUSE_MAP_IF_PINNED(ing_pod_label_policy_map);
 
 	if (bpf_prog_load_xattr(&prog_load_attr, &md->obj, &md->prog_fd)) {
 		TRN_LOG_ERROR("Error loading bpf: %s", kern_path);
