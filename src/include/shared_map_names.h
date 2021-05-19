@@ -35,3 +35,4 @@ static const char *ing_vsip_ppo_map_path	= "/sys/fs/bpf/ing_vsip_ppo_map";
 static const char *ing_vsip_supp_map_path	= "/sys/fs/bpf/ing_vsip_supp_map";
 static const char *ing_vsip_except_map_path	= "/sys/fs/bpf/ing_vsip_except_map";
 static const char *conn_track_cache_path	= "/sys/fs/bpf/conn_track_cache";
+//static const char *ing_pod_label_policy_map_path	= "/sys/fs/bpf/ing_pod_label_policy_map";

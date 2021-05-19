@@ -62,7 +62,7 @@ KINDUSERCONFDIR="${HOME}/.kube"
 KINDUSERCONF="${KINDUSERCONFDIR}/config"
 KUBECTL_LOG="/tmp/${USER}_kubetctl.err"
 MODE=${1:-user}
-NODES=${2:-3}
+NODES=${2:-1}
 timeout=240
 
 if [[ "$MODE" == "dev" ]]; then
