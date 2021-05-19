@@ -322,6 +322,8 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 		return 1;
 	}
 
+	TRN_LOG_INFO("hochan2");
+
 	md->jmp_table_fd = bpf_map__fd(md->jmp_table_map);
 	md->agentmetadata_map_fd = bpf_map__fd(md->agentmetadata_map);
 	md->endpoints_map_fd = bpf_map__fd(md->endpoints_map);
