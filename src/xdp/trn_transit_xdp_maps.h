@@ -143,14 +143,6 @@ BPF_ANNOTATE_KV_PAIR(ep_host_cache, struct endpoint_key_t,
 
 struct bpf_map_def SEC("maps") xdpcap_hook = XDPCAP_HOOK();
 
-struct bpf_map_def SEC("maps") ing_pod_label_policy_map = {
-	.type = BPF_MAP_TYPE_HASH,
-	.key_size = sizeof(struct pod_label_policy_t),
-	.value_size = sizeof(__u64),
-	.max_entries = TRAN_MAX_CACHE_SIZE,
-};
-BPF_ANNOTATE_KV_PAIR(ing_pod_label_policy_map, struct pod_label_policy_t, __u64);
-
 // DONOT change the location of this inlude for now.
 // pinned maps for egress policy checks (shared by transit agent xdp progs)
 // and the global conn_track map
