@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: test-network-policy
+  name: test-network-policy1
   namespace: default
 spec:
   podSelector:
@@ -11,18 +11,9 @@ spec:
   - Ingress
   ingress:
   - from:
-    - namespaceSelector:
-        matchLabels:
-          app: nsnginx
-      podSelector:
-        matchLabels:
-          app: nginx
-    - namespaceSelector:
-        matchLabels:
-          app: nsnginx
     - podSelector:
         matchLabels:
-          app: nginx
+          environment: prod
     ports:
     - protocol: TCP
       port: 8000

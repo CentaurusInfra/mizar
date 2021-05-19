@@ -1,16 +1,16 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: arktospoddefault2
-  namespace: namespace2
+  name: arktospoddefault3
+  namespace: namespace3
   labels:
     app: nginx
-    environment: prod
+    environment: staging
   annotations:
     arktos.futurewei.com/nic: "[{\"name\": \"eth0\"}]"
 spec:
   containers:
-  - name: arktospoddefault2
+  - name: arktospoddefault3
     image: localhost:5000/testpod
     ports:
       - containerPort: 443
