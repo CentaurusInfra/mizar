@@ -923,8 +923,18 @@ int trn_cli_parse_network_policy_protocol_port_key(const cJSON *jsonobj,
 int trn_cli_parse_pod_label_policy(const cJSON *jsonobj,
 				      	       struct rpc_trn_pod_label_policy_t *policy)
 {
+	cJSON *tunnel_id = cJSON_GetObjectItem(jsonobj, "tunnel_id");
 	cJSON *pod_label_value = cJSON_GetObjectItem(jsonobj, "pod_label_value");
 	cJSON *bit_val = cJSON_GetObjectItem(jsonobj, "bit_value");
+
+	if (tunnel_id == NULL) {
+		policy->tunid = 0;
+	} else if (cJSON_IsString(tunnel_id)) {
+		policy->tunid = atoi(tunnel_id->valuestring);
+	} else {
+		print_err("Error: Network policy tunnel_id is non-string.\n");
+		return -EINVAL;
+	}
 
 	if (pod_label_value == NULL) {
 		policy->pod_label_value = 0;
@@ -950,7 +960,17 @@ int trn_cli_parse_pod_label_policy(const cJSON *jsonobj,
 int trn_cli_parse_pod_label_policy_key(const cJSON *jsonobj,
 						   struct rpc_trn_pod_label_policy_key_t *key)
 {
+	cJSON *tunnel_id = cJSON_GetObjectItem(jsonobj, "tunnel_id");
 	cJSON *pod_label_value = cJSON_GetObjectItem(jsonobj, "pod_label_value");
+
+	if (tunnel_id == NULL) {
+		key->tunid = 0;
+	} else if (cJSON_IsString(tunnel_id)) {
+		key->tunid = atoi(tunnel_id->valuestring);
+	} else {
+		print_err("Error: Network policy tunnel_id is non-string.\n");
+		return -EINVAL;
+	}
 
 	if (pod_label_value == NULL) {
 		key->pod_label_value = 0;

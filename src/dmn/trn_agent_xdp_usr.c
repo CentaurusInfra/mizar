@@ -313,10 +313,13 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 	    !md->eg_vsip_except_map ||  !md->ing_vsip_enforce_map ||
 	    !md->ing_vsip_prim_map || !md->ing_vsip_ppo_map ||
 	    !md->ing_vsip_supp_map || !md->ing_vsip_except_map ||
-	    !md->conn_track_cache || !md->packet_metadata_map) {
+	    !md->conn_track_cache || !md->packet_metadata_map ||
+		!md->ing_pod_label_policy_map) {
 		TRN_LOG_ERROR("Failure finding maps objects.");
 		return 1;
 	}
+
+	TRN_LOG_INFO("hochan2");
 
 	md->jmp_table_fd = bpf_map__fd(md->jmp_table_map);
 	md->agentmetadata_map_fd = bpf_map__fd(md->agentmetadata_map);

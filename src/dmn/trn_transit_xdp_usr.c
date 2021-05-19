@@ -141,20 +141,12 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	    !md->ing_vsip_except_map || !md->eg_vsip_enforce_map ||
 	    !md->eg_vsip_prim_map || !md->eg_vsip_ppo_map ||
 	    !md->eg_vsip_supp_map || !md->eg_vsip_except_map ||
-	    !md->conn_track_cache 
-		//|| !md->ing_pod_label_policy_map
-		) {
+	    !md->conn_track_cache || !md->ing_pod_label_policy_map) {
 		TRN_LOG_ERROR("Failure finding maps objects.");
 		return 1;
 	}
 
-	TRN_LOG_INFO("hochan");
-	if (!md->conn_track_cache){
-		TRN_LOG_INFO("hochan1");
-	}
-	if (!md->ing_pod_label_policy_map){
-		TRN_LOG_INFO("hochan2");
-	}
+	TRN_LOG_INFO("hochan1");
 
 	md->jmp_table_fd = bpf_map__fd(md->jmp_table_map);
 	md->networks_map_fd = bpf_map__fd(md->networks_map);

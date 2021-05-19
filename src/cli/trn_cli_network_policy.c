@@ -828,6 +828,7 @@ void dump_protocol_port_policy(struct rpc_trn_vsip_ppo_t *ppo)
 void dump_pod_label_policy(struct rpc_trn_pod_label_policy_t *policy)
 {
 	print_msg("Interface: %s\n", policy->interface);
+	print_msg("Tunnel ID: %ld\n", policy->tunid);
 	print_msg("Pod Label Value: %d\n", policy->pod_label_value);
 	print_msg("bit value: %ld\n", policy->bit_val);
 }

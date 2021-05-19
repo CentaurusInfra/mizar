@@ -462,6 +462,7 @@ class TrnRpc:
         conf_list = []
         for label_policy in label_policy_list:
             conf = {
+                "tunnel_id": label_policy.vni,
                 "pod_label_value": label_policy.pod_label_value,
                 "bit_value": str(label_policy.policy_bit_value),
             }
@@ -541,6 +542,7 @@ class TrnRpc:
         conf_list = []
         for label_policy in label_policy_list:
             conf = {
+                "tunnel_id": label_policy.vni,
                 "pod_label_value": label_policy.pod_label_value,
             }
             conf_list.append(conf)

@@ -227,6 +227,7 @@ struct rpc_trn_vsip_ppo_key_t {
 /* Defines a pod label policy table entry */
 struct rpc_trn_pod_label_policy_t {
        string interface<20>;
+       uint64_t tunid;
        uint32_t pod_label_value;
        uint64_t bit_val;
 };
@@ -234,6 +235,7 @@ struct rpc_trn_pod_label_policy_t {
 /* Defines a pod label policy table key */
 struct rpc_trn_pod_label_policy_key_t {
        string interface<20>;
+       uint64_t tunid;
        uint32_t pod_label_value;
 };
 

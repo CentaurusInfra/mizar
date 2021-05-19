@@ -178,6 +178,7 @@ struct vsip_ppo_t {
 } __attribute__((packed));
 
 struct pod_label_policy_t {
+	__u64 tunnel_id;
 	__u32 pod_label_value;
 } __attribute__((packed));
 

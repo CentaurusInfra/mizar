@@ -1886,7 +1886,8 @@ int *update_transit_pod_label_policy_1_svc(rpc_trn_pod_label_policy_t *rpc_obj, 
 		result = RPC_TRN_ERROR;
 		goto error;
 	}
-
+	
+	policy.tunnel_id = rpc_obj->tunid;
 	policy.pod_label_value = rpc_obj->pod_label_value;
 	TRN_LOG_INFO("rpc_obj: pod_label_value  %d\n", 
 				rpc_obj->pod_label_value);
@@ -1922,6 +1923,7 @@ int *delete_transit_pod_label_policy_1_svc(rpc_trn_pod_label_policy_key_t *key, 
 		goto error;
 	}
 
+	policy.tunnel_id = key->tunid;
 	policy.pod_label_value = key->pod_label_value;
 	TRN_LOG_INFO("key: pod_label_value  %d\n", 
 				key->pod_label_value);

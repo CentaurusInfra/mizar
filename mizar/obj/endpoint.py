@@ -454,7 +454,7 @@ class Endpoint:
         cidr_networkpolicy_list = []
         for item in policy_table:
             cidr_networkpolicy = LabelPolicy(
-                item["pod_label_value"], "", item["bit_value"])
+                item["vni"], item["pod_label_value"], "", item["bit_value"])
             cidr_networkpolicy_list.append(cidr_networkpolicy)
         self.rpc.update_pod_label_policy(cidr_networkpolicy_list)
 
@@ -498,7 +498,7 @@ class Endpoint:
         cidr_networkpolicy_list = []
         for item in policy_table:
             cidr_networkpolicy = LabelPolicy(
-                item["pod_label_value"], "", "")
+                item["vni"], item["pod_label_value"], "", "")
             cidr_networkpolicy_list.append(cidr_networkpolicy)
         self.rpc.delete_pod_label_policy(cidr_networkpolicy_list)
 
