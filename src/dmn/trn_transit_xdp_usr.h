@@ -75,9 +75,9 @@ struct ebpf_prog_stage_t {
 	int ing_vsip_prim_map_ref_fd;
 	int ing_vsip_ppo_map_ref_fd;
 	int ing_vsip_supp_map_ref_fd;
-	int ing_vsip_except_map_ref_fd;
-	int ing_pod_label_policy_map_ref_fd;
+	int ing_vsip_except_map_ref_fd;	
 	int conn_track_cache_ref_fd;
+	int ing_pod_label_policy_map_ref_fd;
 
 	struct bpf_map *networks_map_ref;
 	struct bpf_map *vpc_map_ref;
@@ -100,9 +100,9 @@ struct ebpf_prog_stage_t {
 	struct bpf_map *ing_vsip_prim_map_ref;
 	struct bpf_map *ing_vsip_ppo_map_ref;
 	struct bpf_map *ing_vsip_supp_map_ref;
-	struct bpf_map *ing_vsip_except_map_ref;
-	struct bpf_map *ing_pod_label_policy_map_ref;
+	struct bpf_map *ing_vsip_except_map_ref;	
 	struct bpf_map *conn_track_cache_ref;
+	struct bpf_map *ing_pod_label_policy_map_ref;
 };
 
 struct user_metadata_t {
@@ -136,9 +136,9 @@ struct user_metadata_t {
 	int ing_vsip_prim_map_fd;
 	int ing_vsip_ppo_map_fd;
 	int ing_vsip_supp_map_fd;
-	int ing_vsip_except_map_fd;
-	int ing_pod_label_policy_map_fd;
+	int ing_vsip_except_map_fd;	
 	int conn_track_cache_fd;
+	int ing_pod_label_policy_map_fd;
 
 	struct bpf_map *jmp_table_map;
 	struct bpf_map *networks_map;
@@ -162,9 +162,9 @@ struct user_metadata_t {
 	struct bpf_map *ing_vsip_prim_map;
 	struct bpf_map *ing_vsip_ppo_map;
 	struct bpf_map *ing_vsip_supp_map;
-	struct bpf_map *ing_vsip_except_map;
+	struct bpf_map *ing_vsip_except_map;	
+	struct bpf_map *conn_track_cache;
 	struct bpf_map *ing_pod_label_policy_map;
-	struct bpf_map *conn_track_cache;	
 
 	struct bpf_prog_info info;
 	struct bpf_object *obj;

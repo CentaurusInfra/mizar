@@ -133,3 +133,12 @@ struct bpf_map_def SEC("maps") conn_track_cache = {
 	.max_entries = TRAN_MAX_CACHE_SIZE,
 };
 BPF_ANNOTATE_KV_PAIR(conn_track_cache, struct ipv4_ct_tuple_t, __u8);
+
+struct bpf_map_def SEC("maps") ing_pod_label_policy_map = {
+	.type = BPF_MAP_TYPE_HASH,
+	.key_size = sizeof(struct pod_label_policy_t),
+	.value_size = sizeof(__u64),
+	.max_entries = 1024 * 1024,
+	.map_flags = 0,
+};
+BPF_ANNOTATE_KV_PAIR(ing_pod_label_policy_map, struct pod_label_policy_t, __u64);

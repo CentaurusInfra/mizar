@@ -302,6 +302,7 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 	md->ing_vsip_supp_map = bpf_map__next(md->ing_vsip_ppo_map, md->obj);
 	md->ing_vsip_except_map = bpf_map__next(md->ing_vsip_supp_map, md->obj);
 	md->conn_track_cache = bpf_map__next(md->ing_vsip_except_map, md->obj);
+	md->ing_pod_label_policy_map = bpf_map__next(md->conn_track_cache, md->obj);
 
 	if (!md->jmp_table_map || !md->agentmetadata_map ||
 	    !md->endpoints_map || !md->xdpcap_hook_map ||
@@ -337,6 +338,7 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 	md->ing_vsip_supp_map_fd	= bpf_map__fd(md->ing_vsip_supp_map);
 	md->ing_vsip_except_map_fd	= bpf_map__fd(md->ing_vsip_except_map);
 	md->conn_track_cache_fd		= bpf_map__fd(md->conn_track_cache);
+	md->ing_pod_label_policy_map_fd		= bpf_map__fd(md->ing_pod_label_policy_map);
 
 	if (bpf_map__unpin(md->xdpcap_hook_map, md->pcapfile) == 0) {
 		TRN_LOG_INFO("unpin exiting pcap map file: %s", md->pcapfile);
@@ -361,6 +363,7 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 	bpf_map__pin(md->ing_vsip_supp_map, ing_vsip_supp_map_path);
 	bpf_map__pin(md->ing_vsip_except_map, ing_vsip_except_map_path);
 	bpf_map__pin(md->conn_track_cache, conn_track_cache_path);
+	bpf_map__pin(md->ing_pod_label_policy_map, ing_pod_label_policy_map_path);
 
 	return 0;
 }
@@ -503,6 +506,8 @@ static int _trn_bpf_agent_prog_load_xattr(struct agent_user_metadata_t *md,
 	_REUSE_MAP_IF_PINNED(ing_vsip_supp_map);
 	_REUSE_MAP_IF_PINNED(ing_vsip_except_map);
 	_REUSE_MAP_IF_PINNED(conn_track_cache);
+	_REUSE_MAP_IF_PINNED(ing_pod_label_policy_map);
+	
 
 	/* Only one prog is supported */
 	bpf_object__for_each_program(prog, *pobj)
