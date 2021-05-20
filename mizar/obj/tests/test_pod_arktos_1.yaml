@@ -2,9 +2,8 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: arktospoddefault1
-  namespace: namespace1
   labels:
-    role: frontend
+    arktos.futurewei.com/network: vpc0
   annotations:
     arktos.futurewei.com/nic: "[{\"name\": \"eth0\"}]"
 spec:
@@ -13,4 +12,3 @@ spec:
     image: localhost:5000/testpod
     ports:
       - containerPort: 443
-
