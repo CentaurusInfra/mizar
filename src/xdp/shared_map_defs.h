@@ -142,3 +142,21 @@ struct bpf_map_def SEC("maps") ing_pod_label_policy_map = {
 	.map_flags = 0,
 };
 BPF_ANNOTATE_KV_PAIR(ing_pod_label_policy_map, struct pod_label_policy_t, __u64);
+
+struct bpf_map_def SEC("maps") ing_namespace_label_policy_map = {
+	.type = BPF_MAP_TYPE_HASH,
+	.key_size = sizeof(struct namespace_label_policy_t),
+	.value_size = sizeof(__u64),
+	.max_entries = 1024 * 1024,
+	.map_flags = 0,
+};
+BPF_ANNOTATE_KV_PAIR(ing_namespace_label_policy_map, struct namespace_label_policy_t, __u64);
+
+struct bpf_map_def SEC("maps") ing_pod_and_namespace_label_policy_map = {
+	.type = BPF_MAP_TYPE_HASH,
+	.key_size = sizeof(struct pod_and_namespace_label_policy_t),
+	.value_size = sizeof(__u64),
+	.max_entries = 1024 * 1024,
+	.map_flags = 0,
+};
+BPF_ANNOTATE_KV_PAIR(ing_pod_and_namespace_label_policy_map, struct pod_and_namespace_label_policy_t, __u64);

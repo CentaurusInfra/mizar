@@ -402,6 +402,8 @@ class Endpoint:
             self.delete_network_policy_protocol_port_ingress(data["old"]["ingress"]["port_table"])
             self.delete_network_policy_protocol_port_egress(data["old"]["egress"]["port_table"])
             self.delete_pod_label_policy(data["old"]["ingress"]["pod_label_policy_table"])
+            self.delete_namespace_label_policy(data["old"]["ingress"]["namespace_label_policy_table"])
+            self.delete_pod_and_namespace_label_policy(data["old"]["ingress"]["pod_and_namespace_label_policy_table"])
 
         # When updating policy data, except data should be before cidr data
         self.update_network_policy_ingress("except", data["ingress"]["cidr_table_except"])
@@ -413,6 +415,8 @@ class Endpoint:
         self.update_network_policy_protocol_port_ingress(data["ingress"]["port_table"])
         self.update_network_policy_protocol_port_egress(data["egress"]["port_table"])
         self.update_pod_label_policy(data["ingress"]["pod_label_policy_table"])
+        self.update_namespace_label_policy(data["ingress"]["namespace_label_policy_table"])
+        self.update_pod_and_namespace_label_policy(data["ingress"]["pod_and_namespace_label_policy_table"])
 
     def update_network_policy_ingress(self, cidr_type, cidr_table):
         cidr_networkpolicy_list = []
@@ -458,6 +462,22 @@ class Endpoint:
             cidr_networkpolicy_list.append(cidr_networkpolicy)
         self.rpc.update_pod_label_policy(cidr_networkpolicy_list)
 
+    def update_namespace_label_policy(self, policy_table):
+        cidr_networkpolicy_list = []
+        for item in policy_table:
+            cidr_networkpolicy = LabelPolicy(
+                item["vni"], "", item["namespace_label_value"], item["bit_value"])
+            cidr_networkpolicy_list.append(cidr_networkpolicy)
+        self.rpc.update_namespace_label_policy(cidr_networkpolicy_list)
+
+    def update_pod_and_namespace_label_policy(self, policy_table):
+        cidr_networkpolicy_list = []
+        for item in policy_table:
+            cidr_networkpolicy = LabelPolicy(
+                item["vni"], item["pod_label_value"], item["namespace_label_value"], item["bit_value"])
+            cidr_networkpolicy_list.append(cidr_networkpolicy)
+        self.rpc.update_pod_and_namespace_label_policy(cidr_networkpolicy_list)
+
     def delete_network_policy_ingress(self, cidr_type, cidr_table):
         cidr_networkpolicy_list = []
         for item in cidr_table:
@@ -501,6 +521,22 @@ class Endpoint:
                 item["vni"], item["pod_label_value"], "", "")
             cidr_networkpolicy_list.append(cidr_networkpolicy)
         self.rpc.delete_pod_label_policy(cidr_networkpolicy_list)
+
+    def delete_namespace_label_policy(self, policy_table):
+        cidr_networkpolicy_list = []
+        for item in policy_table:
+            cidr_networkpolicy = LabelPolicy(
+                item["vni"], "", item["namespace_label_value"], "")
+            cidr_networkpolicy_list.append(cidr_networkpolicy)
+        self.rpc.delete_namespace_label_policy(cidr_networkpolicy_list)
+
+    def delete_pod_and_namespace_label_policy(self, policy_table):
+        cidr_networkpolicy_list = []
+        for item in policy_table:
+            cidr_networkpolicy = LabelPolicy(
+                item["vni"], item["pod_label_value"], item["namespace_label_value"], "")
+            cidr_networkpolicy_list.append(cidr_networkpolicy)
+        self.rpc.delete_pod_and_namespace_label_policy(cidr_networkpolicy_list)
 
     def update_network_policy_enforcement_map_ingress(self):
         endpointEnforced = EndpointEnforced(self.vni, self.ip)

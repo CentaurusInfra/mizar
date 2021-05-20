@@ -950,7 +950,7 @@ int trn_cli_parse_pod_label_policy(const cJSON *jsonobj,
 	if (cJSON_IsString(bit_val)) {
 		policy->bit_val = atoi(bit_val->valuestring);
 	} else {
-		print_err("Error: Network policy bit map Error\n");
+		print_err("Error: Network policy bit map Error %s\n", cJSON_Print(bit_val));
 		return -EINVAL;
 	}
 
@@ -980,6 +980,162 @@ int trn_cli_parse_pod_label_policy_key(const cJSON *jsonobj,
 		key->pod_label_value = pod_label_value->valueint;
 	} else {
 		print_err("Error: pod_label_value Error\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int trn_cli_parse_namespace_label_policy(const cJSON *jsonobj,
+				      	       struct rpc_trn_namespace_label_policy_t *policy)
+{
+	cJSON *tunnel_id = cJSON_GetObjectItem(jsonobj, "tunnel_id");
+	cJSON *namespace_label_value = cJSON_GetObjectItem(jsonobj, "namespace_label_value");
+	cJSON *bit_val = cJSON_GetObjectItem(jsonobj, "bit_value");
+
+	if (tunnel_id == NULL) {
+		policy->tunid = 0;
+	} else if (cJSON_IsString(tunnel_id)) {
+		policy->tunid = atoi(tunnel_id->valuestring);
+	} else {
+		print_err("Error: Network policy tunnel_id is non-string.\n");
+		return -EINVAL;
+	}
+
+	if (namespace_label_value == NULL) {
+		policy->namespace_label_value = 0;
+	} else if (cJSON_IsString(namespace_label_value)) {
+		policy->namespace_label_value = atoi(namespace_label_value->valuestring);
+	} else if (cJSON_IsNumber(namespace_label_value)) {
+		policy->namespace_label_value = namespace_label_value->valueint;
+	} else {
+		print_err("Error: namespace_label_value Error\n");
+		return -EINVAL;
+	}
+
+	if (cJSON_IsString(bit_val)) {
+		policy->bit_val = atoi(bit_val->valuestring);
+	} else {
+		print_err("Error: Network policy bit map Error\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int trn_cli_parse_namespace_label_policy_key(const cJSON *jsonobj,
+						   struct rpc_trn_namespace_label_policy_key_t *key)
+{
+	cJSON *tunnel_id = cJSON_GetObjectItem(jsonobj, "tunnel_id");
+	cJSON *namespace_label_value = cJSON_GetObjectItem(jsonobj, "namespace_label_value");
+
+	if (tunnel_id == NULL) {
+		key->tunid = 0;
+	} else if (cJSON_IsString(tunnel_id)) {
+		key->tunid = atoi(tunnel_id->valuestring);
+	} else {
+		print_err("Error: Network policy tunnel_id is non-string.\n");
+		return -EINVAL;
+	}
+
+	if (namespace_label_value == NULL) {
+		key->namespace_label_value = 0;
+	} else if (cJSON_IsString(namespace_label_value)) {
+		key->namespace_label_value = atoi(namespace_label_value->valuestring);
+	} else if (cJSON_IsNumber(namespace_label_value)) {
+		key->namespace_label_value = namespace_label_value->valueint;
+	} else {
+		print_err("Error: namespace_label_value Error\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int trn_cli_parse_pod_and_namespace_label_policy(const cJSON *jsonobj,
+				      	       struct rpc_trn_pod_and_namespace_label_policy_t *policy)
+{
+	cJSON *tunnel_id = cJSON_GetObjectItem(jsonobj, "tunnel_id");
+	cJSON *pod_label_value = cJSON_GetObjectItem(jsonobj, "pod_label_value");
+	cJSON *namespace_label_value = cJSON_GetObjectItem(jsonobj, "namespace_label_value");
+	cJSON *bit_val = cJSON_GetObjectItem(jsonobj, "bit_value");
+
+	if (tunnel_id == NULL) {
+		policy->tunid = 0;
+	} else if (cJSON_IsString(tunnel_id)) {
+		policy->tunid = atoi(tunnel_id->valuestring);
+	} else {
+		print_err("Error: Network policy tunnel_id is non-string.\n");
+		return -EINVAL;
+	}
+
+	if (pod_label_value == NULL) {
+		policy->pod_label_value = 0;
+	} else if (cJSON_IsString(pod_label_value)) {
+		policy->pod_label_value = atoi(pod_label_value->valuestring);
+	} else if (cJSON_IsNumber(pod_label_value)) {
+		policy->pod_label_value = pod_label_value->valueint;
+	} else {
+		print_err("Error: pod_label_value Error\n");
+		return -EINVAL;
+	}
+
+	if (namespace_label_value == NULL) {
+		policy->namespace_label_value = 0;
+	} else if (cJSON_IsString(namespace_label_value)) {
+		policy->namespace_label_value = atoi(namespace_label_value->valuestring);
+	} else if (cJSON_IsNumber(namespace_label_value)) {
+		policy->namespace_label_value = namespace_label_value->valueint;
+	} else {
+		print_err("Error: namespace_label_value Error\n");
+		return -EINVAL;
+	}
+
+	if (cJSON_IsString(bit_val)) {
+		policy->bit_val = atoi(bit_val->valuestring);
+	} else {
+		print_err("Error: Network policy bit map Error\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int trn_cli_parse_pod_and_namespace_label_policy_key(const cJSON *jsonobj,
+						   struct rpc_trn_pod_and_namespace_label_policy_key_t *key)
+{
+	cJSON *tunnel_id = cJSON_GetObjectItem(jsonobj, "tunnel_id");
+	cJSON *pod_label_value = cJSON_GetObjectItem(jsonobj, "pod_label_value");
+	cJSON *namespace_label_value = cJSON_GetObjectItem(jsonobj, "namespace_label_value");
+
+	if (tunnel_id == NULL) {
+		key->tunid = 0;
+	} else if (cJSON_IsString(tunnel_id)) {
+		key->tunid = atoi(tunnel_id->valuestring);
+	} else {
+		print_err("Error: Network policy tunnel_id is non-string.\n");
+		return -EINVAL;
+	}
+
+	if (pod_label_value == NULL) {
+		key->pod_label_value = 0;
+	} else if (cJSON_IsString(pod_label_value)) {
+		key->pod_label_value = atoi(pod_label_value->valuestring);
+	} else if (cJSON_IsNumber(pod_label_value)) {
+		key->pod_label_value = pod_label_value->valueint;
+	} else {
+		print_err("Error: pod_label_value Error\n");
+		return -EINVAL;
+	}
+
+	if (namespace_label_value == NULL) {
+		key->namespace_label_value = 0;
+	} else if (cJSON_IsString(namespace_label_value)) {
+		key->namespace_label_value = atoi(namespace_label_value->valuestring);
+	} else if (cJSON_IsNumber(namespace_label_value)) {
+		key->namespace_label_value = namespace_label_value->valueint;
+	} else {
+		print_err("Error: namespace_label_value Error\n");
 		return -EINVAL;
 	}
 

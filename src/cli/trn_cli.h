@@ -92,6 +92,14 @@ int trn_cli_parse_pod_label_policy(const cJSON *jsonobj,
 					       struct rpc_trn_pod_label_policy_t *ppo);
 int trn_cli_parse_pod_label_policy_key(const cJSON *jsonobj,
 						   struct rpc_trn_pod_label_policy_key_t *ppo_key);
+int trn_cli_parse_namespace_label_policy(const cJSON *jsonobj,
+					       struct rpc_trn_namespace_label_policy_t *ppo);
+int trn_cli_parse_namespace_label_policy_key(const cJSON *jsonobj,
+						   struct rpc_trn_namespace_label_policy_key_t *ppo_key);
+int trn_cli_parse_pod_and_namespace_label_policy(const cJSON *jsonobj,
+					       struct rpc_trn_pod_and_namespace_label_policy_t *ppo);
+int trn_cli_parse_pod_and_namespace_label_policy_key(const cJSON *jsonobj,
+						   struct rpc_trn_pod_and_namespace_label_policy_key_t *ppo_key);
 
 int trn_cli_update_port_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_update_vpc_subcmd(CLIENT *clnt, int argc, char *argv[]);
@@ -135,6 +143,10 @@ int trn_cli_delete_agent_network_policy_protocol_port_subcmd(CLIENT *clnt, int a
 
 int trn_cli_update_transit_pod_label_policy_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_delete_transit_pod_label_policy_subcmd(CLIENT *clnt, int argc, char *argv[]);
+int trn_cli_update_transit_namespace_label_policy_subcmd(CLIENT *clnt, int argc, char *argv[]);
+int trn_cli_delete_transit_namespace_label_policy_subcmd(CLIENT *clnt, int argc, char *argv[]);
+int trn_cli_update_transit_pod_and_namespace_label_policy_subcmd(CLIENT *clnt, int argc, char *argv[]);
+int trn_cli_delete_transit_pod_and_namespace_label_policy_subcmd(CLIENT *clnt, int argc, char *argv[]);
 
 void dump_vpc(struct rpc_trn_vpc_t *vpc);
 void dump_net(struct rpc_trn_network_t *net);
@@ -146,4 +158,6 @@ void dump_network_policy(struct rpc_trn_vsip_cidr_t *policy);
 void dump_enforced_policy(struct rpc_trn_vsip_enforce_t *enforce);
 void dump_protocol_port_policy(struct rpc_trn_vsip_ppo_t *ppo);
 void dump_pod_label_policy(struct rpc_trn_pod_label_policy_t *ppo);
+void dump_namespace_label_policy(struct rpc_trn_namespace_label_policy_t *ppo);
+void dump_pod_and_namespace_label_policy(struct rpc_trn_pod_and_namespace_label_policy_t *ppo);
 uint32_t parse_ip_address(const cJSON *ipobj);
