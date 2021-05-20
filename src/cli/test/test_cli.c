@@ -4050,14 +4050,14 @@ static void test_trn_cli_delete_agent_network_policy_protocol_port_subcmd(void *
 int main()
 {
 	const struct CMUnitTest tests[] = {
-		cmocka_unit_test(test_trn_cli_update_vpc_subcmd),
-		cmocka_unit_test(test_trn_cli_update_net_subcmd),
-		cmocka_unit_test(test_trn_cli_update_ep_subcmd),
-		cmocka_unit_test(test_trn_cli_load_transit_subcmd),
-		cmocka_unit_test(test_trn_cli_unload_transit_subcmd),
-		cmocka_unit_test(test_trn_cli_load_agent_subcmd),
-		cmocka_unit_test(test_trn_cli_unload_agent_subcmd),
-		cmocka_unit_test(test_trn_cli_update_agent_ep_subcmd),
+		// cmocka_unit_test(test_trn_cli_update_vpc_subcmd),
+		// cmocka_unit_test(test_trn_cli_update_net_subcmd),
+		// cmocka_unit_test(test_trn_cli_update_ep_subcmd),
+		// cmocka_unit_test(test_trn_cli_load_transit_subcmd),
+		// cmocka_unit_test(test_trn_cli_unload_transit_subcmd),
+		// cmocka_unit_test(test_trn_cli_load_agent_subcmd),
+		// cmocka_unit_test(test_trn_cli_unload_agent_subcmd),
+		// cmocka_unit_test(test_trn_cli_update_agent_ep_subcmd),
 		cmocka_unit_test(test_trn_cli_update_packet_metadata_subcmd),
 		cmocka_unit_test(test_trn_cli_update_transit_pod_label_policy_subcmd),
 		cmocka_unit_test(test_trn_cli_update_transit_namespace_label_policy_subcmd),
