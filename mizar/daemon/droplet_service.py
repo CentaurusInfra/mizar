@@ -8,6 +8,7 @@ import time
 import grpc
 from concurrent import futures
 from google.protobuf import empty_pb2
+from mizar.common.common import get_itf
 
 logger = logging.getLogger()
 
@@ -15,8 +16,8 @@ logger = logging.getLogger()
 class DropletServer(droplet_pb2_grpc.DropletServiceServicer):
 
     def __init__(self):
-        self.itf = 'eth0'
-        cmd = 'ip addr show eth0 | grep "inet\\b" | awk \'{print $2}\' | cut -d/ -f1'
+        self.itf = get_itf()
+        cmd = 'ip addr show %s | grep "inet\\b" | awk \'{print $2}\' | cut -d/ -f1' % self.itf
         r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         self.ip = r.stdout.read().decode().strip()
 

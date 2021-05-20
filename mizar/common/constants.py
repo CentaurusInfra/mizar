@@ -41,6 +41,7 @@ class CONSTANTS:
     XDP_DRIVER = "4"
     XDP_OFFLOAD = "8"
 
+
 class OBJ_STATUS:
     obj_init = 'Init'
     obj_provisioned = 'Provisioned'
@@ -103,7 +104,10 @@ class OBJ_DEFAULTS:
 
     arktos_pod_label = "arktos.futurewei.com/network"
     arktos_pod_annotation = "arktos.futurewei.com/nic"
-    kopf_max_retries = 10
+
+    # 5 minutes of retries
+    kopf_max_retries = 15
+    kopf_retry_delay = 20
 
 
 class RESOURCES:

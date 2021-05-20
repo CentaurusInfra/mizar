@@ -19,6 +19,7 @@ setup(
         'kubernetes==11.0.0',
         'luigi==2.8.12',
         'grpcio',
+        'scapy',
         'protobuf',
         'fs'
     ]

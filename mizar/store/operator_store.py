@@ -226,11 +226,16 @@ class OprStore(object):
     def delete_networkpolicy(self, name):
         if name in self.networkpolicies_store:
             del self.networkpolicies_store[name]
-        self.delete_networkpolicy_in_label_policy_store(self.label_networkpolicies_store, name)
-        self.delete_networkpolicy_in_label_policy_store(self.label_networkpolicies_ingress_store, name)
-        self.delete_networkpolicy_in_label_policy_store(self.label_networkpolicies_egress_store, name)
-        self.delete_networkpolicy_in_label_policy_store(self.namespace_label_networkpolicies_ingress_store, name)
-        self.delete_networkpolicy_in_label_policy_store(self.namespace_label_networkpolicies_egress_store, name)
+        self.delete_networkpolicy_in_label_policy_store(
+            self.label_networkpolicies_store, name)
+        self.delete_networkpolicy_in_label_policy_store(
+            self.label_networkpolicies_ingress_store, name)
+        self.delete_networkpolicy_in_label_policy_store(
+            self.label_networkpolicies_egress_store, name)
+        self.delete_networkpolicy_in_label_policy_store(
+            self.namespace_label_networkpolicies_ingress_store, name)
+        self.delete_networkpolicy_in_label_policy_store(
+            self.namespace_label_networkpolicies_egress_store, name)
 
     def delete_networkpolicy_in_label_policy_store(self, label_policy_store, policy_name):
         label_list = set()
@@ -294,7 +299,8 @@ class OprStore(object):
         if label not in self.namespace_label_networkpolicies_ingress_store:
             self.namespace_label_networkpolicies_ingress_store[label] = set()
         for policy_name in policy_name_list:
-            self.namespace_label_networkpolicies_ingress_store[label].add(policy_name)
+            self.namespace_label_networkpolicies_ingress_store[label].add(
+                policy_name)
 
     def get_networkpolicies_by_namespace_label_egress(self, label):
         if label in self.namespace_label_networkpolicies_egress_store:
@@ -305,7 +311,8 @@ class OprStore(object):
         if label not in self.namespace_label_networkpolicies_egress_store:
             self.namespace_label_networkpolicies_egress_store[label] = set()
         for policy_name in policy_name_list:
-            self.namespace_label_networkpolicies_egress_store[label].add(policy_name)
+            self.namespace_label_networkpolicies_egress_store[label].add(
+                policy_name)
 
     def get_endpoints_by_networkpolicy_ingress(self, policy_name):
         if policy_name in self.networkpolicy_endpoints_ingress_store:
@@ -315,7 +322,8 @@ class OprStore(object):
     def add_networkpolicy_endpoint_ingress(self, policy_name, endpoint_name):
         if policy_name not in self.networkpolicy_endpoints_ingress_store:
             self.networkpolicy_endpoints_ingress_store[policy_name] = set()
-        self.networkpolicy_endpoints_ingress_store[policy_name].add(endpoint_name)
+        self.networkpolicy_endpoints_ingress_store[policy_name].add(
+            endpoint_name)
 
     def get_endpoints_by_networkpolicy_egress(self, policy_name):
         if policy_name in self.networkpolicy_endpoints_egress_store:
@@ -325,18 +333,21 @@ class OprStore(object):
     def add_networkpolicy_endpoint_egress(self, policy_name, endpoint_name):
         if policy_name not in self.networkpolicy_endpoints_egress_store:
             self.networkpolicy_endpoints_egress_store[policy_name] = set()
-        self.networkpolicy_endpoints_egress_store[policy_name].add(endpoint_name)
+        self.networkpolicy_endpoints_egress_store[policy_name].add(
+            endpoint_name)
 
     def get_or_add_pod_label_value(self, label_combination):
         if label_combination not in self.pod_label_value_store:
-            self.pod_label_value_store[label_combination] = len(self.pod_label_value_store)
+            self.pod_label_value_store[label_combination] = len(
+                self.pod_label_value_store)
         return self.pod_label_value_store[label_combination]
 
     def get_or_add_namespace_label_value(self, label_combination):
         if label_combination not in self.namespace_label_value_store:
-            self.namespace_label_value_store[label_combination] = len(self.namespace_label_value_store)
+            self.namespace_label_value_store[label_combination] = len(
+                self.namespace_label_value_store)
         return self.namespace_label_value_store[label_combination]
-    
+
     def update_droplet(self, droplet):
         self.droplets_store[droplet.name] = droplet
 
@@ -352,6 +363,12 @@ class OprStore(object):
     def get_droplet_by_ip(self, ip):
         for d in self.droplets_store:
             if self.droplets_store[d].ip == ip:
+                return self.droplets_store[d]
+        return None
+
+    def get_droplet_by_main_ip(self, ip):
+        for d in self.droplets_store:
+            if self.droplets_store[d].main_ip == ip:
                 return self.droplets_store[d]
         return None
 

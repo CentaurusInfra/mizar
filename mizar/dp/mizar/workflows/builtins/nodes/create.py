@@ -40,5 +40,6 @@ class k8sDropletCreate(WorkflowTask):
             if addr['type'] != 'InternalIP':
                 continue
             ip = addr['address']
-            droplet_opr.create_droplet(ip)
+            if not droplet_opr.create_droplet(ip):
+                self.raise_temporary_error("Daemon not ready.")
         self.finalize()

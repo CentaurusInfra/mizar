@@ -30,7 +30,9 @@ def init():
     nsenter -t 1 -m -u -n -i /etc/init.d/rpcbind restart && \
     nsenter -t 1 -m -u -n -i /etc/init.d/rsyslog restart && \
     nsenter -t 1 -m -u -n -i sysctl -w net.ipv4.tcp_mtu_probing=2 && \
-    nsenter -t 1 -m -u -n -i ip link set dev eth0 up mtu 9000' ''')
+    nsenter -t 1 -m -u -n -i ip link set dev eth0 up mtu 9000 && \
+    nsenter -t 1 -m -u -n -i mkdir -p /var/run/netns' ''')
+
     r = subprocess.Popen(script, shell=True, stdout=subprocess.PIPE)
     output = r.stdout.read().decode().strip()
     logging.info("Setup done")
@@ -53,7 +55,7 @@ def init():
         "xdp_path": "/trn_xdp/trn_transit_xdp_ebpf_debug.o",
         "pcapfile": "/bpffs/transit_xdp.pcap",
         "xdp_flag": CONSTANTS.XDP_GENERIC
-        }
+    }
     config = json.dumps(config)
     cmd = (
         f'''nsenter -t 1 -m -u -n -i /trn_bin/transit -s {ip} load-transit-xdp -i eth0 -j '{config}' ''')

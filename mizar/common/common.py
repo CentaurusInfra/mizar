@@ -279,6 +279,7 @@ def kube_read_config_map(core_api, name, namespace):
     except:
         return None
 
+
 def kube_list_namespaces_by_labels(core_api, label_dict):
     try:
         label_filter = build_label_filter(label_dict)
@@ -290,9 +291,11 @@ def kube_list_namespaces_by_labels(core_api, label_dict):
     except:
         return None
 
+
 def kube_list_pods_by_labels(core_api, label_dict, namespace=None):
     try:
-        field_selector = "" if namespace is None else "metadata.namespace={}".format(namespace)
+        field_selector = "" if namespace is None else "metadata.namespace={}".format(
+            namespace)
         label_filter = build_label_filter(label_dict)
         response = core_api.list_pod_for_all_namespaces(
             watch=False,
@@ -303,6 +306,7 @@ def kube_list_pods_by_labels(core_api, label_dict, namespace=None):
     except:
         return None
 
+
 def kube_list_pods_by_namespace(core_api, namespace):
     try:
         response = core_api.list_pod_for_all_namespaces(
@@ -312,6 +316,7 @@ def kube_list_pods_by_namespace(core_api, namespace):
         return response
     except:
         return None
+
 
 def build_label_filter(label_dict):
     str_list = []
@@ -324,6 +329,7 @@ def build_label_filter(label_dict):
         str_list.pop()
     return "".join(str_list)
 
+
 def kube_get_pod(core_api, name):
     try:
         response = core_api.list_pod_for_all_namespaces(
@@ -335,6 +341,7 @@ def kube_get_pod(core_api, name):
     except:
         return None
 
+
 def kube_get_namespace(core_api, name):
     try:
         response = core_api.list_namespace(
@@ -345,6 +352,7 @@ def kube_get_namespace(core_api, name):
             return response.items[0]
     except:
         return None
+
 
 def get_spec_val(key, spec, default=""):
     return default if key not in spec else spec[key]
@@ -409,6 +417,7 @@ def reset_param(param):
     param.return_message = None
     return param
 
+
 def conf_list_has_max_elements(conf, conf_list):
     # +1 is for comma that will get added during json conversion
     item_len = len(json.dumps(conf)) + 1
@@ -417,7 +426,18 @@ def conf_list_has_max_elements(conf, conf_list):
         return True
     return False
 
+
 def bindmount_netns(src_netns_path, dst_netns_path):
     os.mknod(dst_netns_path)
-    bindmount = subprocess.run(["mount", "--bind", src_netns_path, dst_netns_path])
+    bindmount = subprocess.run(
+        ["mount", "--bind", src_netns_path, dst_netns_path])
     return bindmount.returncode
+
+
+def get_itf():
+    default_itf = "eth0"
+    if "MIZAR_ITF" in os.environ:
+        logger.info("MIZAR_ITF env var found!")
+        return os.getenv("MIZAR_ITF")
+    else:
+        return default_itf

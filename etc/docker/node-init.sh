@@ -34,8 +34,16 @@ nsenter -t 1 -m -u -n -i apt-get update -y && nsenter -t 1 -m -u -n -i apt-get i
     iputils-ping \
     ethtool \
     curl \
-    python3 \
+    python3.7 \
+    lcov \
+    python3.7-dev \
+    python3-apt \
+    libcmocka-dev \
     python3-pip && \
+nsenter -t 1 -m -u -n -i  update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1 && \
+nsenter -t 1 -m -u -n -i  update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 2 && \
+nsenter -t 1 -m -u -n -i  update-alternatives --set python3 /usr/bin/python3.7 && \
+nsenter -t 1 -m -u -n -i  ln -snf /usr/lib/python3/dist-packages/apt_pkg.cpython-36m-x86_64-linux-gnu.so /usr/lib/python3/dist-packages/apt_pkg.so && \
 nsenter -t 1 -m -u -n -i mkdir -p /opt/cni/bin && \
 nsenter -t 1 -m -u -n -i mkdir -p /etc/cni/net.d && \
 nsenter -t 1 -m -u -n -i pip3 install --upgrade protobuf && \

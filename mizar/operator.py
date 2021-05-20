@@ -47,7 +47,7 @@ from concurrent import futures
 from mizar.proto import builtins_pb2_grpc as builtins_pb2_grpc
 from mizar.arktos.arktos_service import ArktosService
 from kubernetes import client, config
-import socket
+from subprocess import check_output
 from mizar.common.constants import *
 
 logger = logging.getLogger()
@@ -113,11 +113,11 @@ def create_config_map():
         namespace="default",
         labels=dict(service="mizar")
     )
-    data = dict(host=socket.gethostbyname(socket.gethostname()))
+    host_ip = check_output(['hostname', '-I']).decode().split(" ")[0]
     configmap = client.V1ConfigMap(
         api_version="v1",
         kind="ConfigMap",
-        data=data,
+        data=host_ip,
         metadata=metadata
     )
     kube_create_config_map(client.CoreV1Api(), "default", configmap)
