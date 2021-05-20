@@ -3,5 +3,4 @@ kind: Namespace
 metadata:
   name: namespace1
   labels:
-    role: nsfrontend
-
+    run: pod3
