@@ -144,8 +144,8 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	    !md->eg_vsip_prim_map || !md->eg_vsip_ppo_map ||
 	    !md->eg_vsip_supp_map || !md->eg_vsip_except_map ||
 	    !md->conn_track_cache || !md->ing_pod_label_policy_map ||
-		!md->ing_namespace_label_policy_map ||
-		!md->ing_pod_and_namespace_label_policy_map) {
+	    !md->ing_namespace_label_policy_map ||
+	    !md->ing_pod_and_namespace_label_policy_map) {
 		TRN_LOG_ERROR("Failure finding maps objects.");
 		return 1;
 	}
