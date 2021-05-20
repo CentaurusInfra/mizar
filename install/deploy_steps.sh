@@ -24,6 +24,7 @@ source install/common.sh
 
 function deploy_steps:install_mizar {
     sudo cp -rf ${HOME}/mizar /var
+    sudo mkdir -p /opt/cni/bin
     sudo -H pip3 install --ignore-installed /var/mizar/ && \
     sudo ln -snf /sys/fs/bpf /bpffs && \
     sudo ln -snf /var/mizar/build/bin /trn_bin && \
