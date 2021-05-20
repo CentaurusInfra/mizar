@@ -150,8 +150,6 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 		return 1;
 	}
 
-	TRN_LOG_INFO("hochan1");
-
 	md->jmp_table_fd = bpf_map__fd(md->jmp_table_map);
 	md->networks_map_fd = bpf_map__fd(md->networks_map);
 	md->vpc_map_fd = bpf_map__fd(md->vpc_map);

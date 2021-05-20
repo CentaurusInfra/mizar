@@ -566,6 +566,58 @@ static void test_update_packet_metadata_1_svc(void **state)
 	assert_int_equal(*rc, 0);
 }
 
+static void test_update_transit_pod_label_policy_1_svc(void **state)
+{
+	UNUSED(state);
+	char itf[] = "lo";
+
+	struct rpc_trn_pod_label_policy_t pod_label_policy = {
+		.interface = itf,
+		.tunid = 3,
+		.pod_label_value = 11
+	};
+
+	int *rc;
+	expect_function_call(__wrap_bpf_map_update_elem);
+	rc = update_transit_pod_label_policy_1_svc(&pod_label_policy, NULL);
+	assert_int_equal(*rc, 0);
+}
+
+static void test_update_transit_namespace_label_policy_1_svc(void **state)
+{
+	UNUSED(state);
+	char itf[] = "lo";
+
+	struct rpc_trn_namespace_label_policy_t namespace_label_policy = {
+		.interface = itf,
+		.tunid = 3,
+		.namespace_label_value = 11
+	};
+
+	int *rc;
+	expect_function_call(__wrap_bpf_map_update_elem);
+	rc = update_transit_namespace_label_policy_1_svc(&namespace_label_policy, NULL);
+	assert_int_equal(*rc, 0);
+}
+
+static void test_update_transit_pod_and_namespace_label_policy_1_svc(void **state)
+{
+	UNUSED(state);
+	char itf[] = "lo";
+
+	struct rpc_trn_pod_and_namespace_label_policy_t pod_and_namespace_label_policy = {
+		.interface = itf,
+		.tunid = 3,
+		.pod_label_value = 11,
+		.namespace_label_value = 8
+	};
+
+	int *rc;
+	expect_function_call(__wrap_bpf_map_update_elem);
+	rc = update_transit_pod_and_namespace_label_policy_1_svc(&pod_and_namespace_label_policy, NULL);
+	assert_int_equal(*rc, 0);
+}
+
 static void test_update_agent_md_1_svc(void **state)
 {
 	UNUSED(state);
@@ -1593,6 +1645,9 @@ int main()
 		cmocka_unit_test(test_update_agent_md_1_svc),
 		cmocka_unit_test(test_update_agent_ep_1_svc),
 		cmocka_unit_test(test_update_packet_metadata_1_svc),
+		cmocka_unit_test(test_update_transit_pod_label_policy_1_svc),
+		cmocka_unit_test(test_update_transit_namespace_label_policy_1_svc),
+		cmocka_unit_test(test_update_transit_pod_and_namespace_label_policy_1_svc),
 		cmocka_unit_test(test_get_vpc_1_svc),
 		cmocka_unit_test(test_get_net_1_svc),
 		cmocka_unit_test(test_get_ep_1_svc),
