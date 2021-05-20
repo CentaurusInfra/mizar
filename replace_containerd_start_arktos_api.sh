@@ -10,3 +10,4 @@ export CONTAINER_RUNTIME_ENDPOINT="containerRuntime,container,/run/containerd/co
 sleep 15
 cd $HOME/go/src/k8s.io/arktos
 ./hack/arktos-up.sh
+
