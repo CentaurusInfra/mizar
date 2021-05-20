@@ -44,16 +44,7 @@ The lab machine will be rebooted once above script is completed, you will be aut
 
 2. Log onto your lab machine, then run ```bootstrap.sh``` script from the mizar project folder to bootstrap your lab machine. 
 
-
-3. Once bootstrap is completed, you can then compile mizar. Make sure run these in ```sudo``` mode: 
-
-```bash
-cd ~/mizar
-sudo su
-make
-```
-
-4. Build arktos-network-controller (as it is not part of arktos-up.sh yet)
+3. Build arktos-network-controller (as it is not part of arktos-up.sh yet)
 
 ```bash
 cd $HOME/go/src/k8s.io/arktos
@@ -66,24 +57,11 @@ Also, please ensure the hostname and its ip address in /etc/hosts. For instance,
 172.31.41.177 ip-172-31-41-177
 ```
 
-5. Replace the Arktos containerd:
+4. Replace the Arktos containerd and start arktos API server:
 
 ```bash
 cd $HOME/mizar
-./replace-containerd.sh
-```
-
-To make sure containerd is running as expected, run: 
-
-```bash
-sudo systemctl status containerd.service
-```
-
-6. Before deploying Mizar, you will need first start up Arktos API server: 
-
-```bash
-cd $HOME/go/src/k8s.io/arktos
-./hack/arktos-up.sh
+./replace_containerd_start_arktos_api.sh
 ```
 
 Then wait till you see: 
@@ -108,23 +86,7 @@ Alternatively, you can write to the default kubeconfig:
   cluster/kubectl.sh
 ```
 
-7. Deploy Mizar. Open a new terminal window, and run: 
-```bash
-cd $HOME/mizar
-./deploy-mizar.sh
-```
-
-8. Once your arktos server and mizar are running. 
-To verify, you can open a new terminal and run ```kubectl get nodes```, you should see a node running with the name starts with "ip" followed by the private ip address of your lab machine. 
-
-You also want make sure the default kubernetes bridge network configuration file is deleted: 
-
-```bash
-sudo ls /etc/cni/net.d
-sudo rm /etc/cni/net.d/bridge.conf
-```
-
-9. Start Arktos network controller. From a new terminal window, run:
+5. Start Arktos network controller. From a new terminal window, run:
 
 ```bash
 cd $HOME/go/src/k8s.io/arktos
@@ -132,7 +94,11 @@ cd $HOME/go/src/k8s.io/arktos
 ```
 where the ```kube-apiserver-ip``` is your lab machine's **private ip address**
 
-Please refer to [Running Mizar Management Plane](https://mizar.readthedocs.io/en/latest/user/getting_started/#running-mizar-management-plane) for how to inspect resources. 
+6. Deploy Mizar. Open a NEW terminal window, and run: 
+```bash
+cd $HOME/mizar
+./deploy-mizar.sh
+```
 
 ## Test
 

@@ -22,6 +22,24 @@
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 source install/common.sh
 
+function deploy_steps:install_mizar {
+    sudo cp -rf ${HOME}/mizar /var
+    sudo nsenter -t 1 -m -u -n -i pip3 install --ignore-installed /var/mizar/ && \
+    sudo nsenter -t 1 -m -u -n -i ln -snf /sys/fs/bpf /bpffs && \
+    sudo nsenter -t 1 -m -u -n -i ln -snf /var/mizar/build/bin /trn_bin && \
+    sudo nsenter -t 1 -m -u -n -i ln -snf /var/mizar/build/xdp /trn_xdp && \
+    sudo nsenter -t 1 -m -u -n -i ln -snf /var/mizar/etc/cni/10-mizarcni.conf /etc/cni/net.d/10-mizarcni.conf && \
+    sudo nsenter -t 1 -m -u -n -i ln -snf /var/mizar/mizar/cni.py /opt/cni/bin/mizarcni && \
+    sudo nsenter -t 1 -m -u -n -i ln -snf /var/mizar/build/tests/mizarcni.config /etc/mizarcni.config && \
+    echo "install-mizar-complete"
+}
+
+function deploy_steps:install_mizar_cni_in_arktos {
+    sudo rm /etc/cni/net.d/bridge.conf
+    deploy_steps:install_mizar
+    sudo systemctl restart containerd.service
+}
+
 function deploy_steps:binaries_ready {
     local is_mizar_production=${1:-0}
     environment_adaptor:prepare_binary $is_mizar_production
