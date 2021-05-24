@@ -75,7 +75,7 @@ struct ebpf_prog_stage_t {
 	int ing_vsip_prim_map_ref_fd;
 	int ing_vsip_ppo_map_ref_fd;
 	int ing_vsip_supp_map_ref_fd;
-	int ing_vsip_except_map_ref_fd;	
+	int ing_vsip_except_map_ref_fd;
 	int conn_track_cache_ref_fd;
 	int ing_pod_label_policy_map_ref_fd;
 	int ing_namespace_label_policy_map_ref_fd;
