@@ -340,13 +340,17 @@ class OprStore(object):
         if label_combination not in self.pod_label_value_store:
             self.pod_label_value_store[label_combination] = len(
                 self.pod_label_value_store)
-        return self.pod_label_value_store[label_combination]
+            pod_label_value = self.pod_label_value_store[label_combination]
+            logger.info("Added pod_label_value {} for {}.".format(pod_label_value, label_combination))
+        return pod_label_value
 
     def get_or_add_namespace_label_value(self, label_combination):
         if label_combination not in self.namespace_label_value_store:
             self.namespace_label_value_store[label_combination] = len(
                 self.namespace_label_value_store)
-        return self.namespace_label_value_store[label_combination]
+            namespace_label_value = self.namespace_label_value_store[label_combination]
+            logger.info("Added namespace_label_value {} for {}.".format(namespace_label_value, label_combination))
+        return namespace_label_value
 
     def update_droplet(self, droplet):
         self.droplets_store[droplet.name] = droplet

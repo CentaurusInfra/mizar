@@ -112,7 +112,7 @@ static inline int enforce_ingress_policy(__u64 tunnel_id, const struct ipv4_tupl
 
 	if (namespace_label_value > 0) {
 		bpf_debug("Checking packet for namespace label policy with namespace_label_value=%d",
-			pod_label_value);
+			namespace_label_value);
 		struct namespace_label_policy_t namespace_label_policy = {
 			.tunnel_id = tunnel_id,
 			.namespace_label_value = namespace_label_value,
@@ -137,7 +137,7 @@ static inline int enforce_ingress_policy(__u64 tunnel_id, const struct ipv4_tupl
 		__u64 *policies_pod_and_namespace_label_lookup = bpf_map_lookup_elem(&ing_pod_and_namespace_label_policy_map, &pod_and_namespace_label_policy);
 		__u64 policies_pod_and_namespace_label = (policies_pod_and_namespace_label_lookup) ? *policies_pod_and_namespace_label_lookup : 0;
 		if (policies_ppo & policies_pod_and_namespace_label){
-			bpf_debug("Packet matches pod label policy with pod_label_value=%d and namespace_label_value=%d",
+			bpf_debug("Packet matches pod and namespace label policy with pod_label_value=%d and namespace_label_value=%d",
 				pod_label_value, namespace_label_value);
 			return 0;
 		}
