@@ -59,7 +59,8 @@ class k8sPodCreate(WorkflowTask):
             'vpc': OBJ_DEFAULTS.default_ep_vpc,
             'subnet': OBJ_DEFAULTS.default_ep_net,
             'phase': self.param.body['status']['phase'],
-            'interfaces': [{'name': 'eth0'}]
+            'interfaces': [{'name': 'eth0'}],
+            'labels': self.param.body['metadata'].get('labels', {})
         }
 
         spec['vni'] = vpc_opr.store_get(spec['vpc']).vni
@@ -104,7 +105,7 @@ class k8sPodCreate(WorkflowTask):
         #     return
 
         (policy_name_list, pod_label_value, namespace_label_value) = networkpolicy_util.retrieve_change_for_networkpolicy(
-            self.param.name, self.param.namespace, self.param.body.metadata.labels, self.param.diff)
+            self.param.name, self.param.namespace, spec['labels'], self.param.diff)
         spec['pod_label_value'] = pod_label_value
         spec['namespace_label_value'] = namespace_label_value
         if spec['phase'] != 'Pending':
