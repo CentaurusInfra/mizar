@@ -1870,3 +1870,221 @@ int *delete_agent_network_policy_protocol_port_1_svc(rpc_trn_vsip_ppo_key_t *ppo
 error:
 	return &result;
 }
+
+int *update_transit_pod_label_policy_1_svc(rpc_trn_pod_label_policy_t *rpc_obj, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result = -1;
+	int rc;
+	char *itf = rpc_obj->interface;
+	
+	TRN_LOG_INFO("update_transit_pod_label_policy_1_svc service");
+	struct pod_label_policy_t policy;
+	struct user_metadata_t *md = trn_itf_table_find(itf);
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+	
+	policy.tunnel_id = rpc_obj->tunid;
+	policy.pod_label_value = rpc_obj->pod_label_value;
+	TRN_LOG_INFO("rpc_obj: pod_label_value %d\n", 
+				rpc_obj->pod_label_value);
+
+	rc = trn_update_transit_pod_label_policy_map(md, &policy, rpc_obj->bit_val);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure updating transit pod label policy map\n");
+		result = RPC_TRN_FATAL;
+		goto error;
+	}
+
+	result = 0;
+	return &result;
+
+error:
+	return &result;
+}
+
+int *delete_transit_pod_label_policy_1_svc(rpc_trn_pod_label_policy_key_t *key, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result = -1;
+	int rc;
+	char *itf = key->interface;
+	
+	TRN_LOG_INFO("delete_transit_network_policy_protocol_port_1 service");
+	struct pod_label_policy_t policy;
+	struct user_metadata_t *md = trn_itf_table_find(itf);
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	policy.tunnel_id = key->tunid;
+	policy.pod_label_value = key->pod_label_value;
+	TRN_LOG_INFO("key: pod_label_value %d\n", 
+				key->pod_label_value);
+
+	rc = trn_delete_transit_pod_label_policy_map(md, &policy);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure deleting pod label policy map\n");
+		result = RPC_TRN_FATAL;
+		goto error;
+	}
+
+	result = 0;
+	return &result;
+
+error:
+	return &result;
+}
+
+int *update_transit_namespace_label_policy_1_svc(rpc_trn_namespace_label_policy_t *rpc_obj, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result = -1;
+	int rc;
+	char *itf = rpc_obj->interface;
+	
+	TRN_LOG_INFO("update_transit_namespace_label_policy_1_svc service");
+	struct namespace_label_policy_t policy;
+	struct user_metadata_t *md = trn_itf_table_find(itf);
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+	
+	policy.tunnel_id = rpc_obj->tunid;
+	policy.namespace_label_value = rpc_obj->namespace_label_value;
+	TRN_LOG_INFO("rpc_obj: namespace_label_value %d\n", 
+				rpc_obj->namespace_label_value);
+
+	rc = trn_update_transit_namespace_label_policy_map(md, &policy, rpc_obj->bit_val);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure updating transit namespace label policy map\n");
+		result = RPC_TRN_FATAL;
+		goto error;
+	}
+
+	result = 0;
+	return &result;
+
+error:
+	return &result;
+}
+
+int *delete_transit_namespace_label_policy_1_svc(rpc_trn_namespace_label_policy_key_t *key, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result = -1;
+	int rc;
+	char *itf = key->interface;
+	
+	TRN_LOG_INFO("delete_transit_network_policy_protocol_port_1 service");
+	struct namespace_label_policy_t policy;
+	struct user_metadata_t *md = trn_itf_table_find(itf);
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	policy.tunnel_id = key->tunid;
+	policy.namespace_label_value = key->namespace_label_value;
+	TRN_LOG_INFO("key: namespace_label_value %d\n", 
+				key->namespace_label_value);
+
+	rc = trn_delete_transit_namespace_label_policy_map(md, &policy);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure deleting namespace label policy map\n");
+		result = RPC_TRN_FATAL;
+		goto error;
+	}
+
+	result = 0;
+	return &result;
+
+error:
+	return &result;
+}
+
+int *update_transit_pod_and_namespace_label_policy_1_svc(rpc_trn_pod_and_namespace_label_policy_t *rpc_obj, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result = -1;
+	int rc;
+	char *itf = rpc_obj->interface;
+	
+	TRN_LOG_INFO("update_transit_pod_and_namespace_label_policy_1_svc service");
+	struct pod_and_namespace_label_policy_t policy;
+	struct user_metadata_t *md = trn_itf_table_find(itf);
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+	
+	policy.tunnel_id = rpc_obj->tunid;
+	policy.pod_label_value = rpc_obj->pod_label_value;
+	policy.namespace_label_value = rpc_obj->namespace_label_value;
+	TRN_LOG_INFO("rpc_obj: pod_label_value %d namespace_label_value %d\n", 
+				rpc_obj->pod_label_value, rpc_obj->namespace_label_value);
+
+	rc = trn_update_transit_pod_and_namespace_label_policy_map(md, &policy, rpc_obj->bit_val);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure updating transit pod and namespace label policy map\n");
+		result = RPC_TRN_FATAL;
+		goto error;
+	}
+
+	result = 0;
+	return &result;
+
+error:
+	return &result;
+}
+
+int *delete_transit_pod_and_namespace_label_policy_1_svc(rpc_trn_pod_and_namespace_label_policy_key_t *key, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result = -1;
+	int rc;
+	char *itf = key->interface;
+	
+	TRN_LOG_INFO("delete_transit_network_policy_protocol_port_1 service");
+	struct pod_and_namespace_label_policy_t policy;
+	struct user_metadata_t *md = trn_itf_table_find(itf);
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	policy.tunnel_id = key->tunid;
+	policy.pod_label_value = key->pod_label_value;
+	policy.namespace_label_value = key->namespace_label_value;
+	TRN_LOG_INFO("key: pod_label_value %d namespace_label_value %d\n", 
+				key->pod_label_value, key->namespace_label_value);
+
+	rc = trn_delete_transit_pod_and_namespace_label_policy_map(md, &policy);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure deleting pod and namespace label policy map\n");
+		result = RPC_TRN_FATAL;
+		goto error;
+	}
+
+	result = 0;
+	return &result;
+
+error:
+	return &result;
+}

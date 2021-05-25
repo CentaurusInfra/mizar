@@ -224,6 +224,53 @@ struct rpc_trn_vsip_ppo_key_t {
        uint16_t port;
 };
 
+/* Defines a pod label policy table entry */
+struct rpc_trn_pod_label_policy_t {
+       string interface<20>;
+       uint64_t tunid;
+       uint32_t pod_label_value;
+       uint64_t bit_val;
+};
+
+/* Defines a pod label policy table key */
+struct rpc_trn_pod_label_policy_key_t {
+       string interface<20>;
+       uint64_t tunid;
+       uint32_t pod_label_value;
+};
+
+/* Defines a namespace label policy table entry */
+struct rpc_trn_namespace_label_policy_t {
+       string interface<20>;
+       uint64_t tunid;
+       uint32_t namespace_label_value;
+       uint64_t bit_val;
+};
+
+/* Defines a namespace label policy table key */
+struct rpc_trn_namespace_label_policy_key_t {
+       string interface<20>;
+       uint64_t tunid;
+       uint32_t namespace_label_value;
+};
+
+/* Defines a pod and namespace label policy table entry */
+struct rpc_trn_pod_and_namespace_label_policy_t {
+       string interface<20>;
+       uint64_t tunid;
+       uint32_t pod_label_value;
+       uint32_t namespace_label_value;
+       uint64_t bit_val;
+};
+
+/* Defines a pod and namespace label policy table key */
+struct rpc_trn_pod_and_namespace_label_policy_key_t {
+       string interface<20>;
+       uint64_t tunid;
+       uint32_t pod_label_value;
+       uint32_t namespace_label_value;
+};
+
 /*----- Protocol. -----*/
 
 program RPC_TRANSIT_REMOTE_PROTOCOL {
@@ -270,7 +317,14 @@ program RPC_TRANSIT_REMOTE_PROTOCOL {
                 int DELETE_AGENT_NETWORK_POLICY_PROTOCOL_PORT(rpc_trn_vsip_ppo_key_t) = 34;
 
                 int UPDATE_PACKET_METADATA(rpc_trn_packet_metadata_t) = 35;
-                int DELETE_PACKET_METADATA(rpc_trn_packet_metadata_key_t) = 36;                
+                int DELETE_PACKET_METADATA(rpc_trn_packet_metadata_key_t) = 36;
+
+                int UPDATE_TRANSIT_POD_LABEL_POLICY(rpc_trn_pod_label_policy_t) = 37;
+                int DELETE_TRANSIT_POD_LABEL_POLICY(rpc_trn_pod_label_policy_key_t) = 38;
+                int UPDATE_TRANSIT_NAMESPACE_LABEL_POLICY(rpc_trn_namespace_label_policy_t) = 39;
+                int DELETE_TRANSIT_NAMESPACE_LABEL_POLICY(rpc_trn_namespace_label_policy_key_t) = 40;
+                int UPDATE_TRANSIT_POD_AND_NAMESPACE_LABEL_POLICY(rpc_trn_pod_and_namespace_label_policy_t) = 41;
+                int DELETE_TRANSIT_POD_AND_NAMESPACE_LABEL_POLICY(rpc_trn_pod_and_namespace_label_policy_key_t) = 42;
 
           } = 1;
 

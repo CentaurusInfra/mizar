@@ -450,9 +450,9 @@ class NetworkPolicyUtil:
         self.build_cidr_table(access_rules, ep, "with_except")
         self.build_cidr_table(access_rules, ep, "except")
         self.build_port_table(access_rules, ep)
-        self.build_pod_label_policy_table(access_rules)
-        self.build_namespace_label_policy_table(access_rules)
-        self.build_pod_and_namespace_label_policy_table(access_rules)
+        self.build_pod_label_policy_table(access_rules, ep)
+        self.build_namespace_label_policy_table(access_rules, ep)
+        self.build_pod_and_namespace_label_policy_table(access_rules, ep)
 
     def build_cidr_and_policies_map(self, access_rules, cidr_type):
         cidr_map_name = "cidrs_map_" + cidr_type
@@ -515,7 +515,7 @@ class NetworkPolicyUtil:
                 "bit_value": self.calculate_policy_bit_value(access_rules, indexed_policy_names),
             })
 
-    def build_pod_label_policy_table(self, access_rules):
+    def build_pod_label_policy_table(self, access_rules, ep):
         label_value_policy_names_map = {}
         for indexed_policy_name, label_values in access_rules["pod_label_map"].items():
             for label_value in label_values:
@@ -525,11 +525,12 @@ class NetworkPolicyUtil:
         
         for label_value in label_value_policy_names_map:
             access_rules["pod_label_policy_table"].append({
+                "vni": ep.vni,
                 "pod_label_value": label_value,
                 "bit_value": self.calculate_policy_bit_value(access_rules, label_value_policy_names_map[label_value]),
             })
 
-    def build_namespace_label_policy_table(self, access_rules):
+    def build_namespace_label_policy_table(self, access_rules, ep):
         label_value_policy_names_map = {}
         for indexed_policy_name, label_values in access_rules["namespace_label_map"].items():
             for label_value in label_values:
@@ -539,11 +540,12 @@ class NetworkPolicyUtil:
         
         for label_value in label_value_policy_names_map:
             access_rules["namespace_label_policy_table"].append({
+                "vni": ep.vni,
                 "namespace_label_value": label_value,
                 "bit_value": self.calculate_policy_bit_value(access_rules, label_value_policy_names_map[label_value]),
             })
 
-    def build_pod_and_namespace_label_policy_table(self, access_rules):
+    def build_pod_and_namespace_label_policy_table(self, access_rules, ep):
         if len(access_rules["pod_and_namespace_label_map"]) == 0:
             return
             
@@ -562,6 +564,7 @@ class NetworkPolicyUtil:
         for pod_label_value in pod_label_value_policy_names_map:
             for namespace_label_value in namespace_label_value_policy_names_map:
                 access_rules["pod_and_namespace_label_policy_table"].append({
+                    "vni": ep.vni,
                     "pod_label_value": pod_label_value,
                     "namespace_label_value": namespace_label_value,
                     "bit_value": self.calculate_policy_bit_value(access_rules, pod_label_value_policy_names_map[pod_label_value]),

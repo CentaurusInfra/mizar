@@ -125,6 +125,33 @@ int *__wrap_update_packet_metadata_1(rpc_trn_packet_metadata_t *packet_metadata,
 	return retval;
 }
 
+int *__wrap_update_transit_pod_label_policy_1(rpc_trn_pod_label_policy_t *pod_label_policy, CLIENT *clnt)
+{
+	check_expected_ptr(pod_label_policy);
+	check_expected_ptr(clnt);
+	int *retval = mock_ptr_type(int *);
+	function_called();
+	return retval;
+}
+
+int *__wrap_update_transit_namespace_label_policy_1(rpc_trn_namespace_label_policy_t *namespace_label_policy, CLIENT *clnt)
+{
+	check_expected_ptr(namespace_label_policy);
+	check_expected_ptr(clnt);
+	int *retval = mock_ptr_type(int *);
+	function_called();
+	return retval;
+}
+
+int *__wrap_update_transit_pod_and_namespace_label_policy_1(rpc_trn_pod_and_namespace_label_policy_t *pod_and_namespace_label_policy, CLIENT *clnt)
+{
+	check_expected_ptr(pod_and_namespace_label_policy);
+	check_expected_ptr(clnt);
+	int *retval = mock_ptr_type(int *);
+	function_called();
+	return retval;
+}
+
 int *__wrap_update_agent_md_1(rpc_trn_agent_metadata_t *md, CLIENT *clnt)
 {
 	check_expected_ptr(md);
@@ -308,6 +335,33 @@ int *__wrap_delete_agent_ep_1(rpc_trn_endpoint_key_t *argp, CLIENT *clnt)
 }
 
 int *__wrap_delete_packet_metadata_1(rpc_trn_packet_metadata_key_t *argp, CLIENT *clnt)
+{
+	check_expected_ptr(argp);
+	check_expected_ptr(clnt);
+	int *retval = mock_ptr_type(int *);
+	function_called();
+	return retval;
+}
+
+int *__wrap_delete_transit_pod_label_policy_1(rpc_trn_pod_label_policy_key_t *argp, CLIENT *clnt)
+{
+	check_expected_ptr(argp);
+	check_expected_ptr(clnt);
+	int *retval = mock_ptr_type(int *);
+	function_called();
+	return retval;
+}
+
+int *__wrap_delete_transit_namespace_label_policy_1(rpc_trn_namespace_label_policy_key_t *argp, CLIENT *clnt)
+{
+	check_expected_ptr(argp);
+	check_expected_ptr(clnt);
+	int *retval = mock_ptr_type(int *);
+	function_called();
+	return retval;
+}
+
+int *__wrap_delete_transit_pod_and_namespace_label_policy_1(rpc_trn_pod_and_namespace_label_policy_key_t *argp, CLIENT *clnt)
 {
 	check_expected_ptr(argp);
 	check_expected_ptr(clnt);
@@ -516,6 +570,91 @@ static int check_packet_metadata_equal(const LargestIntegralType value,
 	return true;
 }
 
+static int check_pod_label_policy_equal(const LargestIntegralType value,
+			  const LargestIntegralType check_value_data)
+{
+	struct rpc_trn_pod_label_policy_t *pod_label_policy = (struct rpc_trn_pod_label_policy_t *)value;
+	struct rpc_trn_pod_label_policy_t *c_pod_label_policy =
+		(struct rpc_trn_pod_label_policy_t *)check_value_data;
+	int i;
+
+	if (strcmp(pod_label_policy->interface, c_pod_label_policy->interface) != 0) {
+		return false;
+	}
+
+	if (pod_label_policy->tunid != c_pod_label_policy->tunid) {
+		return false;
+	}
+
+	if (pod_label_policy->pod_label_value != c_pod_label_policy->pod_label_value) {
+		return false;
+	}
+
+	if (pod_label_policy->bit_val != c_pod_label_policy->bit_val) {
+		return false;
+	}
+
+	return true;
+}
+
+static int check_namespace_label_policy_equal(const LargestIntegralType value,
+			  const LargestIntegralType check_value_data)
+{
+	struct rpc_trn_namespace_label_policy_t *namespace_label_policy = (struct rpc_trn_namespace_label_policy_t *)value;
+	struct rpc_trn_namespace_label_policy_t *c_namespace_label_policy =
+		(struct rpc_trn_namespace_label_policy_t *)check_value_data;
+	int i;
+
+	if (strcmp(namespace_label_policy->interface, c_namespace_label_policy->interface) != 0) {
+		return false;
+	}
+
+	if (namespace_label_policy->tunid != c_namespace_label_policy->tunid) {
+		return false;
+	}
+
+	if (namespace_label_policy->namespace_label_value != c_namespace_label_policy->namespace_label_value) {
+		return false;
+	}
+
+	if (namespace_label_policy->bit_val != c_namespace_label_policy->bit_val) {
+		return false;
+	}
+
+	return true;
+}
+
+static int check_pod_and_namespace_label_policy_equal(const LargestIntegralType value,
+			  const LargestIntegralType check_value_data)
+{
+	struct rpc_trn_pod_and_namespace_label_policy_t *pod_and_namespace_label_policy = (struct rpc_trn_pod_and_namespace_label_policy_t *)value;
+	struct rpc_trn_pod_and_namespace_label_policy_t *c_pod_and_namespace_label_policy =
+		(struct rpc_trn_pod_and_namespace_label_policy_t *)check_value_data;
+	int i;
+
+	if (strcmp(pod_and_namespace_label_policy->interface, c_pod_and_namespace_label_policy->interface) != 0) {
+		return false;
+	}
+
+	if (pod_and_namespace_label_policy->tunid != c_pod_and_namespace_label_policy->tunid) {
+		return false;
+	}
+
+	if (pod_and_namespace_label_policy->pod_label_value != c_pod_and_namespace_label_policy->pod_label_value) {
+		return false;
+	}
+
+	if (pod_and_namespace_label_policy->namespace_label_value != c_pod_and_namespace_label_policy->namespace_label_value) {
+		return false;
+	}
+
+	if (pod_and_namespace_label_policy->bit_val != c_pod_and_namespace_label_policy->bit_val) {
+		return false;
+	}
+
+	return true;
+}
+
 static int check_md_equal(const LargestIntegralType value,
 			  const LargestIntegralType check_value_data)
 
@@ -669,6 +808,79 @@ static int check_packet_metadata_key_equal(const LargestIntegralType value,
 	}
 
 	if (key->ip != c_key->ip) {
+		return false;
+	}
+
+	return true;
+}
+
+static int check_transit_pod_label_policy_key_equal(const LargestIntegralType value,
+			      const LargestIntegralType check_value_data)
+{
+	struct rpc_trn_pod_label_policy_key_t *key =
+		(struct rpc_trn_pod_label_policy_key_t *)value;
+	struct rpc_trn_pod_label_policy_key_t *c_key =
+		(struct rpc_trn_pod_label_policy_key_t *)check_value_data;
+
+	if (strcmp(key->interface, c_key->interface) != 0) {
+		return false;
+	}
+
+	if (key->tunid != c_key->tunid) {
+		return false;
+	}
+
+	if (key->pod_label_value != c_key->pod_label_value) {
+		return false;
+	}
+
+	return true;
+}
+
+static int check_transit_namespace_label_policy_key_equal(const LargestIntegralType value,
+			      const LargestIntegralType check_value_data)
+{
+	struct rpc_trn_namespace_label_policy_key_t *key =
+		(struct rpc_trn_namespace_label_policy_key_t *)value;
+	struct rpc_trn_namespace_label_policy_key_t *c_key =
+		(struct rpc_trn_namespace_label_policy_key_t *)check_value_data;
+
+	if (strcmp(key->interface, c_key->interface) != 0) {
+		return false;
+	}
+
+	if (key->tunid != c_key->tunid) {
+		return false;
+	}
+
+	if (key->namespace_label_value != c_key->namespace_label_value) {
+		return false;
+	}
+
+	return true;
+}
+
+static int check_transit_pod_and_namespace_label_policy_key_equal(const LargestIntegralType value,
+			      const LargestIntegralType check_value_data)
+{
+	struct rpc_trn_pod_and_namespace_label_policy_key_t *key =
+		(struct rpc_trn_pod_and_namespace_label_policy_key_t *)value;
+	struct rpc_trn_pod_and_namespace_label_policy_key_t *c_key =
+		(struct rpc_trn_pod_and_namespace_label_policy_key_t *)check_value_data;
+
+	if (strcmp(key->interface, c_key->interface) != 0) {
+		return false;
+	}
+
+	if (key->tunid != c_key->tunid) {
+		return false;
+	}
+
+	if (key->pod_label_value != c_key->pod_label_value) {
+		return false;
+	}
+
+	if (key->namespace_label_value != c_key->namespace_label_value) {
 		return false;
 	}
 
@@ -1450,6 +1662,272 @@ static void test_trn_cli_update_packet_metadata_subcmd(void **state)
 	expect_any(__wrap_update_packet_metadata_1, packet_metadata);
 	expect_any(__wrap_update_packet_metadata_1, clnt);
 	rc = trn_cli_update_packet_metadata_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+}
+
+static void test_trn_cli_update_transit_pod_label_policy_subcmd(void **state)
+{
+	UNUSED(state);
+	int rc;
+	int argc = 5;
+	int update_transit_pod_label_policy_1_ret_val = 0;
+
+	/* Test cases */
+	char *argv1[] = { "update-pod-label-policy", "-i", "eth0", "-j", QUOTE([{
+				  "tunnel_id": "0",
+				  "pod_label_value": "11",
+				  "bit_value": "5"
+			  }]) };
+
+	char *argv2[] = { "update-pod-label-policy", "-i", "eth0", "-j", QUOTE([{
+				  "tunnel_id": 0,
+				  "pod_label_value": "11",
+				  "bit_value": "5"
+			  }]) };
+
+	char *argv3[] = { "update-pod-label-policy", "-i", "eth0", "-j", QUOTE([{
+				  "tunnel_id": "0",
+				  "pod_label_value": "11",
+			  }]) };
+
+	char *argv4[] = { "update-pod-label-policy", "-i", "eth0", "-j", QUOTE([{
+				  "tunnel_id": "0",
+				  "pod_label_value": ,
+				  "bit_value": "5"
+			  }]) };
+
+	char itf[] = "eth0";
+
+	struct rpc_trn_pod_label_policy_t exp_pod_label_policy = {
+		.interface = itf,
+		.tunid = 0,
+		.pod_label_value = 11,		
+		.bit_val = 5
+	};
+
+	/* Test call update_transit_pod_label_policy successfully */
+	TEST_CASE(
+		"update_transit_pod_label_policy succeed with well formed endpoint json input");
+	update_transit_pod_label_policy_1_ret_val = 0;
+	expect_function_call(__wrap_update_transit_pod_label_policy_1);
+	will_return(__wrap_update_transit_pod_label_policy_1, &update_transit_pod_label_policy_1_ret_val);
+	expect_check(__wrap_update_transit_pod_label_policy_1, pod_label_policy, check_pod_label_policy_equal, &exp_pod_label_policy);
+	expect_any(__wrap_update_transit_pod_label_policy_1, clnt);
+	rc = trn_cli_update_transit_pod_label_policy_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, 0);
+
+	/* Test parse packet metadata input error*/
+	TEST_CASE("update_transit_pod_label_policy is not called with non-string field");
+	rc = trn_cli_update_transit_pod_label_policy_subcmd(NULL, argc, argv2);
+	assert_int_equal(rc, -EINVAL);
+
+	TEST_CASE("update_transit_pod_label_policy is not called with missing required field");
+	rc = trn_cli_update_transit_pod_label_policy_subcmd(NULL, argc, argv3);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test parse packet metadata input error 2*/
+	TEST_CASE("update_transit_pod_label_policy is not called malformed json");
+	rc = trn_cli_update_transit_pod_label_policy_subcmd(NULL, argc, argv4);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call update_transit_pod_label_policy_1 return error*/
+	TEST_CASE(
+		"update_transit_pod_label_policy subcommand fails if update_transit_pod_label_policy_1 returns error");
+	update_transit_pod_label_policy_1_ret_val = -EINVAL;
+	expect_function_call(__wrap_update_transit_pod_label_policy_1);
+	will_return(__wrap_update_transit_pod_label_policy_1, &update_transit_pod_label_policy_1_ret_val);
+	expect_any(__wrap_update_transit_pod_label_policy_1, pod_label_policy);
+	expect_any(__wrap_update_transit_pod_label_policy_1, clnt);
+	rc = trn_cli_update_transit_pod_label_policy_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call update_transit_pod_label_policy_1 return NULL*/
+	TEST_CASE(
+		"update_transit_pod_label_policy subcommand fails if update_transit_pod_label_policy_1 returns NULl");
+	expect_function_call(__wrap_update_transit_pod_label_policy_1);
+	will_return(__wrap_update_transit_pod_label_policy_1, NULL);
+	expect_any(__wrap_update_transit_pod_label_policy_1, pod_label_policy);
+	expect_any(__wrap_update_transit_pod_label_policy_1, clnt);
+	rc = trn_cli_update_transit_pod_label_policy_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+}
+
+static void test_trn_cli_update_transit_namespace_label_policy_subcmd(void **state)
+{
+	UNUSED(state);
+	int rc;
+	int argc = 5;
+	int update_transit_namespace_label_policy_1_ret_val = 0;
+
+	/* Test cases */
+	char *argv1[] = { "update-namespace-label-policy", "-i", "eth0", "-j", QUOTE([{
+				  "tunnel_id": "0",
+				  "namespace_label_value": "11",
+				  "bit_value": "5"
+			  }]) };
+
+	char *argv2[] = { "update-namespace-label-policy", "-i", "eth0", "-j", QUOTE([{
+				  "tunnel_id": 0,
+				  "namespace_label_value": "11",
+				  "bit_value": "5"
+			  }]) };
+
+	char *argv3[] = { "update-namespace-label-policy", "-i", "eth0", "-j", QUOTE([{
+				  "tunnel_id": "0",
+				  "namespace_label_value": "11",
+			  }]) };
+
+	char *argv4[] = { "update-namespace-label-policy", "-i", "eth0", "-j", QUOTE([{
+				  "tunnel_id": "0",
+				  "namespace_label_value": ,
+				  "bit_value": "5"
+			  }]) };
+
+	char itf[] = "eth0";
+
+	struct rpc_trn_namespace_label_policy_t exp_namespace_label_policy = {
+		.interface = itf,
+		.tunid = 0,
+		.namespace_label_value = 11,		
+		.bit_val = 5
+	};
+
+	/* Test call update_transit_namespace_label_policy successfully */
+	TEST_CASE(
+		"update_transit_namespace_label_policy succeed with well formed endpoint json input");
+	update_transit_namespace_label_policy_1_ret_val = 0;
+	expect_function_call(__wrap_update_transit_namespace_label_policy_1);
+	will_return(__wrap_update_transit_namespace_label_policy_1, &update_transit_namespace_label_policy_1_ret_val);
+	expect_check(__wrap_update_transit_namespace_label_policy_1, namespace_label_policy, check_namespace_label_policy_equal, &exp_namespace_label_policy);
+	expect_any(__wrap_update_transit_namespace_label_policy_1, clnt);
+	rc = trn_cli_update_transit_namespace_label_policy_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, 0);
+
+	/* Test parse packet metadata input error*/
+	TEST_CASE("update_transit_namespace_label_policy is not called with non-string field");
+	rc = trn_cli_update_transit_namespace_label_policy_subcmd(NULL, argc, argv2);
+	assert_int_equal(rc, -EINVAL);
+
+	TEST_CASE("update_transit_namespace_label_policy is not called with missing required field");
+	rc = trn_cli_update_transit_namespace_label_policy_subcmd(NULL, argc, argv3);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test parse packet metadata input error 2*/
+	TEST_CASE("update_transit_namespace_label_policy is not called malformed json");
+	rc = trn_cli_update_transit_namespace_label_policy_subcmd(NULL, argc, argv4);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call update_transit_namespace_label_policy_1 return error*/
+	TEST_CASE(
+		"update_transit_namespace_label_policy subcommand fails if update_transit_namespace_label_policy_1 returns error");
+	update_transit_namespace_label_policy_1_ret_val = -EINVAL;
+	expect_function_call(__wrap_update_transit_namespace_label_policy_1);
+	will_return(__wrap_update_transit_namespace_label_policy_1, &update_transit_namespace_label_policy_1_ret_val);
+	expect_any(__wrap_update_transit_namespace_label_policy_1, namespace_label_policy);
+	expect_any(__wrap_update_transit_namespace_label_policy_1, clnt);
+	rc = trn_cli_update_transit_namespace_label_policy_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call update_transit_namespace_label_policy_1 return NULL*/
+	TEST_CASE(
+		"update_transit_namespace_label_policy subcommand fails if update_transit_namespace_label_policy_1 returns NULl");
+	expect_function_call(__wrap_update_transit_namespace_label_policy_1);
+	will_return(__wrap_update_transit_namespace_label_policy_1, NULL);
+	expect_any(__wrap_update_transit_namespace_label_policy_1, namespace_label_policy);
+	expect_any(__wrap_update_transit_namespace_label_policy_1, clnt);
+	rc = trn_cli_update_transit_namespace_label_policy_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+}
+
+static void test_trn_cli_update_transit_pod_and_namespace_label_policy_subcmd(void **state)
+{
+	UNUSED(state);
+	int rc;
+	int argc = 5;
+	int update_transit_pod_and_namespace_label_policy_1_ret_val = 0;
+
+	/* Test cases */
+	char *argv1[] = { "update-pod-label-policy", "-i", "eth0", "-j", QUOTE([{
+				  "tunnel_id": "0",
+				  "pod_label_value": "11",
+				  "namespace_label_value": "8",
+				  "bit_value": "5"
+			  }]) };
+
+	char *argv2[] = { "update-pod-label-policy", "-i", "eth0", "-j", QUOTE([{
+				  "tunnel_id": 0,
+				  "pod_label_value": "11",
+				  "namespace_label_value": "8",
+				  "bit_value": "5"
+			  }]) };
+
+	char *argv3[] = { "update-pod-label-policy", "-i", "eth0", "-j", QUOTE([{
+				  "tunnel_id": "0",
+				  "pod_label_value": "11",
+				  "namespace_label_value": "8",
+			  }]) };
+
+	char *argv4[] = { "update-pod-label-policy", "-i", "eth0", "-j", QUOTE([{
+				  "tunnel_id": "0",
+				  "pod_label_value": ,
+				  "namespace_label_value": "8",
+				  "bit_value": "5"
+			  }]) };
+
+	char itf[] = "eth0";
+
+	struct rpc_trn_pod_and_namespace_label_policy_t exp_pod_and_namespace_label_policy = {
+		.interface = itf,
+		.tunid = 0,
+		.pod_label_value = 11,
+		.namespace_label_value = 8,
+		.bit_val = 5
+	};
+
+	/* Test call update_transit_pod_and_namespace_label_policy successfully */
+	TEST_CASE(
+		"update_transit_pod_and_namespace_label_policy succeed with well formed endpoint json input");
+	update_transit_pod_and_namespace_label_policy_1_ret_val = 0;
+	expect_function_call(__wrap_update_transit_pod_and_namespace_label_policy_1);
+	will_return(__wrap_update_transit_pod_and_namespace_label_policy_1, &update_transit_pod_and_namespace_label_policy_1_ret_val);
+	expect_check(__wrap_update_transit_pod_and_namespace_label_policy_1, pod_and_namespace_label_policy, check_pod_and_namespace_label_policy_equal, &exp_pod_and_namespace_label_policy);
+	expect_any(__wrap_update_transit_pod_and_namespace_label_policy_1, clnt);
+	rc = trn_cli_update_transit_pod_and_namespace_label_policy_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, 0);
+
+	/* Test parse packet metadata input error*/
+	TEST_CASE("update_transit_pod_and_namespace_label_policy is not called with non-string field");
+	rc = trn_cli_update_transit_pod_and_namespace_label_policy_subcmd(NULL, argc, argv2);
+	assert_int_equal(rc, -EINVAL);
+
+	TEST_CASE("update_transit_pod_and_namespace_label_policy is not called with missing required field");
+	rc = trn_cli_update_transit_pod_and_namespace_label_policy_subcmd(NULL, argc, argv3);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test parse packet metadata input error 2*/
+	TEST_CASE("update_transit_pod_and_namespace_label_policy is not called malformed json");
+	rc = trn_cli_update_transit_pod_and_namespace_label_policy_subcmd(NULL, argc, argv4);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call update_transit_pod_and_namespace_label_policy_1 return error*/
+	TEST_CASE(
+		"update_transit_pod_and_namespace_label_policy subcommand fails if update_transit_pod_and_namespace_label_policy_1 returns error");
+	update_transit_pod_and_namespace_label_policy_1_ret_val = -EINVAL;
+	expect_function_call(__wrap_update_transit_pod_and_namespace_label_policy_1);
+	will_return(__wrap_update_transit_pod_and_namespace_label_policy_1, &update_transit_pod_and_namespace_label_policy_1_ret_val);
+	expect_any(__wrap_update_transit_pod_and_namespace_label_policy_1, pod_and_namespace_label_policy);
+	expect_any(__wrap_update_transit_pod_and_namespace_label_policy_1, clnt);
+	rc = trn_cli_update_transit_pod_and_namespace_label_policy_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call update_transit_pod_and_namespace_label_policy_1 return NULL*/
+	TEST_CASE(
+		"update_transit_pod_and_namespace_label_policy subcommand fails if update_transit_pod_and_namespace_label_policy_1 returns NULl");
+	expect_function_call(__wrap_update_transit_pod_and_namespace_label_policy_1);
+	will_return(__wrap_update_transit_pod_and_namespace_label_policy_1, NULL);
+	expect_any(__wrap_update_transit_pod_and_namespace_label_policy_1, pod_and_namespace_label_policy);
+	expect_any(__wrap_update_transit_pod_and_namespace_label_policy_1, clnt);
+	rc = trn_cli_update_transit_pod_and_namespace_label_policy_subcmd(NULL, argc, argv1);
 	assert_int_equal(rc, -EINVAL);
 }
 
@@ -2347,6 +2825,211 @@ static void test_trn_cli_delete_packet_metadata_subcmd(void **state)
 	expect_any(__wrap_delete_packet_metadata_1, argp);
 	expect_any(__wrap_delete_packet_metadata_1, clnt);
 	rc = trn_cli_delete_packet_metadata_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+}
+
+static void test_trn_cli_delete_transit_pod_label_policy_subcmd(void **state)
+{
+	UNUSED(state);
+	int rc;
+	int argc = 5;
+
+	char itf[] = "eth0";
+
+	/* Test cases */
+	char *argv1[] = { "delete-packet-metadata", "-i", "eth0", "-j",
+			  QUOTE([{ "tunnel_id": "3", "pod_label_value": "11" }]) };
+
+	char *argv2[] = { "delete-packet-metadata", "-i", "eth0", "-j",
+			  QUOTE([{ "tunnel_id": 3, "pod_label_value": "11" }]) };
+
+	char *argv3[] = { "delete-packet-metadata", "-i", "eth0", "-j",
+			  QUOTE([{ "tunnel_id": "3", "pod_label_value": [10.0.0.2] }]) };
+
+	struct rpc_trn_pod_label_policy_key_t exp_transit_pod_label_policy_key = {
+		.interface = itf,		
+		.tunid = 3,
+		.pod_label_value = 11,
+	};
+
+	int delete_transit_pod_label_policy_1_ret_val = 0;
+	/* Test call delete_transit_pod_label_policy_1 successfully */
+	TEST_CASE(
+		"delete_transit_pod_label_policy_1 succeed with well formed endpoint json input");
+	expect_function_call(__wrap_delete_transit_pod_label_policy_1);
+	will_return(__wrap_delete_transit_pod_label_policy_1, &delete_transit_pod_label_policy_1_ret_val);
+	expect_check(__wrap_delete_transit_pod_label_policy_1, argp, check_transit_pod_label_policy_key_equal,
+		     &exp_transit_pod_label_policy_key);
+	expect_any(__wrap_delete_transit_pod_label_policy_1, clnt);
+	rc = trn_cli_delete_transit_pod_label_policy_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, 0);
+
+	/* Test parse input error*/
+	TEST_CASE("delete_transit_pod_label_policy_1 is not called with non-string field");
+	rc = trn_cli_delete_transit_pod_label_policy_subcmd(NULL, argc, argv2);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test parse input error 2*/
+	TEST_CASE("delete_transit_pod_label_policy_1 is not called malformed json");
+	rc = trn_cli_delete_transit_pod_label_policy_subcmd(NULL, argc, argv3);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call delete_transit_pod_label_policy_1 return error*/
+	TEST_CASE(
+		"delete-packet-metadata subcommand fails if delete_transit_pod_label_policy_1 returns error");
+	delete_transit_pod_label_policy_1_ret_val = -EINVAL;
+	expect_function_call(__wrap_delete_transit_pod_label_policy_1);
+	will_return(__wrap_delete_transit_pod_label_policy_1, &delete_transit_pod_label_policy_1_ret_val);
+	expect_any(__wrap_delete_transit_pod_label_policy_1, argp);
+	expect_any(__wrap_delete_transit_pod_label_policy_1, clnt);
+	rc = trn_cli_delete_transit_pod_label_policy_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call delete_transit_pod_label_policy_1 return NULL*/
+	TEST_CASE(
+		"delete-packet-metadata subcommand fails if delete_transit_pod_label_policy_1 returns NULL");
+	expect_function_call(__wrap_delete_transit_pod_label_policy_1);
+	will_return(__wrap_delete_transit_pod_label_policy_1, NULL);
+	expect_any(__wrap_delete_transit_pod_label_policy_1, argp);
+	expect_any(__wrap_delete_transit_pod_label_policy_1, clnt);
+	rc = trn_cli_delete_transit_pod_label_policy_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+}
+
+static void test_trn_cli_delete_transit_namespace_label_policy_subcmd(void **state)
+{
+	UNUSED(state);
+	int rc;
+	int argc = 5;
+
+	char itf[] = "eth0";
+
+	/* Test cases */
+	char *argv1[] = { "delete-packet-metadata", "-i", "eth0", "-j",
+			  QUOTE([{ "tunnel_id": "3", "namespace_label_value": "11" }]) };
+
+	char *argv2[] = { "delete-packet-metadata", "-i", "eth0", "-j",
+			  QUOTE([{ "tunnel_id": 3, "namespace_label_value": "11" }]) };
+
+	char *argv3[] = { "delete-packet-metadata", "-i", "eth0", "-j",
+			  QUOTE([{ "tunnel_id": "3", "namespace_label_value": [10.0.0.2] }]) };
+
+	struct rpc_trn_namespace_label_policy_key_t exp_transit_namespace_label_policy_key = {
+		.interface = itf,		
+		.tunid = 3,
+		.namespace_label_value = 11,
+	};
+
+	int delete_transit_namespace_label_policy_1_ret_val = 0;
+	/* Test call delete_transit_namespace_label_policy_1 successfully */
+	TEST_CASE(
+		"delete_transit_namespace_label_policy_1 succeed with well formed endpoint json input");
+	expect_function_call(__wrap_delete_transit_namespace_label_policy_1);
+	will_return(__wrap_delete_transit_namespace_label_policy_1, &delete_transit_namespace_label_policy_1_ret_val);
+	expect_check(__wrap_delete_transit_namespace_label_policy_1, argp, check_transit_namespace_label_policy_key_equal,
+		     &exp_transit_namespace_label_policy_key);
+	expect_any(__wrap_delete_transit_namespace_label_policy_1, clnt);
+	rc = trn_cli_delete_transit_namespace_label_policy_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, 0);
+
+	/* Test parse input error*/
+	TEST_CASE("delete_transit_namespace_label_policy_1 is not called with non-string field");
+	rc = trn_cli_delete_transit_namespace_label_policy_subcmd(NULL, argc, argv2);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test parse input error 2*/
+	TEST_CASE("delete_transit_namespace_label_policy_1 is not called malformed json");
+	rc = trn_cli_delete_transit_namespace_label_policy_subcmd(NULL, argc, argv3);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call delete_transit_namespace_label_policy_1 return error*/
+	TEST_CASE(
+		"delete-packet-metadata subcommand fails if delete_transit_namespace_label_policy_1 returns error");
+	delete_transit_namespace_label_policy_1_ret_val = -EINVAL;
+	expect_function_call(__wrap_delete_transit_namespace_label_policy_1);
+	will_return(__wrap_delete_transit_namespace_label_policy_1, &delete_transit_namespace_label_policy_1_ret_val);
+	expect_any(__wrap_delete_transit_namespace_label_policy_1, argp);
+	expect_any(__wrap_delete_transit_namespace_label_policy_1, clnt);
+	rc = trn_cli_delete_transit_namespace_label_policy_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call delete_transit_namespace_label_policy_1 return NULL*/
+	TEST_CASE(
+		"delete-packet-metadata subcommand fails if delete_transit_namespace_label_policy_1 returns NULL");
+	expect_function_call(__wrap_delete_transit_namespace_label_policy_1);
+	will_return(__wrap_delete_transit_namespace_label_policy_1, NULL);
+	expect_any(__wrap_delete_transit_namespace_label_policy_1, argp);
+	expect_any(__wrap_delete_transit_namespace_label_policy_1, clnt);
+	rc = trn_cli_delete_transit_namespace_label_policy_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+}
+
+static void test_trn_cli_delete_transit_pod_and_namespace_label_policy_subcmd(void **state)
+{
+	UNUSED(state);
+	int rc;
+	int argc = 5;
+
+	char itf[] = "eth0";
+
+	/* Test cases */
+	char *argv1[] = { "delete-packet-metadata", "-i", "eth0", "-j",
+			  QUOTE([{ "tunnel_id": "3", "pod_label_value": "11", "namespace_label_value": "8" }]) };
+
+	char *argv2[] = { "delete-packet-metadata", "-i", "eth0", "-j",
+			  QUOTE([{ "tunnel_id": 3, "pod_label_value": "11", "namespace_label_value": "8" }]) };
+
+	char *argv3[] = { "delete-packet-metadata", "-i", "eth0", "-j",
+			  QUOTE([{ "tunnel_id": "3", "pod_label_value": [10.0.0.2], "namespace_label_value": "8" }]) };
+
+	struct rpc_trn_pod_and_namespace_label_policy_key_t exp_transit_pod_and_namespace_label_policy_key = {
+		.interface = itf,		
+		.tunid = 3,
+		.pod_label_value = 11,
+		.namespace_label_value = 8,
+	};
+
+	int delete_transit_pod_and_namespace_label_policy_1_ret_val = 0;
+	/* Test call delete_transit_pod_and_namespace_label_policy_1 successfully */
+	TEST_CASE(
+		"delete_transit_pod_and_namespace_label_policy_1 succeed with well formed endpoint json input");
+	expect_function_call(__wrap_delete_transit_pod_and_namespace_label_policy_1);
+	will_return(__wrap_delete_transit_pod_and_namespace_label_policy_1, &delete_transit_pod_and_namespace_label_policy_1_ret_val);
+	expect_check(__wrap_delete_transit_pod_and_namespace_label_policy_1, argp, check_transit_pod_and_namespace_label_policy_key_equal,
+		     &exp_transit_pod_and_namespace_label_policy_key);
+	expect_any(__wrap_delete_transit_pod_and_namespace_label_policy_1, clnt);
+	rc = trn_cli_delete_transit_pod_and_namespace_label_policy_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, 0);
+
+	/* Test parse input error*/
+	TEST_CASE("delete_transit_pod_and_namespace_label_policy_1 is not called with non-string field");
+	rc = trn_cli_delete_transit_pod_and_namespace_label_policy_subcmd(NULL, argc, argv2);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test parse input error 2*/
+	TEST_CASE("delete_transit_pod_and_namespace_label_policy_1 is not called malformed json");
+	rc = trn_cli_delete_transit_pod_and_namespace_label_policy_subcmd(NULL, argc, argv3);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call delete_transit_pod_and_namespace_label_policy_1 return error*/
+	TEST_CASE(
+		"delete-packet-metadata subcommand fails if delete_transit_pod_and_namespace_label_policy_1 returns error");
+	delete_transit_pod_and_namespace_label_policy_1_ret_val = -EINVAL;
+	expect_function_call(__wrap_delete_transit_pod_and_namespace_label_policy_1);
+	will_return(__wrap_delete_transit_pod_and_namespace_label_policy_1, &delete_transit_pod_and_namespace_label_policy_1_ret_val);
+	expect_any(__wrap_delete_transit_pod_and_namespace_label_policy_1, argp);
+	expect_any(__wrap_delete_transit_pod_and_namespace_label_policy_1, clnt);
+	rc = trn_cli_delete_transit_pod_and_namespace_label_policy_subcmd(NULL, argc, argv1);
+	assert_int_equal(rc, -EINVAL);
+
+	/* Test call delete_transit_pod_and_namespace_label_policy_1 return NULL*/
+	TEST_CASE(
+		"delete-packet-metadata subcommand fails if delete_transit_pod_and_namespace_label_policy_1 returns NULL");
+	expect_function_call(__wrap_delete_transit_pod_and_namespace_label_policy_1);
+	will_return(__wrap_delete_transit_pod_and_namespace_label_policy_1, NULL);
+	expect_any(__wrap_delete_transit_pod_and_namespace_label_policy_1, argp);
+	expect_any(__wrap_delete_transit_pod_and_namespace_label_policy_1, clnt);
+	rc = trn_cli_delete_transit_pod_and_namespace_label_policy_subcmd(NULL, argc, argv1);
 	assert_int_equal(rc, -EINVAL);
 }
 
@@ -3376,6 +4059,9 @@ int main()
 		cmocka_unit_test(test_trn_cli_unload_agent_subcmd),
 		cmocka_unit_test(test_trn_cli_update_agent_ep_subcmd),
 		cmocka_unit_test(test_trn_cli_update_packet_metadata_subcmd),
+		cmocka_unit_test(test_trn_cli_update_transit_pod_label_policy_subcmd),
+		cmocka_unit_test(test_trn_cli_update_transit_namespace_label_policy_subcmd),
+		cmocka_unit_test(test_trn_cli_update_transit_pod_and_namespace_label_policy_subcmd),
 		cmocka_unit_test(test_trn_cli_update_agent_md_subcmd),
 		cmocka_unit_test(test_trn_cli_get_vpc_subcmd),
 		cmocka_unit_test(test_trn_cli_get_net_subcmd),
@@ -3387,6 +4073,11 @@ int main()
 		cmocka_unit_test(test_trn_cli_delete_ep_subcmd),
 		cmocka_unit_test(test_trn_cli_delete_agent_ep_subcmd),
 		cmocka_unit_test(test_trn_cli_delete_packet_metadata_subcmd),
+		cmocka_unit_test(test_trn_cli_delete_transit_pod_label_policy_subcmd),
+		cmocka_unit_test(test_trn_cli_delete_transit_namespace_label_policy_subcmd),
+		cmocka_unit_test(test_trn_cli_delete_transit_pod_and_namespace_label_policy_subcmd),
+		cmocka_unit_test(test_trn_cli_delete_transit_namespace_label_policy_subcmd),
+		cmocka_unit_test(test_trn_cli_delete_transit_pod_and_namespace_label_policy_subcmd),
 		cmocka_unit_test(test_trn_cli_delete_agent_md_subcmd),
 		cmocka_unit_test(test_trn_cli_update_transit_network_policy_subcmd),
 		cmocka_unit_test(test_trn_cli_update_agent_network_policy_subcmd),

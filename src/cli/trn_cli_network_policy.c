@@ -574,6 +574,180 @@ int trn_cli_update_agent_network_policy_protocol_port_subcmd(CLIENT *clnt, int a
 	return 0;
 }
 
+int trn_cli_update_transit_pod_label_policy_subcmd(CLIENT *clnt, int argc, char *argv[])
+{
+	ketopt_t om = KETOPT_INIT;
+	struct cli_conf_data_t conf;
+	cJSON *json_str = NULL;
+
+	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
+		return -EINVAL;
+	}
+
+	char *buf = conf.conf_str;
+	json_str = trn_cli_parse_json(buf);
+
+	if (json_str == NULL) {
+		return -EINVAL;
+	}
+
+	int *rc;
+	int counter = cJSON_GetArraySize(json_str); 
+	if (counter <= 0) {
+		print_err("Input data size is less than or equal to zero. Please check your input. \n");
+		return -EINVAL;
+	}
+
+	char rpc[] = "update_transit_pod_label_policy_1";
+
+	for (int i = 0; i < counter; i++)
+	{
+		struct rpc_trn_pod_label_policy_t policy;
+		policy.interface = conf.intf;
+		cJSON *item = cJSON_GetArrayItem(json_str, i);
+
+		int err = trn_cli_parse_pod_label_policy(item, &policy);
+		if (err != 0) {
+			print_err("Error: parsing pod label policy config.\n");
+			return -EINVAL;
+		}
+
+		rc = update_transit_pod_label_policy_1(&policy, clnt);
+		if (rc == (int *)NULL) {
+			print_err("RPC Error: client call failed: update_transit_pod_label_policy_1 \n");
+			return -EINVAL;
+		}
+
+		if (*rc != 0) {
+			print_err(
+				"Error: %s fatal daemon error, see transitd logs for details.\n",
+				rpc);
+			return -EINVAL;
+		}
+		dump_pod_label_policy(&policy);
+	}
+	cJSON_Delete(json_str);
+	print_msg("update_transit_pod_label_policy_1 successfully updated pod label policy \n");
+
+	return 0;
+}
+
+int trn_cli_update_transit_namespace_label_policy_subcmd(CLIENT *clnt, int argc, char *argv[])
+{
+	ketopt_t om = KETOPT_INIT;
+	struct cli_conf_data_t conf;
+	cJSON *json_str = NULL;
+
+	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
+		return -EINVAL;
+	}
+
+	char *buf = conf.conf_str;
+	json_str = trn_cli_parse_json(buf);
+
+	if (json_str == NULL) {
+		return -EINVAL;
+	}
+
+	int *rc;
+	int counter = cJSON_GetArraySize(json_str); 
+	if (counter <= 0) {
+		print_err("Input data size is less than or equal to zero. Please check your input. \n");
+		return -EINVAL;
+	}
+
+	char rpc[] = "update_transit_namespace_label_policy_1";
+
+	for (int i = 0; i < counter; i++)
+	{
+		struct rpc_trn_namespace_label_policy_t policy;
+		policy.interface = conf.intf;
+		cJSON *item = cJSON_GetArrayItem(json_str, i);
+
+		int err = trn_cli_parse_namespace_label_policy(item, &policy);
+		if (err != 0) {
+			print_err("Error: parsing namespace label policy config.\n");
+			return -EINVAL;
+		}
+
+		rc = update_transit_namespace_label_policy_1(&policy, clnt);
+		if (rc == (int *)NULL) {
+			print_err("RPC Error: client call failed: update_transit_namespace_label_policy_1 \n");
+			return -EINVAL;
+		}
+
+		if (*rc != 0) {
+			print_err(
+				"Error: %s fatal daemon error, see transitd logs for details.\n",
+				rpc);
+			return -EINVAL;
+		}
+		dump_namespace_label_policy(&policy);
+	}
+	cJSON_Delete(json_str);
+	print_msg("update_transit_namespace_label_policy_1 successfully updated namespace label policy \n");
+
+	return 0;
+}
+
+int trn_cli_update_transit_pod_and_namespace_label_policy_subcmd(CLIENT *clnt, int argc, char *argv[])
+{
+	ketopt_t om = KETOPT_INIT;
+	struct cli_conf_data_t conf;
+	cJSON *json_str = NULL;
+
+	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
+		return -EINVAL;
+	}
+
+	char *buf = conf.conf_str;
+	json_str = trn_cli_parse_json(buf);
+
+	if (json_str == NULL) {
+		return -EINVAL;
+	}
+
+	int *rc;
+	int counter = cJSON_GetArraySize(json_str); 
+	if (counter <= 0) {
+		print_err("Input data size is less than or equal to zero. Please check your input. \n");
+		return -EINVAL;
+	}
+
+	char rpc[] = "update_transit_pod_and_namespace_label_policy_1";
+
+	for (int i = 0; i < counter; i++)
+	{
+		struct rpc_trn_pod_and_namespace_label_policy_t policy;
+		policy.interface = conf.intf;
+		cJSON *item = cJSON_GetArrayItem(json_str, i);
+
+		int err = trn_cli_parse_pod_and_namespace_label_policy(item, &policy);
+		if (err != 0) {
+			print_err("Error: parsing pod and namespace label policy config.\n");
+			return -EINVAL;
+		}
+
+		rc = update_transit_pod_and_namespace_label_policy_1(&policy, clnt);
+		if (rc == (int *)NULL) {
+			print_err("RPC Error: client call failed: update_transit_pod_and_namespace_label_policy_1 \n");
+			return -EINVAL;
+		}
+
+		if (*rc != 0) {
+			print_err(
+				"Error: %s fatal daemon error, see transitd logs for details.\n",
+				rpc);
+			return -EINVAL;
+		}
+		dump_pod_and_namespace_label_policy(&policy);
+	}
+	cJSON_Delete(json_str);
+	print_msg("update_transit_pod_and_namespace_label_policy_1 successfully updated pod and namespace label policy \n");
+
+	return 0;
+}
+
 int trn_cli_delete_transit_network_policy_protocol_port_subcmd(CLIENT *clnt, int argc, char *argv[])
 {
 	ketopt_t om = KETOPT_INIT;
@@ -685,6 +859,168 @@ int trn_cli_delete_agent_network_policy_protocol_port_subcmd(CLIENT *clnt, int a
 	return 0;
 }
 
+int trn_cli_delete_transit_pod_label_policy_subcmd(CLIENT *clnt, int argc, char *argv[])
+{
+	ketopt_t om = KETOPT_INIT;
+	struct cli_conf_data_t conf;
+	cJSON *json_str = NULL;
+
+	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
+		return -EINVAL;
+	}
+
+	char *buf = conf.conf_str;
+	json_str = trn_cli_parse_json(buf);
+
+	if (json_str == NULL) {
+		return -EINVAL;
+	}
+
+	int *rc;
+	int counter = cJSON_GetArraySize(json_str); 
+	if (counter <= 0) {
+		print_err("Input size is less than or equal to zero. Please check your input. \n");
+		return -EINVAL;
+	}
+	char rpc[] = "delete_transit_pod_label_policy_1";
+
+	for (int i = 0; i < counter; i++)
+	{
+		struct rpc_trn_pod_label_policy_key_t key;
+		key.interface = conf.intf;
+		cJSON *policy = cJSON_GetArrayItem(json_str, i);
+		int err = trn_cli_parse_pod_label_policy_key(policy, &key);
+		if (err != 0) {
+			print_err("Error: parsing pod label policy config.\n");
+			return -EINVAL;
+		}
+		rc = delete_transit_pod_label_policy_1(&key, clnt);
+		if (rc == (int *)NULL) {
+			print_err("RPC Error: client call failed: delete_transit_pod_label_policy_1 \n");
+			return -EINVAL;
+		}
+
+		if (*rc != 0) {
+			print_err(
+				"Error: %s fatal daemon error, see transitd logs for details.\n",
+				rpc);
+			return -EINVAL;
+		}
+	}
+	cJSON_Delete(json_str);
+	print_msg("delete_transit_pod_label_policy_1 successfully deleted pod label policy \n");
+
+	return 0;
+}
+
+int trn_cli_delete_transit_namespace_label_policy_subcmd(CLIENT *clnt, int argc, char *argv[])
+{
+	ketopt_t om = KETOPT_INIT;
+	struct cli_conf_data_t conf;
+	cJSON *json_str = NULL;
+
+	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
+		return -EINVAL;
+	}
+
+	char *buf = conf.conf_str;
+	json_str = trn_cli_parse_json(buf);
+
+	if (json_str == NULL) {
+		return -EINVAL;
+	}
+
+	int *rc;
+	int counter = cJSON_GetArraySize(json_str); 
+	if (counter <= 0) {
+		print_err("Input size is less than or equal to zero. Please check your input. \n");
+		return -EINVAL;
+	}
+	char rpc[] = "delete_transit_namespace_label_policy_1";
+
+	for (int i = 0; i < counter; i++)
+	{
+		struct rpc_trn_namespace_label_policy_key_t key;
+		key.interface = conf.intf;
+		cJSON *policy = cJSON_GetArrayItem(json_str, i);
+		int err = trn_cli_parse_namespace_label_policy_key(policy, &key);
+		if (err != 0) {
+			print_err("Error: parsing namespace label policy config.\n");
+			return -EINVAL;
+		}
+		rc = delete_transit_namespace_label_policy_1(&key, clnt);
+		if (rc == (int *)NULL) {
+			print_err("RPC Error: client call failed: delete_transit_namespace_label_policy_1 \n");
+			return -EINVAL;
+		}
+
+		if (*rc != 0) {
+			print_err(
+				"Error: %s fatal daemon error, see transitd logs for details.\n",
+				rpc);
+			return -EINVAL;
+		}
+	}
+	cJSON_Delete(json_str);
+	print_msg("delete_transit_namespace_label_policy_1 successfully deleted namespace label policy \n");
+
+	return 0;
+}
+
+int trn_cli_delete_transit_pod_and_namespace_label_policy_subcmd(CLIENT *clnt, int argc, char *argv[])
+{
+	ketopt_t om = KETOPT_INIT;
+	struct cli_conf_data_t conf;
+	cJSON *json_str = NULL;
+
+	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
+		return -EINVAL;
+	}
+
+	char *buf = conf.conf_str;
+	json_str = trn_cli_parse_json(buf);
+
+	if (json_str == NULL) {
+		return -EINVAL;
+	}
+
+	int *rc;
+	int counter = cJSON_GetArraySize(json_str); 
+	if (counter <= 0) {
+		print_err("Input size is less than or equal to zero. Please check your input. \n");
+		return -EINVAL;
+	}
+	char rpc[] = "delete_transit_pod_and_namespace_label_policy_1";
+
+	for (int i = 0; i < counter; i++)
+	{
+		struct rpc_trn_pod_and_namespace_label_policy_key_t key;
+		key.interface = conf.intf;
+		cJSON *policy = cJSON_GetArrayItem(json_str, i);
+		int err = trn_cli_parse_pod_and_namespace_label_policy_key(policy, &key);
+		if (err != 0) {
+			print_err("Error: parsing pod and namespace label policy config.\n");
+			return -EINVAL;
+		}
+		rc = delete_transit_pod_and_namespace_label_policy_1(&key, clnt);
+		if (rc == (int *)NULL) {
+			print_err("RPC Error: client call failed: delete_transit_pod_and_namespace_label_policy_1 \n");
+			return -EINVAL;
+		}
+
+		if (*rc != 0) {
+			print_err(
+				"Error: %s fatal daemon error, see transitd logs for details.\n",
+				rpc);
+			return -EINVAL;
+		}
+	}
+	cJSON_Delete(json_str);
+	print_msg("delete_transit_pod_and_namespace_label_policy_1 successfully deleted pod and namespace label policy \n");
+
+	return 0;
+}
+
 void dump_network_policy(struct rpc_trn_vsip_cidr_t *policy)
 {
 	print_msg("Interface: %s\n", policy->interface);
@@ -711,4 +1047,29 @@ void dump_protocol_port_policy(struct rpc_trn_vsip_ppo_t *ppo)
 	print_msg("Protocol: %d\n", ppo->proto);
 	print_msg("Port: %x\n", ppo->port);
 	print_msg("bit value: %ld\n", ppo->bit_val);
+}
+
+void dump_pod_label_policy(struct rpc_trn_pod_label_policy_t *policy)
+{
+	print_msg("Interface: %s\n", policy->interface);
+	print_msg("Tunnel ID: %ld\n", policy->tunid);
+	print_msg("Pod Label Value: %d\n", policy->pod_label_value);
+	print_msg("bit value: %ld\n", policy->bit_val);
+}
+
+void dump_namespace_label_policy(struct rpc_trn_namespace_label_policy_t *policy)
+{
+	print_msg("Interface: %s\n", policy->interface);
+	print_msg("Tunnel ID: %ld\n", policy->tunid);
+	print_msg("Namespace Label Value: %d\n", policy->namespace_label_value);
+	print_msg("bit value: %ld\n", policy->bit_val);
+}
+
+void dump_pod_and_namespace_label_policy(struct rpc_trn_pod_and_namespace_label_policy_t *policy)
+{
+	print_msg("Interface: %s\n", policy->interface);
+	print_msg("Tunnel ID: %ld\n", policy->tunid);
+	print_msg("Pod Label Value: %d\n", policy->pod_label_value);
+	print_msg("Namespace Label Value: %d\n", policy->namespace_label_value);
+	print_msg("bit value: %ld\n", policy->bit_val);
 }

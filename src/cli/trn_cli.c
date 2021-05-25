@@ -66,6 +66,12 @@ static const struct cmd {
 	{ "update-net-policy-protocol-port-out", trn_cli_update_agent_network_policy_protocol_port_subcmd },
 	{ "delete-net-policy-protocol-port-in", trn_cli_delete_transit_network_policy_protocol_port_subcmd },
 	{ "delete-net-policy-protocol-port-out", trn_cli_delete_agent_network_policy_protocol_port_subcmd },
+	{ "update-pod-label-policy", trn_cli_update_transit_pod_label_policy_subcmd },
+	{ "delete-pod-label-policy", trn_cli_delete_transit_pod_label_policy_subcmd },
+	{ "update-namespace-label-policy", trn_cli_update_transit_namespace_label_policy_subcmd },
+	{ "delete-namespace-label-policy", trn_cli_delete_transit_namespace_label_policy_subcmd },
+	{ "update-pod-and-namespace-label-policy", trn_cli_update_transit_pod_and_namespace_label_policy_subcmd },
+	{ "delete-pod-and-namespace-label-policy", trn_cli_delete_transit_pod_and_namespace_label_policy_subcmd },
 	{ 0 },
 };
 

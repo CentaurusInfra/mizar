@@ -62,6 +62,12 @@ class TrnRpc:
         self.trn_cli_update_network_policy_protocol_port_egress = f'''{self.trn_cli} update-net-policy-protocol-port-out -j'''
         self.trn_cli_delete_network_policy_protocol_port_ingress = f'''{self.trn_cli} delete-net-policy-protocol-port-in -i {self.phy_itf} -j'''
         self.trn_cli_delete_network_policy_protocol_port_egress = f'''{self.trn_cli} delete-net-policy-protocol-port-out -j'''
+        self.trn_cli_update_pod_label_policy = f'''{self.trn_cli} update-pod-label-policy -i {self.phy_itf} -j'''
+        self.trn_cli_delete_pod_label_policy = f'''{self.trn_cli} delete-pod-label-policy -i {self.phy_itf} -j'''
+        self.trn_cli_update_namespace_label_policy = f'''{self.trn_cli} update-namespace-label-policy -i {self.phy_itf} -j'''
+        self.trn_cli_delete_namespace_label_policy = f'''{self.trn_cli} delete-namespace-label-policy -i {self.phy_itf} -j'''
+        self.trn_cli_update_pod_and_namespace_label_policy = f'''{self.trn_cli} update-pod-and-namespace-label-policy -i {self.phy_itf} -j'''
+        self.trn_cli_delete_pod_and_namespace_label_policy = f'''{self.trn_cli} delete-pod-and-namespace-label-policy -i {self.phy_itf} -j'''
         self.trn_cli_load_transit_agent_xdp = f'''{self.trn_cli} load-agent-xdp'''
         self.trn_cli_unload_transit_agent_xdp = f'''{self.trn_cli} unload-agent-xdp'''
         self.trn_cli_update_agent_metadata = f'''{self.trn_cli} update-agent-metadata'''
@@ -454,6 +460,76 @@ class TrnRpc:
         logger.info("update_network_policy_protocol_port_ingress returns {} {}".format(
             returncode, text))
 
+    def update_pod_label_policy(self, label_policy_list):
+        if len(label_policy_list) == 0:
+            return
+        conf_list = []
+        for label_policy in label_policy_list:
+            conf = {
+                "tunnel_id": label_policy.vni,
+                "pod_label_value": label_policy.pod_label_value,
+                "bit_value": str(label_policy.policy_bit_value),
+            }
+            conf_list.append(conf)
+            if (conf_list_has_max_elements(conf, conf_list)):
+                self.run_cli_update_pod_label_policy(conf_list)
+                conf_list = []
+        self.run_cli_update_pod_label_policy(conf_list)
+
+    def run_cli_update_pod_label_policy(self, conf_list):
+        jsonconf = json.dumps(conf_list)
+        cmd = f'''{self.trn_cli_update_pod_label_policy} \'{jsonconf}\''''
+        logger.info("update_pod_label_policy: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("update_pod_label_policy returns {} {}".format(returncode, text))
+
+    def update_namespace_label_policy(self, label_policy_list):
+        if len(label_policy_list) == 0:
+            return
+        conf_list = []
+        for label_policy in label_policy_list:
+            conf = {
+                "tunnel_id": label_policy.vni,
+                "namespace_label_value": label_policy.namespace_label_value,
+                "bit_value": str(label_policy.policy_bit_value),
+            }
+            conf_list.append(conf)
+            if (conf_list_has_max_elements(conf, conf_list)):
+                self.run_cli_update_namespace_label_policy(conf_list)
+                conf_list = []
+        self.run_cli_update_namespace_label_policy(conf_list)
+
+    def run_cli_update_namespace_label_policy(self, conf_list):
+        jsonconf = json.dumps(conf_list)
+        cmd = f'''{self.trn_cli_update_namespace_label_policy} \'{jsonconf}\''''
+        logger.info("update_namespace_label_policy: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("update_namespace_label_policy returns {} {}".format(returncode, text))
+
+    def update_pod_and_namespace_label_policy(self, label_policy_list):
+        if len(label_policy_list) == 0:
+            return
+        conf_list = []
+        for label_policy in label_policy_list:
+            conf = {
+                "tunnel_id": label_policy.vni,
+                "pod_label_value": label_policy.pod_label_value,
+                "namespace_label_value": label_policy.namespace_label_value,
+                "bit_value": str(label_policy.policy_bit_value),
+            }
+            conf_list.append(conf)
+            if (conf_list_has_max_elements(conf, conf_list)):
+                self.run_cli_update_pod_and_namespace_label_policy(conf_list)
+                conf_list = []
+        self.run_cli_update_pod_and_namespace_label_policy(conf_list)
+
+    def run_cli_update_pod_and_namespace_label_policy(self, conf_list):
+        jsonconf = json.dumps(conf_list)
+        cmd = f'''{self.trn_cli_update_pod_and_namespace_label_policy} \'{jsonconf}\''''
+        logger.info("update_pod_and_namespace_label_policy: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("update_pod_and_namespace_label_policy returns {} {}".format(returncode, text))
+
     def update_network_policy_protocol_port_egress(self, ep, port_networkpolicy_list):
         if len(port_networkpolicy_list) == 0:
             return
@@ -510,6 +586,73 @@ class TrnRpc:
         returncode, text = run_cmd(cmd)
         logger.info("delete_network_policy_protocol_port_ingress returns {} {}".format(
             returncode, text))
+
+    def delete_pod_label_policy(self, label_policy_list):
+        if len(label_policy_list) == 0:
+            return
+        conf_list = []
+        for label_policy in label_policy_list:
+            conf = {
+                "tunnel_id": label_policy.vni,
+                "pod_label_value": label_policy.pod_label_value,
+            }
+            conf_list.append(conf)
+            if (conf_list_has_max_elements(conf, conf_list)):
+                self.run_cli_delete_pod_label_policy(conf_list)
+                conf_list = []
+        self.run_cli_delete_pod_label_policy(conf_list)
+
+    def run_cli_delete_pod_label_policy(self, conf_list):
+        jsonconf = json.dumps(conf_list)
+        cmd = f'''{self.trn_cli_delete_pod_label_policy} \'{jsonconf}\''''
+        logger.info("delete_pod_label_policy: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("delete_pod_label_policy returns {} {}".format(returncode, text))
+
+    def delete_namespace_label_policy(self, label_policy_list):
+        if len(label_policy_list) == 0:
+            return
+        conf_list = []
+        for label_policy in label_policy_list:
+            conf = {
+                "tunnel_id": label_policy.vni,
+                "namespace_label_value": label_policy.namespace_label_value,
+            }
+            conf_list.append(conf)
+            if (conf_list_has_max_elements(conf, conf_list)):
+                self.run_cli_delete_namespace_label_policy(conf_list)
+                conf_list = []
+        self.run_cli_delete_namespace_label_policy(conf_list)
+
+    def run_cli_delete_namespace_label_policy(self, conf_list):
+        jsonconf = json.dumps(conf_list)
+        cmd = f'''{self.trn_cli_delete_namespace_label_policy} \'{jsonconf}\''''
+        logger.info("delete_namespace_label_policy: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("delete_namespace_label_policy returns {} {}".format(returncode, text))
+
+    def delete_pod_and_namespace_label_policy(self, label_policy_list):
+        if len(label_policy_list) == 0:
+            return
+        conf_list = []
+        for label_policy in label_policy_list:
+            conf = {
+                "tunnel_id": label_policy.vni,
+                "pod_label_value": label_policy.pod_label_value,
+                "namespace_label_value": label_policy.namespace_label_value,
+            }
+            conf_list.append(conf)
+            if (conf_list_has_max_elements(conf, conf_list)):
+                self.run_cli_delete_pod_and_namespace_label_policy(conf_list)
+                conf_list = []
+        self.run_cli_delete_pod_and_namespace_label_policy(conf_list)
+
+    def run_cli_delete_pod_and_namespace_label_policy(self, conf_list):
+        jsonconf = json.dumps(conf_list)
+        cmd = f'''{self.trn_cli_delete_pod_and_namespace_label_policy} \'{jsonconf}\''''
+        logger.info("delete_pod_and_namespace_label_policy: {}".format(cmd))
+        returncode, text = run_cmd(cmd)
+        logger.info("delete_pod_and_namespace_label_policy returns {} {}".format(returncode, text))
 
     def delete_network_policy_protocol_port_egress(self, ep, port_networkpolicy_list):
         if len(port_networkpolicy_list) == 0:
