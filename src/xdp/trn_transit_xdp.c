@@ -460,8 +460,54 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 				return XDP_ABORTED;
 			}
 		} else {
+			pkt->pod_label_value_opt = (void *)pkt->scaled_ep_opt + sizeof(*pkt->scaled_ep_opt);
+	
+			if (pkt->pod_label_value_opt + 1 > pkt->data_end) {
+				bpf_debug("[Scaled_EP:%d:0x%x] ABORTED: Bad offset\n", __LINE__,
+					bpf_ntohl(pkt->itf_ipv4));
+				return XDP_ABORTED;
+			}
+
+			if (pkt->pod_label_value_opt->opt_class != TRN_GNV_OPT_CLASS) {
+				bpf_debug(
+					"[Scaled_EP:%d:0x%x] ABORTED: Unsupported Geneve option class\n",
+					__LINE__, bpf_ntohl(pkt->itf_ipv4));
+				return XDP_ABORTED;
+			}
+
+			if (pkt->pod_label_value_opt->type != TRN_GNV_LABEL_VALUE_OPT_TYPE) {
+				bpf_debug(
+					"[Scaled_EP:%d:0x%x] ABORTED: Unsupported Geneve option type\n",
+					__LINE__, bpf_ntohl(pkt->itf_ipv4));
+				return XDP_ABORTED;
+			}
+
+			pkt->namespace_label_value_opt = (void *)pkt->pod_label_value_opt + sizeof(*pkt->pod_label_value_opt);
+
+			if (pkt->namespace_label_value_opt + 1 > pkt->data_end) {
+				bpf_debug("[Scaled_EP:%d:0x%x] ABORTED: Bad offset\n", __LINE__,
+					bpf_ntohl(pkt->itf_ipv4));
+				return XDP_ABORTED;
+			}
+
+			if (pkt->namespace_label_value_opt->opt_class != TRN_GNV_OPT_CLASS) {
+				bpf_debug(
+					"[Scaled_EP:%d:0x%x] ABORTED: Unsupported Geneve option class\n",
+					__LINE__, bpf_ntohl(pkt->itf_ipv4));
+				return XDP_ABORTED;
+			}
+
+			if (pkt->namespace_label_value_opt->type != TRN_GNV_LABEL_VALUE_OPT_TYPE) {
+				bpf_debug(
+					"[Scaled_EP:%d:0x%x] ABORTED: Unsupported Geneve option type\n",
+					__LINE__, bpf_ntohl(pkt->itf_ipv4));
+				return XDP_ABORTED;
+			}
+
 			// originated-directional packet subjects to policy check, if required so
-			if (0 != ingress_policy_check(tunnel_id, &pkt->inner_ipv4_tuple)){
+			if (0 != ingress_policy_check(tunnel_id, &pkt->inner_ipv4_tuple,
+				pkt->pod_label_value_opt->label_value_data.value,
+				pkt->namespace_label_value_opt->label_value_data.value)){
 				bpf_debug(
 					"[Transit:vpc 0x%lx] ABORTED: packet to 0x%x from 0x%x ingress policy denied\n",
 					tunnel_id,
@@ -728,53 +774,6 @@ static __inline int trn_process_geneve(struct transit_packet *pkt)
 			__LINE__, bpf_ntohl(pkt->itf_ipv4));
 		return XDP_ABORTED;
 	}
-
-	pkt->pod_label_value_opt = (void *)pkt->scaled_ep_opt + sizeof(*pkt->scaled_ep_opt);
-	
-	if (pkt->pod_label_value_opt + 1 > pkt->data_end) {
-		bpf_debug("[Scaled_EP:%d:0x%x] ABORTED: Bad offset\n", __LINE__,
-			  bpf_ntohl(pkt->itf_ipv4));
-		return XDP_ABORTED;
-	}
-
-	if (pkt->pod_label_value_opt->opt_class != TRN_GNV_OPT_CLASS) {
-		bpf_debug(
-			"[Scaled_EP:%d:0x%x] ABORTED: Unsupported Geneve option class\n",
-			__LINE__, bpf_ntohl(pkt->itf_ipv4));
-		return XDP_ABORTED;
-	}
-
-	if (pkt->pod_label_value_opt->type != TRN_GNV_LABEL_VALUE_OPT_TYPE) {
-		bpf_debug(
-			"[Scaled_EP:%d:0x%x] ABORTED: Unsupported Geneve option type\n",
-			__LINE__, bpf_ntohl(pkt->itf_ipv4));
-		return XDP_ABORTED;
-	}
-
-	pkt->namespace_label_value_opt = (void *)pkt->pod_label_value_opt + sizeof(*pkt->pod_label_value_opt);
-
-	if (pkt->namespace_label_value_opt + 1 > pkt->data_end) {
-		bpf_debug("[Scaled_EP:%d:0x%x] ABORTED: Bad offset\n", __LINE__,
-			  bpf_ntohl(pkt->itf_ipv4));
-		return XDP_ABORTED;
-	}
-
-	if (pkt->namespace_label_value_opt->opt_class != TRN_GNV_OPT_CLASS) {
-		bpf_debug(
-			"[Scaled_EP:%d:0x%x] ABORTED: Unsupported Geneve option class\n",
-			__LINE__, bpf_ntohl(pkt->itf_ipv4));
-		return XDP_ABORTED;
-	}
-
-	if (pkt->namespace_label_value_opt->type != TRN_GNV_LABEL_VALUE_OPT_TYPE) {
-		bpf_debug(
-			"[Scaled_EP:%d:0x%x] ABORTED: Unsupported Geneve option type\n",
-			__LINE__, bpf_ntohl(pkt->itf_ipv4));
-		return XDP_ABORTED;
-	}
-
-	// TODO: Handle label based policy from pod_label_value (pkt->pod_label_value_opt->label_value_data.value) 
-	// and namespace_label_value (pkt->namespace_label_value_opt->label_value_data.value)
 
 	return trn_process_inner_eth(pkt);
 }
