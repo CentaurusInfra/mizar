@@ -357,11 +357,11 @@ class NetworkPolicyUtil:
                             for namespace in namespaces.items:
                                 namespace_set.add(namespace.metadata.name)
 
-                            pods = kube_list_pods_by_labels(networkpolicy_opr.core_api, rule_item["podSelector"]["matchLabels"])
-                            if pods is not None:
-                                for pod in pods.items:
-                                    if pod.metadata.namespace in namespace_set:
-                                        self.add_pod_ip_into_cidrs_map(pod, policy_name, data["cidrs_map_no_except"][indexed_policy_name])
+                        pods = kube_list_pods_by_labels(networkpolicy_opr.core_api, rule_item["podSelector"]["matchLabels"])
+                        if pods is not None:
+                            for pod in pods.items:
+                                if pod.metadata.namespace in namespace_set:
+                                    self.add_pod_ip_into_cidrs_map(pod, policy_name, data["cidrs_map_no_except"][indexed_policy_name])
                 elif "namespaceSelector" in rule_item:
                     self.add_namespace_label_networkpolicy(data, rule_item["namespaceSelector"]["matchLabels"], policy_name)
                     if direction == "ingress":
