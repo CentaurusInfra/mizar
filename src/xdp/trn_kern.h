@@ -180,6 +180,7 @@ struct transit_packet {
 	/* Inner IP */
 	struct iphdr *inner_ip;
 	__u8 inner_ttl;
+	__u8 inner_tos;
 
 	/* Inner udp */
 	struct udphdr *inner_udp;

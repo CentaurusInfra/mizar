@@ -1004,10 +1004,10 @@ int *update_packet_metadata_1_svc(rpc_trn_packet_metadata_t *packet_metadata, st
 	struct packet_metadata_t value;
 
 	TRN_LOG_DEBUG("update_packet_metadata_1 packet metadata tunid: %ld, ip: 0x%x,"
-		      " pod_label_value: %d, namespace_label_value: %d",
-		      packet_metadata->tunid, packet_metadata->ip,
-		      packet_metadata->pod_label_value,
-			  packet_metadata->namespace_label_value);
+		" pod_label_value: %d, namespace_label_value: %d, egress_bw: %lu",
+		packet_metadata->tunid, packet_metadata->ip,
+		packet_metadata->pod_label_value, packet_metadata->namespace_label_value,
+		packet_metadata->egress_bandwidth_bps);
 
 	struct agent_user_metadata_t *md = trn_vif_table_find(itf);
 
@@ -1021,7 +1021,8 @@ int *update_packet_metadata_1_svc(rpc_trn_packet_metadata_t *packet_metadata, st
 	memcpy(key.tunip, &packet_metadata->tunid, sizeof(packet_metadata->tunid));	
 	key.tunip[2] = packet_metadata->ip;
 	value.pod_label_value = packet_metadata->pod_label_value;
-	value.namespace_label_value = packet_metadata->namespace_label_value;	
+	value.namespace_label_value = packet_metadata->namespace_label_value;
+	value.egress_bandwidth_bps = packet_metadata->egress_bandwidth_bps;
 
 	rc = trn_agent_update_packet_metadata(md, &key, &value);
 

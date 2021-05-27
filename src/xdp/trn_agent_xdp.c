@@ -159,10 +159,12 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 
 	int pod_label_value = 0;
 	int namespace_label_value = 0;
+	__u64 egress_bw_bps = 0;
 	packet_metadata = bpf_map_lookup_elem(&packet_metadata_map, &packet_metadata_key);
-	if(packet_metadata){
+	if (packet_metadata) {
 		pod_label_value = packet_metadata->pod_label_value;
 		namespace_label_value = packet_metadata->namespace_label_value;
+		egress_bw_bps = packet_metadata->egress_bandwidth_bps;
 	}
 
 	/* Readjust the packet size to fit the outer headers */
@@ -233,12 +235,29 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	pkt->ip->saddr = metadata->eth.ip;
 	pkt->ip->ttl = pkt->inner_ttl;
 
+if (((pkt->inner_ipv4_tuple.saddr & 0xFF) == 20) && ((pkt->inner_ipv4_tuple.daddr & 0xFF) == 20)) {
+    if (pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
+	bpf_debug("[Agent:0x%x] VDBG EGRESS_BW: %lu INNER_TOS: %x!!!!!\n",
+		bpf_ntohl(pkt->agent_ep_ipv4), egress_bw_bps, pkt->inner_tos);
+	bpf_debug("[Agent:0x%x] VDBG PACKET_METADATA: POD_LABEL: %lu NS_LABEL: %lu\n",
+		bpf_ntohl(pkt->agent_ep_ipv4), pod_label_value, namespace_label_value);
+    }
+}
+
+	// Non-zero egress bandwidth configuration => low priority Pod
+	if (egress_bw_bps > 0) {
+		pkt->ip->tos |= IPTOS_MINCOST;
+	}
+	// Support low priority traffic classification from Pod
+	if (pkt->inner_tos & IPTOS_MINCOST) {
+		pkt->ip->tos |= IPTOS_MINCOST;
+	}
+
 	c_sum = 0;
 	trn_ipv4_csum_inline(pkt->ip, &c_sum);
 	pkt->ip->check = c_sum;
 
-	pkt->udp->source = bpf_htons(
-		s_port); // TODO: a hash value based on inner IP packet
+	pkt->udp->source = bpf_htons(s_port); // TODO: a hash value based on inner IP packet
 	pkt->udp->dest = GEN_DSTPORT;
 	pkt->udp->len = bpf_htons(outer_udp_payload);
 
@@ -276,11 +295,16 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	pkt->namespace_label_value_opt->length = sizeof(pkt->namespace_label_value_opt->label_value_data) / 4;;
 	pkt->namespace_label_value_opt->label_value_data.value = namespace_label_value;
 
+	if (pkt->ip->tos & IPTOS_MINCOST) {
+		bpf_debug("[Agent:%ld.0x%x] IP ToS: %u (low priority) -> XDP_PASS!!!!!\n",
+			pkt->agent_ep_tunid, bpf_ntohl(pkt->agent_ep_ipv4), pkt->ip->tos);
+		return XDP_PASS;
+	}
+
 	/* If the source and dest address of the tunneled packet is the
 	 * same, then this host is also a transit switch. Just invoke the
 	 * transit XDP program by a tail call;
 	 */
-
 	if (pkt->ip->saddr == pkt->ip->daddr) {
 		bpf_debug(
 			"[Agent:%ld.0x%x] TAILCALL: transit switch on same host. Tunnel to dst=[0x%x].\n",
@@ -328,6 +352,9 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 			pkt->agent_ep_tunid, bpf_ntohl(pkt->agent_ep_ipv4));
 		return XDP_DROP;
 	}
+
+	pkt->inner_ttl = pkt->inner_ip->ttl;
+	pkt->inner_tos = pkt->inner_ip->tos;
 
 	pkt->inner_ipv4_tuple.saddr = pkt->inner_ip->saddr;
 	pkt->inner_ipv4_tuple.daddr = pkt->inner_ip->daddr;
@@ -415,7 +442,11 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 			  __LINE__);
 	}
 
-	return trn_redirect(pkt, pkt->inner_ip->saddr, pkt->inner_ip->daddr);
+	int retcode = trn_redirect(pkt, pkt->inner_ip->saddr, pkt->inner_ip->daddr);
+
+bpf_debug("--------------ACTION=%d-------------------------------------\n\n",
+		retcode);
+	return retcode;
 }
 
 static __inline int trn_process_arp(struct transit_packet *pkt)
@@ -533,6 +564,8 @@ static __inline int trn_process_inner_eth(struct transit_packet *pkt)
 SEC("agent")
 int _agent(struct xdp_md *ctx)
 {
+bpf_debug("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
+		);
 	struct transit_packet pkt;
 	pkt.data = (void *)(long)ctx->data;
 	pkt.data_end = (void *)(long)ctx->data_end;

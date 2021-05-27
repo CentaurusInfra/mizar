@@ -164,7 +164,8 @@ class InterfaceServer(InterfaceServiceServicer):
         # Network namespace operations (Move these to the CNI)
 
         veth_peer_index = get_iface_index(interface.veth.peer, self.iproute)
-        self.iproute.link('set', index=veth_peer_index, state='up', mtu=9000)
+        mzbr_index = get_iface_index(CONSTANTS.MIZAR_BRIDGE, self.iproute)
+        self.iproute.link('set', index=veth_peer_index, master=mzbr_index, state='up', mtu=9000)
 
         # Configure the Transit Agent
         self._ConfigureTransitAgent(interface)
@@ -429,7 +430,8 @@ class LocalTransitRpc:
             "tunnel_id": interface.address.tunnel_id,
             "ip": interface.address.ip_address,
             "pod_label_value": interface.pod_label_value,
-            "namespace_label_value": interface.namespace_label_value
+            "namespace_label_value": interface.namespace_label_value,
+            "egress_bandwidth_bps": interface.egress_bandwidth_bps
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_update_packet_metadata} -i \'{itf}\' -j \'{jsonconf}\''''

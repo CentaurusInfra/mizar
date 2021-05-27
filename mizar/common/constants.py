@@ -40,6 +40,9 @@ class CONSTANTS:
     XDP_GENERIC = "2"
     XDP_DRIVER = "4"
     XDP_OFFLOAD = "8"
+    MIZAR_BRIDGE = "mzbr0"
+    MIZAR_EGRESS_BW_TAG = "mizar.com/egress-bandwidth"
+    MIZAR_INGRESS_BW_TAG = "mizar.com/ingress-bandwidth"
 
 
 class OBJ_STATUS:

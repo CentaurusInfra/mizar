@@ -63,7 +63,7 @@ KINDUSERCONF="${KINDUSERCONFDIR}/config"
 KUBECTL_LOG="/tmp/${USER}_kubetctl.err"
 MODE=${1:-user}
 NODES=${2:-3}
-timeout=240
+timeout=300
 
 if [[ "$MODE" == "dev" ]]; then
     DOCKER_ACC="localhost:5000"
@@ -113,10 +113,20 @@ api_ip=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{en
 sed "s/server: https:\/\/127.0.0.1:[[:digit:]]\+/server: https:\/\/$api_ip:6443/" $KINDCONF > $MIZARCONF
 ln -snf ${KINDCONF} ${KINDUSERCONF}
 
+while : ; do
+    kubectl get no -owide | grep NotReady > /dev/null
+    if [ $? -ne 0 ]; then
+        break
+    fi
+    echo "Waiting for node ready.."
+    sleep 10
+done
+
 source install/create_crds.sh $CWD
 source install/create_service_account.sh $CWD
 
 source install/deploy_daemon.sh $CWD $MODE $DOCKER_ACC
+sleep 5
 source install/deploy_operator.sh $CWD $MODE $DOCKER_ACC
 source install/create_testimage.sh $CWD $MODE $DOCKER_ACC
 
