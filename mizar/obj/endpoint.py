@@ -68,6 +68,8 @@ class Endpoint:
         self.ingress_networkpolicies = []
         self.egress_networkpolicies = []
         self.data_for_networkpolicy = {}
+        self.pod_label_value = 0
+        self.namespace_label_value = 0
         if spec is not None:
             self.set_obj_spec(spec)
 
@@ -382,6 +384,12 @@ class Endpoint:
 
     def update_agent_substrate(self, ep, bouncer):
         self.rpc.update_agent_substrate_ep(ep, bouncer.ip, bouncer.mac)
+
+    def update_packet_metadata(self, pod_label_value, namespace_label_value):
+        if(pod_label_value != self.pod_label_value or namespace_label_value != self.namespace_label_value):
+            self.pod_label_value = pod_label_value
+            self.namespace_label_value = namespace_label_value
+            self.rpc.update_packet_metadata(self)
 
     def delete_agent_substrate(self, ep, bouncer):
         self.rpc.delete_agent_substrate_ep(ep, bouncer.ip)

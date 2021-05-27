@@ -612,6 +612,10 @@ class NetworkPolicyUtil:
         pod_label_value = networkpolicy_opr.store.get_or_add_pod_label_value(pod_label_combination)
         namespace_label_value = networkpolicy_opr.store.get_or_add_namespace_label_value(namespace_label_combination)
 
+        eps = endpoint_opr.store.get_eps_in_pod(pod_name)
+        for ep in eps.values():
+            ep.update_packet_metadata(pod_label_value, namespace_label_value)
+
         return (policy_name_list, pod_label_value, namespace_label_value)
 
     def get_label_combination(self, labels):
