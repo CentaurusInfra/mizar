@@ -29,4 +29,4 @@ before_script:
 jobs:
   include:
     - stage: "Compile & test"
-      script: make && make run_unittests && make e2efunctest
+      script: make && ./build/tests/test_cli && ./build/tests/test_dmn && make e2efunctest
