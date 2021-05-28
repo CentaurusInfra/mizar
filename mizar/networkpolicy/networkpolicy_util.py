@@ -635,7 +635,7 @@ class NetworkPolicyUtil:
 
         policy_name_list = set()
         for label in data["remove"]:
-            self.add_affected_networkpolicy_by_pod_label(policy_name_list, label)
+            self.add_affected_networkpolicy_by_pod_label(policy_name_list, label, False)
 
         endpoint_affected_policy_name_list = set()
         for label in data["remove"]:
@@ -651,7 +651,7 @@ class NetworkPolicyUtil:
 
         namespace_obj = kube_get_namespace(networkpolicy_opr.core_api, namespace)
         if namespace_obj is not None and namespace_obj.metadata.labels is not None:
-            self.add_affected_networkpolicy_by_namespace_labels(policy_name_list, namespace_obj.metadata.labels)
+            self.add_affected_networkpolicy_by_namespace_labels(policy_name_list, namespace_obj.metadata.labels, False)
 
         for policy_name in policy_name_list:
             for endpoint_name in eps:
