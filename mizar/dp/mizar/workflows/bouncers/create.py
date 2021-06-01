@@ -60,6 +60,7 @@ class BouncerCreate(WorkflowTask):
         if not droplets_opr.assign_bouncer_droplet(bouncer):
             self.raise_temporary_error("Task: {} Bouncer: {} No droplets available.".format(
                 self.__class__.__name__, bouncer.name))
+        bouncers_opr.store.update_bouncer(bouncer)
 
         # Update vpc on bouncer
         # Needs a list of all dividers
@@ -74,5 +75,4 @@ class BouncerCreate(WorkflowTask):
         endpoints_opr.update_endpoints_with_bouncers(bouncer)
         bouncer.load_transit_xdp_pipeline_stage()
         bouncers_opr.set_bouncer_provisioned(bouncer)
-        bouncers_opr.store.update_bouncer(bouncer)
         self.finalize()
