@@ -14,21 +14,21 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        python-version: ['3.7.5']
+        python-version: ['3.8.0']
     steps:
       - uses: actions/checkout@v2
       - uses: docker-practice/actions-setup-docker@master
       - name: Update apt-get
         run: sudo apt-get update
       - name: Install packages
-        run: sudo apt-get install -y build-essential clang-7 llvm-7 libelf-dev python3.7 python3-pip libcmocka-dev lcov python3.7-dev python3-apt pkg-config
+        run: sudo apt-get install -y build-essential clang-7 llvm-7 libelf-dev python3.8 python3-pip libcmocka-dev lcov python3.8-dev python3-apt pkg-config
       - name: Python3.6
         run: sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1
-      - name: Python3.7
-        run: sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 2
-      - name: Python3.7 default
-        run: sudo update-alternatives --set python3 /usr/bin/python3.7
-      - name: Python3.7 symlink fix
+      - name: Python3.8
+        run: sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 2
+      - name: Python3.8 default
+        run: sudo update-alternatives --set python3 /usr/bin/python3.8
+      - name: Python3.8 symlink fix
         run: sudo ln -s /usr/lib/python3/dist-packages/apt_pkg.cpython-36m-x86_64-linux-gnu.so /usr/lib/python3/dist-packages/apt_pkg.so
       - name: Update pip
         run: python3 -m pip install --upgrade pip
