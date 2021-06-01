@@ -34,6 +34,8 @@ jobs:
         run: python3 -m pip install --upgrade pip
       - name: Install python packages
         run: sudo pip3 install setuptools netaddr docker grpcio grpcio-tools kubernetes
+      - name: Update kernel
+        run: printf 'y\nn\n' | sudo ./kernelupdate.sh
       - name: install kind
         run: |
           ver=$(curl -s https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
