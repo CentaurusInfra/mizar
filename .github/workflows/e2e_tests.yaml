@@ -56,6 +56,9 @@ jobs:
         run: ./build/tests/test_dmn
       - name: Create kind cluster
         run: sudo ./kind-setup.sh dev 2
+      - name: Cluster deployment failure, Dump Operator Logs
+        if: ${{ failure() }}
+        run: kubectl get pods | grep mizar-operator | awk '{print $1}' | xargs -i kubectl logs {}
       - name: Run kind e2e test
         run: sudo make e2efunctest
 
