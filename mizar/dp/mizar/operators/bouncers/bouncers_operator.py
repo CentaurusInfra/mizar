@@ -81,11 +81,11 @@ class BouncerOperator(object):
         for b in bouncers.values():
             b.update_vpc(set([div]), False)
 
-    def update_endpoint_with_bouncers(self, ep):
+    def update_endpoint_with_bouncers(self, ep, task):
         bouncers = self.store.get_bouncers_of_net(ep.net)
         eps = set([ep])
         for key in bouncers:
-            bouncers[key].update_eps(eps)
+            bouncers[key].update_eps(eps, task)
 
         if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
             ep.update_bouncers_list(bouncers)
