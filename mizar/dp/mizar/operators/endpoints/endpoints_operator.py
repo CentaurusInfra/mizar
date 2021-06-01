@@ -88,9 +88,9 @@ class EndpointOperator(object):
         ep = Endpoint(name, self.obj_api, self.store, spec)
         self.store.update_ep(ep)
 
-    def update_bouncer_with_endpoints(self, bouncer):
+    def update_bouncer_with_endpoints(self, bouncer, task):
         eps = list(self.store.get_eps_in_net(bouncer.net).values())
-        bouncer.update_eps(eps)
+        bouncer.update_eps(eps, task)
 
     def update_endpoints_with_bouncers(self, bouncer):
         eps = list(self.store.get_eps_in_net(bouncer.net).values())

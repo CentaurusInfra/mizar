@@ -132,10 +132,12 @@ class Bouncer(object):
         self.rpc.load_transit_xdp_pipeline_stage(CONSTANTS.ON_XDP_SCALED_EP,
                                                  self.scaled_ep_obj)
 
-    def update_eps(self, eps):
+    def update_eps(self, eps, task):
         for ep in eps:
             self.eps[ep.name] = ep
             if ep.type in OBJ_DEFAULTS.droplet_eps:
+                if not ep.droplet_obj:
+                    task.raise_temporary_error("Task: {} Endpoint: {} Droplet Object not ready.".format(self.__class__.__name__, ep.name))
                 self._update_simple_ep(ep)
             if ep.type == OBJ_DEFAULTS.ep_type_scaled:
                 self._update_scaled_ep(ep)

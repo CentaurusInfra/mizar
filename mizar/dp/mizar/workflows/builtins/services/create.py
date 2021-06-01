@@ -101,5 +101,5 @@ class k8sEndpointsUpdate(WorkflowTask):
             if not bouncers_opr.store.get_bouncers_of_net(ep.net):
                 self.raise_temporary_error(
                     "Task: {} Endpoint: {} bouncers not yet provisioned.".format(self.__class__.__name__, ep.name))
-            bouncers_opr.update_endpoint_with_bouncers(ep)
+            bouncers_opr.update_endpoint_with_bouncers(ep, self)
         self.finalize()
