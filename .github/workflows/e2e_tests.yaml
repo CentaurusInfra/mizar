@@ -3,12 +3,12 @@
 name: CI
 on:
   push:
-    branches: [ dev-next ]
+    branches:
+      - '**'
   pull_request:
-    branches: [ dev-next ]
-
+    branches:
+      - '**'
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-18.04
