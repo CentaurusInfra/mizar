@@ -558,6 +558,32 @@ static void test_update_packet_metadata_1_svc(void **state)
 		.tunid = 3,
 		.pod_label_value = 11,
 		.namespace_label_value = 1,
+		.egress_bandwidth_bps = 250000,
+	};
+
+	int *rc;
+	expect_function_call(__wrap_bpf_map_update_elem);
+	rc = update_packet_metadata_1_svc(&packet_metadata1, NULL);
+	assert_int_equal(*rc, 0);
+}
+
+static void test_update_packet_metadata_egress_bw_1_svc(void **state)
+{
+	UNUSED(state);
+
+	char itf[] = "veth";
+	char vitf[] = "veth0";
+	char hosted_itf[] = "";
+	uint32_t remote[] = { 0x200000a };
+	char mac[6] = { 1, 2, 3, 4, 5, 6 };
+
+	struct rpc_trn_packet_metadata_t packet_metadata1 = {
+		.interface = itf,
+		.ip = 0x100000a,
+		.tunid = 3,
+		.pod_label_value = 0,
+		.namespace_label_value = 0,
+		.egress_bandwidth_bps = 750000,
 	};
 
 	int *rc;
@@ -1645,6 +1671,7 @@ int main()
 		cmocka_unit_test(test_update_agent_md_1_svc),
 		cmocka_unit_test(test_update_agent_ep_1_svc),
 		cmocka_unit_test(test_update_packet_metadata_1_svc),
+		cmocka_unit_test(test_update_packet_metadata_egress_bw_1_svc),
 		cmocka_unit_test(test_update_transit_pod_label_policy_1_svc),
 		cmocka_unit_test(test_update_transit_namespace_label_policy_1_svc),
 		cmocka_unit_test(test_update_transit_pod_and_namespace_label_policy_1_svc),
