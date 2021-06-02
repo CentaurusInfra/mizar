@@ -345,11 +345,13 @@ class NetworkPolicyUtil:
                 elif "namespaceSelector" in rule_item and "podSelector" in rule_item:
                     self.add_label_networkpolicy(data, rule_item["podSelector"]["matchLabels"], policy_name)
                     self.add_namespace_label_networkpolicy(data, rule_item["namespaceSelector"]["matchLabels"], policy_name)
+                    # For ingress traffic, use label based policy
                     if direction == "ingress":
                         data["pod_and_namespace_label_map"][indexed_policy_name] = {
                             "pod_label_map": self.get_pod_label_values_by_label_dict(rule_item["podSelector"]["matchLabels"]),
                             "namespace_label_map": self.get_namespace_label_values_by_label_dict(rule_item["namespaceSelector"]["matchLabels"])
                         }
+                    # For egress traffic, use ip based policy
                     else:
                         namespaces = kube_list_namespaces_by_labels(networkpolicy_opr.core_api, rule_item["namespaceSelector"]["matchLabels"])
                         if namespaces is not None:
@@ -364,8 +366,10 @@ class NetworkPolicyUtil:
                                     self.add_pod_ip_into_cidrs_map(pod, policy_name, data["cidrs_map_no_except"][indexed_policy_name])
                 elif "namespaceSelector" in rule_item:
                     self.add_namespace_label_networkpolicy(data, rule_item["namespaceSelector"]["matchLabels"], policy_name)
+                    # For ingress traffic, use label based policy
                     if direction == "ingress":
                         data["namespace_label_map"][indexed_policy_name] = self.get_namespace_label_values_by_label_dict(rule_item["namespaceSelector"]["matchLabels"])
+                    # For egress traffic, use ip based policy
                     else:
                         namespaces = kube_list_namespaces_by_labels(networkpolicy_opr.core_api, rule_item["namespaceSelector"]["matchLabels"])
                         if namespaces is not None:
@@ -376,8 +380,10 @@ class NetworkPolicyUtil:
                                         self.add_pod_ip_into_cidrs_map(pod, policy_name, data["cidrs_map_no_except"][indexed_policy_name])
                 elif "podSelector" in rule_item:
                     self.add_label_networkpolicy(data, rule_item["podSelector"]["matchLabels"], policy_name)
+                    # For ingress traffic, use label based policy
                     if direction == "ingress":
                         data["pod_label_map"][indexed_policy_name] = self.get_pod_label_values_by_label_dict(rule_item["podSelector"]["matchLabels"])
+                    # For egress traffic, use ip based policy
                     else:
                         pods = kube_list_pods_by_labels(networkpolicy_opr.core_api, rule_item["podSelector"]["matchLabels"])
                         if pods is not None:
