@@ -17,7 +17,6 @@ jobs:
         python-version: ['3.8.0']
     steps:
       - uses: actions/checkout@v2
-      - uses: docker-practice/actions-setup-docker@master
       - name: Update apt-get
         run: sudo apt-get update
       - name: Install packages
@@ -34,8 +33,6 @@ jobs:
         run: python3 -m pip install --upgrade pip
       - name: Install python packages
         run: sudo pip3 install setuptools netaddr docker grpcio grpcio-tools kubernetes
-      - name: Update kernel
-        run: printf 'y\nn\n' | sudo ./kernelupdate.sh
       - name: install kind
         run: |
           ver=$(curl -s https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
@@ -49,16 +46,26 @@ jobs:
           sudo mv ./kubectl /usr/local/bin/kubectl
           git submodule update --init --recursive
       - name: Compile mizar
-        run: sudo make clean && make && sudo make unittest
+        run: sudo make clean && make
+      - name: Create kind cluster
+        run: sudo ./kind-setup.sh dev 2
+      - name: Kubeconfig chown
+        if: always()
+        run: |
+          mkdir -p ${HOME}/.kube
+          sudo chown $(id -u):$(id -g) $HOME/.kube/config
+          sudo chown -R $(id -u):$(id -g) $HOME/.kube/
+      - name: Cluster deployment failure, Dump Operator Logs
+        if: ${{ failure() }}
+        run: sudo kubectl get pods | grep mizar-operator | awk '{print $1}' | xargs -i kubectl logs {} && kubectl get pods | grep mizar-daemon | awk '{print $1}' | xargs -i kubectl logs {}
+      - name: Run kind e2e test
+        run: sudo make e2efunctest
+      - name: Test Failure, dump operator and daemon logs
+        if: ${{ failure() }}
+        run: sudo kubectl get pods | grep mizar-operator | awk '{print $1}' | xargs -i kubectl logs {} && kubectl get pods | grep mizar-daemon | awk '{print $1}' | xargs -i kubectl logs {}
+      - name: Make unittest
+        run: sudo make unittest
       - name: Run cli unit tests
         run: ./build/tests/test_cli
       - name: Run daemon unit tests
         run: ./build/tests/test_dmn
-      - name: Create kind cluster
-        run: sudo ./kind-setup.sh dev 2
-      - name: Cluster deployment failure, Dump Operator Logs
-        if: ${{ failure() }}
-        run: kubectl get pods | grep mizar-operator | awk '{print $1}' | xargs -i kubectl logs {}
-      - name: Run kind e2e test
-        run: sudo make e2efunctest
-
