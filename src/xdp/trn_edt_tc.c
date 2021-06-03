@@ -1,3 +1,26 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/**
+ * @file trn_edt_tc.c
+ * @author Vinay Kulkarni (@vinaykul)
+ *
+ * @brief EDT (Earliest Departure Time) rate-limiting eBFP program
+ *
+ * @copyright Copyright (c) 2021 The Authors.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ */
 #include <linux/bpf.h>
 #include <linux/pkt_cls.h>
 #include <linux/if_ether.h>
@@ -8,112 +31,85 @@
 #include "extern/bpf_endian.h"
 #include "extern/bpf_helpers.h"
 #include "src/include/trn_datamodel.h"
+#include "src/xdp/shared_map_defs.h"
 #include "trn_kern.h"
 
-#define LOWBPS          (20UL)
 #define ONEKBPS         (1000UL)
-#define TENKBPS         (1000UL * 10)
-#define HUNDREDKBPS     (1000ULL * 100ULL)
-#define ONEMBPS         (1000000ULL)
 #define NSEC_PER_SEC    (1000ULL * 1000ULL * 1000UL)
-#define NSEC_PER_MSEC   (1000ULL * 1000ULL)
-#define NSEC_PER_USEC   (1000UL)
 
-#ifndef __section
-#define __section(NAME)                  \
-	__attribute__((section(NAME), used))
-#endif
-
+// Optimization barrier. 'volatile' is due to gcc bugs
 #ifndef barrier
-#define barrier()		asm volatile("": : :"memory")
+#define barrier() 		__asm__ __volatile__("": : :"memory")
 #endif
 
-#ifndef __READ_ONCE
-#define __READ_ONCE(X)		(*(volatile typeof(X) *)&X)
+#ifndef __read_once
+#define __read_once(x)		(*(volatile typeof(x) *)&x)
 #endif
 
-#ifndef __WRITE_ONCE
-#define __WRITE_ONCE(X, V)	(*(volatile typeof(X) *)&X) = (V)
+#ifndef __write_once
+#define __write_once(x, v)	(*(volatile typeof(x) *)&x) = (v)
 #endif
 
-/* {READ,WRITE}_ONCE() with verifier workaround via bpf_barrier(). */
-#ifndef READ_ONCE
-#define READ_ONCE(X)						\
-			({ typeof(X) __val = __READ_ONCE(X);	\
+#ifndef read_once
+#define read_once(x)						\
+			({ typeof(x) _v = __read_once(x);	\
 				barrier();			\
-				 __val; })
+				_v;				\
+			})
 #endif
 
-#ifndef WRITE_ONCE
-#define WRITE_ONCE(X, V)					\
-			({ typeof(X) __val = (V);		\
-				__WRITE_ONCE(X, __val);		\
+#ifndef write_once
+#define write_once(x, v)					\
+			({ typeof(x) _v = (v);			\
+				__write_once(x, _v);		\
 				barrier();			\
-				__val; })
+				_v;				\
+			})
 #endif
 
 
-struct edt_info {
-    __u64 bps;
-    __u64 t_last;
-    __u64 t_horizon_drop;
-};
-
-struct bpf_map_def SEC("maps") THROTTLE_MAP = {
-    .type        = BPF_MAP_TYPE_HASH,
-    .key_size    = sizeof(int),
-    .value_size  = sizeof(struct edt_info),
-    .max_entries = 1,
-    .map_flags   = 0,
-};
-
-int edt_schedule_departure(struct __sk_buff *skb)
+static inline int edt_schedule_departure(struct __sk_buff *skb)
 {
 	int key = 0;
-	struct edt_info *einfo;
+	struct edt_config_t *ec;
 	__u64 delay = 0, now = 0, t = 0, t_next = 0;
-	char einfo_null_msg[] = "ERR: Map not found\n";
-	char einfo_ts_msg[] = "EVAL tlast=%llu now=%llu tstamp=%llu\n";
-	char einfo_ts_set_msg[] = "SET now=%llu dlay=%llu tnxt=%llu\n";
-	char einfo_ts_drop_msg[] = "*DROP* now=%llu dlay=%llu tnxt=%llu\n";
+	char ec_null_msg[] = "ERR: Map not found\n";
+	char ec_ts_msg[] = "EVAL tlast=%llu now=%llu tstamp=%llu\n";
+	char ec_ts_set_msg[] = "SET now=%llu dlay=%llu tnxt=%llu\n";
+	char ec_ts_drop_msg[] = "*DROP* now=%llu dlay=%llu tnxt=%llu\n";
 
-	einfo = (struct edt_info *)bpf_map_lookup_elem(&THROTTLE_MAP, &key);
-	if (!einfo) {
-		bpf_trace_printk(einfo_null_msg, sizeof(einfo_null_msg));
+	ec = (struct edt_config_t *)bpf_map_lookup_elem(&edt_config_map, &key);
+	if (!ec) {
+		bpf_trace_printk(ec_null_msg, sizeof(ec_null_msg));
 		return TC_ACT_OK;
 	}
 
 	now = bpf_ktime_get_ns();
 
 	t = skb->tstamp;
-	bpf_trace_printk(einfo_ts_msg, sizeof(einfo_ts_msg), einfo->t_last, now, t);
+	bpf_trace_printk(ec_ts_msg, sizeof(ec_ts_msg), ec->t_last, now, t);
 	if (t < now) {
 		t = now;
 	}
-	delay = (skb->wire_len) * NSEC_PER_SEC / einfo->bps;
-	t_next = READ_ONCE(einfo->t_last) + delay;
+	delay = (skb->wire_len) * NSEC_PER_SEC / ec->bps;
+	t_next = read_once(ec->t_last) + delay;
 	if (t_next <= t) {
-		WRITE_ONCE(einfo->t_last, t);
+		write_once(ec->t_last, t);
 		return TC_ACT_OK;
 	}
 
-	/* FQ implements a drop horizon, see also 39d010504e6b ("net_sched:
-	 * sch_fq: add horizon attribute"). However, we explicitly need the
-	 * drop horizon here to i) avoid having t_last messed up and ii) to
-	 * potentially allow for per aggregate control.
-	 */
-	if (t_next - now >= einfo->t_horizon_drop) {
-		bpf_trace_printk(einfo_ts_drop_msg, sizeof(einfo_ts_drop_msg), now, delay, t_next);
+	if (t_next - now >= ec->t_horizon_drop) {
+		bpf_trace_printk(ec_ts_drop_msg, sizeof(ec_ts_drop_msg), now, delay, t_next);
 		return TC_ACT_SHOT;
 	}
-	WRITE_ONCE(einfo->t_last, t_next);
+	write_once(ec->t_last, t_next);
 
-	bpf_trace_printk(einfo_ts_set_msg, sizeof(einfo_ts_set_msg), now, delay, t_next);
+	bpf_trace_printk(ec_ts_set_msg, sizeof(ec_ts_set_msg), now, delay, t_next);
 	skb->tstamp = t_next;
 	return TC_ACT_OK;
 }
 
-__section("edt")
+SEC("edt")
 int tc_edt(struct __sk_buff *skb)
 {
 	//
@@ -128,14 +124,12 @@ int tc_edt(struct __sk_buff *skb)
 
 	//TODO: User creates this map
 	int key = 0;
-	struct edt_info einfo = {};
-	if (!bpf_map_lookup_elem(&THROTTLE_MAP, &key)) {
-		//einfo.bps = LOWBPS;
-		//einfo.bps = 2 * HUNDREDKBPS;
-		einfo.bps = 6 * ONEKBPS;
-		einfo.t_last = 0;
-		einfo.t_horizon_drop = 2 * NSEC_PER_SEC;
-		bpf_map_update_elem(&THROTTLE_MAP, &key, &einfo, BPF_NOEXIST);
+	struct edt_config_t ec = {};
+	if (!bpf_map_lookup_elem(&edt_config_map, &key)) {
+		ec.bps = 8 * ONEKBPS;
+		ec.t_last = 0;
+		ec.t_horizon_drop = 2 * NSEC_PER_SEC;
+		bpf_map_update_elem(&edt_config_map, &key, &ec, BPF_NOEXIST);
 	}
 
 	if (data + sizeof(struct ethhdr) + sizeof(struct iphdr) + sizeof(struct udphdr) < data_end) {
@@ -155,4 +149,4 @@ int tc_edt(struct __sk_buff *skb)
 	return rc;
 }
 
-char __license[] __section("license") = "GPL";
+char __license[] SEC("license") = "GPL";

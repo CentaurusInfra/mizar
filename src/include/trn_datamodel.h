@@ -204,3 +204,9 @@ enum conn_status {
 	UNI_DIRECTION 	= 1 << 1,	// reserved; traffic is uni-direction only, or bi-direction
 	FLAG_REEVAL 	= 1 << 2,	// need to re-evaluate allow/deny traffic
 };
+
+struct edt_config_t {
+	__u64 bps;
+	__u64 t_last;
+	__u64 t_horizon_drop;
+} __attribute__((packed));

@@ -235,15 +235,6 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	pkt->ip->saddr = metadata->eth.ip;
 	pkt->ip->ttl = pkt->inner_ttl;
 
-if (((pkt->inner_ipv4_tuple.saddr & 0xFF) == 20) && ((pkt->inner_ipv4_tuple.daddr & 0xFF) == 20)) {
-    if (pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
-	bpf_debug("[Agent:0x%x] VDBG EGRESS_BW: %lu INNER_TOS: %x!!!!!\n",
-		bpf_ntohl(pkt->agent_ep_ipv4), egress_bw_bps, pkt->inner_tos);
-	bpf_debug("[Agent:0x%x] VDBG PACKET_METADATA: POD_LABEL: %lu NS_LABEL: %lu\n",
-		bpf_ntohl(pkt->agent_ep_ipv4), pod_label_value, namespace_label_value);
-    }
-}
-
 	// Non-zero egress bandwidth configuration => low priority Pod
 	if (egress_bw_bps > 0) {
 		pkt->ip->tos |= IPTOS_MINCOST;
@@ -442,11 +433,7 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 			  __LINE__);
 	}
 
-	int retcode = trn_redirect(pkt, pkt->inner_ip->saddr, pkt->inner_ip->daddr);
-
-bpf_debug("--------------ACTION=%d-------------------------------------\n\n",
-		retcode);
-	return retcode;
+	return trn_redirect(pkt, pkt->inner_ip->saddr, pkt->inner_ip->daddr);
 }
 
 static __inline int trn_process_arp(struct transit_packet *pkt)
@@ -564,8 +551,6 @@ static __inline int trn_process_inner_eth(struct transit_packet *pkt)
 SEC("agent")
 int _agent(struct xdp_md *ctx)
 {
-bpf_debug("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
-		);
 	struct transit_packet pkt;
 	pkt.data = (void *)(long)ctx->data;
 	pkt.data_end = (void *)(long)ctx->data_end;

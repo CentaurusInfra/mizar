@@ -126,7 +126,6 @@ source install/create_crds.sh $CWD
 source install/create_service_account.sh $CWD
 
 source install/deploy_daemon.sh $CWD $MODE $DOCKER_ACC
-sleep 5
 source install/deploy_operator.sh $CWD $MODE $DOCKER_ACC
 source install/create_testimage.sh $CWD $MODE $DOCKER_ACC
 
