@@ -3785,7 +3785,7 @@ static void test_trn_cli_update_transit_network_policy_protocol_port_subcmd(void
 		.proto = 6,
 		.port = 60184,
 		.bit_val = 10
-	}}};
+	}};
 
 	/* Test call update_transit_network_policy_protocol_port successfully */
 	TEST_CASE("update-net-policy-protocol-port-in succeed with well formed policy json input");
