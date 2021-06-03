@@ -474,7 +474,7 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 				return XDP_ABORTED;
 			}
 
-			if (pkt->pod_label_value_opt->type != TRN_GNV_LABEL_VALUE_OPT_TYPE) {
+			if (pkt->pod_label_value_opt->type != TRN_GNV_POD_LABEL_VALUE_OPT_TYPE) {
 				bpf_debug("[Scaled_EP:%d:0x%x] ABORTED: Unsupported Geneve option type\n",
 					__LINE__, bpf_ntohl(pkt->itf_ipv4));
 				return XDP_ABORTED;
@@ -494,7 +494,7 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 				return XDP_ABORTED;
 			}
 
-			if (pkt->namespace_label_value_opt->type != TRN_GNV_LABEL_VALUE_OPT_TYPE) {
+			if (pkt->namespace_label_value_opt->type != TRN_GNV_NAMESPACE_LABEL_VALUE_OPT_TYPE) {
 				bpf_debug("[Scaled_EP:%d:0x%x] ABORTED: Unsupported Geneve option type\n",
 					__LINE__, bpf_ntohl(pkt->itf_ipv4));
 				return XDP_ABORTED;

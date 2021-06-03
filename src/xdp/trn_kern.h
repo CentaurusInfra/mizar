@@ -54,7 +54,8 @@
 #define TRN_GNV_OPT_CLASS 0x0111
 #define TRN_GNV_RTS_OPT_TYPE 0x48
 #define TRN_GNV_SCALED_EP_OPT_TYPE 0x49
-#define TRN_GNV_LABEL_VALUE_OPT_TYPE 0x50
+#define TRN_GNV_POD_LABEL_VALUE_OPT_TYPE 0x50
+#define TRN_GNV_NAMESPACE_LABEL_VALUE_OPT_TYPE 0x51
 
 /* Scaled endpoint messages type */
 #define TRN_SCALED_EP_MODIFY 0x4d // (M: Modify)

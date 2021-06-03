@@ -267,12 +267,12 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 			 sizeof(struct trn_gnv_scaled_ep_data));
 
 	pkt->pod_label_value_opt->opt_class = TRN_GNV_OPT_CLASS;
-	pkt->pod_label_value_opt->type = TRN_GNV_LABEL_VALUE_OPT_TYPE;
+	pkt->pod_label_value_opt->type = TRN_GNV_POD_LABEL_VALUE_OPT_TYPE;
 	pkt->pod_label_value_opt->length = sizeof(pkt->pod_label_value_opt->label_value_data) / 4;
 	pkt->pod_label_value_opt->label_value_data.value = pod_label_value;
 
 	pkt->namespace_label_value_opt->opt_class = TRN_GNV_OPT_CLASS;
-	pkt->namespace_label_value_opt->type = TRN_GNV_LABEL_VALUE_OPT_TYPE;
+	pkt->namespace_label_value_opt->type = TRN_GNV_NAMESPACE_LABEL_VALUE_OPT_TYPE;
 	pkt->namespace_label_value_opt->length = sizeof(pkt->namespace_label_value_opt->label_value_data) / 4;;
 	pkt->namespace_label_value_opt->label_value_data.value = namespace_label_value;
 
