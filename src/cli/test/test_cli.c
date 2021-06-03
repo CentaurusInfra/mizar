@@ -3246,14 +3246,6 @@ static void test_trn_cli_update_transit_network_policy_subcmd(void **state)
 				  "cidr_ip": "172.0.0.9",
 				  "cidr_type": "1",
 				  "bit_value": "10"
-			  },
-			  {
-				  "tunnel_id": "1",
-				  "local_ip": "10.0.0.1",
-				  "cidr_prefixlen": "17",
-				  "cidr_ip": "172.0.0.6",
-				  "cidr_type": "2",
-				  "bit_value": "1"
 			  }]) };
 
 	char *argv2[] = { "update-net-policy-in", "-i", "eth0", "-j", QUOTE([{
@@ -3263,18 +3255,10 @@ static void test_trn_cli_update_transit_network_policy_subcmd(void **state)
 				  "cidr_ip": "172.0.0.9",
 				  "cidr_type": "1",
 				  "bit_value": "10"
-			  },
-			  {
-				  "tunnel_id": "1",
-				  "local_ip": 10.0.0.1,
-				  "cidr_prefixlen": "17",
-				  "cidr_ip": "172.0.0.6",
-				  "cidr_type": "2",
-				  "bit_value": "1"
 			  }]) };
 	char itf[] = "eth0";
 
-	struct rpc_trn_vsip_cidr_t policies[2] = {{
+	struct rpc_trn_vsip_cidr_t policies[1] = {{
 		.interface = itf,
 		.tunid = 3,
 		.local_ip = 0x300000a,
@@ -3282,15 +3266,6 @@ static void test_trn_cli_update_transit_network_policy_subcmd(void **state)
 		.cidr_ip = 0x90000ac,
 		.cidr_type = 1,
 		.bit_val = 10
-	},
-	{
-		.interface = itf,
-		.tunid = 1,
-		.local_ip = 0x100000a,
-		.cidr_prefixlen = 17,
-		.cidr_ip = 0x60000ac,
-		.cidr_type = 2,
-		.bit_val = 1
 	}};
 
 	/* Test call update_transit_network_policy successfully */
@@ -3343,14 +3318,6 @@ static void test_trn_cli_update_agent_network_policy_subcmd(void **state)
 				  "cidr_ip": "172.0.0.9",
 				  "cidr_type": "1",
 				  "bit_value": "10"
-			  },
-			  {
-				  "tunnel_id": "1",
-				  "local_ip": "10.0.0.1",
-				  "cidr_prefixlen": "17",
-				  "cidr_ip": "172.0.0.6",
-				  "cidr_type": "2",
-				  "bit_value": "1"
 			  }]) };
 
 	char *argv2[] = { "update-net-policy-out", "-i", "eth0", "-j", QUOTE([{
@@ -3360,18 +3327,10 @@ static void test_trn_cli_update_agent_network_policy_subcmd(void **state)
 				  "cidr_ip": "172.0.0.9",
 				  "cidr_type": "1",
 				  "bit_value": "10"
-			  },
-			  {
-				  "tunnel_id": "1",
-				  "local_ip": 10.0.0.1,
-				  "cidr_prefixlen": "17",
-				  "cidr_ip": "172.0.0.6",
-				  "cidr_type": "2",
-				  "bit_value": "1"
 			  }]) };
 	char itf[] = "eth0";
 
-	struct rpc_trn_vsip_cidr_t policies[2] = {{
+	struct rpc_trn_vsip_cidr_t policies[1] = {{
 		.interface = itf,
 		.tunid = 3,
 		.local_ip = 0x300000a,
@@ -3379,15 +3338,6 @@ static void test_trn_cli_update_agent_network_policy_subcmd(void **state)
 		.cidr_ip = 0x90000ac,
 		.cidr_type = 1,
 		.bit_val = 10
-	},
-	{
-		.interface = itf,
-		.tunid = 1,
-		.local_ip = 0x100000a,
-		.cidr_prefixlen = 17,
-		.cidr_ip = 0x60000ac,
-		.cidr_type = 2,
-		.bit_val = 1
 	}};
 
 	/* Test call update_agent_network_policy successfully */
@@ -3440,13 +3390,6 @@ static void test_trn_cli_delete_transit_network_policy_subcmd(void **state)
 				  "cidr_prefixlen": "16",
 				  "cidr_ip": "172.0.0.9",
 				  "cidr_type": "1"
-			  },
-			  {
-				  "tunnel_id": "1",
-				  "local_ip": "10.0.0.1",
-				  "cidr_prefixlen": "17",
-				  "cidr_ip": "172.0.0.6",
-				  "cidr_type": "2"
 			  }]) };
 
 	char *argv2[] = { "delete-network-policy-in", "-i", "eth0", "-j", QUOTE([{
@@ -3455,30 +3398,15 @@ static void test_trn_cli_delete_transit_network_policy_subcmd(void **state)
 				  "cidr_prefixlen": "16",
 				  "cidr_ip": "172.0.0.9",
 				  "cidr_type": "1"
-			  },
-			  {
-				  "tunnel_id": "1",
-				  "local_ip": 10.0.0.1,
-				  "cidr_prefixlen": "17",
-				  "cidr_ip": "172.0.0.6",
-				  "cidr_type": "2"
 			  }]) };
 
-	struct rpc_trn_vsip_cidr_key_t exp_policy_key[2] = {{
+	struct rpc_trn_vsip_cidr_key_t exp_policy_key[1] = {{
 		.interface = itf,
 		.tunid = 3,
 		.local_ip = 0x300000a,
 		.cidr_prefixlen = 16,
 		.cidr_ip = 0x90000ac,
 		.cidr_type = 1
-	},
-	{
-		.interface = itf,
-		.tunid = 1,
-		.local_ip = 0x100000a,
-		.cidr_prefixlen = 17,
-		.cidr_ip = 0x60000ac,
-		.cidr_type = 2
 	}};
 
 	/* Test call delete_transit_network_policy successfully */
@@ -3531,13 +3459,6 @@ static void test_trn_cli_delete_agent_network_policy_subcmd(void **state)
 				  "cidr_prefixlen": "16",
 				  "cidr_ip": "172.0.0.9",
 				  "cidr_type": "1"
-			  },
-			  {
-				  "tunnel_id": "1",
-				  "local_ip": "10.0.0.1",
-				  "cidr_prefixlen": "17",
-				  "cidr_ip": "172.0.0.6",
-				  "cidr_type": "2"
 			  }]) };
 
 	char *argv2[] = { "delete-network-policy-out", "-i", "eth0", "-j", QUOTE([{
@@ -3546,30 +3467,15 @@ static void test_trn_cli_delete_agent_network_policy_subcmd(void **state)
 				  "cidr_prefixlen": "16",
 				  "cidr_ip": "172.0.0.9",
 				  "cidr_type": "1"
-			  },
-			  {
-				  "tunnel_id": "1",
-				  "local_ip": 10.0.0.1,
-				  "cidr_prefixlen": "17",
-				  "cidr_ip": "172.0.0.6",
-				  "cidr_type": "2"
 			  }]) };
 
-	struct rpc_trn_vsip_cidr_key_t exp_policy_key[2] = {{
+	struct rpc_trn_vsip_cidr_key_t exp_policy_key[1] = {{
 		.interface = itf,
 		.tunid = 3,
 		.local_ip = 0x300000a,
 		.cidr_prefixlen = 16,
 		.cidr_ip = 0x90000ac,
 		.cidr_type = 1
-	},
-	{
-		.interface = itf,
-		.tunid = 1,
-		.local_ip = 0x100000a,
-		.cidr_prefixlen = 17,
-		.cidr_ip = 0x60000ac,
-		.cidr_type = 2
 	}};
 
 	/* Test call delete_agent_network_policy successfully */
@@ -3861,13 +3767,6 @@ static void test_trn_cli_update_transit_network_policy_protocol_port_subcmd(void
 				  "protocol": "6",
 				  "port": "6379",
 				  "bit_value": "10"
-			  },
-			  {
-				  "tunnel_id": "3",
-				  "local_ip": "10.0.0.3",
-				  "protocol": "6",
-				  "port": "6379",
-				  "bit_value": "10"
 			  }]) };
 
 	char *argv2[] = { "update-net-policy-protocol-port-in", "-i", "eth0", "-j", QUOTE([{
@@ -3876,32 +3775,17 @@ static void test_trn_cli_update_transit_network_policy_protocol_port_subcmd(void
 				  "protocol": "6",
 				  "port": "6379",
 				  "bit_value": "10"
-			  },
-			  {
-				  "tunnel_id": "3",
-				  "local_ip": 10.0.0.3,
-				  "protocol": "6",
-				  "port": "6379",
-				  "bit_value": "10"
 			  }]) };
 	char itf[] = "eth0";
 
-	struct rpc_trn_vsip_ppo_t exp_ppo[2] = {{
+	struct rpc_trn_vsip_ppo_t exp_ppo[1] = {{
 		.interface = itf,
 		.tunid = 3,
 		.local_ip = 0x300000a,
 		.proto = 6,
 		.port = 60184,
 		.bit_val = 10
-	},
-	{
-		.interface = itf,
-		.tunid = 3,
-		.local_ip = 0x300000a,
-		.proto = 6,
-		.port = 60184,
-		.bit_val = 10
-	}};
+	}}};
 
 	/* Test call update_transit_network_policy_protocol_port successfully */
 	TEST_CASE("update-net-policy-protocol-port-in succeed with well formed policy json input");
@@ -3952,13 +3836,6 @@ static void test_trn_cli_update_agent_network_policy_protocol_port_subcmd(void *
 				  "protocol": "6",
 				  "port": "6379",
 				  "bit_value": "10"
-			  },
-			  {
-				  "tunnel_id": "3",
-				  "local_ip": "10.0.0.3",
-				  "protocol": "6",
-				  "port": "6379",
-				  "bit_value": "10"
 			  }]) };
 
 	char *argv2[] = { "update-net-policy-protocol-port-out", "-i", "eth0", "-j", QUOTE([{
@@ -3967,25 +3844,10 @@ static void test_trn_cli_update_agent_network_policy_protocol_port_subcmd(void *
 				  "protocol": "6",
 				  "port": "6379",
 				  "bit_value": "10"
-			  },
-			  {
-				  "tunnel_id": "3",
-				  "local_ip": 10.0.0.3,
-				  "protocol": "6",
-				  "port": "6379",
-				  "bit_value": "10"
 			  }]) };
 	char itf[] = "eth0";
 
-	struct rpc_trn_vsip_ppo_t exp_ppo[2] = {{
-		.interface = itf,
-		.tunid = 3,
-		.local_ip = 0x300000a,
-		.proto = 6,
-		.port = 60184,
-		.bit_val = 10
-	},
-	{
+	struct rpc_trn_vsip_ppo_t exp_ppo[1] = {{
 		.interface = itf,
 		.tunid = 3,
 		.local_ip = 0x300000a,
@@ -4043,12 +3905,6 @@ static void test_trn_cli_delete_transit_network_policy_protocol_port_subcmd(void
 				  "local_ip": "10.0.0.3",
 				  "protocol": "6",
 				  "port": "6379"
-			  },
-			  {
-				  "tunnel_id": "2",
-				  "local_ip": "10.0.0.2",
-				  "protocol": "6",
-				  "port": "6379"
 			  }]) };
 
 	char *argv2[] = { "delete-net-policy-protocol-port-in", "-i", "eth0", "-j", QUOTE([{
@@ -4056,25 +3912,12 @@ static void test_trn_cli_delete_transit_network_policy_protocol_port_subcmd(void
 				  "local_ip": 10.0.0.3,
 				  "protocol": "6",
 				  "port": "6379"
-			  },
-			  {
-				  "tunnel_id": "2",
-				  "local_ip": 10.0.0.2,
-				  "protocol": "6",
-				  "port": "6379"
 			  }]) };
 
-	struct rpc_trn_vsip_ppo_t exp_ppo[2] = {{
+	struct rpc_trn_vsip_ppo_t exp_ppo[1] = {{
 		.interface = itf,
 		.tunid = 3,
 		.local_ip = 0x300000a,
-		.proto = 6,
-		.port = 60184
-	},
-	{
-		.interface = itf,
-		.tunid = 2,
-		.local_ip = 0x200000a,
 		.proto = 6,
 		.port = 60184
 	}};
@@ -4128,12 +3971,6 @@ static void test_trn_cli_delete_agent_network_policy_protocol_port_subcmd(void *
 				  "local_ip": "10.0.0.3",
 				  "protocol": "6",
 				  "port": "6379"
-			  },
-			  {
-				  "tunnel_id": "2",
-				  "local_ip": "10.0.0.2",
-				  "protocol": "6",
-				  "port": "6379"
 			  }]) };
 
 	char *argv2[] = { "delete-net-policy-protocol-port-out", "-i", "eth0", "-j", QUOTE([{
@@ -4141,25 +3978,12 @@ static void test_trn_cli_delete_agent_network_policy_protocol_port_subcmd(void *
 				  "local_ip": 10.0.0.3,
 				  "protocol": "6",
 				  "port": "6379"
-			  },
-			  {
-				  "tunnel_id": "2",
-				  "local_ip": 10.0.0.2,
-				  "protocol": "6",
-				  "port": "6379"
 			  }]) };
 
-	struct rpc_trn_vsip_ppo_t exp_ppo[2] = {{
+	struct rpc_trn_vsip_ppo_t exp_ppo[1] = {{
 		.interface = itf,
 		.tunid = 3,
 		.local_ip = 0x300000a,
-		.proto = 6,
-		.port = 60184
-	},
-	{
-		.interface = itf,
-		.tunid = 2,
-		.local_ip = 0x200000a,
 		.proto = 6,
 		.port = 60184
 	}};
