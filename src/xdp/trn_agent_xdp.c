@@ -159,12 +159,12 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 
 	int pod_label_value = 0;
 	int namespace_label_value = 0;
-	__u64 egress_bw_bps = 0;
+	__u64 egress_bw_bytes_per_sec = 0;
 	packet_metadata = bpf_map_lookup_elem(&packet_metadata_map, &packet_metadata_key);
 	if (packet_metadata) {
 		pod_label_value = packet_metadata->pod_label_value;
 		namespace_label_value = packet_metadata->namespace_label_value;
-		egress_bw_bps = packet_metadata->egress_bandwidth_bps;
+		egress_bw_bytes_per_sec = packet_metadata->egress_bandwidth_bytes_per_sec;
 	}
 
 	/* Readjust the packet size to fit the outer headers */
@@ -236,7 +236,7 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	pkt->ip->ttl = pkt->inner_ttl;
 
 	// Non-zero egress bandwidth configuration => low priority Pod
-	if (egress_bw_bps > 0) {
+	if (egress_bw_bytes_per_sec > 0) {
 		pkt->ip->tos |= IPTOS_MINCOST;
 	}
 	// Support low priority traffic classification from Pod

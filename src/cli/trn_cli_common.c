@@ -448,7 +448,7 @@ int trn_cli_parse_packet_metadata(const cJSON *jsonobj, struct rpc_trn_packet_me
 	cJSON *ip = cJSON_GetObjectItem(jsonobj, "ip");
 	cJSON *pod_label_value = cJSON_GetObjectItem(jsonobj, "pod_label_value");
 	cJSON *namespace_label_value = cJSON_GetObjectItem(jsonobj, "namespace_label_value");
-	cJSON *egress_bandwidth_value = cJSON_GetObjectItem(jsonobj, "egress_bandwidth_bps");
+	cJSON *egress_bandwidth_value = cJSON_GetObjectItem(jsonobj, "egress_bandwidth_bytes_per_sec");
 
 	if (cJSON_IsString(tunnel_id)) {
 		packet_metadata->tunid = atoi(tunnel_id->valuestring);
@@ -489,11 +489,11 @@ int trn_cli_parse_packet_metadata(const cJSON *jsonobj, struct rpc_trn_packet_me
 	}
 
 	if (egress_bandwidth_value == NULL) {
-		packet_metadata->egress_bandwidth_bps = 0;
+		packet_metadata->egress_bandwidth_bytes_per_sec = 0;
 	} else if (cJSON_IsString(egress_bandwidth_value)) {
-		packet_metadata->egress_bandwidth_bps = atoi(egress_bandwidth_value->valuestring);
+		packet_metadata->egress_bandwidth_bytes_per_sec = atoi(egress_bandwidth_value->valuestring);
 	} else if (cJSON_IsNumber(egress_bandwidth_value)) {
-		packet_metadata->egress_bandwidth_bps = egress_bandwidth_value->valueint;
+		packet_metadata->egress_bandwidth_bytes_per_sec = egress_bandwidth_value->valueint;
 	} else {
 		print_err("Error: egress_bandwidth_value Error\n");
 		return -EINVAL;

@@ -558,7 +558,7 @@ static void test_update_packet_metadata_1_svc(void **state)
 		.tunid = 3,
 		.pod_label_value = 11,
 		.namespace_label_value = 1,
-		.egress_bandwidth_bps = 250000,
+		.egress_bandwidth_bytes_per_sec = 250000,
 	};
 
 	int *rc;
@@ -583,7 +583,7 @@ static void test_update_packet_metadata_egress_bw_1_svc(void **state)
 		.tunid = 3,
 		.pod_label_value = 0,
 		.namespace_label_value = 0,
-		.egress_bandwidth_bps = 750000,
+		.egress_bandwidth_bytes_per_sec = 750000,
 	};
 
 	int *rc;

@@ -296,7 +296,7 @@ class EndpointOperator(object):
             status=interface.status,
             pod_label_value=interface.pod_label_value,
             namespace_label_value=interface.namespace_label_value,
-            egress_bandwidth_bps=interface.egress_bandwidth_bps
+            egress_bandwidth_bytes_per_sec=interface.egress_bandwidth_bytes_per_sec
         )]
 
         if ep.type == OBJ_DEFAULTS.ep_type_host:
@@ -406,7 +406,7 @@ class EndpointOperator(object):
                 status=InterfaceStatus.init,
                 pod_label_value=str(spec['pod_label_value']),
                 namespace_label_value=str(spec['namespace_label_value']),
-                egress_bandwidth_bps=str(spec['egress_bandwidth_bps'])
+                egress_bandwidth_bytes_per_sec=str(spec['egress_bandwidth_bytes_per_sec'])
             ))
         if len(interfaces_list) > 0:
             interfaces = InterfacesList(interfaces=interfaces_list)

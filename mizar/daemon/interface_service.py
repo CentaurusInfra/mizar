@@ -431,7 +431,7 @@ class LocalTransitRpc:
             "ip": interface.address.ip_address,
             "pod_label_value": interface.pod_label_value,
             "namespace_label_value": interface.namespace_label_value,
-            "egress_bandwidth_bps": interface.egress_bandwidth_bps
+            "egress_bandwidth_bytes_per_sec": interface.egress_bandwidth_bytes_per_sec
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_update_packet_metadata} -i \'{itf}\' -j \'{jsonconf}\''''

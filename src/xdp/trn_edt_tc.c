@@ -31,10 +31,9 @@
 #include "extern/bpf_endian.h"
 #include "extern/bpf_helpers.h"
 #include "src/include/trn_datamodel.h"
-#include "src/xdp/shared_map_defs.h"
+#include "src/xdp/trn_edt_tc_maps.h"
 #include "trn_kern.h"
 
-#define ONEKBPS         (1000UL)
 #define NSEC_PER_SEC    (1000ULL * 1000ULL * 1000UL)
 
 // Optimization barrier. 'volatile' is due to gcc bugs
@@ -68,9 +67,9 @@
 #endif
 
 
-static inline int edt_schedule_departure(struct __sk_buff *skb)
+static inline int edt_schedule_departure(struct __sk_buff *skb, __u32 saddr)
 {
-	int key = 0;
+	unsigned int key = saddr;
 	struct edt_config_t *ec;
 	__u64 delay = 0, now = 0, t = 0, t_next = 0;
 	char ec_null_msg[] = "ERR: Map not found\n";
@@ -91,7 +90,7 @@ static inline int edt_schedule_departure(struct __sk_buff *skb)
 	if (t < now) {
 		t = now;
 	}
-	delay = (skb->wire_len) * NSEC_PER_SEC / ec->bps;
+	delay = (skb->wire_len) * NSEC_PER_SEC / ec->bytes_per_sec;
 	t_next = read_once(ec->t_last) + delay;
 	if (t_next <= t) {
 		write_once(ec->t_last, t);
@@ -122,16 +121,6 @@ int tc_edt(struct __sk_buff *skb)
 	void *data = (void *)(long)skb->data;
 	void *data_end = (void *)(long)skb->data_end;
 
-	//TODO: User creates this map
-	int key = 0;
-	struct edt_config_t ec = {};
-	if (!bpf_map_lookup_elem(&edt_config_map, &key)) {
-		ec.bps = 8 * ONEKBPS;
-		ec.t_last = 0;
-		ec.t_horizon_drop = 2 * NSEC_PER_SEC;
-		bpf_map_update_elem(&edt_config_map, &key, &ec, BPF_NOEXIST);
-	}
-
 	if (data + sizeof(struct ethhdr) + sizeof(struct iphdr) + sizeof(struct udphdr) < data_end) {
 		struct ethhdr *eth = data;
 		struct iphdr *ip = (data + sizeof(struct ethhdr));
@@ -140,8 +129,9 @@ int tc_edt(struct __sk_buff *skb)
 			struct udphdr *udp = (data + sizeof(struct ethhdr) + sizeof(struct iphdr));
 			if ((udp->dest == GEN_DSTPORT) && (ip->tos & IPTOS_MINCOST)) {
 				bpf_trace_printk(in_msg, sizeof(in_msg));
-				bpf_trace_printk(edt_msg, sizeof(edt_msg), ip->saddr, ip->daddr, udp->source);
-				rc = edt_schedule_departure(skb);
+				bpf_trace_printk(edt_msg, sizeof(edt_msg), bpf_ntohl(ip->saddr),
+							bpf_ntohl(ip->daddr), udp->source);
+				rc = edt_schedule_departure(skb, bpf_ntohl(ip->saddr));
 				bpf_trace_printk(out_msg, sizeof(out_msg), rc);
 			}
 		}

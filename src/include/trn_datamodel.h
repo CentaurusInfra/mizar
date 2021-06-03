@@ -87,7 +87,7 @@ struct packet_metadata_key_t {
 struct packet_metadata_t {
 	__u32 pod_label_value;
 	__u32 namespace_label_value;
-	__u64 egress_bandwidth_bps;
+	__u64 egress_bandwidth_bytes_per_sec;
 } __attribute__((packed, aligned(4)));
 
 struct network_key_t {
@@ -206,7 +206,7 @@ enum conn_status {
 };
 
 struct edt_config_t {
-	__u64 bps;
+	__u64 bytes_per_sec;
 	__u64 t_last;
 	__u64 t_horizon_drop;
 } __attribute__((packed));
