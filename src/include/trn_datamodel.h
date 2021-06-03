@@ -87,6 +87,7 @@ struct packet_metadata_key_t {
 struct packet_metadata_t {
 	__u32 pod_label_value;
 	__u32 namespace_label_value;
+	__u64 egress_bandwidth_bps;
 } __attribute__((packed, aligned(4)));
 
 struct network_key_t {
@@ -203,3 +204,9 @@ enum conn_status {
 	UNI_DIRECTION 	= 1 << 1,	// reserved; traffic is uni-direction only, or bi-direction
 	FLAG_REEVAL 	= 1 << 2,	// need to re-evaluate allow/deny traffic
 };
+
+struct edt_config_t {
+	__u64 bps;
+	__u64 t_last;
+	__u64 t_horizon_drop;
+} __attribute__((packed));

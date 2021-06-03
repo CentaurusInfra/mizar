@@ -566,6 +566,9 @@ static int check_packet_metadata_equal(const LargestIntegralType value,
 	if (packet_metadata->namespace_label_value != c_packet_metadata->namespace_label_value) {
 		return false;
 	}
+	if (packet_metadata->egress_bandwidth_bps != c_packet_metadata->egress_bandwidth_bps) {
+		return false;
+	}
 
 	return true;
 }
@@ -1929,6 +1932,155 @@ static void test_trn_cli_update_transit_pod_and_namespace_label_policy_subcmd(vo
 	expect_any(__wrap_update_transit_pod_and_namespace_label_policy_1, clnt);
 	rc = trn_cli_update_transit_pod_and_namespace_label_policy_subcmd(NULL, argc, argv1);
 	assert_int_equal(rc, -EINVAL);
+}
+
+static void test_trn_cli_update_packet_metadata_egress_bw_subcmd(void **state)
+{
+	UNUSED(state);
+	int rc;
+	int argc = 5;
+	int update_packet_metadata_egress_bw_1_ret_val = 0;
+
+	struct rpc_trn_packet_metadata_t exp_packet_metadata = {
+		.interface = "eth0",
+		.ip = 0x100000a,
+		.pod_label_value = 0,
+		.namespace_label_value = 0,
+		.egress_bandwidth_bps = 250000,
+		.tunid = 0,
+	};
+
+	/* Test cases */
+	struct test_case {
+		char *name;
+		char *json_input;
+		struct rpc_trn_packet_metadata_t expected_metadata;
+		int expected_meta_rc;
+		int expected_rc;
+	};
+
+	struct test_case tc[] = {
+		{
+			"update_packet_metadata succeeds for valid non-zero str egress bandwidth value",
+			QUOTE({
+				"tunnel_id": "0",
+				"ip": "10.0.0.1",
+				"egress_bandwidth_bps": "250000"
+			}),
+			{
+				.interface = "eth0",
+				.ip = 0x100000a,
+				.pod_label_value = 0,
+				.namespace_label_value = 0,
+				.egress_bandwidth_bps = 250000,
+				.tunid = 0,
+			},
+			0,
+			0,
+		},
+		{
+			"update_packet_metadata succeeds for valid non-zero int egress bandwidth value",
+			QUOTE({
+				"tunnel_id": "0",
+				"ip": "10.0.0.1",
+				"egress_bandwidth_bps": 350000
+			}),
+			{
+				.interface = "eth0",
+				.ip = 0x100000a,
+				.pod_label_value = 0,
+				.namespace_label_value = 0,
+				.egress_bandwidth_bps = 350000,
+				.tunid = 0,
+			},
+			0,
+			0,
+		},
+		{
+			"update_packet_metadata succeeds for valid zero str egress bandwidth value",
+			QUOTE({
+				"tunnel_id": "0",
+				"ip": "10.0.0.1",
+				"egress_bandwidth_bps": "0"
+			}),
+			{
+				.interface = "eth0",
+				.ip = 0x100000a,
+				.pod_label_value = 0,
+				.namespace_label_value = 0,
+				.egress_bandwidth_bps = 0,
+				.tunid = 0,
+			},
+			0,
+			0,
+		},
+		{
+			"update_packet_metadata succeeds for valid zero int egress bandwidth value",
+			QUOTE({
+				"tunnel_id": "0",
+				"ip": "10.0.0.1",
+				"egress_bandwidth_bps": 0
+			}),
+			{
+				.interface = "eth0",
+				.ip = 0x100000a,
+				.pod_label_value = 0,
+				.namespace_label_value = 0,
+				.egress_bandwidth_bps = 0,
+				.tunid = 0,
+			},
+			0,
+			0,
+		},
+		{
+			"update_packet_metadata succeeds for valid empty egress bandwidth value",
+			QUOTE({
+				"tunnel_id": "0",
+				"ip": "10.0.0.1",
+				"egress_bandwidth_bps": ""
+			}),
+			{
+				.interface = "eth0",
+				.ip = 0x100000a,
+				.pod_label_value = 0,
+				.namespace_label_value = 0,
+				.egress_bandwidth_bps = 0,
+				.tunid = 0,
+			},
+			0,
+			0,
+		},
+		{
+			"update_packet_metadata fails for invalid egress bandwidth value",
+			QUOTE({
+				"tunnel_id": "0",
+				"ip": "10.0.0.1",
+				"egress_bandwidth_bps": "{123, 456}"
+			}),
+			{
+				.interface = "eth0",
+				.ip = 0x100000a,
+				.pod_label_value = 0,
+				.namespace_label_value = 0,
+				.egress_bandwidth_bps = 0,
+				.tunid = 0,
+			},
+			-EINVAL,
+			-EINVAL,
+		}
+	};
+	int numtc = sizeof(tc) / sizeof(tc[0]);
+
+	for (int i = 0; i < numtc; i++) {
+		TEST_CASE(tc[i].name);
+		expect_function_call(__wrap_update_packet_metadata_1);
+		will_return(__wrap_update_packet_metadata_1, &tc[i].expected_meta_rc);
+		expect_check(__wrap_update_packet_metadata_1, packet_metadata, check_packet_metadata_equal, &tc[i].expected_metadata);
+		expect_any(__wrap_update_packet_metadata_1, clnt);
+		char *args[] = { "update-packet-metadata", "-i", "eth0", "-j", tc[i].json_input };
+		rc = trn_cli_update_packet_metadata_subcmd(NULL, 5, args);
+		assert_int_equal(rc, tc[i].expected_rc);
+	}
 }
 
 static void test_trn_cli_update_agent_md_subcmd(void **state)
@@ -4059,6 +4211,7 @@ int main()
 		cmocka_unit_test(test_trn_cli_unload_agent_subcmd),
 		cmocka_unit_test(test_trn_cli_update_agent_ep_subcmd),
 		cmocka_unit_test(test_trn_cli_update_packet_metadata_subcmd),
+		cmocka_unit_test(test_trn_cli_update_packet_metadata_egress_bw_subcmd),
 		cmocka_unit_test(test_trn_cli_update_transit_pod_label_policy_subcmd),
 		cmocka_unit_test(test_trn_cli_update_transit_namespace_label_policy_subcmd),
 		cmocka_unit_test(test_trn_cli_update_transit_pod_and_namespace_label_policy_subcmd),

@@ -86,6 +86,7 @@ struct rpc_trn_packet_metadata_t {
        uint64_t tunid;
        uint32_t pod_label_value;
        uint32_t namespace_label_value;
+       uint64_t egress_bandwidth_bps;
 };
 
 /* Defines a unique key to get/delete an packet metadata */

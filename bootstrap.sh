@@ -11,16 +11,19 @@ logout_needed=false
 
 sudo apt-get update
 sudo apt-get install -y \
-    build-essential clang-7 llvm-7 \
+    build-essential \
+    clang-7 \
+    llvm-7 \
     libelf-dev \
     python3.7 \
     python3-pip \
     libcmocka-dev \
     lcov \
-	python3.7-dev \
-	python3-apt \
-	pkg-config \
-	docker.io
+    scapy \
+    python3.7-dev \
+    python3-apt \
+    pkg-config \
+    docker.io
 
 sudo systemctl unmask docker.service
 sudo systemctl unmask docker.socket
@@ -39,7 +42,7 @@ sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 2
 sudo update-alternatives --set python3 /usr/bin/python3.7
 # Fix for apt-pkg missing when using python3.7
 sudo ln -s /usr/lib/python3/dist-packages/apt_pkg.cpython-36m-x86_64-linux-gnu.so /usr/lib/python3/dist-packages/apt_pkg.so
-sudo pip3 install netaddr docker grpcio grpcio-tools
+sudo pip3 install netaddr docker grpcio grpcio-tools scapy
 
 ver=$(curl -s https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
 curl -Lo kind "https://github.com/kubernetes-sigs/kind/releases/download/$ver/kind-$(uname)-amd64"

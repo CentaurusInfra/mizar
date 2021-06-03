@@ -98,7 +98,10 @@ clean::
 	rm -f *.gcov
 
 .PHONY: test
-test:: lcov functest
+test:: test_docker_image lcov functest
+
+test_docker_image:
+	sudo docker build -f ./test/Dockerfile -t buildbox:v2 ./test
 
 .PHONY: unittest
 unittest::
