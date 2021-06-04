@@ -566,7 +566,7 @@ static int check_packet_metadata_equal(const LargestIntegralType value,
 	if (packet_metadata->namespace_label_value != c_packet_metadata->namespace_label_value) {
 		return false;
 	}
-	if (packet_metadata->egress_bandwidth_bps != c_packet_metadata->egress_bandwidth_bps) {
+	if (packet_metadata->egress_bandwidth_bytes_per_sec != c_packet_metadata->egress_bandwidth_bytes_per_sec) {
 		return false;
 	}
 
@@ -1946,7 +1946,7 @@ static void test_trn_cli_update_packet_metadata_egress_bw_subcmd(void **state)
 		.ip = 0x100000a,
 		.pod_label_value = 0,
 		.namespace_label_value = 0,
-		.egress_bandwidth_bps = 250000,
+		.egress_bandwidth_bytes_per_sec = 250000,
 		.tunid = 0,
 	};
 
@@ -1965,14 +1965,14 @@ static void test_trn_cli_update_packet_metadata_egress_bw_subcmd(void **state)
 			QUOTE({
 				"tunnel_id": "0",
 				"ip": "10.0.0.1",
-				"egress_bandwidth_bps": "250000"
+				"egress_bandwidth_bytes_per_sec": "250000"
 			}),
 			{
 				.interface = "eth0",
 				.ip = 0x100000a,
 				.pod_label_value = 0,
 				.namespace_label_value = 0,
-				.egress_bandwidth_bps = 250000,
+				.egress_bandwidth_bytes_per_sec = 250000,
 				.tunid = 0,
 			},
 			0,
@@ -1983,14 +1983,14 @@ static void test_trn_cli_update_packet_metadata_egress_bw_subcmd(void **state)
 			QUOTE({
 				"tunnel_id": "0",
 				"ip": "10.0.0.1",
-				"egress_bandwidth_bps": 350000
+				"egress_bandwidth_bytes_per_sec": 350000
 			}),
 			{
 				.interface = "eth0",
 				.ip = 0x100000a,
 				.pod_label_value = 0,
 				.namespace_label_value = 0,
-				.egress_bandwidth_bps = 350000,
+				.egress_bandwidth_bytes_per_sec = 350000,
 				.tunid = 0,
 			},
 			0,
@@ -2001,14 +2001,14 @@ static void test_trn_cli_update_packet_metadata_egress_bw_subcmd(void **state)
 			QUOTE({
 				"tunnel_id": "0",
 				"ip": "10.0.0.1",
-				"egress_bandwidth_bps": "0"
+				"egress_bandwidth_bytes_per_sec": "0"
 			}),
 			{
 				.interface = "eth0",
 				.ip = 0x100000a,
 				.pod_label_value = 0,
 				.namespace_label_value = 0,
-				.egress_bandwidth_bps = 0,
+				.egress_bandwidth_bytes_per_sec = 0,
 				.tunid = 0,
 			},
 			0,
@@ -2019,14 +2019,14 @@ static void test_trn_cli_update_packet_metadata_egress_bw_subcmd(void **state)
 			QUOTE({
 				"tunnel_id": "0",
 				"ip": "10.0.0.1",
-				"egress_bandwidth_bps": 0
+				"egress_bandwidth_bytes_per_sec": 0
 			}),
 			{
 				.interface = "eth0",
 				.ip = 0x100000a,
 				.pod_label_value = 0,
 				.namespace_label_value = 0,
-				.egress_bandwidth_bps = 0,
+				.egress_bandwidth_bytes_per_sec = 0,
 				.tunid = 0,
 			},
 			0,
@@ -2037,14 +2037,14 @@ static void test_trn_cli_update_packet_metadata_egress_bw_subcmd(void **state)
 			QUOTE({
 				"tunnel_id": "0",
 				"ip": "10.0.0.1",
-				"egress_bandwidth_bps": ""
+				"egress_bandwidth_bytes_per_sec": ""
 			}),
 			{
 				.interface = "eth0",
 				.ip = 0x100000a,
 				.pod_label_value = 0,
 				.namespace_label_value = 0,
-				.egress_bandwidth_bps = 0,
+				.egress_bandwidth_bytes_per_sec = 0,
 				.tunid = 0,
 			},
 			0,
@@ -2055,14 +2055,14 @@ static void test_trn_cli_update_packet_metadata_egress_bw_subcmd(void **state)
 			QUOTE({
 				"tunnel_id": "0",
 				"ip": "10.0.0.1",
-				"egress_bandwidth_bps": "{123, 456}"
+				"egress_bandwidth_bytes_per_sec": "{123, 456}"
 			}),
 			{
 				.interface = "eth0",
 				.ip = 0x100000a,
 				.pod_label_value = 0,
 				.namespace_label_value = 0,
-				.egress_bandwidth_bps = 0,
+				.egress_bandwidth_bytes_per_sec = 0,
 				.tunid = 0,
 			},
 			-EINVAL,

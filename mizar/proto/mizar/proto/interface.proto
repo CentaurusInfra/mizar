@@ -76,7 +76,7 @@ message Interface {
   InterfaceStatus status = 8;
   string pod_label_value = 9;
   string namespace_label_value = 10;
-  string egress_bandwidth_bps = 11;
+  string egress_bandwidth_bytes_per_sec = 11;
 }
 
 message InterfacesList {

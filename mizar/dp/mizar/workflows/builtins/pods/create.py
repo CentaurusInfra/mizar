@@ -100,7 +100,7 @@ class k8sPodCreate(WorkflowTask):
         annotations = self.param.body['metadata'].get('annotations', {})
         if len(annotations) > 0:
             k8s_egress_bw = annotations.get(CONSTANTS.MIZAR_EGRESS_BW_TAG)
-            # Convert [B|KB|MB|GB]/s to bits per second.
+            # Convert [KB|MB|GB]/s to bytes per second.
             if k8s_egress_bw is not None:
                 if k8s_egress_bw.endswith('K'):
                     egress_bw = int(float(k8s_egress_bw.replace('K', '')) * 1e3)
@@ -110,7 +110,7 @@ class k8sPodCreate(WorkflowTask):
                     egress_bw = int(float(k8s_egress_bw.replace('G', '')) * 1e9)
                 else:
                     egress_bw = int(k8s_egress_bw)
-        spec['egress_bandwidth_bps'] = egress_bw * 8
+        spec['egress_bandwidth_bytes_per_sec'] = egress_bw
 
         logger.info("Pod spec {}".format(spec))
 

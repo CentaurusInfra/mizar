@@ -160,13 +160,3 @@ struct bpf_map_def SEC("maps") ing_pod_and_namespace_label_policy_map = {
 	.map_flags = 0,
 };
 BPF_ANNOTATE_KV_PAIR(ing_pod_and_namespace_label_policy_map, struct pod_and_namespace_label_policy_t, __u64);
-
-// TC eBPF EDT configuration map
-struct bpf_map_def SEC("maps") edt_config_map = {
-    .type        = BPF_MAP_TYPE_HASH,
-    .key_size    = sizeof(int),
-    .value_size  = sizeof(struct edt_config_t),
-    .max_entries = 1,
-    .map_flags   = 0,
-};
-BPF_ANNOTATE_KV_PAIR(edt_config_map, struct edt_config_t, __u64);
