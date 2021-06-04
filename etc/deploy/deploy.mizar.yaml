@@ -444,7 +444,7 @@ spec:
       hostNetwork: true
       hostPID: true
       initContainers:
-        - image: mizarnet/mizar:latest
+        - image: mizarnet/mizar:0.8
           name: node-init
           command: [./node-init.sh]
           securityContext:
@@ -453,7 +453,7 @@ spec:
             - name: mizar
               mountPath: /home
       containers:
-        - image: mizarnet/dropletd
+        - image: mizarnet/dropletd:0.8
           name: mizar-daemon
           securityContext:
             privileged: true
@@ -486,7 +486,7 @@ spec:
       terminationGracePeriodSeconds: 0
       hostNetwork: true
       containers:
-        - image: mizarnet/endpointopr
+        - image: mizarnet/endpointopr:0.8
           name: mizar-operator
           securityContext:
             privileged: true
