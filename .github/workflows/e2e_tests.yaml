@@ -45,6 +45,8 @@ jobs:
           chmod +x ./kubectl
           sudo mv ./kubectl /usr/local/bin/kubectl
           git submodule update --init --recursive
+      - name: Update Kernel and Linux Headers
+        run: printf 'y\nn\n' | sudo ./kernelupdate.sh
       - name: Compile mizar
         run: sudo make clean && make
       - name: Make unittest
