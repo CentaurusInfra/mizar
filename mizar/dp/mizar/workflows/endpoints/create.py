@@ -50,7 +50,7 @@ class EndpointCreate(WorkflowTask):
             self.raise_temporary_error(
                 "Task: {} Endpoint: {} Droplet Object not ready.".format(self.__class__.__name__, ep.name))
         nets_opr.allocate_endpoint(ep)
-        bouncers_opr.update_endpoint_with_bouncers(ep)
+        bouncers_opr.update_endpoint_with_bouncers(ep, self)
         if ep.type == OBJ_DEFAULTS.ep_type_simple:
             endpoints_opr.produce_simple_endpoint_interface(ep)
         if ep.bouncers:

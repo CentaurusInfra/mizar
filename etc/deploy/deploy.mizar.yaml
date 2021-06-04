@@ -444,22 +444,24 @@ spec:
       hostNetwork: true
       hostPID: true
       initContainers:
-        - name: mizar-cni
-          image: mizarnet/mizarcni:0.7
-          volumeMounts:
-            - name: var
-              mountPath: /install/var
+        - image: mizarnet/mizar:0.8
+          name: node-init
+          command: [./node-init.sh]
           securityContext:
             privileged: true
+          volumeMounts:
+            - name: mizar
+              mountPath: /home
       containers:
-        - image: mizarnet/dropletd:0.7
+        - image: mizarnet/dropletd:0.8
           name: mizar-daemon
           securityContext:
             privileged: true
       volumes:
-        - name: var
+        - name: mizar
           hostPath:
             path: /var
+            type: Directory
 ---
 # mizar deployment of operator
 apiVersion: apps/v1
@@ -484,7 +486,7 @@ spec:
       terminationGracePeriodSeconds: 0
       hostNetwork: true
       containers:
-        - image: mizarnet/endpointopr:0.7
+        - image: mizarnet/endpointopr:0.8
           name: mizar-operator
           securityContext:
             privileged: true

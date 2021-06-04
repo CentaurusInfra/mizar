@@ -16,6 +16,12 @@ def run_cmd(cmd_list):
     return (returncode, text)
 
 
+def run_cmd_text(cmd_list):
+    result = subprocess.Popen(cmd_list, shell=True, stdout=subprocess.PIPE)
+    text = result.stdout.read().decode().rstrip()
+    return text
+
+
 def do_common_tests(test, ep1, ep2):
     do_ping_test(test, ep1, ep2)
     do_http_hostname_test(test, ep1, ep2)

@@ -43,6 +43,9 @@ class k8sApi:
         self.api = MizarApi()
         config.load_kube_config()
         self.k8sapi = client.CoreV1Api()
+        self.operator_logs_cmd = "kubectl get pods | grep mizar-operator | awk '{print $1}' | xargs -i kubectl logs {}"
+        self.operator_pod_name = run_cmd_text(
+            "kubectl get pods | grep mizar-operator | awk '{print $1}'")
 
     def create_vpc(self, name, ip, prefix, dividers=1, vni=None):
         self.api.create_vpc(name, ip, prefix, dividers, vni)
@@ -182,3 +185,23 @@ class k8sApi:
             except:
                 deleted = True
         logger.info("Deleted {}".format(name))
+
+    def count_operator_permanent_errors(self):
+        cmd = "{} | grep 'failed permanently' -c".format(
+            self.operator_logs_cmd)
+        return run_cmd_text(cmd)
+
+    def print_operator_errors(self):
+        logger.info("Printing errors if any!")
+        cmd = "{} | grep -E '^[A-Z][a-z].*Error:'".format(
+            self.operator_logs_cmd)
+        logger.info(run_cmd_text(cmd))
+
+    def count_operator_errors(self):
+        cmd = "{} | grep -E '^[A-Z][a-z].*Error:' -c".format(
+            self.operator_logs_cmd)
+        return run_cmd_text(cmd)
+
+    def check_errors(self):
+        self.print_operator_errors()
+        return int(self.count_operator_permanent_errors()) + int(self.count_operator_errors())

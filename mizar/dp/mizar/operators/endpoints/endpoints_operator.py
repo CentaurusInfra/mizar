@@ -88,16 +88,18 @@ class EndpointOperator(object):
         ep = Endpoint(name, self.obj_api, self.store, spec)
         self.store.update_ep(ep)
 
-    def update_bouncer_with_endpoints(self, bouncer):
+    def update_bouncer_with_endpoints(self, bouncer, task):
         eps = list(self.store.get_eps_in_net(bouncer.net).values())
-        bouncer.update_eps(eps)
+        bouncer.update_eps(eps, task)
 
-    def update_endpoints_with_bouncers(self, bouncer):
+    def update_endpoints_with_bouncers(self, bouncer, task):
         eps = list(self.store.get_eps_in_net(bouncer.net).values())
         for ep in eps:
             logger.info("EP {} update agent with bouncer {}".format(
                 bouncer.name, ep.name))
             if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
+                if not ep.droplet_obj:
+                    task.raise_temporary_error("Task: {} Endpoint: {} Droplet Object not ready.".format(self.__class__.__name__, ep.name))
                 ep.update_bouncers({bouncer.name: bouncer})
 
     def create_scaled_endpoint(self, name, ep_name, spec, net, extra, namespace="default"):
