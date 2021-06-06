@@ -164,8 +164,11 @@ class InterfaceServer(InterfaceServiceServicer):
         # Network namespace operations (Move these to the CNI)
 
         veth_peer_index = get_iface_index(interface.veth.peer, self.iproute)
-        mzbr_index = get_iface_index(CONSTANTS.MIZAR_BRIDGE, self.iproute)
-        self.iproute.link('set', index=veth_peer_index, master=mzbr_index, state='up', mtu=9000)
+        if os.getenv('FEATUREGATE_BWQOS', 'false').lower() in ('false', '0'):
+            self.iproute.link('set', index=veth_peer_index, state='up', mtu=9000)
+        else:
+            mzbr_index = get_iface_index(CONSTANTS.MIZAR_BRIDGE, self.iproute)
+            self.iproute.link('set', index=veth_peer_index, master=mzbr_index, state='up', mtu=9000)
 
         # Configure the Transit Agent
         self._ConfigureTransitAgent(interface)

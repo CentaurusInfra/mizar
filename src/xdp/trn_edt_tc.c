@@ -67,7 +67,7 @@
 #endif
 
 
-static inline int edt_schedule_departure(struct __sk_buff *skb, __u32 saddr)
+static __ALWAYS_INLINE__ int edt_schedule_departure(struct __sk_buff *skb, __u32 saddr)
 {
 	unsigned int key = saddr;
 	struct edt_config_t *ec;
