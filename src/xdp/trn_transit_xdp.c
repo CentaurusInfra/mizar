@@ -73,6 +73,13 @@ static __inline int trn_rewrite_remote_mac(struct transit_packet *pkt)
 
 	trn_set_src_mac(pkt->data, pkt->eth->h_dest);
 	trn_set_dst_mac(pkt->data, remote_ep->mac);
+
+	if (pkt->ip->tos & IPTOS_MINCOST) {
+		bpf_debug("[Transit:0x%x] Low priority pkt saddr:%x -> daddr:%x - XDP_PASS\n",
+			(pkt->itf_ipv4), pkt->ip->saddr, pkt->ip->daddr);
+		return XDP_PASS;
+	}
+
 	return XDP_TX;
 }
 

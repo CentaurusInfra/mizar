@@ -37,9 +37,10 @@ def init(benchmark=False):
     output = r.stdout.read().decode().strip()
     logging.info("Setup done")
 
-    cmd = 'nsenter -t 1 -m -u -n -i ip addr show eth0 | grep "inet\\b" | awk \'{print $2}\' | cut -d/ -f1'
+    cmd = 'nsenter -t 1 -m -u -n -i ip addr show eth0 | grep "inet\\b" | awk \'{print $2}\''
     r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-    ip = r.stdout.read().decode().strip()
+    nodeipmask = r.stdout.read().decode().strip()
+    nodeip = nodeipmask.split("/")[0]
 
     cmd = "nsenter -t 1 -m -u -n -i ip link set dev eth0 xdpgeneric off"
 
@@ -66,42 +67,59 @@ def init(benchmark=False):
     }
     config = json.dumps(config)
     cmd = (
-        f'''nsenter -t 1 -m -u -n -i /trn_bin/transit -s {ip} load-transit-xdp -i eth0 -j '{config}' ''')
+        f'''nsenter -t 1 -m -u -n -i /trn_bin/transit -s {nodeip} load-transit-xdp -i eth0 -j '{config}' ''')
 
     r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     output = r.stdout.read().decode().strip()
     logging.info("Running load-transit-xdp: {}".format(output))
 
+    if os.getenv('FEATUREGATE_BWQOS', 'false').lower() in ('false', '0'):
+        logging.info("Bandwidth QoS feature is disabled.")
+        return
+
     # Setup mizar bridge, update routes, and load EDT TC eBPF program
-    brscript = (f''' bash -c '\
-    nsenter -t 1 -m -u -n -i ip link add {CONSTANTS.MIZAR_BRIDGE} type bridge && \
-    nsenter -t 1 -m -u -n -i sysctl -w net.bridge.bridge-nf-call-iptables=0 && \
-    nsenter -t 1 -m -u -n -i ip link set dev {CONSTANTS.MIZAR_BRIDGE} up && \
-    nsenter -t 1 -m -u -n -i ip link set eth0 master {CONSTANTS.MIZAR_BRIDGE} && \
-    nsenter -t 1 -m -u -n -i brctl show' ''')
+    logging.info("Node IP: {}".format(nodeipmask))
+
+    brcmd = f'''nsenter -t 1 -m -u -n -i sysctl -w net.bridge.bridge-nf-call-iptables=0 && \
+        nsenter -t 1 -m -u -n -i ip link add {CONSTANTS.MIZAR_BRIDGE} type bridge && \
+        nsenter -t 1 -m -u -n -i ip link set dev {CONSTANTS.MIZAR_BRIDGE} up && \
+        nsenter -t 1 -m -u -n -i ip link set eth0 master {CONSTANTS.MIZAR_BRIDGE} && \
+        nsenter -t 1 -m -u -n -i ip addr add {nodeip} dev {CONSTANTS.MIZAR_BRIDGE} && \
+        nsenter -t 1 -m -u -n -i brctl show'''
+
+    rtlistcmd = 'nsenter -t 1 -m -u -n -i ip route list | grep "dev eth0"'
+    r = subprocess.Popen(rtlistcmd, shell=True, stdout=subprocess.PIPE)
+    rtchanges = []
+    while True:
+        line = r.stdout.readline()
+        if not line:
+            break
+        rt = line.decode().strip()
+        rtkey = rt.partition("dev eth0")[0]
+        rtdesc = rt.partition("dev eth0")[2]
+        rnew = 'nsenter -t 1 -m -u -n -i ip route change ' + rtkey + f'''dev {CONSTANTS.MIZAR_BRIDGE}''' + rtdesc
+        if 'default' in rt:
+            rtchanges.append(rnew)
+        else:
+            rtchanges.insert(0, rnew)
+
+    rtchangecmd = ""
+    if len(rtchanges) > 0:
+        for rtc in rtchanges:
+            if not rtchangecmd:
+                rtchangecmd =  rtc
+            else:
+                rtchangecmd = rtchangecmd + " && " + rtc
+            rtchangecmd = rtchangecmd + " || true"
+        rtchangecmd = rtchangecmd + " && "
+    rtchangecmd = rtchangecmd + f'''nsenter -t 1 -m -u -n -i ip route list'''
+
+    brscript = (f''' bash -c '{brcmd} && {rtchangecmd}' ''')
+    logging.info("Mizar bridge setup script:\n{}\n".format(brscript))
     r = subprocess.Popen(brscript, shell=True, stdout=subprocess.PIPE)
     output = r.stdout.read().decode().strip()
+    #TODO: Restore original network config upon error / cleanup
     logging.info("Mizar bridge setup complete.\n{}\n".format(output))
-
-    logging.info("Node IP: {}".format(ip))
-
-    gwcmd = 'nsenter -t 1 -m -u -n -i ip route | grep default | awk \'{print $3}\''
-    r = subprocess.Popen(gwcmd, shell=True, stdout=subprocess.PIPE)
-    defaultgw = r.stdout.read().decode().strip()
-    logging.info("Default gateway: {}".format(defaultgw))
-
-    cidrcmd = 'nsenter -t 1 -m -u -n -i ip route | grep "proto kernel" | awk \'{print $1}\''
-    r = subprocess.Popen(cidrcmd, shell=True, stdout=subprocess.PIPE)
-    nodecidr = r.stdout.read().decode().strip()
-    logging.info("CIDR: {}".format(nodecidr))
-
-    rtscript = (f''' bash -c '\
-    nsenter -t 1 -m -u -n -i ip route change {nodecidr} dev {CONSTANTS.MIZAR_BRIDGE} proto kernel scope link src {ip} && \
-    nsenter -t 1 -m -u -n -i ip route change default via {defaultgw} dev {CONSTANTS.MIZAR_BRIDGE} && \
-    nsenter -t 1 -m -u -n -i ip route show' ''')
-    r = subprocess.Popen(rtscript, shell=True, stdout=subprocess.PIPE)
-    output = r.stdout.read().decode().strip()
-    logging.info("Route update complete.\n{}\n".format(output))
 
     tcscript = (f''' bash -c '\
     nsenter -t 1 -m -u -n -i tc qdisc add dev eth0 clsact && \

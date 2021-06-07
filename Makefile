@@ -97,9 +97,6 @@ clean::
 	rm -rf build/tests/*
 	rm -f *.gcov
 
-.PHONY: test
-test:: lcov functest
-
 .PHONY: unittest
 unittest::
 
