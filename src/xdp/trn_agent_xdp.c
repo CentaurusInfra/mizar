@@ -286,12 +286,6 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	pkt->namespace_label_value_opt->length = sizeof(pkt->namespace_label_value_opt->label_value_data) / 4;;
 	pkt->namespace_label_value_opt->label_value_data.value = namespace_label_value;
 
-	if (pkt->ip->tos & IPTOS_MINCOST) {
-		bpf_debug("[Agent:%ld.0x%x] IP ToS: %u (low priority) -> XDP_PASS!!!!!\n",
-			pkt->agent_ep_tunid, bpf_ntohl(pkt->agent_ep_ipv4), pkt->ip->tos);
-		return XDP_PASS;
-	}
-
 	/* If the source and dest address of the tunneled packet is the
 	 * same, then this host is also a transit switch. Just invoke the
 	 * transit XDP program by a tail call;
@@ -304,6 +298,12 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 
 		__u32 key = XDP_TRANSIT;
 		bpf_tail_call(pkt->xdp, &jmp_table, key);
+	}
+
+	if (pkt->ip->tos & IPTOS_MINCOST) {
+		bpf_debug("[Agent:%ld.0x%x] Low priority pkt to daddr=%x - XDP_PASS\n",
+			pkt->agent_ep_tunid, bpf_ntohl(pkt->agent_ep_ipv4), pkt->ip->daddr);
+		return XDP_PASS;
 	}
 
 	/* Send the packet on the egress of the tunneling interface */
