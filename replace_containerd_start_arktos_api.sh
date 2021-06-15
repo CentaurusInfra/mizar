@@ -8,8 +8,8 @@ sudo systemctl restart containerd
 sudo systemctl start docker
 export CONTAINER_RUNTIME_ENDPOINT="containerRuntime,container,/run/containerd/containerd.sock"
 containerd_status=`systemctl status docker | grep Active | grep active | grep -o running`
-if ! [[ -z "$containerd_status" ]]; then
-    echo "success"
+if [[ ! -z "$containerd_status" ]]; then
+    echo $containerd_status
 else
     echo "failed"
 fi
