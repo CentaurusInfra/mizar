@@ -7,7 +7,12 @@ sudo mv /tmp/containerd /usr/bin/
 sudo systemctl restart containerd
 sudo systemctl start docker
 export CONTAINER_RUNTIME_ENDPOINT="containerRuntime,container,/run/containerd/containerd.sock"
-sleep 15
+containerd_status=`systemctl status docker | grep Active | grep active | grep -o running`
+if ! [[ -z "$containerd_status" ]]; then
+    echo "success"
+else
+    echo "failed"
+fi
 cd $HOME/go/src/k8s.io/arktos
 ./hack/arktos-up.sh
 
