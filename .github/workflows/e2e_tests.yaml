@@ -67,7 +67,7 @@ jobs:
         if: ${{ failure() }}
         run: sudo kubectl get pods | grep mizar-operator | awk '{print $1}' | xargs -i kubectl logs {} && kubectl get pods | grep mizar-daemon | awk '{print $1}' | xargs -i kubectl logs {}
       - name: Setup tmate ssh session
-        if: ${{ failure() }}
+        if: always()
         uses: mxschmitt/action-tmate@v3
         timeout-minutes: 15
       # - name: Run kind e2e test
