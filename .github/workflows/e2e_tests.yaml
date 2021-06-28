@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 jobs:
   build:
-    runs-on: ubuntu-18.04
+    runs-on: self-hosted
     strategy:
       matrix:
         python-version: ['3.8.0']
@@ -20,7 +20,8 @@ jobs:
       - name: Update apt-get
         run: sudo apt-get update
       - name: Install packages
-        run: sudo apt-get install -y build-essential clang-7 llvm-7 libelf-dev python3.8 python3-pip libcmocka-dev lcov python3.8-dev python3-apt pkg-config
+      # Remove docker.io if running on github actions hosted.
+        run: sudo apt-get install -y build-essential clang-7 llvm-7 libelf-dev python3.8 python3-pip libcmocka-dev lcov python3.8-dev python3-apt pkg-config docker.io
       - name: Python3.6
         run: sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1
       - name: Python3.8
@@ -28,7 +29,7 @@ jobs:
       - name: Python3.8 default
         run: sudo update-alternatives --set python3 /usr/bin/python3.8
       - name: Python3.8 symlink fix
-        run: sudo ln -s /usr/lib/python3/dist-packages/apt_pkg.cpython-36m-x86_64-linux-gnu.so /usr/lib/python3/dist-packages/apt_pkg.so
+        run: sudo ln -snf /usr/lib/python3/dist-packages/apt_pkg.cpython-36m-x86_64-linux-gnu.so /usr/lib/python3/dist-packages/apt_pkg.so
       - name: Update pip
         run: python3 -m pip install --upgrade pip
       - name: Install python packages
@@ -66,15 +67,15 @@ jobs:
       - name: Cluster deployment failure, Dump Operator and daemon Logs
         if: ${{ failure() }}
         run: sudo kubectl get pods | grep mizar-operator | awk '{print $1}' | xargs -i kubectl logs {} && kubectl get pods | grep mizar-daemon | awk '{print $1}' | xargs -i kubectl logs {}
-      - name: Setup tmate ssh session
-        if: always()
-        uses: mxschmitt/action-tmate@v3
-        timeout-minutes: 15
-      # - name: Run kind e2e test
-      #   run: sudo make e2efunctest
-      # - name: Test failure, Dump Operator and daemon Logs
-      #   if: ${{ failure() }}
-      #   run: sudo kubectl get pods | grep mizar-operator | awk '{print $1}' | xargs -i kubectl logs {} && kubectl get pods | grep mizar-daemon | awk '{print $1}' | xargs -i kubectl logs {}
+      # - name: Setup tmate ssh session
+      #   if: always()
+      #   uses: mxschmitt/action-tmate@v3
+      #   timeout-minutes: 15
+      - name: Run kind e2e test
+        run: sudo make e2efunctest
+      - name: Test failure, Dump Operator and daemon Logs
+        if: ${{ failure() }}
+        run: sudo kubectl get pods | grep mizar-operator | awk '{print $1}' | xargs -i kubectl logs {} && kubectl get pods | grep mizar-daemon | awk '{print $1}' | xargs -i kubectl logs {}
       # - name: Setup tmate ssh session
       #   if: ${{ failure() }}
       #   uses: mxschmitt/action-tmate@v3
