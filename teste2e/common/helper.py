@@ -6,8 +6,6 @@ from netaddr import *
 logger = logging.getLogger("transit_test")
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
 
-TEST_CLUSTER = 'kind'
-
 
 def run_cmd(cmd_list):
     result = subprocess.Popen(cmd_list, shell=True, stdout=subprocess.PIPE)

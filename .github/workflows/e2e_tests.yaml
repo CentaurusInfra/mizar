@@ -1,4 +1,7 @@
-# Mizar kind e2e test workflow
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2021 The Authors.
+
+# Authors: Phu Tran          <@phudtran>
 
 name: CI
 on:
@@ -16,6 +19,8 @@ jobs:
       matrix:
         python-version: ['3.8.0']
     steps:
+      - name: Permissions
+        run: sudo chown -R $USER:$USER /home/
       - uses: actions/checkout@v2
       - name: Update apt-get
         run: sudo apt-get update
@@ -46,8 +51,8 @@ jobs:
           chmod +x ./kubectl
           sudo mv ./kubectl /usr/local/bin/kubectl
           git submodule update --init --recursive
-      - name: Update Kernel and Linux Headers
-        run: printf 'y\nn\n' | sudo ./kernelupdate.sh
+      # - name: Update Kernel and Linux Headers
+      #   run: printf 'y\nn\n' | sudo ./kernelupdate.sh
       - name: Compile mizar
         run: sudo make clean && make
       - name: Make unittest
@@ -80,3 +85,85 @@ jobs:
       #   if: ${{ failure() }}
       #   uses: mxschmitt/action-tmate@v3
       #   timeout-minutes: 15
+      - name: Cleanup Kind
+        if: ${{ always() }}
+        run: sudo kind delete cluster
+      # Kubeadm tests
+      - name: Start kubeadm
+        run: sudo kubeadm init --pod-network-cidr 20.0.0.0/16
+      - name: kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          yes | sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+          sudo chown $(id -u):$(id -g) $HOME/.kube/config
+      - name: Join workers
+        run: |
+          ssh ciw1 "sudo $(sudo kubeadm token create --print-join-command)"
+          ssh ciw2 "sudo $(sudo kubeadm token create --print-join-command)"
+      - name: build container images
+        run: |
+          sudo docker build -t mizar:0.8 -f etc/docker/mizar.Dockerfile .
+          sudo docker build -t dropletd:0.8 -f etc/docker/daemon.Dockerfile .
+          sudo docker build -t endpointopr:0.8 -f etc/docker/operator.Dockerfile .
+
+          ssh ciw1 "sudo rm -rf ~/mizar"
+          ssh ciw2 "sudo rm -rf ~/mizar"
+
+          scp -r ~/actions-runner/_work/mizar/mizar ciw1:
+          scp -r ~/actions-runner/_work/mizar/mizar ciw2:
+
+          ssh ciw1 "cd mizar && make"
+          ssh ciw2 "cd mizar && make"
+
+          ssh ciw1 "cd ~/mizar && sudo docker build -t mizar:0.8 -f ~/mizar/etc/docker/mizar.Dockerfile ."
+          ssh ciw1 "cd ~/mizar && sudo docker build -t dropletd:0.8 -f ~/mizar/etc/docker/daemon.Dockerfile ."
+          ssh ciw1 "cd ~/mizar && sudo docker build -t endpointopr:0.8 -f ~/mizar/etc/docker/operator.Dockerfile ."
+    
+          ssh ciw2 "cd ~/mizar && sudo docker build -t mizar:0.8 -f ~/mizar/etc/docker/mizar.Dockerfile ."
+          ssh ciw2 "cd ~/mizar && sudo docker build -t dropletd:0.8 -f ~/mizar/etc/docker/daemon.Dockerfile ."
+          ssh ciw2 "cd ~/mizar && sudo docker build -t endpointopr:0.8 -f ~/mizar/etc/docker/operator.Dockerfile ."
+      - name: deploy mizar
+        run: kubectl create -f etc/deploy/deploy.mizar.ci.yaml
+      - name: check ready
+        run: source install/common.sh && check_all_ready
+      - name: run tests
+        run: sudo make e2efunctest
+      - name: Test failure, Dump Operator and daemon Logs
+        if: ${{ failure() }}
+        run: sudo kubectl get pods | grep mizar-operator | awk '{print $1}' | xargs -i kubectl logs {} && kubectl get pods | grep mizar-daemon | awk '{print $1}' | xargs -i kubectl logs {}
+      # Always pass cleanup stage
+      - name: cleanup kubeadm
+        if: ${{ always() }}
+        continue-on-error: true
+        run: |
+          yes | sudo kubeadm reset
+          ssh ciw1 "yes | sudo kubeadm reset"
+          ssh ciw2 "yes | sudo kubeadm reset"
+      - name: cleanup interfaces
+        if: ${{ always() }}
+        continue-on-error: true
+        run: |
+          sudo ip l delete $(ip l | grep -Po "(br-\w+)(?=:)")
+          for name in $(ip l |  grep -Po '(veth-\w+)(?=@)'); do sudo ip l delete $name; done
+          ssh ciw1 "ip l |  grep -Po '(veth-\w+)(?=@)' | awk '{print $1}' | xargs -i sudo ip l delete {}"
+          ssh ciw2 "ip l |  grep -Po '(veth-\w+)(?=@)' | awk '{print $1}' | xargs -i sudo ip l delete {}"
+      - name: cleanup net namespaces
+        if: ${{ always() }}
+        continue-on-error: true
+        run: |
+          sudo ip -all netns delete
+          ssh ciw1 "sudo ip -all netns delete"
+          ssh ciw2 "sudo ip -all netns delete"
+      - name: cleanup docker containers and images
+        if: ${{ always() }}
+        continue-on-error: true
+        run: |
+          sudo docker stop $(docker ps -aq) && docker system prune -f
+          sudo docker rmi -f $(docker images -a -q)
+          sudo docker volume rm $(docker volume ls -qf dangling=true)
+          ssh ciw1 "sudo docker stop $(docker ps -aq) && docker system prune -f"
+          ssh ciw1 "sudo docker rmi -f $(docker images -a -q)"
+          ssh ciw1 "sudo docker volume rm $(docker volume ls -qf dangling=true)"
+          ssh ciw2 "sudo docker stop $(docker ps -aq) && docker system prune -f"
+          ssh ciw2 "sudo docker rmi -f $(docker images -a -q)"
+          ssh ciw2 "sudo docker volume rm $(docker volume ls -qf dangling=true)"
