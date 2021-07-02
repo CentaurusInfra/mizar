@@ -20,19 +20,20 @@ class k8sCluster:
     def _init(self):
         logger.info("Check or start existing cluster")
         if not self.is_running(self):
-            self.start_cluster(self)
+            logger.info("Starting Kind cluster!")
+            self.start_kind_cluster(self)
         else:
             logger.info("Test cluster is already running")
 
-    def start_cluster(self):
+    def start_kind_cluster(self):
         logger.info("Start test cluster")
         run_cmd("./kind-setup.sh dev 2")
 
     def is_running(self):
-        ret, val = run_cmd("kind get clusters")
-        return val.strip() == TEST_CLUSTER
+        ret, val = run_cmd("kubectl cluster-info | grep -c 'running'")
+        return int(val.strip()) == 2
 
-    def delete_cluster(self):
+    def delete_kind_cluster(self):
         logger.info("Delete test cluster")
         run_cmd("kind delete cluster")
 
@@ -71,7 +72,7 @@ class k8sApi:
             },
             'spec': {
                 'containers': [{
-                    'image': 'localhost:5000/testpod:latest',
+                    'image': 'mizarnet/testpod:latest',
                     'name': 'box1'
                 }]
             }
