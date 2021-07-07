@@ -15,9 +15,10 @@ class test_basic_simple_endpoint(unittest.TestCase):
         self.ep2 = self.api.create_pod(self.test_name + "ep2")
 
     def tearDown(self):
-        logger.info("Tearing down endpoints....")
-        self.api.delete_pod(self.test_name + "ep1")
-        self.api.delete_pod(self.test_name + "ep2")
+        pass
+        # logger.info("Tearing down endpoints....")
+        # self.api.delete_pod(self.test_name + "ep1")
+        # self.api.delete_pod(self.test_name + "ep2")
 
     def test_basic_simple_endpoint(self):
         do_common_tests(self, self.ep1, self.ep2)

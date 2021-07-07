@@ -85,7 +85,22 @@ function common:check_mizar_ready {
     fi
 }
 
-
+function check_all_ready {
+    timeout=360
+    KUBECTL_LOG="/tmp/${USER}_kubetctl.err"
+    end=$((SECONDS + $timeout))
+    echo -n "Waiting for cluster to come up."
+    while [[ $SECONDS -lt $end ]]; do
+        common:check_mizar_ready || break
+    done
+    echo
+    if [[ $SECONDS -lt $end ]]; then
+        echo "Cluster now ready!"
+    else
+        echo "ERROR: Cluster setup timed out after $timeout seconds!"
+        exit 1
+    fi
+}
 
 # Polymorphism implementation: There are multiple environment adaptors. Each one is implementation differently based on environment, but share same function.
 function common:source_environment_adaptor {    
