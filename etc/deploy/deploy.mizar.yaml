@@ -487,6 +487,16 @@ spec:
       serviceAccountName: mizar-operator
       terminationGracePeriodSeconds: 0
       hostNetwork: true
+      initContainers:
+      - name: daemon-init
+        image: mizarnet/endpointopr:0.8
+        command: ["python3"]
+        args: ["/var/mizar/etc/docker/daemon-check.py"]
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: mizar
+          mountPath: /home
       containers:
       - name: mizar-operator
         image: mizarnet/endpointopr:0.8
@@ -495,3 +505,8 @@ spec:
           value: 'false'
         securityContext:
           privileged: true
+      volumes:
+      - name: mizar
+        hostPath:
+          path: /var
+          type: Directory
