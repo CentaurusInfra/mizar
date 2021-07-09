@@ -492,8 +492,6 @@ spec:
         image: mizarnet/endpointopr:0.8
         command: ["python3"]
         args: ["/var/mizar/etc/docker/daemon-check.py"]
-        securityContext:
-          privileged: true
         volumeMounts:
         - name: mizar
           mountPath: /home
