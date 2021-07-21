@@ -43,7 +43,7 @@ ln -snf /sys/fs/bpf /bpffs
 ln -snf /var/mizar/build/bin /trn_bin
 ln -snf /var/mizar/build/xdp /trn_xdp
 ln -snf /var/mizar/etc/cni/10-mizarcni.conf /etc/cni/net.d/10-mizarcni.conf
-ln -snf /var/mizar/mizar/cni.py /opt/cni/bin/mizarcni
+ln -snf /var/mizar/build/bin/mizar-cni /opt/cni/bin/mizarcni
 ln -snf /var/mizar/build/tests/mizarcni.config /etc/mizarcni.config
 
 echo "mizarcni installed"
