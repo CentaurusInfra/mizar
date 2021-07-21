@@ -31,8 +31,6 @@ import (
 	"strings"
 	"time"
 
-	//interface_pb "mizar-cni/client"
-
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
 	cniTypesVer "github.com/containernetworking/cni/pkg/types/current"

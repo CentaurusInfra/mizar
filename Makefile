@@ -125,7 +125,6 @@ dirmake:
 	mkdir -p test/trn_func_tests/output
 	mkdir -p test/trn_perf_tests/output
 
-
 .PHONY: build_cni
 build_cni:
 	cd mizarcni/main; go mod init mizar-cni; go build; mv mizar-cni ../../build/bin; rm go.*
