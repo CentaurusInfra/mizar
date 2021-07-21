@@ -17,7 +17,6 @@ limitations under the License.
 package main
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"flag"
@@ -25,8 +24,10 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -36,6 +37,9 @@ import (
 	"github.com/containernetworking/cni/pkg/types"
 	cniTypesVer "github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/pkg/version"
+	"github.com/containernetworking/plugins/pkg/ns"
+	"github.com/vishvananda/netlink"
+	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"
 	klog "k8s.io/klog/v2"
 )
@@ -84,7 +88,7 @@ func init() {
 
 func cmdAdd(args *skel.CmdArgs) error {
 	loadNetConf(args.StdinData)
-	klog.Infof("Network variables: %s", netVariables)
+	klog.Infof("Network variables: %q", netVariables)
 
 	// Construct a CniParameters grpc message
 	param := CniParameters{
@@ -93,58 +97,177 @@ func cmdAdd(args *skel.CmdArgs) error {
 		Interface: netVariables.ifName,
 	}
 	klog.Infof("Doing CNI add for %s/%s", podId.K8SNamespace, podId.K8SPodName)
-	// conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure(), grpc.WithBlock())
-	// if err != nil {
-	// 	return err
-	// }
-	// client := NewInterfaceServiceClient(conn)
-	// ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	client, conn, ctx, cancel, err := getInterfaceServiceClient()
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
 	defer cancel()
+
+	// Consume new (and existing) interfaces for this Pod
 	clientResult, err := client.ConsumeInterfaces(ctx, &param)
 	if err != nil {
 		return err
 	}
 	interfaces := clientResult.Interfaces
-	klog.Infof("hochan interfaces: %s", interfaces)
 
 	if len(interfaces) == 0 {
 		klog.Fatalf("No interfaces found for %s/%s", podId.K8SNamespace, podId.K8SPodName)
 	}
 
+	// Construct the result string
 	result := cniTypesVer.Result{
 		CNIVersion: netVariables.cniVersion,
 	}
-	for index, interfaceItem := range interfaces {
+	for index, intf := range interfaces {
+		if err = activateInterface(intf); err != nil {
+			klog.Error(err)
+			return err
+		}
+
 		result.Interfaces = append(result.Interfaces, &cniTypesVer.Interface{
-			Name:    interfaceItem.InterfaceId.Interface,
-			Mac:     interfaceItem.Address.Mac,
+			Name:    intf.InterfaceId.Interface,
+			Mac:     intf.Address.Mac,
 			Sandbox: netVariables.netNS,
 		})
 
-		_, ipnet, err := net.ParseCIDR(fmt.Sprintf("%s/%s", interfaceItem.Address.IpAddress, interfaceItem.Address.IpPrefix))
+		_, ipnet, err := net.ParseCIDR(fmt.Sprintf("%s/%d", intf.Address.IpAddress, 32))
 		if err != nil {
-			klog.Info("hochan error")
 			return err
 		}
 		result.IPs = append(result.IPs, &cniTypesVer.IPConfig{
-			Version:   interfaceItem.Address.Version,
+			Version:   intf.Address.Version,
 			Address:   *ipnet,
-			Gateway:   net.ParseIP(interfaceItem.Address.GatewayIp),
+			Gateway:   net.ParseIP(intf.Address.GatewayIp),
 			Interface: cniTypesVer.Int(index),
 		})
 	}
-	klog.Infof("hochan good: %s", result)
 	return result.Print()
+}
+
+// moves the interface to the CNI netnt, rename it, set the IP address, and the GW.
+func activateInterface(intf *Interface) error {
+	klog.Infof("Activating interface: %q", intf)
+	link, err := netlink.LinkByName(intf.Veth.Name)
+	if err == nil {
+		if link.Attrs().OperState == netlink.OperUp {
+			klog.Infof("Interface %q has already been UP.", intf.Veth.Name)
+			return nil
+		}
+	}
+
+	netNS, err := ns.GetNS(netVariables.netNS)
+	_, netNSFileName := path.Split(netVariables.netNS)
+	if err != nil {
+		klog.Errorf("Failed to open netns %q: %s", netVariables.netNS, err)
+		return err
+	}
+	defer netNS.Close()
+
+	klog.Infof("Move interface %s/%d to netns %s", intf.Veth.Name, link.Attrs().Index, netNSFileName)
+	if netlink.LinkSetNsFd(link, int(netNS.Fd())); err != nil {
+		return err
+	}
+	if netlink.LinkSetName(link, netVariables.ifName); err != nil {
+		return err
+	}
+	if err = netNS.Do(func(_ ns.NetNS) error {
+		if err := netlink.LinkSetName(link, netVariables.ifName); err != nil {
+			return err
+		}
+
+		loLink, err := netlink.LinkByName("lo")
+		if err != nil {
+			return err
+		}
+		if err = netlink.LinkSetUp(loLink); err != nil {
+			return err
+		}
+		if err = netlink.LinkSetUp(link); err != nil {
+			return err
+		}
+
+		ipPrefix, err := strconv.Atoi(intf.Address.IpPrefix)
+		if err != nil {
+			return err
+		}
+		ipConfig := &netlink.Addr{
+			IPNet: &net.IPNet{
+				IP:   net.ParseIP(intf.Address.IpAddress),
+				Mask: net.CIDRMask(ipPrefix, 32),
+			}}
+		if err = netlink.AddrAdd(link, ipConfig); err != nil {
+			return err
+		}
+
+		gw := net.ParseIP(intf.Address.GatewayIp)
+		defaultRoute := netlink.Route{
+			Dst:      nil,
+			Gw:       gw,
+			Protocol: unix.RTPROT_STATIC,
+		}
+		if err = netlink.RouteAdd(&defaultRoute); err != nil {
+			return err
+		}
+
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	klog.Info("Disable tso for pod")
+
+	if err = execute(exec.Command("ip", "netns", "exec", netNSFileName, "ethtool", "-K", "eth0", "tso", "off", "gso", "off", "ufo", "off")); err != nil {
+		return err
+	}
+
+	if err = execute(exec.Command("ip", "netns", "exec", netNSFileName, "ethtool", "--offload", "eth0", "rx", "off", "tx", "off")); err != nil {
+		return err
+	}
+
+	klog.Infof("Successfully activated interface for %q", intf.InterfaceId.PodId)
+	return nil
+}
+
+func removeIfFromNetNSIfExists(netNS ns.NetNS, ifName string) error {
+	return netNS.Do(func(_ ns.NetNS) error {
+		link, err := netlink.LinkByName(ifName)
+		if err != nil {
+			if strings.Contains(err.Error(), "Link not found") {
+				return nil
+			}
+			return err
+		}
+		return netlink.LinkDel(link)
+	})
 }
 
 func cmdDel(args *skel.CmdArgs) error {
 	loadNetConf(args.StdinData)
 	klog.Infof("Network variables: %s", netVariables)
+
+	param := CniParameters{
+		PodId:     &podId,
+		Netns:     netVariables.netNS,
+		Interface: netVariables.ifName,
+	}
+
+	client, conn, ctx, cancel, err := getInterfaceServiceClient()
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	defer cancel()
+
+	_, err = client.DeleteInterface(ctx, &param)
+	if err != nil {
+		return err
+	}
+
+	netNS, _ := ns.GetNS(netVariables.netNS)
+	if netNS != nil {
+		netNS.Close()
+	}
 
 	result := cniTypesVer.Result{}
 	return result.Print()
@@ -164,7 +287,7 @@ func loadNetConf(bytes []byte) {
 	netConf := &types.NetConf{}
 	if err := json.Unmarshal(bytes, netConf); err != nil {
 		if err != nil {
-			klog.Fatalf("failed to load netconf: %v", err)
+			klog.Fatalf("Failed to load netconf: %v", err)
 		}
 	}
 
@@ -204,22 +327,24 @@ func mountNetNSIfNeeded(netNS string) string {
 		if netVariables.command == "ADD" {
 			os.Mkdir(NetNSFolder, os.ModePerm)
 			os.Mkdir(dstNetNSPath, os.ModePerm)
-			cmd := exec.Command("mount", "--bind", netNS, dstNetNSPath)
-			stderr, _ := cmd.StderrPipe()
-			cmd.Start()
-			scanner := bufio.NewScanner(stderr)
-			var strBuilder strings.Builder
-			for scanner.Scan() {
-				strBuilder.WriteString(scanner.Text())
-			}
-			err := cmd.Wait()
-			if err != nil {
-				klog.Fatalf("failed to bind mount %s to %s: error code %s: %s", netNS, dstNetNSPath, err, strBuilder.String())
+			if err := execute(exec.Command("mount", "--bind", netNS, dstNetNSPath)); err != nil {
+				klog.Fatalf("failed to bind mount %s to %s: error code %s", netNS, dstNetNSPath, err)
 			}
 		}
 		netNS = dstNetNSPath
 	}
 	return netNS
+}
+
+func execute(cmd *exec.Cmd) error {
+	stdoutStderr, err := cmd.CombinedOutput()
+	klog.Infof("Executing cmd: %s", cmd)
+	klog.Infof("Cmd result: %s", stdoutStderr)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func main() {
