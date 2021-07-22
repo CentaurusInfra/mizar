@@ -55,6 +55,10 @@ jobs:
           git submodule update --init --recursive
       # - name: Update Kernel and Linux Headers
       #   run: printf 'y\nn\n' | sudo ./kernelupdate.sh
+      - name: Install grpc go related
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
       - name: Compile mizar
         run: sudo make clean && make
       - name: Make unittest
