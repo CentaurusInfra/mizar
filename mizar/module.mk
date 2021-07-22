@@ -8,7 +8,7 @@ GRPC_FLAGS := -I mizar/proto/ --python_out=. --grpc_python_out=.
 .PHONY: proto
 proto:
 	python3 -m grpc_tools.protoc $(GRPC_FLAGS) mizar/proto/mizar/proto/*.proto
-	protoc --go_out=. --go-grpc_out=. mizar/proto/mizar/proto/interface.proto
+	/usr/bin/protoc --go_out=. --go-grpc_out=. mizar/proto/mizar/proto/interface.proto
 
 clean::
 	rm -rf mizar/proto/__pycache__
