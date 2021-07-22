@@ -55,6 +55,12 @@ jobs:
           git submodule update --init --recursive
       # - name: Update Kernel and Linux Headers
       #   run: printf 'y\nn\n' | sudo ./kernelupdate.sh
+      - name: Install go
+        run: |
+          cd /tmp; wget https://dl.google.com/go/go1.13.9.linux-amd64.tar.gz
+          sudo tar -C /usr/local -xzf go1.13.9.linux-amd64.tar.gz
+          rm -rf go1.13.9.linux-amd64.tar.gz
+          export PATH=$PATH:/usr/local/go/bin
       - name: Install grpc go related
         run: |
           go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
