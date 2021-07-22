@@ -60,7 +60,8 @@ jobs:
           cd /tmp; wget https://dl.google.com/go/go1.13.9.linux-amd64.tar.gz
           sudo tar -C /usr/local -xzf go1.13.9.linux-amd64.tar.gz
           rm -rf go1.13.9.linux-amd64.tar.gz
-          export PATH=$PATH:/usr/local/go/bin:/usr/bin
+          export PATH=$PATH:/usr/local/go/bin
+          sudo apt install -y protobuf-compiler
           GO111MODULE="on" go install google.golang.org/protobuf/cmd/protoc-gen-go
           GO111MODULE="on" go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
           ls /usr/bin
