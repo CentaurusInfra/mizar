@@ -63,7 +63,7 @@ jobs:
           export PATH=$PATH:/usr/local/go/bin:/usr/bin
           GO111MODULE="on" go install google.golang.org/protobuf/cmd/protoc-gen-go
           GO111MODULE="on" go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
-          whereis protoc
+          ls /usr/bin
       - name: Compile mizar
         run: sudo make clean && make
       - name: Make unittest
