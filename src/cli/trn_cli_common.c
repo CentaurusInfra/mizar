@@ -1154,6 +1154,53 @@ int trn_cli_parse_pod_and_namespace_label_policy_key(const cJSON *jsonobj,
 	return 0;
 }
 
+int trn_cli_parse_bw_qos_config(const cJSON *jsonobj, struct rpc_trn_bw_qos_config_t *bw_qos_config)
+{
+	cJSON *saddr = cJSON_GetObjectItem(jsonobj, "src_addr");
+	cJSON *egress_bandwidth_value = cJSON_GetObjectItem(jsonobj, "egress_bandwidth_bytes_per_sec");
+
+	if (cJSON_IsString(saddr)) {
+		struct in_addr inaddr;
+		inet_pton(AF_INET, saddr->valuestring, &inaddr);
+		bw_qos_config->saddr = htonl(inaddr.s_addr);
+	} else if (cJSON_IsNumber(saddr)) {
+		bw_qos_config->saddr = htonl((unsigned int)saddr->valueint);
+	} else {
+		print_err("Error: trn_cli_parse_bw_qos_config saddr Error\n");
+		return -EINVAL;
+	}
+
+	if (egress_bandwidth_value == NULL) {
+		bw_qos_config->egress_bandwidth_bytes_per_sec = 0;
+	} else if (cJSON_IsString(egress_bandwidth_value)) {
+		bw_qos_config->egress_bandwidth_bytes_per_sec = atoi(egress_bandwidth_value->valuestring);
+	} else if (cJSON_IsNumber(egress_bandwidth_value)) {
+		bw_qos_config->egress_bandwidth_bytes_per_sec = egress_bandwidth_value->valueint;
+	} else {
+		print_err("Error: trn_cli_parse_bw_qos_config egress_bandwidth_value Error\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int trn_cli_parse_bw_qos_config_key(const cJSON *jsonobj,
+			 struct rpc_trn_bw_qos_config_key_t *bw_qos_config_key)
+{
+	cJSON *saddr = cJSON_GetObjectItem(jsonobj, "src_addr");
+
+	if (cJSON_IsString(saddr)) {
+		bw_qos_config_key->saddr = atoi(saddr->valuestring);
+	} else if (cJSON_IsNumber(saddr)) {
+		bw_qos_config_key->saddr = saddr->valueint;
+	} else {
+		print_err("Error: trn_cli_parse_bw_qos_config_key saddr Error\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 uint32_t parse_ip_address(const cJSON *ipobj)
 {
 	struct sockaddr_in sa;
