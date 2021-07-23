@@ -319,12 +319,13 @@ func loadEnvVariables() {
 }
 
 func mountNetNSIfNeeded(netNS string) string {
-	if netNS != "dummy" && !strings.HasPrefix(netNS, NetNSFolder) {
+	if !strings.HasPrefix(netNS, NetNSFolder) {
 		klog.Infof("hochan netNS:%s, NetNSFolder:%s", netNS, NetNSFolder)
 		dstNetNS := strings.ReplaceAll(netNS, "/", "_")
 		dstNetNSPath := filepath.Join(NetNSFolder, dstNetNS)
 		klog.Infof("hochan dstNetNS:%s, dstNetNSPath:%s", dstNetNS, dstNetNSPath)
 		if netVariables.command == "ADD" {
+			os.Mkdir(netNS, os.ModePerm)
 			os.Mkdir(NetNSFolder, os.ModePerm)
 			os.Mkdir(dstNetNSPath, os.ModePerm)
 			if err := execute(exec.Command("mount", "--bind", netNS, dstNetNSPath)); err != nil {
