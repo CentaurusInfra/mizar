@@ -319,7 +319,7 @@ func loadEnvVariables() {
 }
 
 func mountNetNSIfNeeded(netNS string) string {
-	if !strings.HasPrefix(netNS, NetNSFolder) {
+	if netNS != "dummy" && !strings.HasPrefix(netNS, NetNSFolder) {
 		klog.Infof("hochan netNS:%s, NetNSFolder:%s", netNS, NetNSFolder)
 		dstNetNS := strings.ReplaceAll(netNS, "/", "_")
 		dstNetNSPath := filepath.Join(NetNSFolder, dstNetNS)
