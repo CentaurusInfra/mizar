@@ -130,9 +130,9 @@ jobs:
           scp -r ~/actions-runner/_work/mizar/mizar ciw2:
           echo hochan7
 
-          ssh ciw1 "cd mizar && make"
+          ssh ciw1 "cd mizar && make container"
           echo hochan8
-          ssh ciw2 "cd mizar && make"
+          ssh ciw2 "cd mizar && make container"
           echo hochan9
 
           ssh ciw1 "cd ~/mizar && sudo docker build -t mizar:0.8 -f ~/mizar/etc/docker/mizar.Dockerfile ."
