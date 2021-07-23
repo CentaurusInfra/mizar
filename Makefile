@@ -76,7 +76,7 @@ CLANGFLAGS= -I.\
 CLANGFLAGS_DEBUG:= -DDEBUG -D__KERNEL__ -g -D__BPF_TRACING__ $(CLANGFLAGS)
 
 #all:  rpcgen transit transitd xdp
-all:: container build_cni
+all:: container proto_go build_cni
 
 .PHONY: container
 container: dirmake update_modules libbpf proto
