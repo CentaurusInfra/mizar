@@ -114,25 +114,40 @@ jobs:
       - name: build container images
         run: |
           sudo docker build -t mizar:0.8 -f etc/docker/mizar.Dockerfile .
+          echo hochan1
           sudo docker build -t dropletd:0.8 -f etc/docker/daemon.Dockerfile .
+          echo hochan2
           sudo docker build -t endpointopr:0.8 -f etc/docker/operator.Dockerfile .
+          echo hochan3
 
           ssh ciw1 "sudo rm -rf ~/mizar"
+          echo hochan4
           ssh ciw2 "sudo rm -rf ~/mizar"
+          echo hochan5
 
           scp -r ~/actions-runner/_work/mizar/mizar ciw1:
+          echo hochan6
           scp -r ~/actions-runner/_work/mizar/mizar ciw2:
+          echo hochan7
 
           ssh ciw1 "cd mizar && make"
+          echo hochan8
           ssh ciw2 "cd mizar && make"
+          echo hochan9
 
           ssh ciw1 "cd ~/mizar && sudo docker build -t mizar:0.8 -f ~/mizar/etc/docker/mizar.Dockerfile ."
+          echo hochan10
           ssh ciw1 "cd ~/mizar && sudo docker build -t dropletd:0.8 -f ~/mizar/etc/docker/daemon.Dockerfile ."
+          echo hochan11
           ssh ciw1 "cd ~/mizar && sudo docker build -t endpointopr:0.8 -f ~/mizar/etc/docker/operator.Dockerfile ."
+          echo hochan12
     
           ssh ciw2 "cd ~/mizar && sudo docker build -t mizar:0.8 -f ~/mizar/etc/docker/mizar.Dockerfile ."
+          echo hochan13
           ssh ciw2 "cd ~/mizar && sudo docker build -t dropletd:0.8 -f ~/mizar/etc/docker/daemon.Dockerfile ."
+          echo hochan14
           ssh ciw2 "cd ~/mizar && sudo docker build -t endpointopr:0.8 -f ~/mizar/etc/docker/operator.Dockerfile ."
+          echo hochan15
       - name: deploy mizar
         run: kubectl create -f etc/deploy/deploy.mizar.ci.yaml
       - name: check ready
