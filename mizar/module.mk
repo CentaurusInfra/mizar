@@ -5,10 +5,11 @@ submodules := tests
 
 GRPC_FLAGS := -I mizar/proto/ --python_out=. --grpc_python_out=.
 
+PATH := $(PATH):/usr/local/go/bin:$(HOME)/go/bin
+
 .PHONY: proto
 proto:
 	python3 -m grpc_tools.protoc $(GRPC_FLAGS) mizar/proto/mizar/proto/*.proto
-	export PATH=$$PATH:/usr/local/go/bin:$(HOME)/go/bin
 	whereis protoc
 	whereis protoc-gen-go
 	printenv
