@@ -67,6 +67,11 @@ jobs:
           GO111MODULE="on" go get google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
           whereis protoc
           whereis protoc-gen-go
+          printenv
+          echo /usr/bin/protoc
+          ls /usr/bin/protoc
+          echo $HOME/go/bin
+          ls $HOME/go/bin
       - name: Compile mizar
         run: sudo make clean && make
       - name: Make unittest
