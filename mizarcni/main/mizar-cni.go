@@ -325,11 +325,11 @@ func mountNetNSIfNeeded(netNS string) string {
 		dstNetNSPath := filepath.Join(NetNSFolder, dstNetNS)
 		klog.Infof("hochan dstNetNS:%s, dstNetNSPath:%s", dstNetNS, dstNetNSPath)
 		if netVariables.command == "ADD" {
-			os.Mkdir(netNS, os.ModePerm)
 			os.Mkdir(NetNSFolder, os.ModePerm)
 			os.Mkdir(dstNetNSPath, os.ModePerm)
 			if err := execute(exec.Command("mount", "--bind", netNS, dstNetNSPath)); err != nil {
-				klog.Fatalf("failed to bind mount %s to %s: error code %s", netNS, dstNetNSPath, err)
+				// klog.Fatalf("failed to bind mount %s to %s: error code %s", netNS, dstNetNSPath, err)
+				klog.Errorf("failed to bind mount %s to %s: error code %s", netNS, dstNetNSPath, err)
 			}
 		}
 		netNS = dstNetNSPath
