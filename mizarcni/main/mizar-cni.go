@@ -336,7 +336,7 @@ func mountNetNSIfNeeded(netNS string) string {
 			os.Mkdir(dstNetNSPath, os.ModePerm)
 			if err := execute(exec.Command("mount", "--bind", netNS, dstNetNSPath)); err != nil {
 				// klog.Fatalf("failed to bind mount %s to %s: error code %s", netNS, dstNetNSPath, err)
-				klog.Errorf("failed to bind mount %s to %s: error code %s", netNS, dstNetNSPath, err)
+				klog.Infof("failed to bind mount %s to %s: error code %s", netNS, dstNetNSPath, err)
 			}
 		}
 		netNS = dstNetNSPath
