@@ -98,18 +98,24 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 	klog.Infof("Doing CNI add for %s/%s", podId.K8SNamespace, podId.K8SPodName)
 	client, conn, ctx, cancel, err := getInterfaceServiceClient()
+	klog.Info("hochan 1")
 	if err != nil {
+		klog.Info(err)
 		return err
 	}
 	defer conn.Close()
 	defer cancel()
+	klog.Info("hochan 2")
 
 	// Consume new (and existing) interfaces for this Pod
 	clientResult, err := client.ConsumeInterfaces(ctx, &param)
+	klog.Info("hochan 3")
 	if err != nil {
+		klog.Info(err)
 		return err
 	}
 	interfaces := clientResult.Interfaces
+	klog.Info("hochan 4")
 
 	if len(interfaces) == 0 {
 		klog.Fatalf("No interfaces found for %s/%s", podId.K8SNamespace, podId.K8SPodName)
@@ -119,7 +125,9 @@ func cmdAdd(args *skel.CmdArgs) error {
 	result := cniTypesVer.Result{
 		CNIVersion: netVariables.cniVersion,
 	}
+	klog.Info("hochan 5")
 	for index, intf := range interfaces {
+		klog.Infof("hochan index:%d interface:%s", index, intf)
 		if err = activateInterface(intf); err != nil {
 			klog.Error(err)
 			return err
