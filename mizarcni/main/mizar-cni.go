@@ -65,6 +65,7 @@ var podId PodId
 var interfaceId InterfaceId
 
 func init() {
+	defer klog.Flush()
 	// Ensures runs only on main thread
 	runtime.LockOSThread()
 
@@ -85,6 +86,7 @@ func init() {
 }
 
 func cmdAdd(args *skel.CmdArgs) error {
+	defer klog.Flush()
 	loadNetConf(args.StdinData)
 	klog.Infof("Network variables: %q", netVariables)
 
@@ -145,6 +147,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 // moves the interface to the CNI netnt, rename it, set the IP address, and the GW.
 func activateInterface(intf *Interface) error {
+	defer klog.Flush()
 	klog.Infof("Activating interface: %q", intf)
 	link, err := netlink.LinkByName(intf.Veth.Name)
 	if err == nil {
@@ -241,6 +244,7 @@ func removeIfFromNetNSIfExists(netNS ns.NetNS, ifName string) error {
 }
 
 func cmdDel(args *skel.CmdArgs) error {
+	defer klog.Flush()
 	loadNetConf(args.StdinData)
 	klog.Infof("Network variables: %s", netVariables)
 
@@ -282,6 +286,7 @@ func getInterfaceServiceClient() (InterfaceServiceClient, *grpc.ClientConn, cont
 }
 
 func loadNetConf(bytes []byte) {
+	defer klog.Flush()
 	netConf := &types.NetConf{}
 	if err := json.Unmarshal(bytes, netConf); err != nil {
 		if err != nil {
@@ -295,6 +300,7 @@ func loadNetConf(bytes []byte) {
 }
 
 func loadEnvVariables() {
+	defer klog.Flush()
 	netVariables.command = os.Getenv("CNI_COMMAND")
 	netVariables.containerID = os.Getenv("CNI_CONTAINERID")
 	netVariables.ifName = os.Getenv("CNI_IFNAME")
@@ -319,6 +325,7 @@ func loadEnvVariables() {
 }
 
 func mountNetNSIfNeeded(netNS string) string {
+	defer klog.Flush()
 	if !strings.HasPrefix(netNS, NetNSFolder) {
 		klog.Infof("hochan netNS:%s, NetNSFolder:%s", netNS, NetNSFolder)
 		dstNetNS := strings.ReplaceAll(netNS, "/", "_")
@@ -338,6 +345,7 @@ func mountNetNSIfNeeded(netNS string) string {
 }
 
 func execute(cmd *exec.Cmd) error {
+	defer klog.Flush()
 	stdoutStderr, err := cmd.CombinedOutput()
 	klog.Infof("Executing cmd: %s", cmd)
 	klog.Infof("Cmd result: %s", stdoutStderr)
