@@ -51,6 +51,7 @@ class Cni:
         if not self.netns.startswith(netns_folder):
             dst_netns = self.netns.replace('/', '_')
             dst_netns_path = os.path.join(netns_folder, dst_netns)
+            logger.info("hochan netns:{} dst_netns_path:{}".format(self.netns, dst_netns_path))
             if self.command == "ADD":
                 errorcode = bindmount_netns(self.netns, dst_netns_path)
                 if errorcode != 0:
