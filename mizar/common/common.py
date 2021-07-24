@@ -427,13 +427,6 @@ def conf_list_has_max_elements(conf, conf_list):
     return False
 
 
-def bindmount_netns(src_netns_path, dst_netns_path):
-    os.mknod(dst_netns_path)
-    bindmount = subprocess.run(
-        ["mount", "--bind", src_netns_path, dst_netns_path])
-    return bindmount.returncode
-
-
 def get_itf():
     default_itf = "eth0"
     if "MIZAR_ITF" in os.environ:
