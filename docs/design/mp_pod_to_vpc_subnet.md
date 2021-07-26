@@ -10,11 +10,11 @@ Authors: Phu Tran          <@phudtran>
 
 ## Introduction
 
-This document defines the interface for users to define their own VPCs and subnets. Furthermore, it also describes the interface for assigning pods to these specific subnet and VPC.
+This document defines the interface for users to define their own VPCs and subnets. Furthermore, it also describes the interface for assigning pods to these specific subnets and VPCs.
 
 ## Custom VPC Creation
 
-When creating a VPC users must define the VPC's name, IP, prefix and the number of dividers.
+When creating a VPC, users must define the VPC's name, IP, prefix, and the number of dividers.
 
 An example is given below.
 
@@ -28,6 +28,10 @@ spec:
   prefix: "8"
   dividers: 2
 ```
+
+#### Requirements
+- The CIDR range is valid.
+- The VPC must not already exist.
 
 ## Custom Subnet Creation
 
@@ -46,7 +50,10 @@ spec:
   prefix: "16"
   bouncers: 2
 ```
-The CIDR range the subnet is given must be within the range of the parent VPC's CIDR to be valid.
+#### Requirements
+- The CIDR range the subnet is given must be within the range of the parent VPC's range.
+- The Parent VPC must exist.
+- The new subnet must not yet already exist within the VPC.
 
 ## Pod to VPC and Subnet designation
 
@@ -88,6 +95,10 @@ spec:
       - containerPort: 443
 ```
 
+#### Requirements
+- The Parent VPC must exist.
+- The VPC must have an existing subnet.
+
 The pod is invalid if the VPC does not exist.
 
 ### Placing a pod into a specific VPC and Subnet
@@ -109,3 +120,7 @@ spec:
       - containerPort: 443
 ```
 The pod definition is invalid if the VPC or subnet does not exist.
+
+#### Requirements
+- The Parent VPC must exist.
+- Within the parent VPC must exist the specified subnet.
