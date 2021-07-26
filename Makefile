@@ -130,4 +130,4 @@ dirmake:
 
 .PHONY: build_cni
 build_cni:
-	cd mizarcni/main; go mod init mizar-cni; go build; mv mizar-cni ../../build/bin; rm go.*
+	cd cmd/mizarcni/main; go mod init mizar-cni; go build; mv mizar-cni ../../../build/bin; rm go.*

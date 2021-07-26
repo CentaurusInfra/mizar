@@ -25,4 +25,4 @@ docs/design/out
 docs/out
 mizar/proto/*pb2_*.py
 mizar/proto/*pb2.py
-mizarcni/main/*pb.go
+cmd/mizarcni/main/*pb.go
