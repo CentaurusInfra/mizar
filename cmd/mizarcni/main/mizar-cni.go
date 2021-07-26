@@ -325,10 +325,14 @@ func mountNetNSIfNeeded(netNS string) string {
 		dstNetNS := strings.ReplaceAll(netNS, "/", "_")
 		dstNetNSPath := filepath.Join(NetNSFolder, dstNetNS)
 		if netVariables.command == "ADD" {
-			os.Mkdir(NetNSFolder, os.ModePerm)
-			os.Create(dstNetNSPath)
-			if err := execute(exec.Command("mount", "--bind", netNS, dstNetNSPath)); err != nil {
-				klog.Fatalf("failed to bind mount %s to %s: error code %s", netNS, dstNetNSPath, err)
+			if _, err := os.Stat(dstNetNSPath); os.IsNotExist(err) {
+				os.Mkdir(NetNSFolder, os.ModePerm)
+				os.Create(dstNetNSPath)
+				if err := execute(exec.Command("mount", "--bind", netNS, dstNetNSPath)); err != nil {
+					klog.Fatalf("failed to bind mount %s to %s: error code %s", netNS, dstNetNSPath, err)
+				}
+			} else {
+				klog.Infof("Skip mount %s since file %s exists.", netNS, dstNetNSPath)
 			}
 		}
 		netNS = dstNetNSPath
