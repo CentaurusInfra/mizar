@@ -31,7 +31,7 @@
 #include "extern/bpf_endian.h"
 #include "extern/bpf_helpers.h"
 #include "src/include/trn_datamodel.h"
-#include "src/xdp/trn_edt_tc_maps.h"
+#include "src/xdp/trn_bw_qos_config_maps.h"
 #include "trn_kern.h"
 
 #define NSEC_PER_SEC    (1000ULL * 1000ULL * 1000UL)
@@ -69,17 +69,18 @@
 
 static __ALWAYS_INLINE__ int edt_schedule_departure(struct __sk_buff *skb, __u32 saddr)
 {
-	unsigned int key = saddr;
-	struct edt_config_t *ec;
+	struct bw_qos_config_key_t key;
+	struct bw_qos_config_t *ec;
 	__u64 delay = 0, now = 0, t = 0, t_next = 0;
-	char ec_null_msg[] = "ERR: Map not found\n";
+	char ec_null_msg[] = "ERR: EDT map not found. saddr=0x%x if_index=%d\n";
 	char ec_ts_msg[] = "EVAL tlast=%llu now=%llu tstamp=%llu\n";
 	char ec_ts_set_msg[] = "SET now=%llu dlay=%llu tnxt=%llu\n";
 	char ec_ts_drop_msg[] = "*DROP* now=%llu dlay=%llu tnxt=%llu\n";
 
-	ec = (struct edt_config_t *)bpf_map_lookup_elem(&edt_config_map, &key);
+	key.saddr = saddr;
+	ec = (struct bw_qos_config_t *)bpf_map_lookup_elem(&bw_qos_config_map, &key);
 	if (!ec) {
-		bpf_trace_printk(ec_null_msg, sizeof(ec_null_msg));
+		bpf_trace_printk(ec_null_msg, sizeof(ec_null_msg), key.saddr, skb->ifindex);
 		return TC_ACT_OK;
 	}
 
@@ -90,7 +91,7 @@ static __ALWAYS_INLINE__ int edt_schedule_departure(struct __sk_buff *skb, __u32
 	if (t < now) {
 		t = now;
 	}
-	delay = (skb->wire_len) * NSEC_PER_SEC / ec->bytes_per_sec;
+	delay = (skb->wire_len) * NSEC_PER_SEC / ec->egress_bandwidth_bytes_per_sec;
 	t_next = read_once(ec->t_last) + delay;
 	if (t_next <= t) {
 		write_once(ec->t_last, t);

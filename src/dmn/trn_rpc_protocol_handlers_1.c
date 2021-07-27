@@ -2089,3 +2089,113 @@ int *delete_transit_pod_and_namespace_label_policy_1_svc(rpc_trn_pod_and_namespa
 error:
 	return &result;
 }
+
+int *update_bw_qos_config_1_svc(rpc_trn_bw_qos_config_t *bw_qos_config, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result = -1;
+	result = 0;
+	int rc;
+	char *itf = bw_qos_config->interface;
+	struct bw_qos_config_key_t key;
+	struct bw_qos_config_t value;
+
+	TRN_LOG_DEBUG("update_bw_qos_config_1 interface: %s, saddr: 0x%x, egress_bw_bytes_per_sec: %lu",
+		bw_qos_config->interface, bw_qos_config->saddr, bw_qos_config->egress_bandwidth_bytes_per_sec);
+
+	struct user_metadata_t *md = trn_itf_table_find(bw_qos_config->interface);
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s",
+				bw_qos_config->interface);
+		goto error;
+	}
+
+	key.saddr = bw_qos_config->saddr;
+	memset(&value, 0, sizeof(value));
+	value.egress_bandwidth_bytes_per_sec = bw_qos_config->egress_bandwidth_bytes_per_sec;
+
+	rc = trn_update_bw_qos_config(md, &key, &value);
+	if (rc != 0) {
+		TRN_LOG_ERROR("Cannot update bandwidth qos config for interface %s",
+				itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	TRN_LOG_DEBUG("update_bw_qos_config_1 Success!");
+
+	return &result;
+
+error:
+	return &result;
+}
+
+int *delete_bw_qos_config_1_svc(rpc_trn_bw_qos_config_key_t *argp, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result = -1;
+	result = 0;
+	struct bw_qos_config_key_t key;
+	int rc;
+
+	TRN_LOG_DEBUG("delete_bw_qos_config_1 ifname: %s, saddr: 0x%x",
+			argp->interface, argp->saddr);
+
+	struct user_metadata_t *md = trn_itf_table_find(argp->interface);
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s",
+				argp->interface);
+		goto error;
+	}
+
+	key.saddr = argp->saddr;
+	rc = trn_delete_bw_qos_config(md, &key);
+	if (rc != 0) {
+		TRN_LOG_ERROR("Cannot delete bandwidth qos config on interface %s",
+				argp->interface);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	return &result;
+error:
+	return &result;
+}
+
+rpc_trn_bw_qos_config_t *get_bw_qos_config_1_svc(rpc_trn_bw_qos_config_key_t *argp, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static rpc_trn_bw_qos_config_t result;
+	int rc;
+	struct bw_qos_config_key_t key;
+	struct bw_qos_config_t val;
+
+	TRN_LOG_DEBUG("get_bw_qos_config_1 saddr: 0x%x on interface: %s", argp->saddr,
+			argp->interface);
+
+	struct user_metadata_t *md = trn_itf_table_find(argp->interface);
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s",
+				argp->interface);
+		goto error;
+	}
+
+	key.saddr = argp->saddr;
+	rc = trn_get_bw_qos_config(md, &key, &val);
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure getting bw_qos_config data for saddr: %u on interface: %s",
+				argp->saddr, argp->interface);
+		goto error;
+	}
+
+	result.interface = argp->interface;
+	result.saddr = argp->saddr;
+	result.egress_bandwidth_bytes_per_sec = val.egress_bandwidth_bytes_per_sec;
+
+	return &result;
+
+error:
+	result.interface = "";
+	result.saddr = 0;
+	return &result;
+}

@@ -265,3 +265,13 @@ int trn_update_transit_pod_and_namespace_label_policy_map(struct user_metadata_t
 
 int trn_delete_transit_pod_and_namespace_label_policy_map(struct user_metadata_t *md,
 						        struct pod_and_namespace_label_policy_t *policy);
+
+int trn_update_bw_qos_config(struct user_metadata_t *md,
+				struct bw_qos_config_key_t *bwqoskey,
+				struct bw_qos_config_t *bwqoscfg);
+
+int trn_delete_bw_qos_config(struct user_metadata_t *md, struct bw_qos_config_key_t *bwqoskey);
+
+int trn_get_bw_qos_config(struct user_metadata_t *md,
+				struct bw_qos_config_key_t *bwqoskey,
+				struct bw_qos_config_t *bwqoscfg);

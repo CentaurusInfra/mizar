@@ -819,3 +819,84 @@ int trn_delete_transit_pod_and_namespace_label_policy_map(struct user_metadata_t
 
 	return 0;
 }
+
+static int bw_qos_config_map_fd	= -1;
+static const char *bw_qos_config_map_path = "/sys/fs/bpf/tc/globals/bw_qos_config_map";
+
+int init_bw_qos_config_map()
+{
+	if (bw_qos_config_map_fd == -1) {
+		bw_qos_config_map_fd = bpf_create_map(BPF_MAP_TYPE_HASH,
+							sizeof(struct bw_qos_config_key_t),
+							sizeof(struct bw_qos_config_t), 1, 0);
+		if (bw_qos_config_map_fd == -1) {
+			TRN_LOG_ERROR("Failure creating bw_qos_config_map. errno=%d:%s", errno, strerror(errno));
+			return -1;
+		}
+
+		if (bpf_obj_pin(bw_qos_config_map_fd, bw_qos_config_map_path) != 0) {
+			TRN_LOG_ERROR("Failure pinning bw_qos_config_map. errno=%d:%s", errno, strerror(errno));
+			return -1;
+		}
+	}
+	return bw_qos_config_map_fd;
+}
+
+int get_bw_qos_config_map_fd()
+{
+	if (bw_qos_config_map_fd == -1) {
+		int fd = bpf_obj_get(bw_qos_config_map_path);
+		if (fd <= 0) {
+			TRN_LOG_ERROR("Failure getting bw_qos_config_map_fd. errno=%d:%s", errno, strerror(errno));
+			return -1;
+		}
+		bw_qos_config_map_fd = fd;
+	}
+	return bw_qos_config_map_fd;
+}
+
+int trn_update_bw_qos_config(struct user_metadata_t *md,
+				struct bw_qos_config_key_t *bwqoskey,
+				struct bw_qos_config_t *bwqoscfg)
+{
+	UNUSED(md);
+	if (get_bw_qos_config_map_fd() == -1) {
+		return 1;
+	}
+	int err = bpf_map_update_elem(bw_qos_config_map_fd, bwqoskey, bwqoscfg, 0);
+	if (err) {
+		TRN_LOG_ERROR("Update BFP map for bw qos config failed (err:%d).", err);
+		return 1;
+	}
+	return 0;
+}
+
+int trn_delete_bw_qos_config(struct user_metadata_t *md, struct bw_qos_config_key_t *bwqoskey)
+{
+	UNUSED(md);
+	if (bw_qos_config_map_fd == -1) {
+		return 1;
+	}
+	int err = bpf_map_delete_elem(bw_qos_config_map_fd, bwqoskey);
+	if (err) {
+		TRN_LOG_ERROR("Delete BFP map for bw qos config failed (err:%d).", err);
+		return 1;
+	}
+	return 0;
+}
+
+int trn_get_bw_qos_config(struct user_metadata_t *md,
+				struct bw_qos_config_key_t *bwqoskey,
+				struct bw_qos_config_t *bwqoscfg)
+{
+	UNUSED(md);
+	if (bw_qos_config_map_fd == -1) {
+		return 1;
+	}
+	int err = bpf_map_lookup_elem(bw_qos_config_map_fd, bwqoskey, bwqoscfg);
+	if (err) {
+		TRN_LOG_ERROR("Lookup BPF map for bw qos config failed (err:%d).", err);
+		return 1;
+	}
+	return 0;
+}
