@@ -31,6 +31,9 @@ import (
 	"strings"
 	"time"
 
+	. "mizar.com/mizarcni/cmd/mizarcni/app"
+	"mizar.com/mizarcni/pkg/util/executil"
+
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
 	cniTypesVer "github.com/containernetworking/cni/pkg/types/current"
@@ -217,7 +220,7 @@ func activateInterface(intf *Interface) error {
 
 	klog.Info("Disable tso for pod")
 
-	if err = execute(exec.Command("ip", "netns", "exec", netNSFileName, "ethtool", "-K", "eth0", "tso", "off", "gso", "off", "ufo", "off")); err != nil {
+	if err = executil.Execute(exec.Command("ip", "netns", "exec", netNSFileName, "ethtool", "-K", "eth0", "tso", "off", "gso", "off", "ufo", "off")); err != nil {
 		return err
 	}
 

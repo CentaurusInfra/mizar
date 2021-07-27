@@ -1,7 +1,7 @@
 syntax = "proto3";
 package mizar;
 
-option go_package = "cmd/mizarcni/main";
+option go_package = "cmd/mizarcni/app";
 
 import "google/protobuf/empty.proto";
 

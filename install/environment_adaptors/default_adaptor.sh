@@ -128,6 +128,6 @@ function install_dependencies_to_remote {
     kubectl exec $pod_name -- nsenter -t 1 -m -u -n -i ln -snf /var/mizar/build/bin /trn_bin
     kubectl exec $pod_name -- nsenter -t 1 -m -u -n -i ln -snf /var/mizar/build/xdp /trn_xdp
     kubectl exec $pod_name -- nsenter -t 1 -m -u -n -i ln -snf /var/mizar/etc/cni/10-mizarcni.conf /etc/cni/net.d/00-mizarcni.conf
-    kubectl exec $pod_name -- nsenter -t 1 -m -u -n -i ln -snf /var/mizar/build/bin/mizar-cni /opt/cni/bin/mizarcni
+    kubectl exec $pod_name -- nsenter -t 1 -m -u -n -i ln -snf /var/mizar/build/bin/mizarcni /opt/cni/bin/mizarcni
     kubectl exec $pod_name -- nsenter -t 1 -m -u -n -i ln -snf /var/mizar/build/tests/mizarcni.config /etc/mizarcni.config
 }
