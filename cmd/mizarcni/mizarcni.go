@@ -18,23 +18,20 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"net"
 	"path"
-	"path/filepath"
 	"runtime"
 	"strconv"
-	"strings"
 	"time"
 
 	. "mizar.com/mizarcni/cmd/mizarcni/app"
+	"mizar.com/mizarcni/pkg/object"
 	"mizar.com/mizarcni/pkg/util/executil"
-	"mizar.com/mizarcni/pkg/util/osutil"
+	"mizar.com/mizarcni/pkg/util/objectutil"
 
 	"github.com/containernetworking/cni/pkg/skel"
-	"github.com/containernetworking/cni/pkg/types"
 	cniTypesVer "github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/pkg/version"
 	"github.com/containernetworking/plugins/pkg/ns"
@@ -48,21 +45,7 @@ const (
 	NetNSFolder = "/var/run/netns/"
 )
 
-type NetVariables struct {
-	command         string
-	containerID     string
-	netNS           string
-	ifName          string
-	cniPath         string
-	k8sPodNamespace string
-	k8sPodName      string
-	k8sPodTenant    string
-	cniVersion      string
-	networkName     string
-	plugin          string
-}
-
-var netVariables NetVariables
+var netVariables object.NetVariables
 var podId PodId
 var interfaceId InterfaceId
 
@@ -74,27 +57,35 @@ func init() {
 	flag.Set("logtostderr", "false")
 	flag.Set("log_file", "/tmp/mizarcni.log")
 
-	loadEnvVariables()
+	objectutil.LoadEnvVariables(&netVariables)
+	info, err := objectutil.MountNetNSIfNeeded(&netVariables)
+	klog.Info(info)
+	if err != nil {
+		klog.Fatal(err)
+	}
+
 	podId = PodId{
-		K8SNamespace: netVariables.k8sPodNamespace,
-		K8SPodName:   netVariables.k8sPodName,
-		K8SPodTenant: netVariables.k8sPodTenant,
+		K8SNamespace: netVariables.K8sPodNamespace,
+		K8SPodName:   netVariables.K8sPodName,
+		K8SPodTenant: netVariables.K8sPodTenant,
 	}
 	interfaceId = InterfaceId{
 		PodId:     &podId,
-		Interface: netVariables.ifName,
+		Interface: netVariables.IfName,
 	}
 }
 
 func cmdAdd(args *skel.CmdArgs) error {
-	loadNetConf(args.StdinData)
+	if err := objectutil.LoadCniConfig(&netVariables, args.StdinData); err != nil {
+		return err
+	}
 	klog.Infof("Network variables: %q", netVariables)
 
 	// Construct a CniParameters grpc message
 	param := CniParameters{
 		PodId:     &podId,
-		Netns:     netVariables.netNS,
-		Interface: netVariables.ifName,
+		Netns:     netVariables.NetNS,
+		Interface: netVariables.IfName,
 	}
 	klog.Infof("Doing CNI add for %s/%s", podId.K8SNamespace, podId.K8SPodName)
 	client, conn, ctx, cancel, err := getInterfaceServiceClient()
@@ -119,7 +110,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 	// Construct the result string
 	result := cniTypesVer.Result{
-		CNIVersion: netVariables.cniVersion,
+		CNIVersion: netVariables.CniVersion,
 	}
 	for index, intf := range interfaces {
 		if err = activateInterface(intf); err != nil {
@@ -130,7 +121,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		result.Interfaces = append(result.Interfaces, &cniTypesVer.Interface{
 			Name:    intf.InterfaceId.Interface,
 			Mac:     intf.Address.Mac,
-			Sandbox: netVariables.netNS,
+			Sandbox: netVariables.NetNS,
 		})
 
 		_, ipnet, err := net.ParseCIDR(fmt.Sprintf("%s/%d", intf.Address.IpAddress, 32))
@@ -158,10 +149,10 @@ func activateInterface(intf *Interface) error {
 		}
 	}
 
-	netNS, err := ns.GetNS(netVariables.netNS)
-	_, netNSFileName := path.Split(netVariables.netNS)
+	netNS, err := ns.GetNS(netVariables.NetNS)
+	_, netNSFileName := path.Split(netVariables.NetNS)
 	if err != nil {
-		klog.Errorf("Failed to open netns %q: %s", netVariables.netNS, err)
+		klog.Errorf("Failed to open netns %q: %s", netVariables.NetNS, err)
 		return err
 	}
 	defer netNS.Close()
@@ -170,11 +161,11 @@ func activateInterface(intf *Interface) error {
 	if netlink.LinkSetNsFd(link, int(netNS.Fd())); err != nil {
 		return err
 	}
-	if netlink.LinkSetName(link, netVariables.ifName); err != nil {
+	if netlink.LinkSetName(link, netVariables.IfName); err != nil {
 		return err
 	}
 	if err = netNS.Do(func(_ ns.NetNS) error {
-		if err := netlink.LinkSetName(link, netVariables.ifName); err != nil {
+		if err := netlink.LinkSetName(link, netVariables.IfName); err != nil {
 			return err
 		}
 
@@ -234,27 +225,16 @@ func activateInterface(intf *Interface) error {
 	return nil
 }
 
-func removeIfFromNetNSIfExists(netNS ns.NetNS, ifName string) error {
-	return netNS.Do(func(_ ns.NetNS) error {
-		link, err := netlink.LinkByName(ifName)
-		if err != nil {
-			if strings.Contains(err.Error(), "Link not found") {
-				return nil
-			}
-			return err
-		}
-		return netlink.LinkDel(link)
-	})
-}
-
 func cmdDel(args *skel.CmdArgs) error {
-	loadNetConf(args.StdinData)
+	if err := objectutil.LoadCniConfig(&netVariables, args.StdinData); err != nil {
+		return err
+	}
 	klog.Infof("Network variables: %s", netVariables)
 
 	param := CniParameters{
 		PodId:     &podId,
-		Netns:     netVariables.netNS,
-		Interface: netVariables.ifName,
+		Netns:     netVariables.NetNS,
+		Interface: netVariables.IfName,
 	}
 
 	client, conn, ctx, cancel, err := getInterfaceServiceClient()
@@ -269,7 +249,7 @@ func cmdDel(args *skel.CmdArgs) error {
 		return err
 	}
 
-	netNS, _ := ns.GetNS(netVariables.netNS)
+	netNS, _ := ns.GetNS(netVariables.NetNS)
 	if netNS != nil {
 		netNS.Close()
 	}
@@ -286,65 +266,6 @@ func getInterfaceServiceClient() (InterfaceServiceClient, *grpc.ClientConn, cont
 	client := NewInterfaceServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	return client, conn, ctx, cancel, nil
-}
-
-func loadNetConf(bytes []byte) {
-	netConf := &types.NetConf{}
-	if err := json.Unmarshal(bytes, netConf); err != nil {
-		if err != nil {
-			klog.Fatalf("Failed to load netconf: %v", err)
-		}
-	}
-
-	netVariables.cniVersion = netConf.CNIVersion
-	netVariables.networkName = netConf.Name
-	netVariables.plugin = netConf.Type
-}
-
-func loadEnvVariables() {
-	netVariables.command = osutil.Getenv("CNI_COMMAND")
-	netVariables.containerID = osutil.Getenv("CNI_CONTAINERID")
-	netVariables.ifName = osutil.Getenv("CNI_IFNAME")
-	netVariables.cniPath = osutil.Getenv("CNI_PATH")
-	netVariables.netNS = mountNetNSIfNeeded(osutil.Getenv("CNI_NETNS"))
-
-	cniArgs := osutil.Getenv("CNI_ARGS")
-	if len(cniArgs) > 0 {
-		splitted := strings.Split(cniArgs, ";")
-		for _, item := range splitted {
-			keyValue := strings.Split(item, "=")
-			switch keyValue[0] {
-			case "K8S_POD_NAMESPACE":
-				netVariables.k8sPodNamespace = keyValue[1]
-			case "K8S_POD_NAME":
-				netVariables.k8sPodName = keyValue[1]
-			case "K8S_POD_TENANT":
-				netVariables.k8sPodTenant = keyValue[1]
-			}
-		}
-	}
-}
-
-func mountNetNSIfNeeded(netNS string) string {
-	if !strings.HasPrefix(netNS, NetNSFolder) {
-		dstNetNS := strings.ReplaceAll(netNS, "/", "_")
-		dstNetNSPath := filepath.Join(NetNSFolder, dstNetNS)
-		if netVariables.command == "ADD" {
-			if osutil.FileExists(dstNetNSPath) {
-				klog.Infof("Skip mount %s since file %s exists.", netNS, dstNetNSPath)
-			} else {
-				osutil.Mkdir(NetNSFolder)
-				osutil.Create(dstNetNSPath)
-				cmdTxt, result, err := executil.Execute("mount", "--bind", netNS, dstNetNSPath)
-				klog.Infof("Executing cmd: \n%s\n%s", cmdTxt, result)
-				if err != nil {
-					klog.Fatalf("failed to bind mount %s to %s: error code %s", netNS, dstNetNSPath, err)
-				}
-			}
-		}
-		netNS = dstNetNSPath
-	}
-	return netNS
 }
 
 func main() {
