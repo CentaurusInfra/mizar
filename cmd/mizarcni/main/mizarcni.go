@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -219,12 +218,15 @@ func activateInterface(intf *Interface) error {
 	}
 
 	klog.Info("Disable tso for pod")
-
-	if err = executil.Execute(exec.Command("ip", "netns", "exec", netNSFileName, "ethtool", "-K", "eth0", "tso", "off", "gso", "off", "ufo", "off")); err != nil {
+	cmdTxt, result, err := executil.Execute("ip", "netns", "exec", netNSFileName, "ethtool", "-K", "eth0", "tso", "off", "gso", "off", "ufo", "off")
+	klog.Infof("Executing cmd: \n%s\n%s", cmdTxt, result)
+	if err != nil {
 		return err
 	}
 
-	if err = execute(exec.Command("ip", "netns", "exec", netNSFileName, "ethtool", "--offload", "eth0", "rx", "off", "tx", "off")); err != nil {
+	cmdTxt, result, err = executil.Execute("ip", "netns", "exec", netNSFileName, "ethtool", "--offload", "eth0", "rx", "off", "tx", "off")
+	klog.Infof("Executing cmd: \n%s\n%s", cmdTxt, result)
+	if err != nil {
 		return err
 	}
 
@@ -331,7 +333,9 @@ func mountNetNSIfNeeded(netNS string) string {
 			if _, err := os.Stat(dstNetNSPath); os.IsNotExist(err) {
 				os.Mkdir(NetNSFolder, os.ModePerm)
 				os.Create(dstNetNSPath)
-				if err := execute(exec.Command("mount", "--bind", netNS, dstNetNSPath)); err != nil {
+				cmdTxt, result, err := executil.Execute("mount", "--bind", netNS, dstNetNSPath)
+				klog.Infof("Executing cmd: \n%s\n%s", cmdTxt, result)
+				if err != nil {
 					klog.Fatalf("failed to bind mount %s to %s: error code %s", netNS, dstNetNSPath, err)
 				}
 			} else {
@@ -341,17 +345,6 @@ func mountNetNSIfNeeded(netNS string) string {
 		netNS = dstNetNSPath
 	}
 	return netNS
-}
-
-func execute(cmd *exec.Cmd) error {
-	stdoutStderr, err := cmd.CombinedOutput()
-	klog.Infof("Executing cmd: %s", cmd)
-	klog.Infof("Cmd result: %s", stdoutStderr)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func main() {

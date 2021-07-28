@@ -17,18 +17,16 @@ limitations under the License.
 package executil
 
 import (
+	"fmt"
 	"os/exec"
-
-	klog "k8s.io/klog/v2"
 )
 
-func Execute(cmd *exec.Cmd) error {
+func Execute(name string, arg ...string) (string, string, error) {
+	cmd := exec.Command(name, arg...)
 	stdoutStderr, err := cmd.CombinedOutput()
-	klog.Infof("Executing cmd: %s", cmd)
-	klog.Infof("Cmd result: %s", stdoutStderr)
 	if err != nil {
-		return err
+		return fmt.Sprint(cmd), string(stdoutStderr), err
 	}
 
-	return nil
+	return fmt.Sprint(cmd), string(stdoutStderr), nil
 }
