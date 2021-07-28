@@ -22,7 +22,6 @@ import (
 	"flag"
 	"fmt"
 	"net"
-	"os"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -32,6 +31,7 @@ import (
 
 	. "mizar.com/mizarcni/cmd/mizarcni/app"
 	"mizar.com/mizarcni/pkg/util/executil"
+	"mizar.com/mizarcni/pkg/util/osutil"
 
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
@@ -302,13 +302,13 @@ func loadNetConf(bytes []byte) {
 }
 
 func loadEnvVariables() {
-	netVariables.command = os.Getenv("CNI_COMMAND")
-	netVariables.containerID = os.Getenv("CNI_CONTAINERID")
-	netVariables.ifName = os.Getenv("CNI_IFNAME")
-	netVariables.cniPath = os.Getenv("CNI_PATH")
-	netVariables.netNS = mountNetNSIfNeeded(os.Getenv("CNI_NETNS"))
+	netVariables.command = osutil.Getenv("CNI_COMMAND")
+	netVariables.containerID = osutil.Getenv("CNI_CONTAINERID")
+	netVariables.ifName = osutil.Getenv("CNI_IFNAME")
+	netVariables.cniPath = osutil.Getenv("CNI_PATH")
+	netVariables.netNS = mountNetNSIfNeeded(osutil.Getenv("CNI_NETNS"))
 
-	cniArgs := os.Getenv("CNI_ARGS")
+	cniArgs := osutil.Getenv("CNI_ARGS")
 	if len(cniArgs) > 0 {
 		splitted := strings.Split(cniArgs, ";")
 		for _, item := range splitted {
@@ -330,16 +330,16 @@ func mountNetNSIfNeeded(netNS string) string {
 		dstNetNS := strings.ReplaceAll(netNS, "/", "_")
 		dstNetNSPath := filepath.Join(NetNSFolder, dstNetNS)
 		if netVariables.command == "ADD" {
-			if _, err := os.Stat(dstNetNSPath); os.IsNotExist(err) {
-				os.Mkdir(NetNSFolder, os.ModePerm)
-				os.Create(dstNetNSPath)
+			if osutil.FileExists(dstNetNSPath) {
+				klog.Infof("Skip mount %s since file %s exists.", netNS, dstNetNSPath)
+			} else {
+				osutil.Mkdir(NetNSFolder)
+				osutil.Create(dstNetNSPath)
 				cmdTxt, result, err := executil.Execute("mount", "--bind", netNS, dstNetNSPath)
 				klog.Infof("Executing cmd: \n%s\n%s", cmdTxt, result)
 				if err != nil {
 					klog.Fatalf("failed to bind mount %s to %s: error code %s", netNS, dstNetNSPath, err)
 				}
-			} else {
-				klog.Infof("Skip mount %s since file %s exists.", netNS, dstNetNSPath)
 			}
 		}
 		netNS = dstNetNSPath
