@@ -26,7 +26,7 @@ import (
 	"strconv"
 	"time"
 
-	. "mizar.com/mizarcni/cmd/mizarcni/app"
+	. "mizar.com/mizarcni/cmd/mizarcni/grpc"
 	"mizar.com/mizarcni/pkg/object"
 	"mizar.com/mizarcni/pkg/util/executil"
 	"mizar.com/mizarcni/pkg/util/objectutil"
