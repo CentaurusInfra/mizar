@@ -46,8 +46,7 @@ const (
 )
 
 var netVariables object.NetVariables
-var podId PodId
-var interfaceId InterfaceId
+var cniParameters CniParameters
 
 func init() {
 	// Ensures runs only on main thread
@@ -59,18 +58,22 @@ func init() {
 
 	objectutil.LoadEnvVariables(&netVariables)
 	info, err := objectutil.MountNetNSIfNeeded(&netVariables)
-	klog.Info(info)
+	if info != "" {
+		klog.Info(info)
+	}
 	if err != nil {
 		klog.Fatal(err)
 	}
 
-	podId = PodId{
-		K8SNamespace: netVariables.K8sPodNamespace,
-		K8SPodName:   netVariables.K8sPodName,
-		K8SPodTenant: netVariables.K8sPodTenant,
-	}
-	interfaceId = InterfaceId{
-		PodId:     &podId,
+	// Construct a CniParameters grpc message.
+	// It will be used in both cmdAdd and cmdDel.
+	cniParameters = CniParameters{
+		PodId: &PodId{
+			K8SNamespace: netVariables.K8sPodNamespace,
+			K8SPodName:   netVariables.K8sPodName,
+			K8SPodTenant: netVariables.K8sPodTenant,
+		},
+		Netns:     netVariables.NetNS,
 		Interface: netVariables.IfName,
 	}
 }
@@ -81,13 +84,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 	klog.Infof("Network variables: %q", netVariables)
 
-	// Construct a CniParameters grpc message
-	param := CniParameters{
-		PodId:     &podId,
-		Netns:     netVariables.NetNS,
-		Interface: netVariables.IfName,
-	}
-	klog.Infof("Doing CNI add for %s/%s", podId.K8SNamespace, podId.K8SPodName)
+	klog.Infof("Doing CNI add for %s/%s", netVariables.K8sPodNamespace, netVariables.K8sPodName)
 	client, conn, ctx, cancel, err := getInterfaceServiceClient()
 	if err != nil {
 		klog.Info(err)
@@ -97,7 +94,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 	defer cancel()
 
 	// Consume new (and existing) interfaces for this Pod
-	clientResult, err := client.ConsumeInterfaces(ctx, &param)
+	clientResult, err := client.ConsumeInterfaces(ctx, &cniParameters)
 	if err != nil {
 		klog.Info(err)
 		return err
@@ -105,7 +102,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 	interfaces := clientResult.Interfaces
 
 	if len(interfaces) == 0 {
-		klog.Fatalf("No interfaces found for %s/%s", podId.K8SNamespace, podId.K8SPodName)
+		klog.Fatalf("No interfaces found for %s/%s", netVariables.K8sPodNamespace, netVariables.K8sPodName)
 	}
 
 	// Construct the result string
@@ -231,12 +228,6 @@ func cmdDel(args *skel.CmdArgs) error {
 	}
 	klog.Infof("Network variables: %s", netVariables)
 
-	param := CniParameters{
-		PodId:     &podId,
-		Netns:     netVariables.NetNS,
-		Interface: netVariables.IfName,
-	}
-
 	client, conn, ctx, cancel, err := getInterfaceServiceClient()
 	if err != nil {
 		return err
@@ -244,7 +235,7 @@ func cmdDel(args *skel.CmdArgs) error {
 	defer conn.Close()
 	defer cancel()
 
-	_, err = client.DeleteInterface(ctx, &param)
+	_, err = client.DeleteInterface(ctx, &cniParameters)
 	if err != nil {
 		return err
 	}
