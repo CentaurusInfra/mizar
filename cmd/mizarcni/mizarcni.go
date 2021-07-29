@@ -17,18 +17,17 @@ limitations under the License.
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"net"
 	"path"
 	"runtime"
 	"strconv"
-	"time"
 
-	. "mizar.com/mizarcni/cmd/mizarcni/grpc"
+	. "mizar.com/mizarcni/pkg/grpc"
 	"mizar.com/mizarcni/pkg/object"
 	"mizar.com/mizarcni/pkg/util/executil"
+	"mizar.com/mizarcni/pkg/util/grpcclientutil"
 	"mizar.com/mizarcni/pkg/util/objectutil"
 
 	"github.com/containernetworking/cni/pkg/skel"
@@ -37,7 +36,6 @@ import (
 	"github.com/containernetworking/plugins/pkg/ns"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
-	"google.golang.org/grpc"
 	klog "k8s.io/klog/v2"
 )
 
@@ -46,7 +44,6 @@ const (
 )
 
 var netVariables object.NetVariables
-var cniParameters CniParameters
 
 func init() {
 	// Ensures runs only on main thread
@@ -64,18 +61,6 @@ func init() {
 	if err != nil {
 		klog.Fatal(err)
 	}
-
-	// Construct a CniParameters grpc message.
-	// It will be used in both cmdAdd and cmdDel.
-	cniParameters = CniParameters{
-		PodId: &PodId{
-			K8SNamespace: netVariables.K8sPodNamespace,
-			K8SPodName:   netVariables.K8sPodName,
-			K8SPodTenant: netVariables.K8sPodTenant,
-		},
-		Netns:     netVariables.NetNS,
-		Interface: netVariables.IfName,
-	}
 }
 
 func cmdAdd(args *skel.CmdArgs) error {
@@ -85,22 +70,11 @@ func cmdAdd(args *skel.CmdArgs) error {
 	klog.Infof("Network variables: %q", netVariables)
 
 	klog.Infof("Doing CNI add for %s/%s", netVariables.K8sPodNamespace, netVariables.K8sPodName)
-	client, conn, ctx, cancel, err := getInterfaceServiceClient()
+	interfaces, err := grpcclientutil.ConsumeInterfaces(netVariables)
 	if err != nil {
 		klog.Info(err)
 		return err
 	}
-	defer conn.Close()
-	defer cancel()
-
-	// Consume new (and existing) interfaces for this Pod
-	clientResult, err := client.ConsumeInterfaces(ctx, &cniParameters)
-	if err != nil {
-		klog.Info(err)
-		return err
-	}
-	interfaces := clientResult.Interfaces
-
 	if len(interfaces) == 0 {
 		klog.Fatalf("No interfaces found for %s/%s", netVariables.K8sPodNamespace, netVariables.K8sPodName)
 	}
@@ -218,7 +192,7 @@ func activateInterface(intf *Interface) error {
 		return err
 	}
 
-	klog.Infof("Successfully activated interface for %q", intf.InterfaceId.PodId)
+	klog.Infof("Successfully activated interface for %s/%s", netVariables.K8sPodNamespace, netVariables.K8sPodName)
 	return nil
 }
 
@@ -226,17 +200,11 @@ func cmdDel(args *skel.CmdArgs) error {
 	if err := objectutil.LoadCniConfig(&netVariables, args.StdinData); err != nil {
 		return err
 	}
-	klog.Infof("Network variables: %s", netVariables)
+	klog.Infof("Network variables: %q", netVariables)
 
-	client, conn, ctx, cancel, err := getInterfaceServiceClient()
+	err := grpcclientutil.DeleteInterface(netVariables)
 	if err != nil {
-		return err
-	}
-	defer conn.Close()
-	defer cancel()
-
-	_, err = client.DeleteInterface(ctx, &cniParameters)
-	if err != nil {
+		klog.Info(err)
 		return err
 	}
 
@@ -247,16 +215,6 @@ func cmdDel(args *skel.CmdArgs) error {
 
 	result := cniTypesVer.Result{}
 	return result.Print()
-}
-
-func getInterfaceServiceClient() (InterfaceServiceClient, *grpc.ClientConn, context.Context, context.CancelFunc, error) {
-	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure(), grpc.WithBlock())
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-	client := NewInterfaceServiceClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-	return client, conn, ctx, cancel, nil
 }
 
 func main() {

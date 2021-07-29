@@ -17,4 +17,4 @@ proto_go:
 clean::
 	rm -rf mizar/proto/__pycache__
 	find mizar/proto/ -name '*.py' -not -name '__init__.py' -delete
-	rm -rf cmd/mizarcni/grpc/
+	rm -rf pkg/grpc/
