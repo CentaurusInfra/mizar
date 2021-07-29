@@ -20,19 +20,12 @@ import (
 	"flag"
 	"runtime"
 
+	"centaurusinfra.io/mizar/cmd/mizarcni/app"
 	"centaurusinfra.io/mizar/pkg/object"
-	"centaurusinfra.io/mizar/pkg/util/grpcclientutil"
-	"centaurusinfra.io/mizar/pkg/util/netutil"
-	"centaurusinfra.io/mizar/pkg/util/objectutil"
 
 	"github.com/containernetworking/cni/pkg/skel"
-	cniTypesVer "github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/pkg/version"
 	klog "k8s.io/klog/v2"
-)
-
-const (
-	NetNSFolder = "/var/run/netns/"
 )
 
 var netVariables object.NetVariables
@@ -41,94 +34,51 @@ func init() {
 	// Ensures runs only on main thread
 	runtime.LockOSThread()
 
+	// Initial log
 	klog.InitFlags(nil)
 	flag.Set("logtostderr", "false")
 	flag.Set("log_file", "/tmp/mizarcni.log")
+	defer klog.Flush()
 
-	objectutil.LoadEnvVariables(&netVariables)
-	info, err := objectutil.MountNetNSIfNeeded(&netVariables)
+	info, err := app.DoInit(&netVariables)
 	if info != "" {
 		klog.Info(info)
 	}
 	if err != nil {
-		klog.Fatal(err)
+		klog.Error(err)
 	}
 }
 
 func cmdAdd(args *skel.CmdArgs) error {
-	if err := objectutil.LoadCniConfig(&netVariables, args.StdinData); err != nil {
-		return err
-	}
-	klog.Infof("Network variables: %q", netVariables)
+	defer klog.Flush()
 
-	klog.Infof("Doing CNI add for %s/%s", netVariables.K8sPodNamespace, netVariables.K8sPodName)
-	interfaces, err := grpcclientutil.ConsumeInterfaces(netVariables)
+	info, err := app.DoCmdAdd(&netVariables, args.StdinData)
+	if info != "" {
+		klog.Info(info)
+	}
 	if err != nil {
-		klog.Info(err)
+		klog.Error(err)
 		return err
 	}
-	if len(interfaces) == 0 {
-		klog.Fatalf("No interfaces found for %s/%s", netVariables.K8sPodNamespace, netVariables.K8sPodName)
-	}
 
-	// Construct the result string
-	result := cniTypesVer.Result{
-		CNIVersion: netVariables.CniVersion,
-	}
-	for index, intf := range interfaces {
-		klog.Infof("Activating interface: %q", intf)
-		info, err := netutil.ActivateInterface(
-			netVariables.IfName,
-			netVariables.NetNS,
-			intf.Veth.Name,
-			intf.Address.IpPrefix,
-			intf.Address.IpAddress,
-			intf.Address.GatewayIp)
-		if info != "" {
-			klog.Info(info)
-		}
-		if err != nil {
-			klog.Error(err)
-			return err
-		}
-
-		result.Interfaces = append(result.Interfaces, &cniTypesVer.Interface{
-			Name:    intf.InterfaceId.Interface,
-			Mac:     intf.Address.Mac,
-			Sandbox: netVariables.NetNS,
-		})
-
-		_, ipnet, err := netutil.ParseCIDR(intf.Address.IpAddress)
-		if err != nil {
-			return err
-		}
-		result.IPs = append(result.IPs, &cniTypesVer.IPConfig{
-			Version:   intf.Address.Version,
-			Address:   *ipnet,
-			Gateway:   netutil.ParseIP(intf.Address.GatewayIp),
-			Interface: cniTypesVer.Int(index),
-		})
-	}
-	klog.Infof("Successfully activated interface for %s/%s", netVariables.K8sPodNamespace, netVariables.K8sPodName)
-	return result.Print()
+	klog.Infof("Successfully added interface for %s/%s", netVariables.K8sPodNamespace, netVariables.K8sPodName)
+	return nil
 }
 
 func cmdDel(args *skel.CmdArgs) error {
-	if err := objectutil.LoadCniConfig(&netVariables, args.StdinData); err != nil {
-		return err
-	}
-	klog.Infof("Network variables: %q", netVariables)
+	defer klog.Flush()
 
-	err := grpcclientutil.DeleteInterface(netVariables)
+	info, err := app.DoCmdDel(&netVariables, args.StdinData)
+	if info != "" {
+		klog.Info(info)
+	}
 	if err != nil {
-		klog.Info(err)
+		klog.Error(err)
 		return err
 	}
 
-	netutil.DeleteNetNS(netVariables.NetNS)
-
-	result := cniTypesVer.Result{}
-	return result.Print()
+	klog.Infof("Successfully deleted interface for %s/%s", netVariables.K8sPodNamespace, netVariables.K8sPodName)
+	return nil
 }
 
 func main() {
