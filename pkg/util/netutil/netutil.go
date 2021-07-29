@@ -23,10 +23,10 @@ import (
 	"strconv"
 	"strings"
 
+	"centaurusinfra.io/mizar/pkg/util/executil"
 	"github.com/containernetworking/plugins/pkg/ns"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
-	"mizar.com/mizarcni/pkg/util/executil"
 )
 
 // moves the interface to the CNI netnt, rename it, set the IP address, and the gatewey.
