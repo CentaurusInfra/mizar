@@ -20,11 +20,10 @@ import (
 	"flag"
 	"runtime"
 
-	. "mizar.com/mizarcni/pkg/grpc"
-	"mizar.com/mizarcni/pkg/object"
-	"mizar.com/mizarcni/pkg/util/grpcclientutil"
-	"mizar.com/mizarcni/pkg/util/netutil"
-	"mizar.com/mizarcni/pkg/util/objectutil"
+	"centaurusinfra.io/mizar/pkg/object"
+	"centaurusinfra.io/mizar/pkg/util/grpcclientutil"
+	"centaurusinfra.io/mizar/pkg/util/netutil"
+	"centaurusinfra.io/mizar/pkg/util/objectutil"
 
 	"github.com/containernetworking/cni/pkg/skel"
 	cniTypesVer "github.com/containernetworking/cni/pkg/types/current"

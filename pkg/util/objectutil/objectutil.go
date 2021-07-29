@@ -22,11 +22,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"mizar.com/mizarcni/pkg/object"
+	"centaurusinfra.io/mizar/pkg/object"
 
+	"centaurusinfra.io/mizar/pkg/util/executil"
+	"centaurusinfra.io/mizar/pkg/util/osutil"
 	"github.com/containernetworking/cni/pkg/types"
-	"mizar.com/mizarcni/pkg/util/executil"
-	"mizar.com/mizarcni/pkg/util/osutil"
 )
 
 // Load cni config from args.StdinData

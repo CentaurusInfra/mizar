@@ -20,9 +20,9 @@ import (
 	"context"
 	"time"
 
+	. "centaurusinfra.io/mizar/pkg/grpc"
+	"centaurusinfra.io/mizar/pkg/object"
 	"google.golang.org/grpc"
-	. "mizar.com/mizarcni/pkg/grpc"
-	"mizar.com/mizarcni/pkg/object"
 )
 
 func ConsumeInterfaces(netVariables object.NetVariables) ([]*Interface, error) {

@@ -1,4 +1,4 @@
-module mizar.com/mizarcni
+module centaurusinfra.io/mizar
 
 go 1.13
 
