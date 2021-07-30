@@ -41,13 +41,13 @@ func ActivateInterface(
 	link, err := netlink.LinkByName(vethName)
 	if err == nil {
 		if link.Attrs().OperState == netlink.OperUp {
-			return fmt.Sprintf("Interface %q has already been UP.", vethName), nil
+			return fmt.Sprintf("Interface %s has already been UP.", vethName), nil
 		}
 	}
 
 	netNS, err := ns.GetNS(netNSName)
 	if err != nil {
-		return fmt.Sprintf("Failed to open netns %q", netNSName), err
+		return fmt.Sprintf("Failed to open netns %s", netNSName), err
 	}
 	defer netNS.Close()
 

@@ -39,7 +39,7 @@ func DoCmdAdd(netVariables *object.NetVariables, stdinData []byte) (string, erro
 	if err := netvariablesutil.LoadCniConfig(netVariables, stdinData); err != nil {
 		return strBuilder.String(), err
 	}
-	strBuilder.WriteString(fmt.Sprintf("Network variables: %q", netVariables))
+	strBuilder.WriteString(fmt.Sprintf("Network variables: %s", netVariables))
 
 	strBuilder.WriteString(fmt.Sprintf("\nDoing CNI add for %s/%s", netVariables.K8sPodNamespace, netVariables.K8sPodName))
 	interfaces, err := grpcclientutil.ConsumeInterfaces(*netVariables)
@@ -55,7 +55,7 @@ func DoCmdAdd(netVariables *object.NetVariables, stdinData []byte) (string, erro
 		CNIVersion: netVariables.CniVersion,
 	}
 	for index, intf := range interfaces {
-		strBuilder.WriteString(fmt.Sprintf("\nActivating interface: %q", intf))
+		strBuilder.WriteString(fmt.Sprintf("\nActivating interface: %s", intf))
 		info, err := netutil.ActivateInterface(
 			netVariables.IfName,
 			netVariables.NetNS,
@@ -97,7 +97,7 @@ func DoCmdDel(netVariables *object.NetVariables, stdinData []byte) (string, erro
 	if err := netvariablesutil.LoadCniConfig(netVariables, stdinData); err != nil {
 		return strBuilder.String(), err
 	}
-	strBuilder.WriteString(fmt.Sprintf("Network variables: %q", netVariables))
+	strBuilder.WriteString(fmt.Sprintf("Network variables: %s", netVariables))
 
 	strBuilder.WriteString(fmt.Sprintf("\nDeleting interface for %s/%s", netVariables.K8sPodNamespace, netVariables.K8sPodName))
 	err := grpcclientutil.DeleteInterface(*netVariables)
