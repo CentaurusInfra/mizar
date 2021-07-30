@@ -24,8 +24,8 @@ func Getenv(key string) string {
 	return os.Getenv(key)
 }
 
-func FileExists(fileName string) bool {
-	if _, err := os.Stat(fileName); os.IsNotExist(err) {
+func Exists(name string) bool {
+	if _, err := os.Stat(name); os.IsNotExist(err) {
 		return false
 	}
 	return true

@@ -77,7 +77,7 @@ func MountNetNSIfNeeded(netVariables *object.NetVariables) (string, error) {
 		dstNetNS := strings.ReplaceAll(netVariables.NetNS, "/", "_")
 		dstNetNSPath := filepath.Join(NetNSFolder, dstNetNS)
 		if netVariables.Command == "ADD" {
-			if osutil.FileExists(dstNetNSPath) {
+			if osutil.Exists(dstNetNSPath) {
 				info = fmt.Sprintf("Skip mount %s since file %s exists.", netVariables.NetNS, dstNetNSPath)
 			} else {
 				osutil.Mkdir(NetNSFolder)
