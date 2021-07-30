@@ -14,25 +14,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package object
+package object_test
 
-import "encoding/json"
+import (
+	"fmt"
+	"testing"
 
-type NetVariables struct {
-	Command         string
-	ContainerID     string
-	NetNS           string
-	IfName          string
-	CniPath         string
-	K8sPodNamespace string
-	K8sPodName      string
-	K8sPodTenant    string
-	CniVersion      string
-	NetworkName     string
-	Plugin          string
-}
+	"centaurusinfra.io/mizar/pkg/object"
+	. "github.com/smartystreets/goconvey/convey"
+)
 
-func (netVariables NetVariables) String() string {
-	str, _ := json.Marshal(netVariables)
-	return string(str)
+func Test_NetVariables(t *testing.T) {
+	Convey("Subject: NetVariables.String", t, func() {
+
+		Convey("Given an object, expecting correct string result", func() {
+			netVariables := &object.NetVariables{
+				Command: "TestCommand",
+			}
+			So(fmt.Sprint(netVariables), ShouldContainSubstring, "TestCommand")
+		})
+	})
 }
