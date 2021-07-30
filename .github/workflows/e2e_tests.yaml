@@ -74,7 +74,9 @@ jobs:
       - name: Run daemon unit tests
         run: ./build/tests/test_dmn
       - name: Run go unit tests
-        run: go test ./...
+        run: |
+          export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
+          go test ./...
       - name: Create kind cluster
         run: sudo ./kind-setup.sh dev 2
       - name: Kubeconfig chown
