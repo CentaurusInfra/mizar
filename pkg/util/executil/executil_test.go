@@ -24,7 +24,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestSpec(t *testing.T) {
+func Test_Execute(t *testing.T) {
 	Convey("Subject: executil.Execute", t, func() {
 
 		Convey("Given correct input, expecting success", func() {
@@ -37,7 +37,7 @@ func TestSpec(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(cmdTxt, ShouldContainSubstring, "touch /tmp/test_folder/test_file")
 			So(result, ShouldBeEmpty)
-			So(osutil.FileExists("/tmp/test_folder/test_file"), ShouldEqual, true)
+			So(osutil.Exists("/tmp/test_folder/test_file"), ShouldBeTrue)
 
 			cmdTxt, result, err = executil.Execute("ls", "/tmp/test_folder/")
 			So(err, ShouldBeNil)
@@ -48,7 +48,7 @@ func TestSpec(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(cmdTxt, ShouldContainSubstring, "rm -rf /tmp/test_folder")
 			So(result, ShouldBeEmpty)
-			So(osutil.FileExists("/tmp/test_folder/test_file"), ShouldEqual, false)
+			So(osutil.Exists("/tmp/test_folder/test_file"), ShouldBeFalse)
 		})
 
 		Convey("Given wrong input, expecting error", func() {
