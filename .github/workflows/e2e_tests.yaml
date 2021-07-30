@@ -55,7 +55,7 @@ jobs:
           git submodule update --init --recursive
       # - name: Update Kernel and Linux Headers
       #   run: printf 'y\nn\n' | sudo ./kernelupdate.sh
-      - name: Install grpc go related
+      - name: Install go related
         run: |
           cd /tmp; wget https://dl.google.com/go/go1.13.9.linux-amd64.tar.gz
           sudo tar -C /usr/local -xzf go1.13.9.linux-amd64.tar.gz
@@ -64,6 +64,7 @@ jobs:
           sudo apt-get install -y protobuf-compiler libprotobuf-dev
           GO111MODULE="on" go get google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
           GO111MODULE="on" go get google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
+          GO111MODULE="on" go get github.com/smartystreets/goconvey
       - name: Compile mizar
         run: sudo make clean && make
       - name: Make unittest
@@ -72,6 +73,8 @@ jobs:
         run: ./build/tests/test_cli
       - name: Run daemon unit tests
         run: ./build/tests/test_dmn
+      - name: Run go unit tests
+        run: go test ./...
       - name: Create kind cluster
         run: sudo ./kind-setup.sh dev 2
       - name: Kubeconfig chown
