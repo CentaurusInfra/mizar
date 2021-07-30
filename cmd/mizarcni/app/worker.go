@@ -23,20 +23,20 @@ import (
 	"centaurusinfra.io/mizar/pkg/object"
 	"centaurusinfra.io/mizar/pkg/util/grpcclientutil"
 	"centaurusinfra.io/mizar/pkg/util/netutil"
-	"centaurusinfra.io/mizar/pkg/util/objectutil"
+	"centaurusinfra.io/mizar/pkg/util/netvariablesutil"
 
 	cniTypesVer "github.com/containernetworking/cni/pkg/types/current"
 )
 
 func DoInit(netVariables *object.NetVariables) (string, error) {
-	objectutil.LoadEnvVariables(netVariables)
-	return objectutil.MountNetNSIfNeeded(netVariables)
+	netvariablesutil.LoadEnvVariables(netVariables)
+	return netvariablesutil.MountNetNSIfNeeded(netVariables)
 }
 
 func DoCmdAdd(netVariables *object.NetVariables, stdinData []byte) (string, error) {
 	strBuilder := strings.Builder{}
 
-	if err := objectutil.LoadCniConfig(netVariables, stdinData); err != nil {
+	if err := netvariablesutil.LoadCniConfig(netVariables, stdinData); err != nil {
 		return strBuilder.String(), err
 	}
 	strBuilder.WriteString(fmt.Sprintf("Network variables: %q", netVariables))
@@ -94,7 +94,7 @@ func DoCmdAdd(netVariables *object.NetVariables, stdinData []byte) (string, erro
 func DoCmdDel(netVariables *object.NetVariables, stdinData []byte) (string, error) {
 	strBuilder := strings.Builder{}
 
-	if err := objectutil.LoadCniConfig(netVariables, stdinData); err != nil {
+	if err := netvariablesutil.LoadCniConfig(netVariables, stdinData); err != nil {
 		return strBuilder.String(), err
 	}
 	strBuilder.WriteString(fmt.Sprintf("Network variables: %q", netVariables))
