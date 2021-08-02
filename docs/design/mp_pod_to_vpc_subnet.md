@@ -61,7 +61,7 @@ Three options are defined for assigning pods to specific VPCs.
 
 ### Placing a pod into the default VPC
 
-Creating a standard pod with no Mizar specific annotation will assign it to the default VPC that is created at Mizar setup.
+Creating a standard pod with no Mizar specific annotation will assign it to the default VPC and that VPC's default subnet that is created at Mizar setup.
 
 ```yaml
 apiVersion: v1
@@ -86,7 +86,7 @@ kind: Pod
 metadata:
   name: nginx
   annotations:
-    mizar.com: {"vpc": "vpc0"}
+    mizar.com/vpc: "vpc0"
 spec:
   containers:
   - name: nginx
@@ -111,7 +111,8 @@ kind: Pod
 metadata:
   name: nginx
   annotations:
-    mizar.com: {"vpc": "vpc0", "subnet": "subnet0"}
+    mizar.com/vpc: "vpc0"
+    mizar.com/subnet: "subnet0"
 spec:
   containers:
   - name: nginx
@@ -124,3 +125,15 @@ The pod definition is invalid if the VPC or subnet does not exist.
 #### Requirements
 - The Parent VPC must exist.
 - Within the parent VPC must exist the specified subnet.
+
+## Additional Planned Features
+
+### Migration
+We plan on supporting the ability to migrate pods and related resources between subnets, and VPCs.
+
+### Deployments
+We plan on supporting the ability to specify VPC, and subnet details for deployments.
+
+### Services
+We plan on supporting the ability to specify VPC, and subnet details for services created using our Scaled Endpoint.
+
