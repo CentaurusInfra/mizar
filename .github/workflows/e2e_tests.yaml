@@ -76,7 +76,7 @@ jobs:
       - name: Run go unit tests
         run: |
           export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
-          go test ./...
+          sudo go test ./...
       - name: Create kind cluster
         run: sudo ./kind-setup.sh dev 2
       - name: Kubeconfig chown
