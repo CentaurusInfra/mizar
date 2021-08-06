@@ -1,6 +1,8 @@
 syntax = "proto3";
 package mizar;
 
+option go_package = "pkg/grpc";
+
 import "google/protobuf/empty.proto";
 
 service InterfaceService {
