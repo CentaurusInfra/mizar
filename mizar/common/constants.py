@@ -43,6 +43,7 @@ class CONSTANTS:
     MIZAR_BRIDGE = "mzbr0"
     MIZAR_EGRESS_BW_TAG = "mizar.com/egress-bandwidth"
     MIZAR_INGRESS_BW_TAG = "mizar.com/ingress-bandwidth"
+    MIZAR_DEFAULT_EGRESS_BW_LIMIT_PCT = 30
 
 
 class OBJ_STATUS:

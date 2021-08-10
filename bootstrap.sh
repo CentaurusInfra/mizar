@@ -64,7 +64,6 @@ if [ ! -f /usr/local/bin/kind ]; then
 fi
 
 git submodule update --init --recursive
-make
 
 kernel_ver=`uname -r`
 echo "Running kernel version: $kernel_ver"

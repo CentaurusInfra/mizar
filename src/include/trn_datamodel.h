@@ -205,8 +205,12 @@ enum conn_status {
 	FLAG_REEVAL 	= 1 << 2,	// need to re-evaluate allow/deny traffic
 };
 
-struct edt_config_t {
-	__u64 bytes_per_sec;
+struct bw_qos_config_key_t {
+	__u32 saddr;
+} __attribute__((packed));
+
+struct bw_qos_config_t {
+	__u64 egress_bandwidth_bytes_per_sec;
 	__u64 t_last;
 	__u64 t_horizon_drop;
 } __attribute__((packed));

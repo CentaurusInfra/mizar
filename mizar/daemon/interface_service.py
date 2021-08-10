@@ -294,6 +294,16 @@ class InterfaceServer(InterfaceServiceServicer):
         rc, text = run_cmd(cmd)
         logger.info(
             "Disabled rx tx offload for host ep rc: {} text: {}".format(rc, text))
+
+        cmd = "nsenter -t 1 -m -u -n -i cat /sys/class/net/{}/speed".format(interface.veth.name)
+        rc, linkspeed = run_cmd(cmd)
+        linkspeed_bytes_per_sec = int(int(linkspeed.rstrip('\r\n')) * 100 * 100/ 8)
+        logger.info("Host interface {} Link Speed {} MB/s".format(interface.veth.name, linkspeed_bytes_per_sec))
+
+        #TODO: Get user-configured default bandwidth limit percentage from config-map
+        bwlimit = int((linkspeed_bytes_per_sec * CONSTANTS.MIZAR_DEFAULT_EGRESS_BW_LIMIT_PCT) / 100)
+        self.rpc.update_bw_qos_config(interface.address.ip_address, bwlimit)
+
         return interface
 
 
@@ -355,6 +365,9 @@ class LocalTransitRpc:
         self.trn_cli_delete_agent_ep = f'''{self.trn_cli} delete-agent-ep'''
         self.trn_cli_update_packet_metadata = f'''{self.trn_cli} update-packet-metadata'''
         self.trn_cli_delete_packet_metadata = f'''{self.trn_cli} delete-packet-metadata'''
+        self.trn_cli_update_bw_qos_config = f'''{self.trn_cli} update-bw-qos-config -i {self.phy_itf} -j'''
+        self.trn_cli_delete_bw_qos_config = f'''{self.trn_cli} delete-bw-qos-config -i {self.phy_itf} -j'''
+        self.trn_cli_get_bw_qos_config = f'''{self.trn_cli} get-bw-qos-config -i {self.phy_itf} -j'''
 
         if benchmark:
             self.xdp_path = "/trn_xdp/trn_transit_xdp_ebpf.o"
@@ -478,3 +491,14 @@ class LocalTransitRpc:
         returncode, text = run_cmd(cmd)
         logger.info(
             "update_agent_metadata returns {} {}".format(returncode, text))
+
+    def update_bw_qos_config(self, ipaddr, egress_bw_bps):
+        jsonconf = {
+            "src_addr": ipaddr,
+            "egress_bandwidth_bytes_per_sec": egress_bw_bps
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_update_bw_qos_config} \'{jsonconf}\''''
+        returncode, text = run_cmd(cmd)
+        logger.info(
+            "update_bw_qos_config returns {} {}".format(returncode, text))
