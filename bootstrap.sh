@@ -11,6 +11,7 @@ logout_needed=false
 
 sudo apt-get update
 sudo apt-get install -y \
+sudo apt-get install linux-headers-$(uname-r)\
     build-essential \
     clang-7 \
     llvm-7 \
@@ -66,23 +67,42 @@ fi
 git submodule update --init --recursive
 
 kernel_ver=`uname -r`
+kernel_hed=`sudo apt search linux-headers-$(uname -r)`
+
 echo "Running kernel version: $kernel_ver"
+echo "..................................."
+echo "Running kernel headers: $kernel_hed"
+
 mj_ver=$(echo $kernel_ver | cut -d. -f1)
 mn_ver=$(echo $kernel_ver | cut -d. -f2)
+mj_hed=$(echo $kernel_hed | cut -d. -f7 | cut -d- -f3)
+mn_hed=$(echo $kernel_hed | cut -d. -f8)
 
-if [[ "$mj_ver" < "5" ]] || [[ "$mn_ver" < "6" ]]; then
-        tput setaf 1
-	echo "Mizar requires an updated kernel: linux-5.6-rc2 for TCP to function correctly. Current version is $kernel_ver"
-
-	read -p "Execute kernel update script (y/n)?" choice
-	tput sgr0
-	case "$choice" in
-	  y|Y ) sh ./kernelupdate.sh;;
-	  n|N ) echo "Please run kernelupdate.sh to download and update the kernel!"; exit;;
-	  * ) echo "Please run kernelupdate.sh to download and update the kernel!"; exit;;
-	esac
+if ([[ "0$mj_ver" -le "04" ]] || [[ "$mn_ver" -le "05" ]]) || ([[ "$mn_ver" -le "5" ]]); then
+    tput setaf 1
+    echo "Mizar requires an updated kernel: linux-5.6 rc2 for TCP to function correctly. Current version is $kernel_ver"
+    read -p "Execute kernel update script (y/n)?" choice
+    tput sgr0
+    case "$choice" in
+      y|Y ) sh ./kernelupdate.sh;;
+      n|N ) echo "Please run kernelupdate.sh to download and update the kernel!"; exit;;
+      * ) echo "Please run kernelupdate.sh to download and update the kernel!";
+ exit;;
+    esac
+elif
+   [[ "0$mj_ver" != "0$mj_hed" ]] || [[ "$mn_ver" != "$mn_hed" ]]; then
+    tput setf 2
+    echo " Update kernel_header..!! "
+    read -p "Execute kernel_header update command (y/n)?" choice
+    tput sgr0
+    case "$choice" in
+      y|Y ) echo `sudo apt-get install linux-headers-$(uname -r)`;;
+      n|N ) echo "Please run kernelheader to download and update
+ the kernel_header!"; exit;;
+      * ) echo "Please run kernelheader to download and update
+ the kernel_header!"; exit;;
+    esac
 fi
-
 if [ "$logout_needed" = true ]; then
     logout
 fi
