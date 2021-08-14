@@ -42,6 +42,7 @@
 
 #include "trn_datamodel.h"
 #include "trn_agent_xdp_maps.h"
+#include "trn_xdp_stats_maps.h"
 #include "trn_kern.h"
 #include "conntrack_common.h"
 
@@ -588,20 +589,34 @@ int _agent(struct xdp_md *ctx)
 
 	int action = trn_process_inner_eth(&pkt);
 
-	if (action == XDP_PASS)
-		return xdpcap_exit(ctx, &xdpcap_hook, XDP_PASS);
+	bpf_debug("[Agent:%ld.0x%x] action=%d\n", pkt.agent_ep_tunid,
+		  bpf_ntohl(pkt.agent_ep_ipv4), action);
 
-	if (action == XDP_DROP)
-		return xdpcap_exit(ctx, &xdpcap_hook, XDP_DROP);
-
-	if (action == XDP_TX)
-		return xdpcap_exit(ctx, &xdpcap_hook, XDP_TX);
-
-	if (action == XDP_ABORTED)
-		return xdpcap_exit(ctx, &xdpcap_hook, XDP_ABORTED);
-
-	if (action == XDP_REDIRECT)
+	__u32 tail_call_key = XDP_TXSTATS_PASS;
+	switch (action) {
+	case XDP_REDIRECT:
+		tail_call_key = XDP_TXSTATS_REDIRECT;
+		bpf_tail_call(pkt.xdp, &jmp_table, tail_call_key);
 		return xdpcap_exit(ctx, &xdpcap_hook, XDP_REDIRECT);
+	case XDP_PASS:
+		tail_call_key = XDP_TXSTATS_PASS;
+		bpf_tail_call(pkt.xdp, &jmp_table, tail_call_key);
+		return xdpcap_exit(ctx, &xdpcap_hook, XDP_PASS);
+	case XDP_DROP:
+		tail_call_key = XDP_TXSTATS_DROP;
+		bpf_tail_call(pkt.xdp, &jmp_table, tail_call_key);
+		return xdpcap_exit(ctx, &xdpcap_hook, XDP_DROP);
+	case XDP_TX:
+		return xdpcap_exit(ctx, &xdpcap_hook, XDP_TX);
+	case XDP_ABORTED:
+		tail_call_key = XDP_TXSTATS_ABORTED;
+		bpf_tail_call(pkt.xdp, &jmp_table, tail_call_key);
+		return xdpcap_exit(ctx, &xdpcap_hook, XDP_ABORTED);
+	default:
+		tail_call_key = XDP_TXSTATS_PASS;
+		bpf_tail_call(pkt.xdp, &jmp_table, tail_call_key);
+		return xdpcap_exit(ctx, &xdpcap_hook, XDP_PASS);
+	}
 
 	return xdpcap_exit(ctx, &xdpcap_hook, XDP_PASS);
 }

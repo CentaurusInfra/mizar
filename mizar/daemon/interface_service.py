@@ -300,6 +300,10 @@ class InterfaceServer(InterfaceServiceServicer):
         linkspeed_bytes_per_sec = int(int(linkspeed.rstrip('\r\n')) * 100 * 100/ 8)
         logger.info("Host interface {} Link Speed {} MB/s".format(interface.veth.name, linkspeed_bytes_per_sec))
 
+        # Initialize Tx stats map entry
+        #TODO: Use interface.address.ip_address for multi-NIC scenario
+        self.rpc.reset_tx_stats("0.0.0.0")
+
         #TODO: Get user-configured default bandwidth limit percentage from config-map
         bwlimit = int((linkspeed_bytes_per_sec * CONSTANTS.MIZAR_DEFAULT_EGRESS_BW_LIMIT_PCT) / 100)
         self.rpc.update_bw_qos_config(interface.address.ip_address, bwlimit)
@@ -365,6 +369,7 @@ class LocalTransitRpc:
         self.trn_cli_delete_agent_ep = f'''{self.trn_cli} delete-agent-ep'''
         self.trn_cli_update_packet_metadata = f'''{self.trn_cli} update-packet-metadata'''
         self.trn_cli_delete_packet_metadata = f'''{self.trn_cli} delete-packet-metadata'''
+        self.trn_cli_update_tx_stats = f'''{self.trn_cli} update-tx-stats -i {self.phy_itf} -j'''
         self.trn_cli_update_bw_qos_config = f'''{self.trn_cli} update-bw-qos-config -i {self.phy_itf} -j'''
         self.trn_cli_delete_bw_qos_config = f'''{self.trn_cli} delete-bw-qos-config -i {self.phy_itf} -j'''
         self.trn_cli_get_bw_qos_config = f'''{self.trn_cli} get-bw-qos-config -i {self.phy_itf} -j'''
@@ -491,6 +496,22 @@ class LocalTransitRpc:
         returncode, text = run_cmd(cmd)
         logger.info(
             "update_agent_metadata returns {} {}".format(returncode, text))
+
+    def reset_tx_stats(self, ipaddr):
+        jsonconf = {
+            "src_addr": ipaddr,
+            "tx_pkts_xdp_redirect": 0,
+            "tx_bytes_xdp_redirect": 0,
+            "tx_pkts_xdp_pass": 0,
+            "tx_bytes_xdp_pass": 0,
+            "tx_pkts_xdp_drop": 0,
+            "tx_bytes_xdp_drop": 0
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_update_tx_stats} \'{jsonconf}\''''
+        returncode, text = run_cmd(cmd)
+        logger.info(
+            "update_tx_stats returns {} {}".format(returncode, text))
 
     def update_bw_qos_config(self, ipaddr, egress_bw_bps):
         jsonconf = {

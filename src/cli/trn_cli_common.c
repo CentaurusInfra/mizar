@@ -1201,6 +1201,112 @@ int trn_cli_parse_bw_qos_config_key(const cJSON *jsonobj,
 	return 0;
 }
 
+int trn_cli_parse_tx_stats(const cJSON *jsonobj, struct rpc_trn_tx_stats_t *tx_stats)
+{
+	cJSON *saddr = cJSON_GetObjectItem(jsonobj, "src_addr");
+	cJSON *tx_pkts_xdp_redirect = cJSON_GetObjectItem(jsonobj, "tx_pkts_xdp_redirect");
+	cJSON *tx_bytes_xdp_redirect = cJSON_GetObjectItem(jsonobj, "tx_bytes_xdp_redirect");
+	cJSON *tx_pkts_xdp_pass = cJSON_GetObjectItem(jsonobj, "tx_pkts_xdp_pass");
+	cJSON *tx_bytes_xdp_pass = cJSON_GetObjectItem(jsonobj, "tx_bytes_xdp_pass");
+	cJSON *tx_pkts_xdp_drop = cJSON_GetObjectItem(jsonobj, "tx_pkts_xdp_drop");
+	cJSON *tx_bytes_xdp_drop = cJSON_GetObjectItem(jsonobj, "tx_bytes_xdp_drop");
+
+	if (cJSON_IsString(saddr)) {
+		struct in_addr inaddr;
+		inet_pton(AF_INET, saddr->valuestring, &inaddr);
+		tx_stats->saddr = htonl(inaddr.s_addr);
+	} else if (cJSON_IsNumber(saddr)) {
+		tx_stats->saddr = htonl((unsigned int)saddr->valueint);
+	} else {
+		print_err("Error: trn_cli_parse_tx_stats saddr Error\n");
+		return -EINVAL;
+	}
+
+	if (tx_pkts_xdp_redirect == NULL) {
+		tx_stats->tx_pkts_xdp_redirect = 0;
+	} else if (cJSON_IsString(tx_pkts_xdp_redirect)) {
+		tx_stats->tx_pkts_xdp_redirect = atoi(tx_pkts_xdp_redirect->valuestring);
+	} else if (cJSON_IsNumber(tx_pkts_xdp_redirect)) {
+		tx_stats->tx_pkts_xdp_redirect = tx_pkts_xdp_redirect->valueint;
+	} else {
+		print_err("Error: trn_cli_parse_tx_stats tx_pkts_xdp_redirect Error\n");
+		return -EINVAL;
+	}
+
+	if (tx_bytes_xdp_redirect == NULL) {
+		tx_stats->tx_bytes_xdp_redirect = 0;
+	} else if (cJSON_IsString(tx_bytes_xdp_redirect)) {
+		tx_stats->tx_bytes_xdp_redirect = atoi(tx_bytes_xdp_redirect->valuestring);
+	} else if (cJSON_IsNumber(tx_bytes_xdp_redirect)) {
+		tx_stats->tx_bytes_xdp_redirect = tx_bytes_xdp_redirect->valueint;
+	} else {
+		print_err("Error: trn_cli_parse_tx_stats tx_bytes_xdp_redirect Error\n");
+		return -EINVAL;
+	}
+
+	if (tx_pkts_xdp_pass == NULL) {
+		tx_stats->tx_pkts_xdp_pass = 0;
+	} else if (cJSON_IsString(tx_pkts_xdp_pass)) {
+		tx_stats->tx_pkts_xdp_pass = atoi(tx_pkts_xdp_pass->valuestring);
+	} else if (cJSON_IsNumber(tx_pkts_xdp_pass)) {
+		tx_stats->tx_pkts_xdp_pass = tx_pkts_xdp_pass->valueint;
+	} else {
+		print_err("Error: trn_cli_parse_tx_stats tx_pkts_xdp_pass Error\n");
+		return -EINVAL;
+	}
+
+	if (tx_bytes_xdp_pass == NULL) {
+		tx_stats->tx_bytes_xdp_pass = 0;
+	} else if (cJSON_IsString(tx_bytes_xdp_pass)) {
+		tx_stats->tx_bytes_xdp_pass = atoi(tx_bytes_xdp_pass->valuestring);
+	} else if (cJSON_IsNumber(tx_bytes_xdp_pass)) {
+		tx_stats->tx_bytes_xdp_pass = tx_bytes_xdp_pass->valueint;
+	} else {
+		print_err("Error: trn_cli_parse_tx_stats tx_bytes_xdp_pass Error\n");
+		return -EINVAL;
+	}
+
+	if (tx_pkts_xdp_drop == NULL) {
+		tx_stats->tx_pkts_xdp_drop = 0;
+	} else if (cJSON_IsString(tx_pkts_xdp_drop)) {
+		tx_stats->tx_pkts_xdp_drop = atoi(tx_pkts_xdp_drop->valuestring);
+	} else if (cJSON_IsNumber(tx_pkts_xdp_drop)) {
+		tx_stats->tx_pkts_xdp_drop = tx_pkts_xdp_drop->valueint;
+	} else {
+		print_err("Error: trn_cli_parse_tx_stats tx_pkts_xdp_drop Error\n");
+		return -EINVAL;
+	}
+
+	if (tx_bytes_xdp_drop == NULL) {
+		tx_stats->tx_bytes_xdp_drop = 0;
+	} else if (cJSON_IsString(tx_bytes_xdp_drop)) {
+		tx_stats->tx_bytes_xdp_drop = atoi(tx_bytes_xdp_drop->valuestring);
+	} else if (cJSON_IsNumber(tx_bytes_xdp_drop)) {
+		tx_stats->tx_bytes_xdp_drop = tx_bytes_xdp_drop->valueint;
+	} else {
+		print_err("Error: trn_cli_parse_tx_stats tx_bytes_xdp_drop Error\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int trn_cli_parse_tx_stats_key(const cJSON *jsonobj, struct rpc_trn_tx_stats_key_t *tx_stats_key)
+{
+	cJSON *saddr = cJSON_GetObjectItem(jsonobj, "src_addr");
+
+	if (cJSON_IsString(saddr)) {
+		tx_stats_key->saddr = atoi(saddr->valuestring);
+	} else if (cJSON_IsNumber(saddr)) {
+		tx_stats_key->saddr = saddr->valueint;
+	} else {
+		print_err("Error: trn_cli_parse_tx_stats_key saddr Error\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 uint32_t parse_ip_address(const cJSON *ipobj)
 {
 	struct sockaddr_in sa;

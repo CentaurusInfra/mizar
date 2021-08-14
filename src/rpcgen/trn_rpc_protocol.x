@@ -285,6 +285,24 @@ struct rpc_trn_bw_qos_config_key_t {
        uint32_t saddr;
 };
 
+/* Defines a struct for XDP Tx stats */
+struct rpc_trn_tx_stats_t {
+       string interface<20>;
+       uint32_t saddr;
+       uint32_t tx_pkts_xdp_redirect;
+       uint64_t tx_bytes_xdp_redirect;
+       uint32_t tx_pkts_xdp_pass;
+       uint64_t tx_bytes_xdp_pass;
+       uint32_t tx_pkts_xdp_drop;
+       uint64_t tx_bytes_xdp_drop;
+};
+
+/* Defines a unique key to get/update EDT XDP Tx stats */
+struct rpc_trn_tx_stats_key_t {
+       string interface<20>;
+       uint32_t saddr;
+};
+
 /*----- Protocol. -----*/
 
 program RPC_TRANSIT_REMOTE_PROTOCOL {
@@ -343,6 +361,9 @@ program RPC_TRANSIT_REMOTE_PROTOCOL {
                 int UPDATE_BW_QOS_CONFIG(rpc_trn_bw_qos_config_t) = 43;
                 int DELETE_BW_QOS_CONFIG(rpc_trn_bw_qos_config_key_t) = 44;
                 rpc_trn_bw_qos_config_t GET_BW_QOS_CONFIG(rpc_trn_bw_qos_config_key_t) = 45;
+
+                int UPDATE_TX_STATS(rpc_trn_tx_stats_t) = 46;
+                rpc_trn_tx_stats_t GET_TX_STATS(rpc_trn_tx_stats_key_t) = 47;
           } = 1;
 
 } =  0x20009051;

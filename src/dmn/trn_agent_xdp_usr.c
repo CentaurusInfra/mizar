@@ -305,6 +305,7 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 	md->ing_pod_label_policy_map = bpf_map__next(md->conn_track_cache, md->obj);
 	md->ing_namespace_label_policy_map = bpf_map__next(md->ing_pod_label_policy_map, md->obj);
 	md->ing_pod_and_namespace_label_policy_map = bpf_map__next(md->ing_namespace_label_policy_map, md->obj);
+	md->tx_stats_map = bpf_map__next(md->ing_pod_and_namespace_label_policy_map, md->obj);
 
 	if (!md->jmp_table_map || !md->agentmetadata_map ||
 	    !md->endpoints_map || !md->xdpcap_hook_map ||
@@ -317,7 +318,7 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 	    !md->ing_vsip_supp_map || !md->ing_vsip_except_map ||
 	    !md->conn_track_cache || !md->packet_metadata_map ||
 	    !md->ing_pod_label_policy_map || !md->ing_namespace_label_policy_map ||
-	    !md->ing_pod_and_namespace_label_policy_map) {
+	    !md->ing_pod_and_namespace_label_policy_map || !md->tx_stats_map) {
 		TRN_LOG_ERROR("Failure finding maps objects.");
 		return 1;
 	}
@@ -345,6 +346,7 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 	md->ing_pod_label_policy_map_fd = bpf_map__fd(md->ing_pod_label_policy_map);
 	md->ing_namespace_label_policy_map_fd = bpf_map__fd(md->ing_namespace_label_policy_map);
 	md->ing_pod_and_namespace_label_policy_map_fd = bpf_map__fd(md->ing_pod_and_namespace_label_policy_map);
+	md->tx_stats_map_fd = bpf_map__fd(md->tx_stats_map);
 
 	if (bpf_map__unpin(md->xdpcap_hook_map, md->pcapfile) == 0) {
 		TRN_LOG_INFO("unpin exiting pcap map file: %s", md->pcapfile);
@@ -372,6 +374,7 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 	bpf_map__pin(md->ing_pod_label_policy_map, ing_pod_label_policy_map_path);
 	bpf_map__pin(md->ing_namespace_label_policy_map, ing_namespace_label_policy_map_path);
 	bpf_map__pin(md->ing_pod_and_namespace_label_policy_map, ing_pod_and_namespace_label_policy_map_path);
+	bpf_map__pin(md->tx_stats_map, tx_stats_map_path);
 
 	return 0;
 }
@@ -517,6 +520,7 @@ static int _trn_bpf_agent_prog_load_xattr(struct agent_user_metadata_t *md,
 	_REUSE_MAP_IF_PINNED(ing_pod_label_policy_map);
 	_REUSE_MAP_IF_PINNED(ing_namespace_label_policy_map);
 	_REUSE_MAP_IF_PINNED(ing_pod_and_namespace_label_policy_map);	
+	_REUSE_MAP_IF_PINNED(tx_stats_map);
 
 	/* Only one prog is supported */
 	bpf_object__for_each_program(prog, *pobj)
@@ -547,6 +551,51 @@ error:
 		      attr->file);
 	bpf_object__close(*pobj);
 	return 1;
+}
+
+static int _trn_bpf_agent_prog_load_txstats(const char *prog_file,
+						struct bpf_object **prog_obj,
+						int *prog_fd)
+{
+	int err = -1;
+	*prog_fd = -1;
+	*prog_obj = NULL;
+	struct bpf_program *prog = NULL, *first_prog = NULL;
+	struct bpf_object *pobj = NULL;
+	struct bpf_map *pmap = NULL;
+	struct bpf_object_open_attr open_attr = { .prog_type = BPF_PROG_TYPE_XDP, .file = prog_file };
+
+	pobj = bpf_object__open_xattr(&open_attr);
+	if (IS_ERR_OR_NULL(pobj)) {
+		err = -PTR_ERR(pobj);
+		TRN_LOG_ERROR("Error openning bpf file: %s. err: %d:%s\n", open_attr.file, err, strerror(-err));
+		return err;
+	}
+
+	bpf_object__for_each_program(prog, pobj) {
+		bpf_program__set_type(prog, BPF_PROG_TYPE_XDP);
+		if (!first_prog)
+			first_prog = prog;
+	}
+
+	bpf_object__for_each_map(pmap, pobj) {
+		int pinned_map_fd;
+
+		pinned_map_fd = bpf_obj_get(tx_stats_map_path);
+		if (pinned_map_fd < 0)
+			return pinned_map_fd;
+
+		err = bpf_map__reuse_fd(pmap, pinned_map_fd);
+		if (err)
+			return err;
+	}
+
+	bpf_object__load(pobj);
+
+	*prog_fd = bpf_program__fd(first_prog);
+	*prog_obj = pobj;
+
+	return 0;
 }
 
 int trn_agent_metadata_init(struct agent_user_metadata_t *md, char *itf,
@@ -603,6 +652,36 @@ int trn_agent_metadata_init(struct agent_user_metadata_t *md, char *itf,
 		return 1;
 	}
 	md->prog_id = md->info.id;
+
+	char agent_file_name[256] = {0};
+	strncpy(agent_file_name, prog_load_attr.file, strlen(prog_load_attr.file));
+	char *debug = strstr(agent_file_name, "debug");
+	char *prog_dir = dirname(agent_file_name);
+	for (enum tailcall_txstat t = 0; t < MAX_TXSTAT; t++) {
+		char fname[256] = {0};
+		sprintf(fname, "%s/trn_xdp_txstats_", prog_dir);
+		switch (t) {
+		case txstat_redirect:
+			sprintf(fname, "%sredirect_ebpf", fname);
+			break;
+		case txstat_pass:
+			sprintf(fname, "%spass_ebpf", fname);
+			break;
+		case txstat_drop:
+			sprintf(fname, "%sdrop_ebpf", fname);
+			break;
+		default:
+			continue;
+		};
+		if (debug)
+			sprintf(fname, "%s_debug.o", fname);
+		else
+			sprintf(fname, "%s.o", fname);
+		if (_trn_bpf_agent_prog_load_txstats(fname, &md->txstats_obj[t], &md->txstats_prog_fd[t])) {
+			TRN_LOG_ERROR("Error loading txstats xdp programs");
+			return 1;
+		}
+	}
 
 	return 0;
 }

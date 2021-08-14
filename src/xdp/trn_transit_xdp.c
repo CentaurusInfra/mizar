@@ -44,6 +44,7 @@
 
 #include "trn_datamodel.h"
 #include "trn_transit_xdp_maps.h"
+#include "trn_xdp_stats_maps.h"
 #include "trn_kern.h"
 #include "conntrack_common.h"
 
