@@ -19,7 +19,7 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-FROM python:3.7
+FROM python:3.9
 RUN apt-get update -y
 RUN apt-get install -y net-tools
 RUN apt-get install -y ethtool
