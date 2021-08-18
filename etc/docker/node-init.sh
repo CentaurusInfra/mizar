@@ -63,7 +63,7 @@ if [[ "$parsedVersion" -lt "37" ]] ; then
 fi
 nsenter -t 1 -m -u -n -i mkdir -p /opt/cni/bin && \
 nsenter -t 1 -m -u -n -i mkdir -p /etc/cni/net.d && \
-nsenter -t 1 -m -u -n -i ln -snf /var/mizar/mizar/cni.py /opt/cni/bin/mizarcni && \
+nsenter -t 1 -m -u -n -i ln -snf /var/mizar/build/bin/mizarcni /opt/cni/bin/mizarcni && \
 nsenter -t 1 -m -u -n -i pip3 install --upgrade protobuf && \
 nsenter -t 1 -m -u -n -i pip3 install --ignore-installed /var/mizar/ && \
 nsenter -t 1 -m -u -n -i ln -snf /sys/fs/bpf /bpffs && \
