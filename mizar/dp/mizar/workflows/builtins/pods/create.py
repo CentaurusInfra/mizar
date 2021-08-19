@@ -62,6 +62,21 @@ class k8sPodCreate(WorkflowTask):
             'phase': self.param.body['status']['phase'],
             'interfaces': [{'name': 'eth0'}]
         }
+        if self.param.body['metadata'].get('annotations'):
+            if self.param.body['metadata'].get('annotations').get('mizar.com/vpc'):
+                vpc_name = self.param.body['metadata'].get('annotations').get('mizar.com/vpc')
+                vpc = vpc_opr.store_get(vpc_name)
+                if not vpc:
+                    self.raise_temporary_error("VPC {} of pod {} does not exist!".format(vpc_name, self.param.name))
+                if self.param.body['metadata'].get('annotations').get('mizar.com/subnet'):
+                    subnet_name = self.param.body['metadata'].get('annotations').get('mizar.com/subnet')
+                    subnet = net_opr.store.get_net(subnet_name)
+                    if not subnet:
+                        self.raise_temporary_error("Subnet {} of pod {} does not exist!".format(subnet_name, self.param.name))
+                    if subnet.vpc != vpc_name:
+                         self.raise_temporary_error("Subnet {} of pod {} does not belong to VPC {}".format(subnet_name, self.param.name, vpc_name))
+                spec['vpc'] = vpc_name
+                spec['subnet'] = subnet_name
 
         spec['vni'] = vpc_opr.store_get(spec['vpc']).vni
         spec['droplet'] = droplet_opr.store_get_by_main_ip(spec['hostIP'])

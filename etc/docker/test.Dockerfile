@@ -19,9 +19,9 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-FROM python:3.7
+FROM python:3.9
 RUN apt-get update -y
-RUN apt-get install iputils-ping
+RUN apt-get install -y iputils-ping
 RUN apt-get install -y netcat
 RUN apt-get install -y iperf3
 RUN apt-get install -y net-tools
