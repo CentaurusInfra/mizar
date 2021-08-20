@@ -82,7 +82,7 @@ class k8sApi:
                         'mizar.com/vpc': vpc,
                         'mizar.com/subnet': subnet,
                     },
-                    'labels': {
+                'labels': {
                         'scaledep': scaledep
                     }
             },
@@ -93,6 +93,8 @@ class k8sApi:
                 }]
             }
         }
+        if not subnet:
+            del pod_manifest["metadata"]["annotations"]['mizar.com/subnet']
         resp = self.k8sapi.create_namespaced_pod(
             body=pod_manifest, namespace='default')
 
