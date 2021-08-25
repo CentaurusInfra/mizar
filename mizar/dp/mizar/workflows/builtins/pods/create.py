@@ -63,14 +63,14 @@ class k8sPodCreate(WorkflowTask):
             'interfaces': [{'name': 'eth0'}]
         }
         if self.param.body['metadata'].get('annotations'):
-            if self.param.body['metadata'].get('annotations').get('mizar.com/vpc'):
+            if self.param.body['metadata'].get('annotations').get(OBJ_DEFAULTS.mizar_pod_vpc_annotation):
                 vpc_name = self.param.body['metadata'].get(
                     'annotations').get('mizar.com/vpc')
                 vpc = vpc_opr.store_get(vpc_name)
                 if not vpc:
                     self.raise_temporary_error(
                         "VPC {} of pod {} does not exist!".format(vpc_name, self.param.name))
-                if self.param.body['metadata'].get('annotations').get('mizar.com/subnet'):
+                if self.param.body['metadata'].get('annotations').get(OBJ_DEFAULTS.mizar_pod_subnet_annotation):
                     subnet_name = self.param.body['metadata'].get(
                         'annotations').get('mizar.com/subnet')
                     subnet = net_opr.store.get_net(subnet_name)

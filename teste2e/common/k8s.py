@@ -6,6 +6,7 @@ from kubernetes.stream import stream
 from teste2e.common.k8spod import *
 from teste2e.common.k8sservice import *
 from kubernetes.stream.ws_client import ERROR_CHANNEL, STDOUT_CHANNEL, STDERR_CHANNEL
+from mizar.common.constants import *
 
 
 class k8sCluster:
@@ -56,13 +57,13 @@ class k8sApi:
 
     def get_vpc(self, name):
         vpc = self.api.get_vpc(name)
-        while vpc["status"] != "Provisioned":
+        while vpc["status"] != OBJ_STATUS.obj_provisioned:
             vpc = self.api.get_vpc(name)
         return vpc
 
     def get_net(self, name):
         net = self.api.get_net(name)
-        while net["status"] != "Provisioned":
+        while net["status"] != OBJ_STATUS.obj_provisioned:
             net = self.api.get_net(name)
         return net
 
@@ -79,12 +80,12 @@ class k8sApi:
             'metadata': {
                     'name': name,
                     'annotations': {
-                        'mizar.com/vpc': vpc,
-                        'mizar.com/subnet': subnet,
+                        OBJ_DEFAULTS.mizar_pod_vpc_annotation: vpc,
+                        OBJ_DEFAULTS.mizar_pod_subnet_annotation: subnet,
                     },
                 'labels': {
                         'scaledep': scaledep
-                    }
+                        }
             },
             'spec': {
                 'containers': [{
@@ -94,7 +95,7 @@ class k8sApi:
             }
         }
         if not subnet:
-            del pod_manifest["metadata"]["annotations"]['mizar.com/subnet']
+            del pod_manifest["metadata"]["annotations"][OBJ_DEFAULTS.mizar_pod_subnet_annotation]
         resp = self.k8sapi.create_namespaced_pod(
             body=pod_manifest, namespace='default')
 

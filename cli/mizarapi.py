@@ -73,7 +73,7 @@ class MizarApi:
             propagation_policy="Orphan")
 
     def get_vpc(self, name):
-        response =  self.get_obj(name, "vpcs")
+        response = self.get_obj(name, "vpcs")
         return response["spec"]
 
     def get_net(self, name):
