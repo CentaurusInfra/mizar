@@ -55,16 +55,16 @@ jobs:
           git submodule update --init --recursive
       # - name: Update Kernel and Linux Headers
       #   run: printf 'y\nn\n' | sudo ./kernelupdate.sh
-      - name: Install go related
-        run: |
-          cd /tmp; wget https://dl.google.com/go/go1.13.9.linux-amd64.tar.gz
-          sudo tar -C /usr/local -xzf go1.13.9.linux-amd64.tar.gz
-          rm -rf go1.13.9.linux-amd64.tar.gz
-          export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
-          sudo apt-get install -y protobuf-compiler libprotobuf-dev
-          GO111MODULE="on" go get google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
-          GO111MODULE="on" go get google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
-          GO111MODULE="on" go get github.com/smartystreets/goconvey
+      # - name: Install go related
+      #   run: |
+      #     cd /tmp; wget https://dl.google.com/go/go1.13.9.linux-amd64.tar.gz
+      #     sudo tar -C /usr/local -xzf go1.13.9.linux-amd64.tar.gz
+      #     rm -rf go1.13.9.linux-amd64.tar.gz
+      #     export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
+      #     sudo apt-get install -y protobuf-compiler libprotobuf-dev
+      #     GO111MODULE="on" go get google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
+      #     GO111MODULE="on" go get google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
+      #     GO111MODULE="on" go get github.com/smartystreets/goconvey
       - name: Compile mizar
         run: sudo make clean && make
       - name: Make unittest
@@ -126,6 +126,9 @@ jobs:
 
           scp -r ~/actions-runner/_work/mizar/mizar ciw1:
           scp -r ~/actions-runner/_work/mizar/mizar ciw2:
+
+          # ssh ciw1 "cd mizar && make container"
+          # ssh ciw2 "cd mizar && make container"
 
           ssh ciw1 "cd ~/mizar && sudo docker build -t mizar:0.8 -f ~/mizar/etc/docker/mizar.Dockerfile ."
           ssh ciw1 "cd ~/mizar && sudo docker build -t dropletd:0.8 -f ~/mizar/etc/docker/daemon.Dockerfile ."
