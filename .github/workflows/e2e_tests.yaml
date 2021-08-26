@@ -127,9 +127,6 @@ jobs:
           scp -r ~/actions-runner/_work/mizar/mizar ciw1:
           scp -r ~/actions-runner/_work/mizar/mizar ciw2:
 
-          ssh ciw1 "cd mizar && make container"
-          ssh ciw2 "cd mizar && make container"
-
           ssh ciw1 "cd ~/mizar && sudo docker build -t mizar:0.8 -f ~/mizar/etc/docker/mizar.Dockerfile ."
           ssh ciw1 "cd ~/mizar && sudo docker build -t dropletd:0.8 -f ~/mizar/etc/docker/daemon.Dockerfile ."
           ssh ciw1 "cd ~/mizar && sudo docker build -t endpointopr:0.8 -f ~/mizar/etc/docker/operator.Dockerfile ."
