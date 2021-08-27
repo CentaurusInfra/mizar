@@ -297,8 +297,8 @@ class InterfaceServer(InterfaceServiceServicer):
 
         cmd = "nsenter -t 1 -m -u -n -i cat /sys/class/net/{}/speed".format(interface.veth.name)
         rc, linkspeed = run_cmd(cmd)
-        linkspeed_bytes_per_sec = int(int(linkspeed.rstrip('\r\n')) * 100 * 100/ 8)
-        logger.info("Host interface {} Link Speed {} MB/s".format(interface.veth.name, linkspeed_bytes_per_sec))
+        linkspeed_bytes_per_sec = int(int(linkspeed.rstrip('\r\n')) * 1000 * (1000/ 8))
+        logger.info("Host interface {} Link Speed {} bytes/sec".format(interface.veth.name, linkspeed_bytes_per_sec))
 
         # Initialize Tx stats map entry
         #TODO: Use interface.address.ip_address for multi-NIC scenario

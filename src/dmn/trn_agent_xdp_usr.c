@@ -469,7 +469,7 @@ static int _trn_bpf_agent_prog_load_xattr(struct agent_user_metadata_t *md,
 	*pobj = bpf_object__open(attr->file);
 
 	if (IS_ERR_OR_NULL(*pobj)) {
-		TRN_LOG_ERROR("Error openning bpf file: %s\n", attr->file);
+		TRN_LOG_ERROR("Error opening bpf file: %s\n", attr->file);
 		return 1;
 	}
 
@@ -568,7 +568,7 @@ static int _trn_bpf_agent_prog_load_txstats(const char *prog_file,
 	pobj = bpf_object__open_xattr(&open_attr);
 	if (IS_ERR_OR_NULL(pobj)) {
 		err = -PTR_ERR(pobj);
-		TRN_LOG_ERROR("Error openning bpf file: %s. err: %d:%s\n", open_attr.file, err, strerror(-err));
+		TRN_LOG_ERROR("Error opening bpf file: %s. err: %d:%s\n", open_attr.file, err, strerror(-err));
 		return err;
 	}
 

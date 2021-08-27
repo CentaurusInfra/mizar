@@ -372,7 +372,7 @@ int trn_add_prog(struct user_metadata_t *md, unsigned int prog_idx,
 	stage->obj = bpf_object__open(prog_path);
 
 	if (IS_ERR_OR_NULL(stage->obj)) {
-		TRN_LOG_ERROR("Error openning bpf file: %s\n", prog_path);
+		TRN_LOG_ERROR("Error opening bpf file: %s\n", prog_path);
 		return 1;
 	}
 
