@@ -767,11 +767,11 @@ class NetworkPolicyUtil:
             else:
                 raise NotImplementedError("Not implemented for label change type of {}".format(change_type))
         elif field is not None and len(field) == 0:
-            if change_type == "add" and "metadata" in new and new["metadata"] is not None and new["metadata"]["labels"] is not None:
+            if change_type == "add" and "metadata" in new and new["metadata"] and new["metadata"].get("labels"):
                 labels = new["metadata"]["labels"]
                 for key in labels:
                     data["add"].add("{}={}".format(key, labels[key]))
-            elif change_type == "remove" and "metadata" in old and old["metadata"] is not None and old["metadata"]["labels"] is not None:
+            elif change_type == "remove" and "metadata" in old and old["metadata"] and old["metadata"].get("labels"):
                 labels = old["metadata"]["labels"]
                 for key in labels:
                     data["remove"].add("{}={}".format(key, labels[key]))

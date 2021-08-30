@@ -62,6 +62,35 @@ class k8sPodCreate(WorkflowTask):
             'phase': self.param.body['status']['phase'],
             'interfaces': [{'name': 'eth0'}]
         }
+        if self.param.body['metadata'].get('annotations'):
+            if self.param.body['metadata'].get('annotations').get(OBJ_DEFAULTS.mizar_pod_vpc_annotation):
+                vpc_name = self.param.body['metadata'].get(
+                    'annotations').get('mizar.com/vpc')
+                vpc = vpc_opr.store_get(vpc_name)
+                if not vpc:
+                    self.raise_temporary_error(
+                        "VPC {} of pod {} does not exist!".format(vpc_name, self.param.name))
+                if self.param.body['metadata'].get('annotations').get(OBJ_DEFAULTS.mizar_pod_subnet_annotation):
+                    subnet_name = self.param.body['metadata'].get(
+                        'annotations').get('mizar.com/subnet')
+                    subnet = net_opr.store.get_net(subnet_name)
+                    if subnet.vpc != vpc_name:
+                        self.raise_temporary_error("Subnet {} of pod {} does not belong to VPC {}".format(
+                            subnet_name, self.param.name, vpc_name))
+                    if not subnet:
+                        self.raise_temporary_error(
+                            "Subnet {} of pod {} does not exist!".format(subnet_name, self.param.name))
+                else:
+                    subnets = list(net_opr.store.get_nets_in_vpc(vpc_name))
+                    if subnets:
+                        subnet_name = subnets[0]
+                        logger.info("Subnet not specified, allocating pod {} in subnet {} for VPC {}".format(
+                            self.param.name, subnet_name, vpc_name))
+                    else:
+                        self.raise_temporary_error(
+                            "VPC {} has no subnets to allocate pod {}!".format(vpc_name, self.param.name))
+                spec['vpc'] = vpc_name
+                spec['subnet'] = subnet_name
 
         spec['vni'] = vpc_opr.store_get(spec['vpc']).vni
         spec['droplet'] = droplet_opr.store_get_by_main_ip(spec['hostIP'])
@@ -105,11 +134,14 @@ class k8sPodCreate(WorkflowTask):
                 # Convert [KB|MB|GB]/s to bytes per second.
                 if k8s_egress_bw is not None:
                     if k8s_egress_bw.endswith('K'):
-                        egress_bw = int(float(k8s_egress_bw.replace('K', '')) * 1e3)
+                        egress_bw = int(
+                            float(k8s_egress_bw.replace('K', '')) * 1e3)
                     elif k8s_egress_bw.endswith('M'):
-                        egress_bw = int(float(k8s_egress_bw.replace('M', '')) * 1e6)
+                        egress_bw = int(
+                            float(k8s_egress_bw.replace('M', '')) * 1e6)
                     elif k8s_egress_bw.endswith('G'):
-                        egress_bw = int(float(k8s_egress_bw.replace('G', '')) * 1e9)
+                        egress_bw = int(
+                            float(k8s_egress_bw.replace('G', '')) * 1e9)
                     else:
                         egress_bw = int(k8s_egress_bw)
         spec['egress_bandwidth_bytes_per_sec'] = egress_bw

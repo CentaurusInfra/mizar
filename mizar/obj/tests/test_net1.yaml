@@ -22,10 +22,10 @@
 apiVersion: "mizar.com/v1"
 kind: Subnet
 metadata:
-  name: net1
+  name: subnet1
 spec:
   vpc: "vpc1"
-  vni: "0"
+  vni: "15654902"
   ip: "12.2.0.0"
   prefix: "16"
   status: "Init"

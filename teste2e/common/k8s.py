@@ -6,6 +6,7 @@ from kubernetes.stream import stream
 from teste2e.common.k8spod import *
 from teste2e.common.k8sservice import *
 from kubernetes.stream.ws_client import ERROR_CHANNEL, STDOUT_CHANNEL, STDERR_CHANNEL
+from mizar.common.constants import *
 
 
 class k8sCluster:
@@ -48,11 +49,23 @@ class k8sApi:
         self.operator_pod_name = run_cmd_text(
             "kubectl get pods | grep mizar-operator | awk '{print $1}'")
 
-    def create_vpc(self, name, ip, prefix, dividers=1, vni=None):
-        self.api.create_vpc(name, ip, prefix, dividers, vni)
+    def create_vpc(self, name, ip, prefix, dividers=1):
+        self.api.create_vpc(name, ip, prefix, dividers)
 
-    def create_net(self, name, ip, prefix, vpc, bouncers=1, vni=None):
-        self.api.create_net(name, ip, prefix, vpc, bouncers, vni)
+    def create_net(self, name, ip, prefix, vpc, vni, bouncers=1):
+        self.api.create_net(name, ip, prefix, vpc, vni, bouncers)
+
+    def get_vpc(self, name):
+        vpc = self.api.get_vpc(name)
+        while vpc["status"] != OBJ_STATUS.obj_provisioned:
+            vpc = self.api.get_vpc(name)
+        return vpc
+
+    def get_net(self, name):
+        net = self.api.get_net(name)
+        while net["status"] != OBJ_STATUS.obj_provisioned:
+            net = self.api.get_net(name)
+        return net
 
     def delete_vpc(self, name):
         self.api.delete_vpc(name)
@@ -60,15 +73,19 @@ class k8sApi:
     def delete_net(self, name):
         self.api.delete_net(name)
 
-    def create_pod(self, name, scaledep=''):
+    def create_pod(self, name, vpc="vpc0", subnet="net0", scaledep=''):
         pod_manifest = {
             'apiVersion': 'v1',
             'kind': 'Pod',
             'metadata': {
                     'name': name,
-                    'labels': {
+                    'annotations': {
+                        OBJ_DEFAULTS.mizar_pod_vpc_annotation: vpc,
+                        OBJ_DEFAULTS.mizar_pod_subnet_annotation: subnet,
+                    },
+                'labels': {
                         'scaledep': scaledep
-                    }
+                        }
             },
             'spec': {
                 'containers': [{
@@ -77,7 +94,8 @@ class k8sApi:
                 }]
             }
         }
-
+        if not subnet:
+            del pod_manifest["metadata"]["annotations"][OBJ_DEFAULTS.mizar_pod_subnet_annotation]
         resp = self.k8sapi.create_namespaced_pod(
             body=pod_manifest, namespace='default')
 
