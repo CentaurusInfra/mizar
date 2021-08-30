@@ -121,19 +121,23 @@ jobs:
           sudo docker build -t dropletd:0.8 -f etc/docker/daemon.Dockerfile .
           sudo docker build -t endpointopr:0.8 -f etc/docker/operator.Dockerfile .
 
+          sudo docker save mizar:0.8 -o etc/docker/mizar.tar
+          sudo docker save dropletd:0.8 -o etc/docker/dropletd.tar
+          sudo docker save endpointopr:0.8 -o etc/docker/endpointopr.tar
+
           ssh ciw1 "sudo rm -rf ~/mizar"
           ssh ciw2 "sudo rm -rf ~/mizar"
 
           scp -r ~/actions-runner/_work/mizar/mizar ciw1:
           scp -r ~/actions-runner/_work/mizar/mizar ciw2:
 
-          ssh ciw1 "cd ~/mizar && sudo docker build -t mizar:0.8 -f ~/mizar/etc/docker/mizar.Dockerfile ."
-          ssh ciw1 "cd ~/mizar && sudo docker build -t dropletd:0.8 -f ~/mizar/etc/docker/daemon.Dockerfile ."
-          ssh ciw1 "cd ~/mizar && sudo docker build -t endpointopr:0.8 -f ~/mizar/etc/docker/operator.Dockerfile ."
+          ssh ciw1 "sudo docker load -i ~/mizar/etc/docker/mizar.tar"
+          ssh ciw1 "sudo docker load -i ~/mizar/etc/docker/dropletd.tar"
+          ssh ciw1 "sudo docker load -i ~/mizar/etc/docker/endpointopr.tar"
     
-          ssh ciw2 "cd ~/mizar && sudo docker build -t mizar:0.8 -f ~/mizar/etc/docker/mizar.Dockerfile ."
-          ssh ciw2 "cd ~/mizar && sudo docker build -t dropletd:0.8 -f ~/mizar/etc/docker/daemon.Dockerfile ."
-          ssh ciw2 "cd ~/mizar && sudo docker build -t endpointopr:0.8 -f ~/mizar/etc/docker/operator.Dockerfile ."
+          ssh ciw2 "sudo docker load -i ~/mizar/etc/docker/mizar.tar"
+          ssh ciw2 "sudo docker load -i ~/mizar/etc/docker/dropletd.tar"
+          ssh ciw2 "sudo docker load -i ~/mizar/etc/docker/endpointopr.tar"
       - name: deploy mizar
         run: kubectl create -f etc/deploy/deploy.mizar.ci.yaml
       - name: check ready
