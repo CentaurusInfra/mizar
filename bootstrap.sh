@@ -11,7 +11,6 @@ logout_needed=false
 
 sudo apt-get update
 sudo apt-get install -y \
-sudo apt-get install linux-headers-$(uname-r)\
     build-essential \
     clang-7 \
     llvm-7 \
