@@ -144,6 +144,8 @@ class EndpointOperator(object):
         get_body = True
         while get_body:
             endpoint = kube_get_endpoints(self.core_api, name, namespace)
+            if namespace == "default" and name == "kubernetes" and not endpoint.metadata.annotations:
+                endpoint.metadata.annotations = {OBJ_DEFAULTS.mizar_service_annotation_key: OBJ_DEFAULTS.mizar_service_annotation_val}
             if not endpoint or not endpoint.metadata or not endpoint.metadata.annotations:
                 return
             endpoint.metadata.annotations[OBJ_DEFAULTS.mizar_service_annotation_key] = OBJ_DEFAULTS.mizar_service_annotation_val
