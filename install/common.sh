@@ -169,7 +169,6 @@ function common:build_docker_images {
     docker image build -t $docker_account/dropletd:latest -f etc/docker/daemon.Dockerfile .
     docker image build -t $docker_account/endpointopr:latest -f etc/docker/operator.Dockerfile .
     docker image build -t $docker_account/testpod:latest -f etc/docker/test.Dockerfile .
-    docker image build -t $docker_account/mizarcni:latest -f etc/docker/mizarcni.Dockerfile .
 }
 
 function common:check_pod_by_image {
