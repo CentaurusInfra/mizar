@@ -16,7 +16,7 @@ import json
 
 
 class droplet:
-    def __init__(self, id, droplet_type='docker', phy_itf='eth0', benchmark=False):
+    def __init__(self, id, droplet_type='docker', phy_itf='eth0', benchmark=True):
         """
         Models a host that runs the transit XDP program. In the
         functional test this is simply a docker container.

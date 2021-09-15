@@ -62,6 +62,9 @@ static __inline int trn_select_transit_switch(struct transit_packet *pkt,
 	*s_port = SPORT_MIN + (inhash % SPORT_BASE);
 
 	if (*s_port < SPORT_MIN || *s_port > SPORT_MAX) {
+		bpf_debug("[Agent:] trn_select_transit_switch (BUG): s_port [%d] "
+			  "is outside of port range [%d - %d]!\n",
+			  *s_port, SPORT_MIN, SPORT_MAX);
 		return 1;
 	}
 
@@ -119,6 +122,15 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	if (dst_r_ep) {
 		d_addr = dst_r_ep->ip;
 		d_mac = dst_r_ep->mac;
+
+		__u32 inhash = jhash_2words(in_src_ip, in_dst_ip, INIT_JHASH_SEED);
+		s_port = SPORT_MIN + (inhash % SPORT_BASE);
+		if (s_port < SPORT_MIN || s_port > SPORT_MAX) {
+			bpf_debug("[Agent:] DROP (BUG): s_port [%d] "
+			 			"is outside of port range [%d - %d]!\n",
+			  		s_port, SPORT_MIN, SPORT_MAX);
+			return XDP_DROP;
+		}
 
 		bpf_debug(
 			"[Agent:%ld.0x%x] Host of 0x%x, found sending directly!\n",
@@ -283,7 +295,7 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 
 	pkt->namespace_label_value_opt->opt_class = TRN_GNV_OPT_CLASS;
 	pkt->namespace_label_value_opt->type = TRN_GNV_NAMESPACE_LABEL_VALUE_OPT_TYPE;
-	pkt->namespace_label_value_opt->length = sizeof(pkt->namespace_label_value_opt->label_value_data) / 4;;
+	pkt->namespace_label_value_opt->length = sizeof(pkt->namespace_label_value_opt->label_value_data) / 4;
 	pkt->namespace_label_value_opt->label_value_data.value = namespace_label_value;
 
 	/* If the source and dest address of the tunneled packet is the
@@ -410,29 +422,29 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 			__u8 conn_allowed = (pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) ? FLAG_REEVAL : 0;
 			conntrack_set_conn_state(&conn_track_cache, pkt->agent_ep_tunid, &pkt->inner_ipv4_tuple, conn_allowed);
 		}
+
+		/* Check if we need to apply a forward flow update */
+
+		struct ipv4_tuple_t in_tuple;
+		struct scaled_endpoint_remote_t *out_tuple;
+		__builtin_memcpy(&in_tuple, &pkt->inner_ipv4_tuple,
+			 	sizeof(struct ipv4_tuple_t));
+
+		out_tuple = bpf_map_lookup_elem(fwd_flow_mod_cache, &in_tuple);
+
+		if (out_tuple) {
+			/* Modify the inner packet accordingly */
+			trn_set_src_dst_port(pkt, out_tuple->sport, out_tuple->dport);
+			trn_set_src_dst_inner_ip_csum(pkt, out_tuple->saddr,
+					      	out_tuple->daddr);
+			trn_set_dst_mac(pkt->inner_eth, out_tuple->h_dest);
+		} else {
+			bpf_debug("[Agent:%ld.0x%x] No dest IP address found! [%d]\n",
+			  	pkt->agent_ep_tunid, bpf_ntohl(in_tuple.daddr),
+			  	__LINE__);
+		}
 	}
-
-	/* Check if we need to apply a forward flow update */
-
-	struct ipv4_tuple_t in_tuple;
-	struct scaled_endpoint_remote_t *out_tuple;
-	__builtin_memcpy(&in_tuple, &pkt->inner_ipv4_tuple,
-			 sizeof(struct ipv4_tuple_t));
-
-	out_tuple = bpf_map_lookup_elem(fwd_flow_mod_cache, &in_tuple);
-
-	if (out_tuple) {
-		/* Modify the inner packet accordingly */
-		trn_set_src_dst_port(pkt, out_tuple->sport, out_tuple->dport);
-		trn_set_src_dst_inner_ip_csum(pkt, out_tuple->saddr,
-					      out_tuple->daddr);
-		trn_set_dst_mac(pkt->inner_eth, out_tuple->h_dest);
-	} else {
-		bpf_debug("[Agent:%ld.0x%x] No dest IP address found! [%d]\n",
-			  pkt->agent_ep_tunid, bpf_ntohl(in_tuple.daddr),
-			  __LINE__);
-	}
-
+	
 	return trn_redirect(pkt, pkt->inner_ip->saddr, pkt->inner_ip->daddr);
 }
 
