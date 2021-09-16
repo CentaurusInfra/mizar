@@ -446,7 +446,7 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 			  	__LINE__);
 		}
 	}
-	
+
 	return trn_redirect(pkt, pkt->inner_ip->saddr, pkt->inner_ip->daddr);
 }
 
