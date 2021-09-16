@@ -62,9 +62,10 @@ static __inline int trn_select_transit_switch(struct transit_packet *pkt,
 	*s_port = SPORT_MIN + (inhash % SPORT_BASE);
 
 	if (*s_port < SPORT_MIN || *s_port > SPORT_MAX) {
-		bpf_debug("[Agent:] trn_select_transit_switch (BUG): s_port [%d] "
-			  "is outside of port range [%d - %d]!\n",
-			  *s_port, SPORT_MIN, SPORT_MAX);
+		bpf_debug("[Agent:%ld.0x%x] trn_select_transit_switch (BUG): s_port[%d] "
+			  " is outside of port range!\n",
+			  pkt->agent_ep_tunid, bpf_ntohl(pkt->agent_ep_ipv4),
+			  *s_port);
 		return 1;
 	}
 
@@ -126,9 +127,10 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 		__u32 inhash = jhash_2words(in_src_ip, in_dst_ip, INIT_JHASH_SEED);
 		s_port = SPORT_MIN + (inhash % SPORT_BASE);
 		if (s_port < SPORT_MIN || s_port > SPORT_MAX) {
-			bpf_debug("[Agent:] DROP (BUG): s_port [%d] "
-			 			"is outside of port range [%d - %d]!\n",
-			  		s_port, SPORT_MIN, SPORT_MAX);
+			bpf_debug("[Agent:%ld.0x%x] DROP (BUG): s_port[%d] "
+			 		" is outside of port range!\n",
+					pkt->agent_ep_tunid, bpf_ntohl(pkt->agent_ep_ipv4),
+			  		s_port);
 			return XDP_DROP;
 		}
 
