@@ -64,9 +64,9 @@ if [ ! -f /usr/local/bin/kind ]; then
 fi
 
 # Install go and related
-cd /tmp; wget https://dl.google.com/go/go1.13.9.linux-amd64.tar.gz
-sudo tar -C /usr/local -xzf go1.13.9.linux-amd64.tar.gz
-rm -rf go1.13.9.linux-amd64.tar.gz
+wget -O /tmp/go1.13.9.linux-amd64.tar.gz https://dl.google.com/go/go1.13.9.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf /tmp/go1.13.9.linux-amd64.tar.gz
+rm -rf /tmp/go1.13.9.linux-amd64.tar.gz
 export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
 sudo apt-get install -y protobuf-compiler libprotobuf-dev
 GO111MODULE="on" go get google.golang.org/protobuf/cmd/protoc-gen-go@v1.26

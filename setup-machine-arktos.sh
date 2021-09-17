@@ -19,10 +19,9 @@ sudo apt-get install libbz2-dev -y -q
 sudo apt-get install libreadline-dev -y -q
 sudo apt-get install libffi-dev -y -q
 
-cd /tmp
-wget https://dl.google.com/go/go1.13.9.linux-amd64.tar.gz
-sudo tar -C /usr/local -xzf go1.13.9.linux-amd64.tar.gz
-rm -rf go1.13.9.linux-amd64.tar.gz
+wget -O /tmp/go1.13.9.linux-amd64.tar.gz https://dl.google.com/go/go1.13.9.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf /tmp/go1.13.9.linux-amd64.tar.gz
+rm -rf /tmp/go1.13.9.linux-amd64.tar.gz
 
 ####################
 
@@ -30,10 +29,9 @@ echo Setup: Install bazel
 
 sudo apt install g++ unzip zip -y -q
 sudo apt-get install openjdk-8-jdk -y -q
-cd /tmp
-wget https://github.com/bazelbuild/bazel/releases/download/0.26.1/bazel-0.26.1-installer-linux-x86_64.sh
-chmod +x bazel-0.26.1-installer-linux-x86_64.sh
-./bazel-0.26.1-installer-linux-x86_64.sh --user
+wget -O /tmp/bazel-0.26.1-installer-linux-x86_64.sh https://github.com/bazelbuild/bazel/releases/download/0.26.1/bazel-0.26.1-installer-linux-x86_64.sh
+chmod +x /tmp/bazel-0.26.1-installer-linux-x86_64.sh
+/tmp/bazel-0.26.1-installer-linux-x86_64.sh --user
 
 ####################
 
@@ -65,10 +63,9 @@ sudo gpasswd -a $USER docker
 
 echo Setup: Install crictl
 
-cd /tmp
-wget https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.17.0/crictl-v1.17.0-linux-amd64.tar.gz
-sudo tar -zxvf crictl-v1.17.0-linux-amd64.tar.gz -C /usr/local/bin
-rm -f crictl-v1.17.0-linux-amd64.tar.gz
+wget -O /tmp/crictl-v1.17.0-linux-amd64.tar.gz https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.17.0/crictl-v1.17.0-linux-amd64.tar.gz
+sudo tar -zxvf /tmp/crictl-v1.17.0-linux-amd64.tar.gz -C /usr/local/bin
+rm -f /tmp/crictl-v1.17.0-linux-amd64.tar.gz
 
 touch /tmp/crictl.yaml
 echo runtime-endpoint: unix:///run/containerd/containerd.sock >> /tmp/crictl.yaml
