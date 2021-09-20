@@ -79,6 +79,20 @@ struct rpc_trn_endpoint_key_t {
        uint32_t ip;
 };
 
+enum rpc_pod_network_class_t {
+        RPC_BESTEFFORT = 0,
+        RPC_EXPEDITED,
+        RPC_PREMIUM,
+        RPC_MAX_POD_NETWORK_CLASS
+};
+
+enum rpc_pod_network_priority_t {
+        RPC_PRIORITY_HIGH = 0,
+        RPC_PRIORITY_MEDIUM,
+        RPC_PRIORITY_LOW,
+        RPC_MAX_POD_NETWORK_PRIORITY
+};
+
 /* Defines an packet metadata */
 struct rpc_trn_packet_metadata_t {
        string interface<20>;
@@ -87,6 +101,8 @@ struct rpc_trn_packet_metadata_t {
        uint32_t pod_label_value;
        uint32_t namespace_label_value;
        uint64_t egress_bandwidth_bytes_per_sec;
+       enum rpc_pod_network_class_t pod_network_class;
+       enum rpc_pod_network_priority_t pod_network_priority;
 };
 
 /* Defines a unique key to get/delete an packet metadata */

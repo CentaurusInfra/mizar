@@ -79,6 +79,8 @@ message Interface {
   string pod_label_value = 9;
   string namespace_label_value = 10;
   string egress_bandwidth_bytes_per_sec = 11;
+  string pod_network_priority = 12;
+  string pod_network_class = 13;
 }
 
 message InterfacesList {

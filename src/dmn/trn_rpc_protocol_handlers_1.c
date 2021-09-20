@@ -1005,9 +1005,11 @@ int *update_packet_metadata_1_svc(rpc_trn_packet_metadata_t *packet_metadata, st
 
 	TRN_LOG_DEBUG("update_packet_metadata_1 packet metadata tunid: %ld, ip: 0x%x,"
 		" pod_label_value: %d, namespace_label_value: %d, egress_bw_bytes_per_sec: %lu",
+		" pod_network_class: %d, pod_network_priority: %d",
 		packet_metadata->tunid, packet_metadata->ip,
 		packet_metadata->pod_label_value, packet_metadata->namespace_label_value,
-		packet_metadata->egress_bandwidth_bytes_per_sec);
+		packet_metadata->egress_bandwidth_bytes_per_sec, packet_metadata->pod_network_class,
+		packet_metadata->pod_network_priority);
 
 	struct agent_user_metadata_t *md = trn_vif_table_find(itf);
 
@@ -1023,6 +1025,29 @@ int *update_packet_metadata_1_svc(rpc_trn_packet_metadata_t *packet_metadata, st
 	value.pod_label_value = packet_metadata->pod_label_value;
 	value.namespace_label_value = packet_metadata->namespace_label_value;
 	value.egress_bandwidth_bytes_per_sec = packet_metadata->egress_bandwidth_bytes_per_sec;
+	unsigned int pod_network_class_priority = BESTEFFORT | PRIORITY_MEDIUM;
+	if (packet_metadata->pod_network_class == RPC_PREMIUM) {
+		pod_network_class_priority = PREMIUM | PRIORITY_MEDIUM;
+		if (packet_metadata->pod_network_priority == RPC_PRIORITY_HIGH) {
+			pod_network_class_priority = PREMIUM | PRIORITY_HIGH;
+		} else if (packet_metadata->pod_network_priority == RPC_PRIORITY_LOW) {
+			pod_network_class_priority = PREMIUM | PRIORITY_LOW;
+		}
+	} else if (packet_metadata->pod_network_class == RPC_EXPEDITED) {
+		pod_network_class_priority = EXPEDITED | PRIORITY_MEDIUM;
+		if (packet_metadata->pod_network_priority == RPC_PRIORITY_HIGH) {
+			pod_network_class_priority = EXPEDITED | PRIORITY_HIGH;
+		} else if (packet_metadata->pod_network_priority == RPC_PRIORITY_LOW) {
+			pod_network_class_priority = EXPEDITED | PRIORITY_LOW;
+		}
+	} else {
+		if (packet_metadata->pod_network_priority == RPC_PRIORITY_HIGH) {
+			pod_network_class_priority = BESTEFFORT | PRIORITY_HIGH;
+		} else if (packet_metadata->pod_network_priority == RPC_PRIORITY_LOW) {
+			pod_network_class_priority = BESTEFFORT | PRIORITY_LOW;
+		}
+	}
+	value.pod_network_class_priority = pod_network_class_priority;
 
 	rc = trn_agent_update_packet_metadata(md, &key, &value);
 

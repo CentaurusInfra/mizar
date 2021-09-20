@@ -449,6 +449,8 @@ int trn_cli_parse_packet_metadata(const cJSON *jsonobj, struct rpc_trn_packet_me
 	cJSON *pod_label_value = cJSON_GetObjectItem(jsonobj, "pod_label_value");
 	cJSON *namespace_label_value = cJSON_GetObjectItem(jsonobj, "namespace_label_value");
 	cJSON *egress_bandwidth_value = cJSON_GetObjectItem(jsonobj, "egress_bandwidth_bytes_per_sec");
+	cJSON *pod_network_class = cJSON_GetObjectItem(jsonobj, "pod_network_class");
+	cJSON *pod_network_priority = cJSON_GetObjectItem(jsonobj, "pod_network_priority");
 
 	if (cJSON_IsString(tunnel_id)) {
 		packet_metadata->tunid = atoi(tunnel_id->valuestring);
@@ -496,6 +498,42 @@ int trn_cli_parse_packet_metadata(const cJSON *jsonobj, struct rpc_trn_packet_me
 		packet_metadata->egress_bandwidth_bytes_per_sec = egress_bandwidth_value->valueint;
 	} else {
 		print_err("Error: egress_bandwidth_value Error\n");
+		return -EINVAL;
+	}
+
+	if (pod_network_class == NULL) {
+		packet_metadata->pod_network_class = RPC_BESTEFFORT;
+	} else if (cJSON_IsString(pod_network_class)) {
+		char *pr = pod_network_class->valuestring;
+		if (strcmp(pr, "Premium") == 0) {
+			packet_metadata->pod_network_class = RPC_PREMIUM;
+		} else if (strcmp(pr, "Expedited") == 0) {
+			packet_metadata->pod_network_class = RPC_EXPEDITED;
+		} else {
+			packet_metadata->pod_network_class = RPC_BESTEFFORT;
+		}
+	} else if (cJSON_IsNumber(pod_network_class)) {
+		packet_metadata->pod_network_class = (enum rpc_pod_network_class_t)pod_network_class->valueint;
+	} else {
+		print_err("Error: pod_network_class Error\n");
+		return -EINVAL;
+	}
+
+	if (pod_network_priority == NULL) {
+		packet_metadata->pod_network_priority = RPC_PRIORITY_MEDIUM;
+	} else if (cJSON_IsString(pod_network_priority)) {
+		char *pr = pod_network_priority->valuestring;
+		if (strcmp(pr, "High") == 0) {
+			packet_metadata->pod_network_priority = RPC_PRIORITY_HIGH;
+		} else if (strcmp(pr, "Low") == 0) {
+			packet_metadata->pod_network_priority = RPC_PRIORITY_LOW;
+		} else {
+			packet_metadata->pod_network_priority = RPC_PRIORITY_MEDIUM;
+		}
+	} else if (cJSON_IsNumber(pod_network_priority)) {
+		packet_metadata->pod_network_priority = (enum rpc_pod_network_priority_t)pod_network_priority->valueint;
+	} else {
+		print_err("Error: pod_network_priority Error\n");
 		return -EINVAL;
 	}
 

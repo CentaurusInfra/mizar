@@ -127,24 +127,34 @@ class k8sPodCreate(WorkflowTask):
 
         # Get 'mizar.com/egress-bandwidth' from pod annotations
         egress_bw = int(0)
+        pod_network_class_value = "BestEffort"
+        pod_network_priority_value = "Medium"
         if os.getenv('FEATUREGATE_BWQOS', 'false').lower() in ('true', '1'):
             annotations = self.param.body['metadata'].get('annotations', {})
             if len(annotations) > 0:
-                k8s_egress_bw = annotations.get(CONSTANTS.MIZAR_EGRESS_BW_TAG)
+                mizar_egress_bw = annotations.get(CONSTANTS.MIZAR_EGRESS_BW_TAG)
+                mizar_pod_network_class = annotations.get(CONSTANTS.MIZAR_NETWORK_CLASS_TAG)
+                mizar_pod_network_priority = annotations.get(CONSTANTS.MIZAR_NETWORK_PRIORITY_TAG)
                 # Convert [KB|MB|GB]/s to bytes per second.
-                if k8s_egress_bw is not None:
-                    if k8s_egress_bw.endswith('K'):
+                if mizar_egress_bw is not None:
+                    if mizar_egress_bw.endswith('K'):
                         egress_bw = int(
-                            float(k8s_egress_bw.replace('K', '')) * 1e3)
-                    elif k8s_egress_bw.endswith('M'):
+                            float(mizar_egress_bw.replace('K', '')) * 1e3)
+                    elif mizar_egress_bw.endswith('M'):
                         egress_bw = int(
-                            float(k8s_egress_bw.replace('M', '')) * 1e6)
-                    elif k8s_egress_bw.endswith('G'):
+                            float(mizar_egress_bw.replace('M', '')) * 1e6)
+                    elif mizar_egress_bw.endswith('G'):
                         egress_bw = int(
-                            float(k8s_egress_bw.replace('G', '')) * 1e9)
+                            float(mizar_egress_bw.replace('G', '')) * 1e9)
                     else:
-                        egress_bw = int(k8s_egress_bw)
+                        egress_bw = int(mizar_egress_bw)
+                if mizar_pod_network_class is not None:
+                    pod_network_class_value = mizar_pod_network_class
+                if mizar_pod_network_priority is not None:
+                    pod_network_priority_value = mizar_pod_network_priority
         spec['egress_bandwidth_bytes_per_sec'] = egress_bw
+        spec['pod_network_class'] = pod_network_class_value
+        spec['pod_network_priority'] = pod_network_priority_value
 
         logger.info("Pod spec {}".format(spec))
 

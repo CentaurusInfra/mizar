@@ -125,10 +125,11 @@ int tc_edt(struct __sk_buff *skb)
 	if (data + sizeof(struct ethhdr) + sizeof(struct iphdr) + sizeof(struct udphdr) < data_end) {
 		struct ethhdr *eth = data;
 		struct iphdr *ip = (data + sizeof(struct ethhdr));
-		// Enforce EDT only for GENEVE frames classified as MINCOST
+		// Enforce EDT only for GENEVE frames classified as BestEffort/Expedited and Low priority
 		if (ip->protocol == IPPROTO_UDP) {
 			struct udphdr *udp = (data + sizeof(struct ethhdr) + sizeof(struct iphdr));
-			if ((udp->dest == GEN_DSTPORT) && (ip->tos & IPTOS_MINCOST)) {
+			__u8 dscp_code = ip->tos >> 2;
+			if ((udp->dest == GEN_DSTPORT) && ((dscp_code == DSCP_EXPEDITED_LOW) || (dscp_code == DSCP_BESTEFFORT_LOW))) {
 				bpf_trace_printk(in_msg, sizeof(in_msg));
 				bpf_trace_printk(edt_msg, sizeof(edt_msg), bpf_ntohl(ip->saddr),
 							bpf_ntohl(ip->daddr), udp->source);

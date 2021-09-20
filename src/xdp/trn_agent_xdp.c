@@ -175,11 +175,15 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	int pod_label_value = 0;
 	int namespace_label_value = 0;
 	__u64 egress_bw_bytes_per_sec = 0;
+	__u32 pod_network_class_priority = BESTEFFORT | PRIORITY_MEDIUM;
 	packet_metadata = bpf_map_lookup_elem(&packet_metadata_map, &packet_metadata_key);
 	if (packet_metadata) {
 		pod_label_value = packet_metadata->pod_label_value;
 		namespace_label_value = packet_metadata->namespace_label_value;
 		egress_bw_bytes_per_sec = packet_metadata->egress_bandwidth_bytes_per_sec;
+		if (packet_metadata->pod_network_class_priority != 0) {
+			pod_network_class_priority = packet_metadata->pod_network_class_priority;
+		}
 	}
 
 	/* Readjust the packet size to fit the outer headers */
@@ -244,20 +248,41 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	pkt->ip->frag_off = 0;
 	pkt->ip->protocol = IPPROTO_UDP;
 	pkt->ip->check = 0;
-	pkt->ip->tos = 0;
 	pkt->ip->tot_len = bpf_htons(outer_ip_payload);
 	pkt->ip->daddr = d_addr;
 	pkt->ip->saddr = metadata->eth.ip;
 	pkt->ip->ttl = pkt->inner_ttl;
 
-	// Non-zero egress bandwidth configuration => low priority Pod
-	if (egress_bw_bytes_per_sec > 0) {
-		pkt->ip->tos |= IPTOS_MINCOST;
+	__u8 dscp_code = 0;
+	switch (pod_network_class_priority) {
+	case (PREMIUM|PRIORITY_HIGH):
+		dscp_code = DSCP_PREMIUM_HIGH;
+		break;
+	case (PREMIUM|PRIORITY_MEDIUM):
+		dscp_code = DSCP_PREMIUM_MEDIUM;
+		break;
+	case (PREMIUM|PRIORITY_LOW):
+		dscp_code = DSCP_PREMIUM_LOW;
+		break;
+	case (EXPEDITED|PRIORITY_HIGH):
+		dscp_code = DSCP_EXPEDITED_HIGH;
+		break;
+	case (EXPEDITED|PRIORITY_MEDIUM):
+		dscp_code = DSCP_EXPEDITED_MEDIUM;
+		break;
+	case (EXPEDITED|PRIORITY_LOW):
+		dscp_code = DSCP_EXPEDITED_LOW;
+		break;
+	case (BESTEFFORT|PRIORITY_HIGH):
+		dscp_code = DSCP_BESTEFFORT_HIGH;
+		break;
+	case (BESTEFFORT|PRIORITY_LOW):
+		dscp_code = DSCP_BESTEFFORT_LOW;
+		break;
+	default:
+		dscp_code = 0;
 	}
-	// Support low priority traffic classification from Pod
-	if (pkt->inner_tos & IPTOS_MINCOST) {
-		pkt->ip->tos |= IPTOS_MINCOST;
-	}
+	pkt->ip->tos = dscp_code << 2;
 
 	c_sum = 0;
 	trn_ipv4_csum_inline(pkt->ip, &c_sum);
@@ -315,8 +340,8 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 		bpf_tail_call(pkt->xdp, &jmp_table, key);
 	}
 
-	if (pkt->ip->tos & IPTOS_MINCOST) {
-		bpf_debug("[Agent:%ld.0x%x] Low priority pkt to daddr=%x - XDP_PASS\n",
+	if ((dscp_code != DSCP_PREMIUM_HIGH) && (dscp_code != DSCP_PREMIUM_MEDIUM) && (dscp_code != DSCP_PREMIUM_LOW)) {
+		bpf_debug("[Agent:%ld.0x%x] Non premium pkt to daddr=%x - XDP_PASS\n",
 			pkt->agent_ep_tunid, bpf_ntohl(pkt->agent_ep_ipv4), pkt->ip->daddr);
 		return XDP_PASS;
 	}

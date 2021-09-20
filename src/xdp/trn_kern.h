@@ -60,6 +60,17 @@
 /* Scaled endpoint messages type */
 #define TRN_SCALED_EP_MODIFY 0x4d // (M: Modify)
 
+/* Pod QoS DSCP codes */
+#define DSCP_BESTEFFORT_HIGH   16
+#define DSCP_BESTEFFORT_MEDIUM 0
+#define DSCP_BESTEFFORT_LOW    8
+#define DSCP_EXPEDITED_HIGH    46
+#define DSCP_EXPEDITED_MEDIUM  32
+#define DSCP_EXPEDITED_LOW     24
+#define DSCP_PREMIUM_HIGH      10
+#define DSCP_PREMIUM_MEDIUM    20
+#define DSCP_PREMIUM_LOW       30
+
 #ifndef __inline
 #define __inline inline __attribute__((always_inline))
 #endif

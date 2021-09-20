@@ -98,10 +98,19 @@ struct packet_metadata_key_t {
 	__u32 tunip[3];
 } __attribute__((packed));
 
+#define PREMIUM         0x01000000
+#define EXPEDITED       0x00100000
+#define BESTEFFORT      0x00010000
+
+#define PRIORITY_HIGH   0x00000100
+#define PRIORITY_MEDIUM 0x00000010
+#define PRIORITY_LOW    0x00000001
+
 struct packet_metadata_t {
 	__u32 pod_label_value;
 	__u32 namespace_label_value;
 	__u64 egress_bandwidth_bytes_per_sec;
+	__u32 pod_network_class_priority;
 } __attribute__((packed, aligned(4)));
 
 struct network_key_t {

@@ -43,6 +43,8 @@ class CONSTANTS:
     MIZAR_BRIDGE = "mzbr0"
     MIZAR_EGRESS_BW_TAG = "mizar.com/egress-bandwidth"
     MIZAR_INGRESS_BW_TAG = "mizar.com/ingress-bandwidth"
+    MIZAR_NETWORK_CLASS_TAG = "mizar.com/network-class"
+    MIZAR_NETWORK_PRIORITY_TAG = "mizar.com/network-priority"
     MIZAR_DEFAULT_EGRESS_BW_LIMIT_PCT = 30
 
 
