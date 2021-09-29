@@ -254,8 +254,8 @@ static inline void trn_update_l4_csum(__u64 *csum, __be32 old_addr,
 }
 
 __ALWAYS_INLINE__
-static inline void trn_update_l4_csum_port(__u64 *csum, __be16 old_port,
-					   __be16 new_port)
+static inline void trn_update_l4_csum_port(__u64 *csum, __be32 old_port,
+					   __be32 new_port)
 {
 	*csum = (~*csum & 0xffff) + ~old_port + new_port;
 	*csum = trn_csum_fold_helper(*csum);
@@ -471,12 +471,12 @@ static inline void trn_set_src_dst_port(struct transit_packet *pkt, __u16 sport,
 		if (old_dport != dport) {
 			__u64 cs = pkt->inner_tcp->check;
 			trn_update_l4_csum_port(&cs, old_dport, dport);
-			pkt->inner_tcp->check = cs - bpf_htons(256);
+			pkt->inner_tcp->check = cs;
 		}
 		if (old_sport != sport) {
 			__u64 cs = pkt->inner_tcp->check;
 			trn_update_l4_csum_port(&cs, old_sport, sport);
-			pkt->inner_tcp->check = cs - bpf_htons(256);
+			pkt->inner_tcp->check = cs;
 		}
 		bpf_debug("Modified Inner TCP Ports src: %u, dest: %u, csum: 0x%x\n",
 			  bpf_ntohs(pkt->inner_tcp->source),
@@ -493,12 +493,12 @@ static inline void trn_set_src_dst_port(struct transit_packet *pkt, __u16 sport,
 		if (old_dport != dport) {
 			__u64 cs = pkt->inner_udp->check;
 			trn_update_l4_csum_port(&cs, old_dport, dport);
-			pkt->inner_udp->check = cs - bpf_htons(256);
+			pkt->inner_udp->check = cs;
 		}
 		if (old_sport != sport) {
 			__u64 cs = pkt->inner_udp->check;
 			trn_update_l4_csum_port(&cs, old_sport, sport);
-			pkt->inner_udp->check = cs - bpf_htons(256);
+			pkt->inner_udp->check = cs;
 		}
 		bpf_debug("Modified Inner UDP Ports src: %u, dest: %u, csum: 0x%x\n",
 			  bpf_ntohs(pkt->inner_udp->source),
