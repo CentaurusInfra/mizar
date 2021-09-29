@@ -21,7 +21,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
+#include <linux/in.h>
+#include <linux/if_ether.h>
+#include <linux/ip.h>
+#include "extern/bpf_endian.h"
 #include "trn_xdp_stats_maps.h"
+#include "trn_kern.h"
 
 SEC("txstats_pass")
 int _txstats(struct xdp_md *ctx)
@@ -33,6 +38,31 @@ int _txstats(struct xdp_md *ctx)
 	if (tx_stats) {
 		__sync_fetch_and_add(&tx_stats->tx_pkts_xdp_pass, 1);
 		__sync_fetch_and_add(&tx_stats->tx_bytes_xdp_pass, pkt_size);
+
+		void *data = (void *)(long)ctx->data;
+		void *data_end = (void *)(long)ctx->data_end;
+		struct ethhdr *eh = (void *)data;
+		__u64 ehoff = sizeof(*eh);
+		if (eh + 1 > data_end) {
+			bpf_debug("[txstats_pass] Bad offset for eth header [%d]\n",
+					__LINE__);
+			return XDP_PASS;
+		}
+		if (eh->h_proto != bpf_htons(ETH_P_IP)) {
+			bpf_debug("[txstats_pass] Not an IP packet\n");
+			return XDP_PASS;
+		}
+		struct iphdr *iph = (void *)eh + ehoff;
+		if (iph + 1 > data_end) {
+			bpf_debug("[txstats_pass] Bad offset for ip header [%d]\n",
+					__LINE__);
+			return XDP_PASS;
+		}
+		__u8 dscp_code = iph->tos >> 2;
+		if ((dscp_code == DSCP_EXPEDITED_HIGH) || (dscp_code == DSCP_EXPEDITED_MEDIUM) || (dscp_code == DSCP_EXPEDITED_LOW)) {
+			__sync_fetch_and_add(&tx_stats->tx_pkts_xdp_expedited, 1);
+			__sync_fetch_and_add(&tx_stats->tx_bytes_xdp_expedited, pkt_size);
+		}
 	}
 	return XDP_PASS;
 }

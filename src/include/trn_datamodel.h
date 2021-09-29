@@ -244,9 +244,11 @@ struct tx_stats_key_t {
 
 struct tx_stats_t {
 	__u64 tx_bytes_xdp_redirect;
+	__u64 tx_bytes_xdp_expedited;
 	__u64 tx_bytes_xdp_pass;
 	__u64 tx_bytes_xdp_drop;
 	__u32 tx_pkts_xdp_redirect;
+	__u32 tx_pkts_xdp_expedited;
 	__u32 tx_pkts_xdp_pass;
 	__u32 tx_pkts_xdp_drop;
 } __attribute__((packed, aligned(8)));
