@@ -44,7 +44,7 @@ CFLAGS += -Wall
 CFLAGS += -Wextra
 CFLAGS += -Werror
 CFLAGS += -pedantic -Wpedantic
-CLFAGS += -Wno-cast-function-type -Wno-error=cast-function-type
+#CFLAGS += -Wno-cast-function-type -Wno-error=cast-function-type
 
 CFLAGS += -fno-common
 CFLAGS += -fstrict-aliasing
