@@ -51,6 +51,9 @@ class k8sPodCreate(WorkflowTask):
         if "hostIP" not in self.param.body['status']:
             self.raise_temporary_error("Pod spec not ready.")
 
+        default_itf = get_itf()
+        logger.info("Create.run: get default interface {}".format(default_itf))
+
         spec = {
             'hostIP': self.param.body['status']['hostIP'],
             'name': self.param.name,
@@ -60,7 +63,7 @@ class k8sPodCreate(WorkflowTask):
             'vpc': OBJ_DEFAULTS.default_ep_vpc,
             'subnet': OBJ_DEFAULTS.default_ep_net,
             'phase': self.param.body['status']['phase'],
-            'interfaces': [{'name': 'eth0'}]
+            'interfaces': [{'name': default_itf }]
         }
         if self.param.body['metadata'].get('annotations'):
             if self.param.body['metadata'].get('annotations').get(OBJ_DEFAULTS.mizar_pod_vpc_annotation):

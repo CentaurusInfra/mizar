@@ -37,11 +37,12 @@ class InterfaceServer(InterfaceServiceServicer):
         self.queued_pods = set()  # A set of pods, with queued interfaces (to be consumed)
         self.interfaces_lock = threading.Lock()
 
-        cmd = 'ip addr show eth0 | grep "inet\\b" | awk \'{print $2}\' | cut -d/ -f1'
+        self.itf = get_itf()
+        cmd = 'ip addr show ' + f'''{self.itf}''' + ' | grep "inet\\b" | awk \'{print $2}\' | cut -d/ -f1'
         r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         self.droplet_ip = r.stdout.read().decode().strip()
 
-        cmd = 'ip addr show eth0 | grep "link/ether\\b" | awk \'{print $2}\' | cut -d/ -f1'
+        cmd = 'ip addr show ' + f'''{self.itf}''' + ' | grep "link/ether\\b" | awk \'{print $2}\' | cut -d/ -f1'
         r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         self.droplet_mac = r.stdout.read().decode().strip()
 
@@ -49,8 +50,7 @@ class InterfaceServer(InterfaceServiceServicer):
         r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         self.droplet_name = r.stdout.read().decode().strip()
 
-        self.itf = 'eth0'
-        self.rpc = LocalTransitRpc('127.0.0.1', self.droplet_mac)
+        self.rpc = LocalTransitRpc('127.0.0.1', self.droplet_mac, self.itf)
 
     def __del__(self):
         self.iproute.close()
@@ -334,7 +334,7 @@ class InterfaceServiceClient():
 
 
 class LocalTransitRpc:
-    def __init__(self, ip, mac, itf='eth0', benchmark=False):
+    def __init__(self, ip, mac, itf, benchmark=False):
         self.ip = ip
         self.mac = mac
         self.phy_itf = itf
@@ -458,6 +458,7 @@ class LocalTransitRpc:
 
     def update_agent_metadata(self, interface):
         itf = interface.veth.peer
+        default_itf = get_itf()
         netip = str(ipaddress.ip_interface(
             interface.address.ip_address + '/' + interface.address.ip_prefix).network.network_address)
         bouncers = []
@@ -471,7 +472,7 @@ class LocalTransitRpc:
                 "mac": interface.address.mac,
                 "veth": interface.veth.name,
                 "remote_ips": [interface.droplet.ip_address],
-                "hosted_iface": 'eth0'
+                "hosted_iface": default_itf
             },
             "net": {
                 "tunnel_id": interface.address.tunnel_id,
@@ -482,7 +483,7 @@ class LocalTransitRpc:
             "eth": {
                 "ip": interface.droplet.ip_address,
                 "mac": interface.droplet.mac,
-                "iface": 'eth0'
+                "iface": default_itf
             }
         }
         jsonconf = json.dumps(jsonconf)

@@ -21,7 +21,7 @@ class DropletServer(droplet_pb2_grpc.DropletServiceServicer):
         r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         self.ip = r.stdout.read().decode().strip()
 
-        cmd = 'ip addr show eth0 | grep "link/ether\\b" | awk \'{print $2}\' | cut -d/ -f1'
+        cmd = 'ip addr show ' + f'''{self.itf}''' + ' | grep "link/ether\\b" | awk \'{print $2}\' | cut -d/ -f1'
         r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         self.mac = r.stdout.read().decode().strip()
 
