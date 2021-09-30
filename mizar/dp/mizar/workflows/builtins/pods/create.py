@@ -127,9 +127,11 @@ class k8sPodCreate(WorkflowTask):
 
         # Get 'mizar.com/egress-bandwidth' from pod annotations
         egress_bw = int(0)
-        pod_network_class_value = "BestEffort"
-        pod_network_priority_value = "Medium"
+        pod_network_class_value = "Premium"
+        pod_network_priority_value = "High"
         if os.getenv('FEATUREGATE_BWQOS', 'false').lower() in ('true', '1'):
+            pod_network_class_value = "BestEffort"
+            pod_network_priority_value = "Medium"
             annotations = self.param.body['metadata'].get('annotations', {})
             if len(annotations) > 0:
                 mizar_egress_bw = annotations.get(CONSTANTS.MIZAR_EGRESS_BW_TAG)
