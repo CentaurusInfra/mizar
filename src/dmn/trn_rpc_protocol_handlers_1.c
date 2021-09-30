@@ -1005,9 +1005,11 @@ int *update_packet_metadata_1_svc(rpc_trn_packet_metadata_t *packet_metadata, st
 
 	TRN_LOG_DEBUG("update_packet_metadata_1 packet metadata tunid: %ld, ip: 0x%x,"
 		" pod_label_value: %d, namespace_label_value: %d, egress_bw_bytes_per_sec: %lu",
+		" pod_network_class: %d, pod_network_priority: %d",
 		packet_metadata->tunid, packet_metadata->ip,
 		packet_metadata->pod_label_value, packet_metadata->namespace_label_value,
-		packet_metadata->egress_bandwidth_bytes_per_sec);
+		packet_metadata->egress_bandwidth_bytes_per_sec, packet_metadata->pod_network_class,
+		packet_metadata->pod_network_priority);
 
 	struct agent_user_metadata_t *md = trn_vif_table_find(itf);
 
@@ -1023,6 +1025,29 @@ int *update_packet_metadata_1_svc(rpc_trn_packet_metadata_t *packet_metadata, st
 	value.pod_label_value = packet_metadata->pod_label_value;
 	value.namespace_label_value = packet_metadata->namespace_label_value;
 	value.egress_bandwidth_bytes_per_sec = packet_metadata->egress_bandwidth_bytes_per_sec;
+	unsigned int pod_network_class_priority = BESTEFFORT | PRIORITY_MEDIUM;
+	if (packet_metadata->pod_network_class == RPC_PREMIUM) {
+		pod_network_class_priority = PREMIUM | PRIORITY_MEDIUM;
+		if (packet_metadata->pod_network_priority == RPC_PRIORITY_HIGH) {
+			pod_network_class_priority = PREMIUM | PRIORITY_HIGH;
+		} else if (packet_metadata->pod_network_priority == RPC_PRIORITY_LOW) {
+			pod_network_class_priority = PREMIUM | PRIORITY_LOW;
+		}
+	} else if (packet_metadata->pod_network_class == RPC_EXPEDITED) {
+		pod_network_class_priority = EXPEDITED | PRIORITY_MEDIUM;
+		if (packet_metadata->pod_network_priority == RPC_PRIORITY_HIGH) {
+			pod_network_class_priority = EXPEDITED | PRIORITY_HIGH;
+		} else if (packet_metadata->pod_network_priority == RPC_PRIORITY_LOW) {
+			pod_network_class_priority = EXPEDITED | PRIORITY_LOW;
+		}
+	} else {
+		if (packet_metadata->pod_network_priority == RPC_PRIORITY_HIGH) {
+			pod_network_class_priority = BESTEFFORT | PRIORITY_HIGH;
+		} else if (packet_metadata->pod_network_priority == RPC_PRIORITY_LOW) {
+			pod_network_class_priority = BESTEFFORT | PRIORITY_LOW;
+		}
+	}
+	value.pod_network_class_priority = pod_network_class_priority;
 
 	rc = trn_agent_update_packet_metadata(md, &key, &value);
 
@@ -1148,9 +1173,27 @@ int *update_agent_md_1_svc(rpc_trn_agent_metadata_t *agent_md,
 	}
 
 	rc = trn_agent_add_prog(md, XDP_TRANSIT, eth_md->prog_fd);
-
 	if (rc != 0) {
 		TRN_LOG_ERROR("Cannot update agent jump table %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	rc = trn_agent_add_prog(md, XDP_TXSTATS_REDIRECT, md->txstats_prog_fd[txstat_redirect]);
+	if (rc != 0) {
+		TRN_LOG_ERROR("Cannot update agent jump table for XDP_TXSTATS_REDIRECT prog %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+	rc = trn_agent_add_prog(md, XDP_TXSTATS_PASS, md->txstats_prog_fd[txstat_pass]);
+	if (rc != 0) {
+		TRN_LOG_ERROR("Cannot update agent jump table for XDP_TXSTATS_PASS prog %s", itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+	rc = trn_agent_add_prog(md, XDP_TXSTATS_DROP, md->txstats_prog_fd[txstat_drop]);
+	if (rc != 0) {
+		TRN_LOG_ERROR("Cannot update agent jump table for XDP_TXSTATS_DROP prog %s", itf);
 		result = RPC_TRN_ERROR;
 		goto error;
 	}
@@ -2191,6 +2234,94 @@ rpc_trn_bw_qos_config_t *get_bw_qos_config_1_svc(rpc_trn_bw_qos_config_key_t *ar
 	result.interface = argp->interface;
 	result.saddr = argp->saddr;
 	result.egress_bandwidth_bytes_per_sec = val.egress_bandwidth_bytes_per_sec;
+
+	return &result;
+
+error:
+	result.interface = "";
+	result.saddr = 0;
+	return &result;
+}
+
+int *update_tx_stats_1_svc(rpc_trn_tx_stats_t *tx_stats, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result = -1;
+	result = 0;
+	int rc;
+	char *itf = tx_stats->interface;
+	struct tx_stats_key_t key;
+	struct tx_stats_t value;
+
+	TRN_LOG_DEBUG("update_tx_stats_1 interface: %s, saddr: 0x%x",
+			tx_stats->interface, tx_stats->saddr);
+
+	struct user_metadata_t *md = trn_itf_table_find(tx_stats->interface);
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s",
+				tx_stats->interface);
+		goto error;
+	}
+
+	key.saddr = tx_stats->saddr;
+	memset(&value, 0, sizeof(value));
+	value.tx_pkts_xdp_redirect = tx_stats->tx_pkts_xdp_redirect;
+	value.tx_bytes_xdp_redirect = tx_stats->tx_bytes_xdp_redirect;
+	value.tx_pkts_xdp_pass = tx_stats->tx_pkts_xdp_pass;
+	value.tx_bytes_xdp_pass = tx_stats->tx_bytes_xdp_pass;
+	value.tx_pkts_xdp_drop = tx_stats->tx_pkts_xdp_drop;
+	value.tx_bytes_xdp_drop = tx_stats->tx_bytes_xdp_drop;
+
+	rc = trn_update_tx_stats(md, &key, &value);
+	if (rc != 0) {
+		TRN_LOG_ERROR("Cannot update tx_stats for interface %s",
+				itf);
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+
+	TRN_LOG_DEBUG("update_tx_stats_1 Success!");
+
+	return &result;
+
+error:
+	return &result;
+}
+
+rpc_trn_tx_stats_t *get_tx_stats_1_svc(rpc_trn_tx_stats_key_t *argp, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static rpc_trn_tx_stats_t result;
+	int rc;
+	struct tx_stats_key_t key;
+	struct tx_stats_t val;
+
+	TRN_LOG_DEBUG("get_tx_stats_1 saddr: 0x%x on interface: %s", argp->saddr,
+			argp->interface);
+
+	struct user_metadata_t *md = trn_itf_table_find(argp->interface);
+	if (!md) {
+		TRN_LOG_ERROR("Cannot find interface metadata for %s",
+				argp->interface);
+		goto error;
+	}
+
+	key.saddr = argp->saddr;
+	rc = trn_get_tx_stats(md, &key, &val);
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failure getting tx_stats for saddr: %u on interface: %s",
+				argp->saddr, argp->interface);
+		goto error;
+	}
+
+	result.interface = argp->interface;
+	result.saddr = argp->saddr;
+	result.tx_pkts_xdp_redirect = val.tx_pkts_xdp_redirect;
+	result.tx_bytes_xdp_redirect = val.tx_bytes_xdp_redirect;
+	result.tx_pkts_xdp_pass = val.tx_pkts_xdp_pass;
+	result.tx_bytes_xdp_pass = val.tx_bytes_xdp_pass;
+	result.tx_pkts_xdp_drop = val.tx_pkts_xdp_drop;
+	result.tx_bytes_xdp_drop = val.tx_bytes_xdp_drop;
 
 	return &result;
 

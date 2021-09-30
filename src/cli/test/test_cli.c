@@ -1938,8 +1938,6 @@ static void test_trn_cli_update_packet_metadata_egress_bw_subcmd(void **state)
 	struct rpc_trn_packet_metadata_t exp_packet_metadata = {
 		.interface = "eth0",
 		.ip = 0x100000a,
-		.pod_label_value = 0,
-		.namespace_label_value = 0,
 		.egress_bandwidth_bytes_per_sec = 250000,
 		.tunid = 0,
 	};
@@ -2073,6 +2071,122 @@ static void test_trn_cli_update_packet_metadata_egress_bw_subcmd(void **state)
 		expect_any(__wrap_update_packet_metadata_1, clnt);
 		char *args[] = { "update-packet-metadata", "-i", "eth0", "-j", tc[i].json_input };
 		rc = trn_cli_update_packet_metadata_subcmd(NULL, 5, args);
+		assert_int_equal(rc, tc[i].expected_rc);
+	}
+}
+
+static void test_trn_cli_update_packet_metadata_pod_network_class_priority_subcmd(void **state)
+{
+	UNUSED(state);
+	int rc;
+	int argc = 5;
+	int update_packet_metadata_pod_network_class_priority_1_ret_val = 0;
+
+	/* Test cases */
+	struct test_case {
+		char *name;
+		char *json_input;
+		struct rpc_trn_packet_metadata_t expected_metadata;
+		int expected_meta_rc;
+		int expected_rc;
+	};
+
+	struct test_case tc[] = {
+		{
+			"update_packet_metadata succeeds for valid non-null pod network class and priority value",
+			QUOTE({
+				"tunnel_id": "0",
+				"ip": "10.0.0.1",
+				"egress_bandwidth_bytes_per_sec": "0",
+				"pod_network_class": "Premium",
+				"pod_network_priority": "High"
+			}),
+			{
+				.interface = "eth0",
+				.ip = 0x100000a,
+				.pod_label_value = 0,
+				.namespace_label_value = 0,
+				.egress_bandwidth_bytes_per_sec = 0,
+				.pod_network_class = RPC_PREMIUM,
+				.pod_network_priority = RPC_PRIORITY_HIGH,
+				.tunid = 0,
+			},
+			0,
+			0,
+		},
+		{
+			"update_packet_metadata succeeds for valid non-existent network class and priority value",
+			QUOTE({
+				"tunnel_id": "0",
+				"ip": "10.0.0.1"
+			}),
+			{
+				.interface = "eth0",
+				.ip = 0x100000a,
+				.pod_label_value = 0,
+				.namespace_label_value = 0,
+				.egress_bandwidth_bytes_per_sec = 0,
+				.pod_network_class = RPC_BESTEFFORT,
+				.pod_network_priority = RPC_PRIORITY_MEDIUM,
+				.tunid = 0,
+			},
+			0,
+			0,
+		},
+		{
+			"update_packet_metadata returns invalid for empty pod network class and priority value",
+			QUOTE({
+				"tunnel_id": "0",
+				"ip": "10.0.0.1",
+				"egress_bandwidth_bytes_per_sec": 0,
+				"pod_network_class": "",
+				"pod_network_priority": ""
+			}),
+			{
+				.interface = "eth0",
+				.ip = 0x100000a,
+				.pod_label_value = 0,
+				.namespace_label_value = 0,
+				.egress_bandwidth_bytes_per_sec = 0,
+				.pod_network_class = RPC_BESTEFFORT,
+				.pod_network_priority = RPC_PRIORITY_MEDIUM,
+				.tunid = 0,
+			},
+			-EINVAL,
+			-EINVAL,
+		},
+		{
+			"update_packet_metadata fails for invalid pod network class and priority values",
+			QUOTE({
+				"tunnel_id": "0",
+				"ip": "10.0.0.1",
+				"pod_network_class": "Preemium",
+				"pod_network_priority": "Hiigh"
+			}),
+			{
+				.interface = "eth0",
+				.ip = 0x100000a,
+				.pod_label_value = 0,
+				.namespace_label_value = 0,
+				.egress_bandwidth_bytes_per_sec = 0,
+				.tunid = 0,
+				.pod_network_class = RPC_BESTEFFORT,
+				.pod_network_priority = RPC_PRIORITY_MEDIUM,
+			},
+			-EINVAL,
+			-EINVAL,
+		}
+	};
+	int numtc = sizeof(tc) / sizeof(tc[0]);
+
+	for (int i = 0; i < numtc; i++) {
+		TEST_CASE(tc[i].name);
+		expect_function_call(__wrap_update_packet_metadata_1);
+		will_return(__wrap_update_packet_metadata_1, &tc[i].expected_meta_rc);
+		expect_check(__wrap_update_packet_metadata_1, packet_metadata, check_packet_metadata_equal, &tc[i].expected_metadata);
+		expect_any(__wrap_update_packet_metadata_1, clnt);
+		char *args[] = { "update-packet-metadata", "-i", "eth0", "-j", tc[i].json_input };
+		rc = trn_cli_update_packet_metadata_subcmd(NULL, argc, args);
 		assert_int_equal(rc, tc[i].expected_rc);
 	}
 }
@@ -4191,6 +4305,8 @@ int main()
 		// cmocka_unit_test(test_trn_cli_update_transit_pod_label_policy_subcmd),
 		// cmocka_unit_test(test_trn_cli_update_transit_namespace_label_policy_subcmd),
 		// cmocka_unit_test(test_trn_cli_update_transit_pod_and_namespace_label_policy_subcmd),
+		cmocka_unit_test(test_trn_cli_update_packet_metadata_egress_bw_subcmd),
+		cmocka_unit_test(test_trn_cli_update_packet_metadata_pod_network_class_priority_subcmd),
 		cmocka_unit_test(test_trn_cli_update_agent_md_subcmd),
 		cmocka_unit_test(test_trn_cli_get_vpc_subcmd),
 		cmocka_unit_test(test_trn_cli_get_net_subcmd),

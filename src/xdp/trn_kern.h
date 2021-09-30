@@ -60,6 +60,17 @@
 /* Scaled endpoint messages type */
 #define TRN_SCALED_EP_MODIFY 0x4d // (M: Modify)
 
+/* Pod QoS DSCP codes */
+#define DSCP_BESTEFFORT_HIGH   16    // On-wire IP.TOS: 0x40
+#define DSCP_BESTEFFORT_MEDIUM 0     // On-wire IP.TOS: 0x00
+#define DSCP_BESTEFFORT_LOW    8     // On-wire IP.TOS: 0x20
+#define DSCP_EXPEDITED_HIGH    46    // On-wire IP.TOS: 0xB8
+#define DSCP_EXPEDITED_MEDIUM  32    // On-wire IP.TOS: 0x80
+#define DSCP_EXPEDITED_LOW     24    // On-wire IP.TOS: 0x60
+#define DSCP_PREMIUM_HIGH      10    // On-wire IP.TOS: 0x28
+#define DSCP_PREMIUM_MEDIUM    20    // On-wire IP.TOS: 0x50
+#define DSCP_PREMIUM_LOW       30    // On-wire IP.TOS: 0x78
+
 #ifndef __inline
 #define __inline inline __attribute__((always_inline))
 #endif

@@ -27,6 +27,7 @@
 #include <rpc/pmap_clnt.h>
 #include <string.h>
 #include <memory.h>
+#include <pthread.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <syslog.h>
@@ -44,6 +45,8 @@
 
 void rpc_transit_remote_protocol_1(struct svc_req *rqstp,
 				   register SVCXPRT *transp);
+
+void* bw_qos_monitor(void *argv);
 
 void sighandler(int signo)
 {
@@ -114,11 +117,21 @@ int main()
 		exit(1);
 	}
 
+	// Start bandwidth QoS monitor thread
+	pthread_t bw_qos_monitor_tid;
+	int err = pthread_create(&bw_qos_monitor_tid, NULL, bw_qos_monitor, NULL);
+	if (err != 0) {
+		TRN_LOG_ERROR("Failure starting bandwidth QoS monitor thread. err=%d:%s", err, strerror(err));
+		exit(1);
+	}
+
 	TRN_LOG_INFO(
 		"Press ctrl-c, or send SIGTERM to process ID %d, to gracefully exit program.",
 		getpid());
 	svc_run();
 	TRN_LOG_ERROR("svc_run returned");
+
+	pthread_join(bw_qos_monitor_tid, NULL);
 
 	trn_itf_table_free();
 	TRN_LOG_CLOSE();

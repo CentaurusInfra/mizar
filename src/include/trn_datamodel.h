@@ -46,6 +46,20 @@
 /* XDP programs keys in transit agent */
 #define XDP_TRANSIT 0
 
+/* XDP tx stats program keys */
+#define XDP_TXSTATS_REDIRECT 1
+#define XDP_TXSTATS_PASS     2
+#define XDP_TXSTATS_TX       3
+#define XDP_TXSTATS_DROP     4
+#define XDP_TXSTATS_ABORTED  5
+
+#define TAILCALL_SUPPORTED_TXSTATS TXSTAT(txstat_redirect)TXSTAT(txstat_pass)TXSTAT(txstat_drop)
+#define TXSTAT(x) x,
+enum tailcall_txstat { TAILCALL_SUPPORTED_TXSTATS MAX_TXSTAT };
+#undef TXSTAT
+#define TXSTAT(x) #x,
+static const char * const tailcall_txstat_name[] = { TAILCALL_SUPPORTED_TXSTATS };
+
 /* Cache related const */
 #define TRAN_MAX_CACHE_SIZE 1000000
 
@@ -84,10 +98,19 @@ struct packet_metadata_key_t {
 	__u32 tunip[3];
 } __attribute__((packed));
 
+#define PREMIUM         0x01000000
+#define EXPEDITED       0x00100000
+#define BESTEFFORT      0x00010000
+
+#define PRIORITY_HIGH   0x00000100
+#define PRIORITY_MEDIUM 0x00000010
+#define PRIORITY_LOW    0x00000001
+
 struct packet_metadata_t {
 	__u32 pod_label_value;
 	__u32 namespace_label_value;
 	__u64 egress_bandwidth_bytes_per_sec;
+	__u32 pod_network_class_priority;
 } __attribute__((packed, aligned(4)));
 
 struct network_key_t {
@@ -214,3 +237,18 @@ struct bw_qos_config_t {
 	__u64 t_last;
 	__u64 t_horizon_drop;
 } __attribute__((packed));
+
+struct tx_stats_key_t {
+	__u32 saddr;
+} __attribute__((packed, aligned(4)));
+
+struct tx_stats_t {
+	__u64 tx_bytes_xdp_redirect;
+	__u64 tx_bytes_xdp_expedited;
+	__u64 tx_bytes_xdp_pass;
+	__u64 tx_bytes_xdp_drop;
+	__u32 tx_pkts_xdp_redirect;
+	__u32 tx_pkts_xdp_expedited;
+	__u32 tx_pkts_xdp_pass;
+	__u32 tx_pkts_xdp_drop;
+} __attribute__((packed, aligned(8)));

@@ -449,6 +449,8 @@ int trn_cli_parse_packet_metadata(const cJSON *jsonobj, struct rpc_trn_packet_me
 	cJSON *pod_label_value = cJSON_GetObjectItem(jsonobj, "pod_label_value");
 	cJSON *namespace_label_value = cJSON_GetObjectItem(jsonobj, "namespace_label_value");
 	cJSON *egress_bandwidth_value = cJSON_GetObjectItem(jsonobj, "egress_bandwidth_bytes_per_sec");
+	cJSON *pod_network_class = cJSON_GetObjectItem(jsonobj, "pod_network_class");
+	cJSON *pod_network_priority = cJSON_GetObjectItem(jsonobj, "pod_network_priority");
 
 	if (cJSON_IsString(tunnel_id)) {
 		packet_metadata->tunid = atoi(tunnel_id->valuestring);
@@ -496,6 +498,42 @@ int trn_cli_parse_packet_metadata(const cJSON *jsonobj, struct rpc_trn_packet_me
 		packet_metadata->egress_bandwidth_bytes_per_sec = egress_bandwidth_value->valueint;
 	} else {
 		print_err("Error: egress_bandwidth_value Error\n");
+		return -EINVAL;
+	}
+
+	if (pod_network_class == NULL) {
+		packet_metadata->pod_network_class = RPC_BESTEFFORT;
+	} else if (cJSON_IsString(pod_network_class)) {
+		char *pr = pod_network_class->valuestring;
+		if (strcmp(pr, "Premium") == 0) {
+			packet_metadata->pod_network_class = RPC_PREMIUM;
+		} else if (strcmp(pr, "Expedited") == 0) {
+			packet_metadata->pod_network_class = RPC_EXPEDITED;
+		} else {
+			packet_metadata->pod_network_class = RPC_BESTEFFORT;
+		}
+	} else if (cJSON_IsNumber(pod_network_class)) {
+		packet_metadata->pod_network_class = (enum rpc_pod_network_class_t)pod_network_class->valueint;
+	} else {
+		print_err("Error: pod_network_class Error\n");
+		return -EINVAL;
+	}
+
+	if (pod_network_priority == NULL) {
+		packet_metadata->pod_network_priority = RPC_PRIORITY_MEDIUM;
+	} else if (cJSON_IsString(pod_network_priority)) {
+		char *pr = pod_network_priority->valuestring;
+		if (strcmp(pr, "High") == 0) {
+			packet_metadata->pod_network_priority = RPC_PRIORITY_HIGH;
+		} else if (strcmp(pr, "Low") == 0) {
+			packet_metadata->pod_network_priority = RPC_PRIORITY_LOW;
+		} else {
+			packet_metadata->pod_network_priority = RPC_PRIORITY_MEDIUM;
+		}
+	} else if (cJSON_IsNumber(pod_network_priority)) {
+		packet_metadata->pod_network_priority = (enum rpc_pod_network_priority_t)pod_network_priority->valueint;
+	} else {
+		print_err("Error: pod_network_priority Error\n");
 		return -EINVAL;
 	}
 
@@ -1195,6 +1233,112 @@ int trn_cli_parse_bw_qos_config_key(const cJSON *jsonobj,
 		bw_qos_config_key->saddr = saddr->valueint;
 	} else {
 		print_err("Error: trn_cli_parse_bw_qos_config_key saddr Error\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int trn_cli_parse_tx_stats(const cJSON *jsonobj, struct rpc_trn_tx_stats_t *tx_stats)
+{
+	cJSON *saddr = cJSON_GetObjectItem(jsonobj, "src_addr");
+	cJSON *tx_pkts_xdp_redirect = cJSON_GetObjectItem(jsonobj, "tx_pkts_xdp_redirect");
+	cJSON *tx_bytes_xdp_redirect = cJSON_GetObjectItem(jsonobj, "tx_bytes_xdp_redirect");
+	cJSON *tx_pkts_xdp_pass = cJSON_GetObjectItem(jsonobj, "tx_pkts_xdp_pass");
+	cJSON *tx_bytes_xdp_pass = cJSON_GetObjectItem(jsonobj, "tx_bytes_xdp_pass");
+	cJSON *tx_pkts_xdp_drop = cJSON_GetObjectItem(jsonobj, "tx_pkts_xdp_drop");
+	cJSON *tx_bytes_xdp_drop = cJSON_GetObjectItem(jsonobj, "tx_bytes_xdp_drop");
+
+	if (cJSON_IsString(saddr)) {
+		struct in_addr inaddr;
+		inet_pton(AF_INET, saddr->valuestring, &inaddr);
+		tx_stats->saddr = htonl(inaddr.s_addr);
+	} else if (cJSON_IsNumber(saddr)) {
+		tx_stats->saddr = htonl((unsigned int)saddr->valueint);
+	} else {
+		print_err("Error: trn_cli_parse_tx_stats saddr Error\n");
+		return -EINVAL;
+	}
+
+	if (tx_pkts_xdp_redirect == NULL) {
+		tx_stats->tx_pkts_xdp_redirect = 0;
+	} else if (cJSON_IsString(tx_pkts_xdp_redirect)) {
+		tx_stats->tx_pkts_xdp_redirect = atoi(tx_pkts_xdp_redirect->valuestring);
+	} else if (cJSON_IsNumber(tx_pkts_xdp_redirect)) {
+		tx_stats->tx_pkts_xdp_redirect = tx_pkts_xdp_redirect->valueint;
+	} else {
+		print_err("Error: trn_cli_parse_tx_stats tx_pkts_xdp_redirect Error\n");
+		return -EINVAL;
+	}
+
+	if (tx_bytes_xdp_redirect == NULL) {
+		tx_stats->tx_bytes_xdp_redirect = 0;
+	} else if (cJSON_IsString(tx_bytes_xdp_redirect)) {
+		tx_stats->tx_bytes_xdp_redirect = atoi(tx_bytes_xdp_redirect->valuestring);
+	} else if (cJSON_IsNumber(tx_bytes_xdp_redirect)) {
+		tx_stats->tx_bytes_xdp_redirect = tx_bytes_xdp_redirect->valueint;
+	} else {
+		print_err("Error: trn_cli_parse_tx_stats tx_bytes_xdp_redirect Error\n");
+		return -EINVAL;
+	}
+
+	if (tx_pkts_xdp_pass == NULL) {
+		tx_stats->tx_pkts_xdp_pass = 0;
+	} else if (cJSON_IsString(tx_pkts_xdp_pass)) {
+		tx_stats->tx_pkts_xdp_pass = atoi(tx_pkts_xdp_pass->valuestring);
+	} else if (cJSON_IsNumber(tx_pkts_xdp_pass)) {
+		tx_stats->tx_pkts_xdp_pass = tx_pkts_xdp_pass->valueint;
+	} else {
+		print_err("Error: trn_cli_parse_tx_stats tx_pkts_xdp_pass Error\n");
+		return -EINVAL;
+	}
+
+	if (tx_bytes_xdp_pass == NULL) {
+		tx_stats->tx_bytes_xdp_pass = 0;
+	} else if (cJSON_IsString(tx_bytes_xdp_pass)) {
+		tx_stats->tx_bytes_xdp_pass = atoi(tx_bytes_xdp_pass->valuestring);
+	} else if (cJSON_IsNumber(tx_bytes_xdp_pass)) {
+		tx_stats->tx_bytes_xdp_pass = tx_bytes_xdp_pass->valueint;
+	} else {
+		print_err("Error: trn_cli_parse_tx_stats tx_bytes_xdp_pass Error\n");
+		return -EINVAL;
+	}
+
+	if (tx_pkts_xdp_drop == NULL) {
+		tx_stats->tx_pkts_xdp_drop = 0;
+	} else if (cJSON_IsString(tx_pkts_xdp_drop)) {
+		tx_stats->tx_pkts_xdp_drop = atoi(tx_pkts_xdp_drop->valuestring);
+	} else if (cJSON_IsNumber(tx_pkts_xdp_drop)) {
+		tx_stats->tx_pkts_xdp_drop = tx_pkts_xdp_drop->valueint;
+	} else {
+		print_err("Error: trn_cli_parse_tx_stats tx_pkts_xdp_drop Error\n");
+		return -EINVAL;
+	}
+
+	if (tx_bytes_xdp_drop == NULL) {
+		tx_stats->tx_bytes_xdp_drop = 0;
+	} else if (cJSON_IsString(tx_bytes_xdp_drop)) {
+		tx_stats->tx_bytes_xdp_drop = atoi(tx_bytes_xdp_drop->valuestring);
+	} else if (cJSON_IsNumber(tx_bytes_xdp_drop)) {
+		tx_stats->tx_bytes_xdp_drop = tx_bytes_xdp_drop->valueint;
+	} else {
+		print_err("Error: trn_cli_parse_tx_stats tx_bytes_xdp_drop Error\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int trn_cli_parse_tx_stats_key(const cJSON *jsonobj, struct rpc_trn_tx_stats_key_t *tx_stats_key)
+{
+	cJSON *saddr = cJSON_GetObjectItem(jsonobj, "src_addr");
+
+	if (cJSON_IsString(saddr)) {
+		tx_stats_key->saddr = atoi(saddr->valuestring);
+	} else if (cJSON_IsNumber(saddr)) {
+		tx_stats_key->saddr = saddr->valueint;
+	} else {
+		print_err("Error: trn_cli_parse_tx_stats_key saddr Error\n");
 		return -EINVAL;
 	}
 

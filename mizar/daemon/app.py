@@ -130,6 +130,39 @@ def init(benchmark=False):
     output = r.stdout.read().decode().strip()
     logging.info("Load EDT eBPF program done.\n{}\n".format(output))
 
+    #Setup multi-level QoS for Best-effort and Expedited class traffic
+    linkspeed="10gbit"
+    burstsize="2k"
+    tcscript = (f''' bash -c '\
+    nsenter -t 1 -m -u -n -i tc qdisc del dev {CONSTANTS.MIZAR_BRIDGE} root 2> /dev/null || true && \
+    nsenter -t 1 -m -u -n -i tc qdisc add dev {CONSTANTS.MIZAR_BRIDGE} root handle 1: prio bands 6 priomap 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 && \
+    nsenter -t 1 -m -u -n -i tc qdisc add dev {CONSTANTS.MIZAR_BRIDGE} parent 1:1 handle 11: pfifo && \
+    nsenter -t 1 -m -u -n -i tc qdisc add dev {CONSTANTS.MIZAR_BRIDGE} parent 1:2 handle 12: htb r2q 6 && \
+    nsenter -t 1 -m -u -n -i tc class add dev {CONSTANTS.MIZAR_BRIDGE} parent 12: classid 12:1 htb rate {linkspeed} burst {burstsize} && \
+    nsenter -t 1 -m -u -n -i tc class add dev {CONSTANTS.MIZAR_BRIDGE} parent 12:1 classid 12:11 htb rate {linkspeed} ceil {linkspeed} burst {linkspeed} prio 1 && \
+    nsenter -t 1 -m -u -n -i tc class add dev {CONSTANTS.MIZAR_BRIDGE} parent 12:1 classid 12:12 htb rate {linkspeed} ceil {linkspeed} burst {linkspeed} prio 2 && \
+    nsenter -t 1 -m -u -n -i tc class add dev {CONSTANTS.MIZAR_BRIDGE} parent 12:1 classid 12:13 htb rate {linkspeed} ceil {linkspeed} burst {linkspeed} prio 3 && \
+    nsenter -t 1 -m -u -n -i tc class add dev {CONSTANTS.MIZAR_BRIDGE} parent 12:1 classid 12:14 htb rate {linkspeed} ceil {linkspeed} burst {linkspeed} prio 4 && \
+    nsenter -t 1 -m -u -n -i tc class add dev {CONSTANTS.MIZAR_BRIDGE} parent 12:1 classid 12:15 htb rate {linkspeed} ceil {linkspeed} burst {linkspeed} prio 5 && \
+    nsenter -t 1 -m -u -n -i tc class add dev {CONSTANTS.MIZAR_BRIDGE} parent 12:1 classid 12:16 htb rate {linkspeed} ceil {linkspeed} burst {linkspeed} prio 6 && \
+    nsenter -t 1 -m -u -n -i tc qdisc add dev {CONSTANTS.MIZAR_BRIDGE} parent 12:11 handle 1211: sfq perturb 10 && \
+    nsenter -t 1 -m -u -n -i tc qdisc add dev {CONSTANTS.MIZAR_BRIDGE} parent 12:12 handle 1212: sfq perturb 10 && \
+    nsenter -t 1 -m -u -n -i tc qdisc add dev {CONSTANTS.MIZAR_BRIDGE} parent 12:13 handle 1213: sfq perturb 10 && \
+    nsenter -t 1 -m -u -n -i tc qdisc add dev {CONSTANTS.MIZAR_BRIDGE} parent 12:14 handle 1214: sfq perturb 10 && \
+    nsenter -t 1 -m -u -n -i tc qdisc add dev {CONSTANTS.MIZAR_BRIDGE} parent 12:15 handle 1215: sfq perturb 10 && \
+    nsenter -t 1 -m -u -n -i tc qdisc add dev {CONSTANTS.MIZAR_BRIDGE} parent 12:16 handle 1216: sfq perturb 10 && \
+    nsenter -t 1 -m -u -n -i tc filter add dev {CONSTANTS.MIZAR_BRIDGE} parent 1: prio 1 protocol ip u32 match ip tos 0xB8 0xff flowid 1:1 && \
+    nsenter -t 1 -m -u -n -i tc filter add dev {CONSTANTS.MIZAR_BRIDGE} parent 1: prio 2 protocol ip u32 match ip tos 0x80 0xff flowid 1:2 && \
+    nsenter -t 1 -m -u -n -i tc filter add dev {CONSTANTS.MIZAR_BRIDGE} parent 1: prio 3 protocol ip u32 match ip tos 0x60 0xff flowid 1:3 && \
+    nsenter -t 1 -m -u -n -i tc filter add dev {CONSTANTS.MIZAR_BRIDGE} parent 1: prio 4 protocol ip u32 match ip tos 0x40 0xff flowid 1:4 && \
+    nsenter -t 1 -m -u -n -i tc filter add dev {CONSTANTS.MIZAR_BRIDGE} parent 1: prio 5 protocol ip u32 match ip tos 0x00 0xff flowid 1:5 && \
+    nsenter -t 1 -m -u -n -i tc filter add dev {CONSTANTS.MIZAR_BRIDGE} parent 1: prio 6 protocol ip u32 match ip tos 0x20 0xff flowid 1:6 && \
+    nsenter -t 1 -m -u -n -i tc -s qdisc ls dev {CONSTANTS.MIZAR_BRIDGE} && \
+    nsenter -t 1 -m -u -n -i tc -s class ls dev {CONSTANTS.MIZAR_BRIDGE}' ''')
+    r = subprocess.Popen(tcscript, shell=True, stdout=subprocess.PIPE)
+    output = r.stdout.read().decode().strip()
+    logging.info("Multi-level QoS setup done.\n{}\n".format(output))
+
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=POOL_WORKERS))
