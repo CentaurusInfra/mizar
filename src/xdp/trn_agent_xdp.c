@@ -288,6 +288,7 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	trn_ipv4_csum_inline(pkt->ip, &c_sum);
 	pkt->ip->check = c_sum;
 
+	pkt->udp->check = 0;
 	pkt->udp->source = bpf_htons(s_port); // TODO: a hash value based on inner IP packet
 	pkt->udp->dest = GEN_DSTPORT;
 	pkt->udp->len = bpf_htons(outer_udp_payload);
