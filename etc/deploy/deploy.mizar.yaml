@@ -444,7 +444,7 @@ spec:
       hostPID: true
       initContainers:
       - name: node-init
-        image: mizarnet/mizar:0.8
+        image: mizarnet/mizar:0.9
         command: [./node-init.sh]
         securityContext:
           privileged: true
@@ -453,7 +453,7 @@ spec:
           mountPath: /home
       containers:
       - name: mizar-daemon
-        image: mizarnet/dropletd:0.8
+        image: mizarnet/dropletd:0.9
         env:
         - name: FEATUREGATE_BWQOS
           value: 'false'
@@ -489,7 +489,7 @@ spec:
       hostNetwork: true
       containers:
       - name: mizar-operator
-        image: mizarnet/endpointopr:0.8
+        image: mizarnet/endpointopr:0.9
         env:
         - name: FEATUREGATE_BWQOS
           value: 'false'

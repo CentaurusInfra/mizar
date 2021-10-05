@@ -107,13 +107,13 @@ jobs:
           ssh ciw2 "sudo $(sudo kubeadm token create --print-join-command)"
       - name: build container images
         run: |
-          sudo docker build -t mizar:0.8 -f etc/docker/mizar.Dockerfile .
-          sudo docker build -t dropletd:0.8 -f etc/docker/daemon.Dockerfile .
-          sudo docker build -t endpointopr:0.8 -f etc/docker/operator.Dockerfile .
+          sudo docker build -t mizar:0.9 -f etc/docker/mizar.Dockerfile .
+          sudo docker build -t dropletd:0.9 -f etc/docker/daemon.Dockerfile .
+          sudo docker build -t endpointopr:0.9 -f etc/docker/operator.Dockerfile .
 
-          sudo docker save mizar:0.8 -o build/bin/mizar.tar
-          sudo docker save dropletd:0.8 -o build/bin/dropletd.tar
-          sudo docker save endpointopr:0.8 -o build/bin/endpointopr.tar
+          sudo docker save mizar:0.9 -o build/bin/mizar.tar
+          sudo docker save dropletd:0.9 -o build/bin/dropletd.tar
+          sudo docker save endpointopr:0.9 -o build/bin/endpointopr.tar
 
           sudo chmod +r build/bin/mizar.tar
           sudo chmod +r build/bin/dropletd.tar
