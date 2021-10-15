@@ -29,7 +29,7 @@ logger = logging.getLogger()
 
 
 class Bouncer(object):
-    def __init__(self, name, obj_api, opr_store, spec=None):
+    def __init__(self, name, obj_api, opr_store, spec=None, benchmark=False):
         self.name = name
         self.obj_api = obj_api
         self.store = opr_store
@@ -46,7 +46,11 @@ class Bouncer(object):
         self.dividers = {}
         self.known_substrates = {}
         self.status = OBJ_STATUS.bouncer_status_init
-        self.scaled_ep_obj = '/trn_xdp/trn_transit_scaled_endpoint_ebpf_debug.o'
+        if benchmark:
+            self.scaled_ep_obj = '/trn_xdp/trn_transit_scaled_endpoint_ebpf.o'
+        else:
+            self.scaled_ep_obj = '/trn_xdp/trn_transit_scaled_endpoint_ebpf_debug.o'
+
         if spec is not None:
             self.set_obj_spec(spec)
 

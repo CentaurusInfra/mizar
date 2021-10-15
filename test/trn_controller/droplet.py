@@ -9,6 +9,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 from test.trn_controller.common import cidr, logger, run_cmd
+from mizar.common.common import *
 import os
 import docker
 import time
@@ -16,11 +17,13 @@ import json
 
 
 class droplet:
-    def __init__(self, id, droplet_type='docker', phy_itf='eth0', benchmark=False):
+    def __init__(self, id, phy_itf, droplet_type='docker', benchmark=False):
         """
         Models a host that runs the transit XDP program. In the
         functional test this is simply a docker container.
         """
+        if not phy_itf:
+            phy_itf = get_itf()
         self.id = id
         self.droplet_type = droplet_type
         self.container = None
@@ -72,9 +75,7 @@ class droplet:
         self.trn_cli_update_packet_metadata = f'''{self.trn_cli} update-packet-metadata'''
         self.trn_cli_delete_packet_metadata = f'''{self.trn_cli} delete-packet-metadata'''
 
-        self.xdp_path = "/trn_xdp/trn_transit_xdp_ebpf_debug.o"
-        self.agent_xdp_path = "/trn_xdp/trn_agent_xdp_ebpf_debug.o"
-        self.pcap_file = "eth0_transit_pcap"
+        self.pcap_file = f'''{self.phy_itf}_transit_pcap'''
         self.agent_pcap_file = {}
         self.main_bridge = 'br0'
         self.bootstrap()
@@ -521,6 +522,7 @@ ip netns del {ep.ns} \' ''')
     def update_agent_metadata(self, itf, ep, net, expect_fail=False):
         log_string = "[DROPLET {}]: update_agent_metadata on {} for endpoint {}".format(
             self.id, itf, ep.ip)
+        default_itf = get_itf()
         jsonconf = {
             "ep": {
                 "tunnel_id": ep.get_tunnel_id(),
@@ -529,7 +531,7 @@ ip netns del {ep.ns} \' ''')
                 "mac": ep.get_mac(),
                 "veth": ep.get_veth_name(),
                 "remote_ips": ep.get_remote_ips(),
-                "hosted_iface": "eth0"
+                "hosted_iface": default_itf
             },
             "net": {
                 "tunnel_id": net.get_tunnel_id(),
@@ -540,7 +542,7 @@ ip netns del {ep.ns} \' ''')
             "eth": {
                 "ip": self.ip,
                 "mac": self.mac,
-                "iface": "eth0"
+                "iface": default_itf
             }
         }
         jsonconf = json.dumps(jsonconf)
@@ -721,6 +723,7 @@ cp /var/log/syslog /trn_test_out/syslog_{self.ip}
         Assumes "buildbox:v2" image exist and setup on host
         """
         cwd = os.getcwd()
+        default_itf = get_itf()
 
         # get a docker client
         docker_client = docker.from_env()
@@ -745,7 +748,8 @@ cp /var/log/syslog /trn_test_out/syslog_{self.ip}
         # Restart dependancy services
         container.exec_run("/etc/init.d/rpcbind restart")
         container.exec_run("/etc/init.d/rsyslog restart")
-        container.exec_run("ip link set dev eth0 up mtu 9000")
+        local_cmd=f'''ip link set dev {default_itf} up mtu 9000'''
+        container.exec_run(local_cmd)
         container.exec_run("sysctl -w net.ipv4.tcp_mtu_probing=2")
 
         # We may need ovs for compatability tests
@@ -780,9 +784,10 @@ cp /var/log/syslog /trn_test_out/syslog_{self.ip}
         self.mac = self.container.attrs['NetworkSettings']['MacAddress']
 
     def start_pcap(self):
-        # Start a pcap to collect packets on eth0
+        # Start a pcap to collect packets on default nic
+        default_itf = get_itf()
         cmd = f''' bash -c \
-'(/mnt/Transit/tools/xdpcap /bpffs/eth0_transit_pcap \
+'(/mnt/Transit/tools/xdpcap /bpffs/{default_itf}_transit_pcap \
 /trn_test_out/\
 droplet_{self.ip}.pcap >/dev/null 2>&1 &\
 )' '''
@@ -833,10 +838,11 @@ droplet_{self.ip}.pcap >/dev/null 2>&1 &\
     def dump_pcap_on_host(self, pcapfile, timeout=5):
         """
         Does tcpdump to a pcap file for "n" seconds on the host veth device
-        corresponding to the eth0 interface inside the docker container.
+        corresponding to the default interface inside the docker container.
         """
-        veth_index = self.run(
-            "cat /sys/class/net/eth0/iflink")[1].strip()
+        default_itf = get_itf()
+        local_cmd = f'''cat /sys/class/net/{default_itf}/iflink'''
+        veth_index = self.run(local_cmd)[1].strip()
         veth = self.run_from_root(
             "grep -l " + veth_index + " /sys/class/net/veth*/ifindex")[1].split("/")[4]
         run_cmd("timeout " + str(timeout) + " tcpdump -nn -A -i " + veth + " -w test/trn_func_tests/output/" +
