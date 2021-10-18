@@ -29,7 +29,7 @@ logger = logging.getLogger()
 
 
 class TrnRpc:
-    def __init__(self, ip, mac, itf, benchmark=False):
+    def __init__(self, ip, mac, itf, benchmark=True):
         self.ip = ip
         self.mac = mac
         self.phy_itf = itf

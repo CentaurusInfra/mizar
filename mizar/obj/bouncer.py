@@ -29,7 +29,7 @@ logger = logging.getLogger()
 
 
 class Bouncer(object):
-    def __init__(self, name, obj_api, opr_store, spec=None, benchmark=False):
+    def __init__(self, name, obj_api, opr_store, spec=None, benchmark=True):
         self.name = name
         self.obj_api = obj_api
         self.store = opr_store

@@ -24,7 +24,7 @@ logger = logging.getLogger()
 POOL_WORKERS = 10
 
 
-def init(benchmark=False):
+def init(benchmark=True):
     # Setup the droplet's host
     default_itf = get_itf()
     script = (f''' bash -c '\
