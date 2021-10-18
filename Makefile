@@ -42,9 +42,9 @@ CFLAGS += -std=c11
 CFLAGS += -D_POSIX_C_SOURCE
 CFLAGS += -Wall
 CFLAGS += -Wextra
-CFLAGS += -Werror
+# removed it in 20.04 for now
+#CFLAGS += -Werror
 CFLAGS += -pedantic -Wpedantic
-# needed in 20.04
 #CFLAGS += -Wno-cast-function-type -Wno-error=cast-function-type
 
 CFLAGS += -fno-common
