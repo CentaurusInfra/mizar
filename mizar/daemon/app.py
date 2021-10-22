@@ -32,7 +32,7 @@ def init(benchmark=True):
     nsenter -t 1 -m -u -n -i /etc/init.d/rpcbind restart && \
     nsenter -t 1 -m -u -n -i /etc/init.d/rsyslog restart && \
     nsenter -t 1 -m -u -n -i sysctl -w net.ipv4.tcp_mtu_probing=2 && \
-    nsenter -t 1 -m -u -n -i ip link set dev eth0 up mtu 9000 && \
+    nsenter -t 1 -m -u -n -i ip link set dev {default_itf} up mtu 9000 && \
     nsenter -t 1 -m -u -n -i mkdir -p /var/run/netns' ''')
 
     r = subprocess.Popen(script, shell=True, stdout=subprocess.PIPE)
@@ -85,7 +85,7 @@ def init(benchmark=True):
     brcmd = f'''nsenter -t 1 -m -u -n -i sysctl -w net.bridge.bridge-nf-call-iptables=0 && \
         nsenter -t 1 -m -u -n -i ip link add {CONSTANTS.MIZAR_BRIDGE} type bridge && \
         nsenter -t 1 -m -u -n -i ip link set dev {CONSTANTS.MIZAR_BRIDGE} up && \
-        nsenter -t 1 -m -u -n -i ip link set eth0 master {CONSTANTS.MIZAR_BRIDGE} && \
+        nsenter -t 1 -m -u -n -i ip link set {default_itf} master {CONSTANTS.MIZAR_BRIDGE} && \
         nsenter -t 1 -m -u -n -i ip addr add {nodeip} dev {CONSTANTS.MIZAR_BRIDGE} && \
         nsenter -t 1 -m -u -n -i brctl show'''
 
