@@ -90,7 +90,7 @@ def init(benchmark=True):
         nsenter -t 1 -m -u -n -i brctl show'''
 
     dev_default_itf = f'''dev {default_itf}'''
-    rtlistcmd = 'nsenter -t 1 -m -u -n -i ip route list | grep "' + f'''{dev_default_itf}''' +'"'
+    rtlistcmd = 'nsenter -t 1 -m -u -n -i ip route list | grep "' + f'''{dev_default_itf}''' + '"'
 
     r = subprocess.Popen(rtlistcmd, shell=True, stdout=subprocess.PIPE)
     rtchanges = []
