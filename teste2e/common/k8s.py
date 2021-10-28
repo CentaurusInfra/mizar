@@ -135,7 +135,7 @@ class k8sApi:
             resp.update(timeout=1)
             err = resp.read_channel(ERROR_CHANNEL)
             if err:
-                return yaml.load(err)
+                return yaml.safe_load(err)
 
     def pod_exec_stdout(self, name, cmd):
         exec_command = cmd.split()
