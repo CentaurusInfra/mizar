@@ -106,7 +106,13 @@ func DoCmdDel(netVariables *object.NetVariables, stdinData []byte) (string, erro
 	}
 
 	strBuilder.WriteString(fmt.Sprintf("\nDeleting network namespace %s for interface of %s/%s", netVariables.NetNS, netVariables.K8sPodNamespace, netVariables.K8sPodName))
-	netutil.DeleteNetNS(netVariables.NetNS)
+	info, err := netutil.DeleteNetNS(netVariables.NetNS)
+	if info != "" {
+		strBuilder.WriteString(fmt.Sprintf("\n%s", info))
+	}
+	if err != nil {
+		return strBuilder.String(), err
+	}
 
 	result := cniTypesVer.Result{}
 	return strBuilder.String(), result.Print()
