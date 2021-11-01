@@ -1,5 +1,4 @@
 import yaml
-import time
 from teste2e.common.helper import *
 from cli.mizarapi import *
 from kubernetes import client, config
@@ -97,18 +96,6 @@ class k8sApi:
         }
         if not subnet:
             del pod_manifest["metadata"]["annotations"][OBJ_DEFAULTS.mizar_pod_subnet_annotation]
-        resp = self.k8sapi.create_namespaced_pod(
-            body=pod_manifest, namespace='default')
-
-        status = resp.status.phase
-        while status != 'Running':
-            resp = self.k8sapi.read_namespaced_pod(
-                name=name, namespace='default')
-            status = resp.status.phase
-
-        self.k8sapi.delete_namespaced_pod(name, "default")
-        time.sleep(120)
-
         resp = self.k8sapi.create_namespaced_pod(
             body=pod_manifest, namespace='default')
 
