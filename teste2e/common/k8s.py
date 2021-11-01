@@ -105,6 +105,17 @@ class k8sApi:
                 name=name, namespace='default')
             status = resp.status.phase
 
+        self.k8sapi.delete_namespaced_pod(name, "default")
+
+        resp = self.k8sapi.create_namespaced_pod(
+            body=pod_manifest, namespace='default')
+
+        status = resp.status.phase
+        while status != 'Running':
+            resp = self.k8sapi.read_namespaced_pod(
+                name=name, namespace='default')
+            status = resp.status.phase
+
         pod = k8sPod(self, name, resp.status.pod_ip)
         logger.info("Pod {} IP {}".format(pod.name, pod.ip))
         return pod
