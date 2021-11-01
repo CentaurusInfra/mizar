@@ -1,4 +1,5 @@
 import yaml
+import time
 from teste2e.common.helper import *
 from cli.mizarapi import *
 from kubernetes import client, config
@@ -106,6 +107,7 @@ class k8sApi:
             status = resp.status.phase
 
         self.k8sapi.delete_namespaced_pod(name, "default")
+        time.sleep(120)
 
         resp = self.k8sapi.create_namespaced_pod(
             body=pod_manifest, namespace='default')
