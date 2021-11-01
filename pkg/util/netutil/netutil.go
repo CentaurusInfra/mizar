@@ -127,12 +127,18 @@ func ActivateInterface(
 	return strBuilder.String(), nil
 }
 
-func DeleteNetNS(netNSName string) {
+func DeleteNetNS(netNSName string) (string, error) {
 	netNS, _ := ns.GetNS(netNSName)
 	if netNS != nil {
 		netNS.Close()
 	}
-	executil.Execute("ip", "netns", "delete", netNSName)
+	cmdTxt, result, err := executil.Execute("ip", "netns", "delete", netNSName)
+	strBuilder := strings.Builder{}
+	strBuilder.WriteString(fmt.Sprintf("\nExecuting cmd: \n%s\n%s", cmdTxt, result))
+	if err != nil {
+		return strBuilder.String(), err
+	}
+	return strBuilder.String(), nil
 }
 
 func ParseCIDR(s string) (net.IP, *net.IPNet, error) {
