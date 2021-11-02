@@ -128,12 +128,16 @@ func ActivateInterface(
 }
 
 func DeleteNetNS(netNSName string) (string, error) {
+	strBuilder := strings.Builder{}
 	netNS, _ := ns.GetNS(netNSName)
 	if netNS != nil {
+		strBuilder.WriteString("\nhochan test")
 		netNS.Close()
 	}
-	cmdTxt, result, err := executil.Execute("ip", "netns", "delete", netNSName)
-	strBuilder := strings.Builder{}
+
+	_, netNSFileName := path.Split(netNSName)
+	cmdTxt, result, err := executil.Execute("ip", "netns", "delete", netNSFileName)
+
 	strBuilder.WriteString(fmt.Sprintf("\nExecuting cmd: \n%s\n%s", cmdTxt, result))
 	if err != nil {
 		return strBuilder.String(), err
