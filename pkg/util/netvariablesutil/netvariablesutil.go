@@ -71,26 +71,28 @@ func LoadEnvVariables(netVariables *object.NetVariables) {
 }
 
 func MountNetNSIfNeeded(netVariables *object.NetVariables) (string, error) {
+	strBuilder := strings.Builder{}
+	strBuilder.WriteString(fmt.Sprintf("netVariables.NetNS: %s", netVariables.NetNS))
 	const NetNSFolder = "/var/run/netns/"
-	info := ""
 	if !strings.HasPrefix(netVariables.NetNS, NetNSFolder) {
 		dstNetNS := strings.ReplaceAll(netVariables.NetNS, "/", "_")
 		dstNetNSPath := filepath.Join(NetNSFolder, dstNetNS)
 		if netVariables.Command == "ADD" {
 			if osutil.Exists(dstNetNSPath) {
-				info = fmt.Sprintf("Skip mount %s since file %s exists.", netVariables.NetNS, dstNetNSPath)
+				strBuilder.WriteString(fmt.Sprintf("\nSkip mount %s since file %s exists.", netVariables.NetNS, dstNetNSPath))
 			} else {
 				osutil.Mkdir(NetNSFolder)
 				osutil.Create(dstNetNSPath)
 				cmdTxt, result, err := executil.Execute("mount", "--bind", netVariables.NetNS, dstNetNSPath)
-				info = fmt.Sprintf("Executing cmd: \n%s\n%s", cmdTxt, result)
+				strBuilder.WriteString(fmt.Sprintf("\nExecuting cmd: \n%s\n%s", cmdTxt, result))
 				if err != nil {
-					return info, err
+					return strBuilder.String(), err
 				}
 			}
 		}
 		netVariables.NetNS = dstNetNSPath
+		strBuilder.WriteString(fmt.Sprintf("new netVariables.NetNS: %s", netVariables.NetNS))
 	}
 
-	return info, nil
+	return strBuilder.String(), nil
 }
