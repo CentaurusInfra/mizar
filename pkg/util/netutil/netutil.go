@@ -53,6 +53,7 @@ func ActivateInterface(
 
 	_, netNSFileName := path.Split(netNSName)
 	strBuilder := strings.Builder{}
+	strBuilder.WriteString(fmt.Sprintf("\nnetNSName: %s, netNSFileName: %s.", netNSName, netNSFileName))
 
 	strBuilder.WriteString(fmt.Sprintf("Move interface %s/%d to netns %s.", vethName, link.Attrs().Index, netNSFileName))
 	if netlink.LinkSetNsFd(link, int(netNS.Fd())); err != nil {
@@ -131,11 +132,14 @@ func DeleteNetNS(netNSName string) (string, error) {
 	strBuilder := strings.Builder{}
 	netNS, _ := ns.GetNS(netNSName)
 	if netNS != nil {
-		strBuilder.WriteString("\nhochan test")
+		strBuilder.WriteString("\nhochan not nil")
 		netNS.Close()
+	} else {
+		strBuilder.WriteString("\nhochan nil")
 	}
 
 	_, netNSFileName := path.Split(netNSName)
+	strBuilder.WriteString(fmt.Sprintf("\nnetNSName: %s, netNSFileName: %s.", netNSName, netNSFileName))
 	cmdTxt, result, err := executil.Execute("ip", "netns", "delete", netNSFileName)
 
 	strBuilder.WriteString(fmt.Sprintf("\nExecuting cmd: \n%s\n%s", cmdTxt, result))
