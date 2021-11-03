@@ -112,13 +112,13 @@ func ActivateInterface(
 	}
 
 	strBuilder.WriteString("\nDisable tso for pod")
-	cmdTxt, result, err := executil.Execute("ip", "netns", "exec", netNSFileName, "ethtool", "-K", "eth0", "tso", "off", "gso", "off", "ufo", "off")
+	cmdTxt, result, err := executil.Execute("ip", "netns", "exec", netNSFileName, "ethtool", "-K", ifName, "tso", "off", "gso", "off", "ufo", "off")
 	strBuilder.WriteString(fmt.Sprintf("\nExecuting cmd: \n%s\n%s", cmdTxt, result))
 	if err != nil {
 		return strBuilder.String(), err
 	}
 
-	cmdTxt, result, err = executil.Execute("ip", "netns", "exec", netNSFileName, "ethtool", "--offload", "eth0", "rx", "off", "tx", "off")
+	cmdTxt, result, err = executil.Execute("ip", "netns", "exec", netNSFileName, "ethtool", "--offload", ifName, "rx", "off", "tx", "off")
 	strBuilder.WriteString(fmt.Sprintf("\nExecuting cmd: \n%s\n%s", cmdTxt, result))
 	if err != nil {
 		return strBuilder.String(), err
