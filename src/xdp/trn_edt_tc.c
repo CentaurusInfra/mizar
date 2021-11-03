@@ -36,6 +36,12 @@
 
 #define NSEC_PER_SEC    (1000ULL * 1000ULL * 1000UL)
 
+#ifdef DEBUG
+#define BPF_TRACE_PRINT(...) bpf_trace_printk(__VA_ARGS__)
+#else
+#define BPF_TRACE_PRINT(...) ;
+#endif
+
 // Optimization barrier. 'volatile' is due to gcc bugs
 #ifndef barrier
 #define barrier() 		__asm__ __volatile__("": : :"memory")
@@ -80,14 +86,14 @@ static __ALWAYS_INLINE__ int edt_schedule_departure(struct __sk_buff *skb, __u32
 	key.saddr = saddr;
 	ec = (struct bw_qos_config_t *)bpf_map_lookup_elem(&bw_qos_config_map, &key);
 	if (!ec) {
-		bpf_trace_printk(ec_null_msg, sizeof(ec_null_msg), key.saddr, skb->ifindex);
+		BPF_TRACE_PRINT(ec_null_msg, sizeof(ec_null_msg), key.saddr, skb->ifindex);
 		return TC_ACT_OK;
 	}
 
 	now = bpf_ktime_get_ns();
 
 	t = skb->tstamp;
-	bpf_trace_printk(ec_ts_msg, sizeof(ec_ts_msg), ec->t_last, now, t);
+	BPF_TRACE_PRINT(ec_ts_msg, sizeof(ec_ts_msg), ec->t_last, now, t);
 	if (t < now) {
 		t = now;
 	}
@@ -99,12 +105,12 @@ static __ALWAYS_INLINE__ int edt_schedule_departure(struct __sk_buff *skb, __u32
 	}
 
 	if (t_next - now >= ec->t_horizon_drop) {
-		bpf_trace_printk(ec_ts_drop_msg, sizeof(ec_ts_drop_msg), now, delay, t_next);
+		BPF_TRACE_PRINT(ec_ts_drop_msg, sizeof(ec_ts_drop_msg), now, delay, t_next);
 		return TC_ACT_SHOT;
 	}
 	write_once(ec->t_last, t_next);
 
-	bpf_trace_printk(ec_ts_set_msg, sizeof(ec_ts_set_msg), now, delay, t_next);
+	BPF_TRACE_PRINT(ec_ts_set_msg, sizeof(ec_ts_set_msg), now, delay, t_next);
 	skb->tstamp = t_next;
 	return TC_ACT_OK;
 }
@@ -117,7 +123,7 @@ int tc_edt(struct __sk_buff *skb)
 	//
 	int rc = TC_ACT_OK;
 	char in_msg[] = "=====>>>>\n";
-	char out_msg[] = "<<<<===== [TC_Action: %d]\n";
+	char out_msg[] = "<<<<===== [TC_ACTION: %d]\n";
 	char edt_msg[] = "[TC-EDT:0x%x] Low priority packet Dst: 0x%x\n";
 	void *data = (void *)(long)skb->data;
 	void *data_end = (void *)(long)skb->data_end;
@@ -131,11 +137,11 @@ int tc_edt(struct __sk_buff *skb)
 			__u8 dscp_code = ip->tos >> 2;
 			if ((udp->dest == GEN_DSTPORT) &&
 				((dscp_code == DSCP_BESTEFFORT_HIGH) || (dscp_code == DSCP_BESTEFFORT_MEDIUM) || (dscp_code == DSCP_BESTEFFORT_LOW))) {
-				bpf_trace_printk(in_msg, sizeof(in_msg));
-				bpf_trace_printk(edt_msg, sizeof(edt_msg), bpf_ntohl(ip->saddr),
+				BPF_TRACE_PRINT(in_msg, sizeof(in_msg));
+				BPF_TRACE_PRINT(edt_msg, sizeof(edt_msg), bpf_ntohl(ip->saddr),
 							bpf_ntohl(ip->daddr), udp->source);
 				rc = edt_schedule_departure(skb, bpf_ntohl(ip->saddr));
-				bpf_trace_printk(out_msg, sizeof(out_msg), rc);
+				BPF_TRACE_PRINT(out_msg, sizeof(out_msg), rc);
 			}
 		}
 	}
