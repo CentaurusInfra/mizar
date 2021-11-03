@@ -117,7 +117,7 @@ int tc_edt(struct __sk_buff *skb)
 	//
 	int rc = TC_ACT_OK;
 	char in_msg[] = "=====>>>>\n";
-	char out_msg[] = "<<<<===== [TC_Action: %d]\n";
+	char out_msg[] = "<<<<===== [TC_ACTION: %d]\n";
 	char edt_msg[] = "[TC-EDT:0x%x] Low priority packet Dst: 0x%x\n";
 	void *data = (void *)(long)skb->data;
 	void *data_end = (void *)(long)skb->data_end;
