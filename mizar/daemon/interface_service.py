@@ -236,7 +236,7 @@ class InterfaceServer(InterfaceServiceServicer):
         """
         veth_peer_index = get_iface_index(interface.veth.peer, self.iproute)
         self.rpc.unload_transit_agent_xdp(interface)
-        self.iproute.link('del', index=veth_peer_index)
+        self.iproute.link('delete', index=veth_peer_index)
 
     def DeleteInterface(self, request, context):
         """

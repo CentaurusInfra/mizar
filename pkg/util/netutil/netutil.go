@@ -132,7 +132,8 @@ func DeleteNetNS(netNSName string) {
 	if netNS != nil {
 		netNS.Close()
 	}
-	executil.Execute("ip", "netns", "delete", netNSName)
+	_, netNSFileName := path.Split(netNSName)
+	executil.Execute("ip", "netns", "delete", netNSFileName)
 }
 
 func ParseCIDR(s string) (net.IP, *net.IPNet, error) {
