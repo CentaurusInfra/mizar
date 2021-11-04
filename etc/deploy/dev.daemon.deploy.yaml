@@ -46,6 +46,6 @@ spec:
         image: localhost:5000/dropletd:latest
         env:
         - name: FEATUREGATE_BWQOS
-          value: 'true'
+          value: 'false'
         securityContext:
           privileged: true
