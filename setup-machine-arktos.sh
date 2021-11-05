@@ -120,6 +120,7 @@ sudo apt-get install -y \
     lcov \
     protobuf-compiler \
     libprotobuf-dev
+sudo pip3 install --upgrade pip
 
 GO111MODULE="on" go get google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
 GO111MODULE="on" go get google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
