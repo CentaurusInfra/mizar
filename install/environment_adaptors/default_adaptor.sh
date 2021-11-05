@@ -119,6 +119,7 @@ function install_dependencies_to_remote {
 
     kubectl exec $pod_name -- nsenter -t 1 -m -u -n -i apt-get update -y
     kubectl exec $pod_name -- nsenter -t 1 -m -u -n -i apt-get install -y sudo rpcbind rsyslog libelf-dev iproute2 net-tools iputils-ping ethtool curl python3 python3-pip
+    kubectl exec $pod_name -- nsenter -t 1 -m -u -n -i python3 -m pip install --upgrade pip
     kubectl exec $pod_name -- nsenter -t 1 -m -u -n -i mkdir -p /opt/cni/bin
     #kubectl exec $pod_name -- nsenter -t 1 -m -u -n -i rm -rf /etc/cni/net.d
     kubectl exec $pod_name -- nsenter -t 1 -m -u -n -i mkdir -p /etc/cni/net.d

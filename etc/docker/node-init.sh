@@ -55,6 +55,7 @@ nsenter -t 1 -m -u -n -i apt-get update -y && nsenter -t 1 -m -u -n -i apt-get i
     python3-testresources \
     libcmocka-dev \
     python3-pip && \
+nsenter -t 1 -m -u -n -i python3 -m pip install --upgrade pip
 if [[ "$parsedVersion" -lt "37" ]] ; then
   nsenter -t 1 -m -u -n -i update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1 &&
   nsenter -t 1 -m -u -n -i update-alternatives --install /usr/bin/python3 python3 /usr/bin/python$pyversion 2 &&

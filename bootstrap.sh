@@ -24,6 +24,7 @@ sudo apt-get install -y \
     python3-apt \
     pkg-config \
     docker.io
+sudo python3 -m pip install --upgrade pip
 
 sudo systemctl unmask docker.service
 sudo systemctl unmask docker.socket
