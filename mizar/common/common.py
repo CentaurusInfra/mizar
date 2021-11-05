@@ -29,6 +29,7 @@ import datetime
 import json
 import dateutil.parser
 from kubernetes import watch, client
+from kubernetes.client.rest import ApiException
 from ctypes.util import find_library
 from mizar.common.constants import *
 from pathlib import Path
@@ -265,8 +266,9 @@ def kube_create_config_map(core_api, namespace, configmap):
             body=configmap
         )
         print(response)
-    except:
-        print("Exception when calling CoreV1Api -> create_namespaced_config_map")
+    except ApiException as e:
+        logger.info(
+            "Exception when creating config map: %s\n" % e)
 
 
 def kube_read_config_map(core_api, name, namespace):

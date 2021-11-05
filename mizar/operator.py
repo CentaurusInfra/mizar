@@ -50,6 +50,7 @@ from kubernetes import client, config
 from subprocess import check_output
 from mizar.common.constants import *
 
+
 logger = logging.getLogger()
 LOCK: asyncio.Lock
 POOL_WORKERS = 10
@@ -108,19 +109,22 @@ def grpc_server():
 
 
 def create_config_map():
+    logger.info("Creating config map!")
     metadata = metadata = client.V1ObjectMeta(
         name="mizar-grpc-service",
         namespace="default",
         labels=dict(service="mizar")
     )
     host_ip = check_output(['hostname', '-I']).decode().split(" ")[0]
+    logger.info("Host IP is {}".format(host_ip))
     configmap = client.V1ConfigMap(
         api_version="v1",
         kind="ConfigMap",
-        data=host_ip,
+        data=dict(host=host_ip),
         metadata=metadata
     )
     kube_create_config_map(client.CoreV1Api(), "default", configmap)
+    logger.info("Config map created!")
 
 
 def read_config_map():
