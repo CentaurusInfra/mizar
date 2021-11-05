@@ -25,6 +25,7 @@ RUN apt-get install -y net-tools
 RUN apt-get install -y ethtool
 RUN apt-get install -y iproute2
 RUN apt-get install -y sudo
+RUN python3 -m pip install --upgrade pip
 RUN pip3 install PyYAML
 RUN pip3 install kopf
 RUN pip3 install netaddr

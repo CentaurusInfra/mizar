@@ -12,7 +12,7 @@ sudo apt-get install -y \
     lcov \
     docker.io \
     openvswitch-switch
-sudo pip3 install --upgrade pip
+sudo python3 -m pip install --upgrade pip
 
 sudo pip3 install netaddr docker
 

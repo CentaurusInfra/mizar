@@ -35,7 +35,7 @@ RUN apt-get install -y curl
 RUN apt-get install -y python3
 RUN apt-get install -y python3-pip
 RUN apt-get install -y tcpdump
-RUN pip3 install --upgrade pip
+RUN python3 -m pip install --upgrade pip
 RUN pip3 install PyYAML
 RUN pip3 install kopf
 RUN pip3 install netaddr
