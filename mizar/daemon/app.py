@@ -50,6 +50,12 @@ def init(benchmark=False):
     output = r.stdout.read().decode().strip()
     logging.info("Removed existing XDP program: {}".format(output))
 
+    cmd = "nsenter -t 1 -m -u -n -i ip link set dev " + f'''{default_itf}''' + " xdpoffload off"
+
+    r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    output = r.stdout.read().decode().strip()
+    logging.info("Removed existing offload XDP program: {}".format(output))
+
     cmd = "nsenter -t 1 -m -u -n -i /trn_bin/transitd &"
     r = subprocess.Popen(cmd, shell=True)
     logging.info("Running transitd")
@@ -74,6 +80,12 @@ def init(benchmark=False):
     r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     output = r.stdout.read().decode().strip()
     logging.info("Running load-transit-xdp: {}".format(output))
+
+    if default_itf in get_smart_nic_itf_names():
+        cmd = (f'''nsenter -t 1 -m -u -n -i /trn_bin/transit -s {nodeip} load-transit-offload-xdp -i {default_itf} -j '{config}' ''')
+        r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+        output = r.stdout.read().decode().strip()
+        logging.info("Running load-transit-offload-xdp: {}".format(output))
 
     if os.getenv('FEATUREGATE_BWQOS', 'false').lower() in ('false', '0'):
         logging.info("Bandwidth QoS feature is disabled.")

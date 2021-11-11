@@ -645,6 +645,90 @@ int trn_user_metadata_init(struct user_metadata_t *md, char *itf,
 	return 0;
 }
 
+int trn_user_metadata_init_offload(struct user_metadata_t *md, char *itf,
+			   char *kern_path, int xdp_flags)
+{
+	// use original xdp_transit as xdp2 and load it as the same way
+	int rc;
+	// rc = trn_user_metadata_init(md, itf, kern_path, xdp_flags);
+	// if (rc != 0) {
+	// 	return rc;
+	// }
+	
+	// continue to load xdp1 with hardcode
+	// kern_path = "/trn_xdp/trn_transit_xdp1_ebpf.o";
+	struct rlimit r = { RLIM_INFINITY, RLIM_INFINITY };
+	struct bpf_prog_load_attr prog_load_attr = { .prog_type =
+							     BPF_PROG_TYPE_XDP,
+						     .file = kern_path };
+	__u32 info_len = sizeof(md->info_offload);
+	// md->xdp_flags = 8; // XDP_OFFLOAD = "8"
+
+	if (setrlimit(RLIMIT_MEMLOCK, &r)) {
+		TRN_LOG_ERROR("setrlimit(RLIMIT_MEMLOCK)");
+		return 1;
+	}
+
+	// snprintf(md->pcapfile, sizeof(md->pcapfile),
+	// 	 "/sys/fs/bpf/%s_transit_pcap", itf);
+
+	md->ifindex = if_nametoindex(itf);
+	prog_load_attr.ifindex = md->ifindex;
+	if (!md->ifindex) {
+		TRN_LOG_ERROR("if_nametoindex");
+		return 1;
+	}
+
+	md->eth.ip = trn_get_interface_ipv4(md->ifindex);
+	md->eth.iface_index = md->ifindex;
+
+	//TODO:offload_xdp cannot reuse the pinned maps(network policy), need recreate new maps here
+
+	if (bpf_prog_load_xattr(&prog_load_attr, &md->obj_offload, &md->prog_offload_fd)) {
+		TRN_LOG_ERROR("Error loading bpf: %s", kern_path);
+		return 1;
+	}
+
+	//map_init
+	md->endpoints_offload_map = bpf_map__next(NULL, md->obj_offload);
+	md->interface_config_offload_map = bpf_map__next(md->endpoints_offload_map, md->obj_offload);
+	if (!md->endpoints_offload_map || !md->interface_config_offload_map ) {
+		TRN_LOG_ERROR("Failure finding offloaded maps objects.");
+		return 1;
+	}
+	md->endpoints_map_offload_fd = bpf_map__fd(md->endpoints_offload_map);
+	md->interface_config_map_offload_fd = bpf_map__fd(md->interface_config_offload_map);
+	//map_init done
+
+	if (!md->prog_offload_fd) {
+		TRN_LOG_ERROR("load_bpf_file: %s.", strerror(errno));
+		return 1;
+	}
+
+	if (bpf_set_link_xdp_fd(md->ifindex, md->prog_offload_fd, xdp_flags) < 0) {
+		TRN_LOG_ERROR("link set xdp_offload fd failed - %s.", strerror(errno));
+		return 1;
+	}
+
+	rc = bpf_obj_get_info_by_fd(md->prog_offload_fd, &md->info_offload, &info_len);
+	if (rc != 0) {
+		TRN_LOG_ERROR("can't get prog info - %s.", strerror(errno));
+		return rc;
+	}
+	md->prog_offload_id = md->info_offload.id;
+
+	// as the config of xdp2 already has the itf_idx, set xdp1 as the same config
+	int k = 0;
+
+	rc = bpf_map_update_elem(md->interface_config_map_offload_fd, &k, &md->eth, 0);
+	if (rc != 0) {
+		TRN_LOG_ERROR("Failed to store interface data.");
+		return 1;
+	}
+
+	return 0;
+}
+
 uint32_t trn_get_interface_ipv4(int itf_idx)
 {
 	int fd;

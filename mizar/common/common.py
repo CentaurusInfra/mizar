@@ -428,6 +428,9 @@ def conf_list_has_max_elements(conf, conf_list):
         return True
     return False
 
+def get_smart_nic_itf_names():
+    return ["enp1s0np0"] # check for specific smart_itf_name with hard code
+
 def get_default_itf():
     """
     Assuming "ip route" returns the following format:
@@ -435,14 +438,19 @@ def get_default_itf():
         172.17.0.0/16 dev docker0 proto kernel scope link src 172.17.0.1
         ...
     """
-    default_itf="eth0"
+    global smart_NIC_itfs
+    smart_NIC_itfs = ["enp1s0np0"] # check for specific smart_itf_name with hard code
     ret, data = run_cmd("ip route")
     data = [i for i in data.split('\n') if i]
+    for smart_NIC_itf in get_smart_nic_itf_names():
+        for line in data:
+            if smart_NIC_itf in line:
+                return smart_NIC_itf
     for line in data:
         if line.startswith('default'):
             logging.info("default_itf from ip route: {}".format(line.split()[4]))
             return line.split()[4]
-    return default_itf
+    return "eth0"
 
 def get_bridge_real_itf():
     cmd = "ls /sys/class/net/" + CONSTANTS.MIZAR_BRIDGE + "/brif"

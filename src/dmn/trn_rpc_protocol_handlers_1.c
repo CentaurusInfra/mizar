@@ -676,6 +676,81 @@ error:
 	return &result;
 }
 
+int *load_transit_xdp_offload_1_svc(rpc_trn_xdp_intf_t *xdp_intf, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result = -1;
+
+	int rc;
+	bool unload_error = false;
+	char *itf = xdp_intf->interface;
+	int xdp_flag = xdp_intf->xdp_flag;
+	// char *kern_path = xdp_intf->xdp_path;
+	char *kern_path = "/trn_xdp/trn_transit_xdp1_ebpf.o";
+	struct user_metadata_t empty_md;
+	struct user_metadata_t *md = trn_itf_table_find(itf);
+
+	if (md) {
+		TRN_LOG_INFO("meatadata for interface %s already exist.", itf);
+	} else {
+		TRN_LOG_INFO("creating meatadata for interface %s.", itf);
+		md = malloc(sizeof(struct user_metadata_t));
+	}
+
+	if (!md) {
+		TRN_LOG_ERROR("Failure allocating memory for user_metadata_t");
+		result = RPC_TRN_FATAL;
+		goto error;
+	}
+
+	memset(md, 0, sizeof(struct user_metadata_t));
+
+	// Set all interface index slots to unused
+	int i;
+	for (i = 0; i < TRAN_MAX_ITF; i++) {
+		md->itf_idx[i] = TRAN_UNUSED_ITF_IDX;
+	}
+
+	strcpy(md->pcapfile, xdp_intf->pcapfile);
+	md->pcapfile[255] = '\0';
+	md->xdp_flags = xdp_intf->xdp_flag;
+
+	TRN_LOG_DEBUG("load_transit_xdp_offload_1 path: %s, pcap: %s",
+		      xdp_intf->xdp_path, xdp_intf->pcapfile);
+
+	rc = trn_user_metadata_init_offload(md, itf, kern_path, 8);  // different to load_transit_xdp_1_svc
+
+	if (rc != 0) {
+		TRN_LOG_ERROR(
+			"Failure initializing or loading transit XDP offload program for interface %s",
+			itf);
+		result = RPC_TRN_FATAL;
+		goto error;
+	}
+
+	rc = trn_itf_table_insert(itf, md);
+	if (rc != 0) {
+		TRN_LOG_ERROR(
+			"Failure populating interface table when loading XDP offload program on %s",
+			itf);
+		result = RPC_TRN_ERROR;
+		unload_error = true;
+		goto error;
+	}
+
+	TRN_LOG_INFO("Successfully loaded transit XDP offload on interface %s", itf);
+
+	result = 0;
+	return &result;
+
+error:
+	if (unload_error) {
+		trn_user_metadata_free(md);
+	}
+	free(md);
+	return &result;
+}
+
 int *unload_transit_xdp_1_svc(rpc_intf_t *argp, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);

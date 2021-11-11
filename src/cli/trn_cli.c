@@ -38,6 +38,7 @@ static const struct cmd {
 	{ "update-packet-metadata", trn_cli_update_packet_metadata_subcmd },
 	{ "update-agent-metadata", trn_cli_update_agent_md_subcmd },
 	{ "load-transit-xdp", trn_cli_load_transit_subcmd },
+	{ "load-transit-offload-xdp", trn_cli_load_transit_offload_subcmd },
 	{ "load-agent-xdp", trn_cli_load_agent_subcmd },
 	{ "unload-transit-xdp", trn_cli_unload_transit_subcmd },
 	{ "unload-agent-xdp", trn_cli_unload_agent_subcmd },
