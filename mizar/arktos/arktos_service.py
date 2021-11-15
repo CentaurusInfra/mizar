@@ -27,10 +27,11 @@ from mizar.dp.mizar.operators.vpcs.vpcs_operator import *
 from mizar.proto.builtins_pb2 import *
 from mizar.common.wf_param import *
 from mizar.common.wf_factory import wffactory
+from mizar.store.operator_store import OprStore
 
 vpc_opr = VpcOperator()
 logger = logging.getLogger()
-
+store = OprStore()
 
 class ArktosService(BuiltinsServiceServicer):
 
@@ -51,6 +52,31 @@ class ArktosService(BuiltinsServiceServicer):
         param.body['status']['phase'] = request.phase
         param.body['metadata']['tenant'] = request.tenant
         param.extra = {}
+        store.update_pod_namespace_store(param.name, param.namespace)
+        if request.labels is not None and len(request.labels) != 0:
+            param.body['metadata']['labels'] = json.loads(request.labels)
+            logger.info("Labels for pod {} from Arktos Service are {}".format(request.name, request.labels))
+            diff_item = []
+            diff_item.append('add')
+            diff_item.append(tuple())
+            # old
+            old_dict = {}
+            old_dict['metadata'] = {}
+            old_dict['metadata']['labels'] = store.get_old_pod_labels(request.name)
+            diff_item.append(old_dict)
+            # new
+            new_dict = {}
+            new_dict['metadata'] = {}
+            new_dict['metadata']['labels'] = json.loads(request.labels)
+            diff_item.append(new_dict)
+            diff_items = []
+            diff_items.append(tuple(diff_item))
+            param.diff = tuple(diff_items)
+            logger.info("Pod create param.diff =  {}".format(param.diff))
+            store.update_pod_label_store(param.name, param.body['metadata']['labels'])
+        else:
+            param.body['metadata']['labels'] = {}
+            param.diff = tuple(tuple())
         if request.arktos_network != "":
             param.extra["arktos_network"] = request.arktos_network
         if len(request.interfaces) > 0:
@@ -74,6 +100,39 @@ class ArktosService(BuiltinsServiceServicer):
         param.body['status']['addresses'][0]["type"] = "InternalIP"
         param.body['status']['addresses'][0]["address"] = request.ip
         return run_arktos_workflow(wffactory().k8sDropletCreate(param=param))
+
+    def CreateNamespace(self, request, context):
+        logger.info("Creating namespace from Arktos Service {}".format(request.name))
+        param = reset_param(HandlerParam())
+        param.name = request.name
+        param.body['status'] = {}
+        param.body['metadata'] = {}
+        param.body['metadata']['tenant'] = request.tenant
+        if request.labels is not None and len(request.labels) != 0:
+            logger.info("Labels for namespace {} from Arktos Service are {}".format(request.name, request.labels))
+            param.body['metadata']['labels'] = json.loads(request.labels)
+            diff_item = []
+            diff_item.append('add')
+            diff_item.append(tuple())
+            # old
+            old_dict = {}
+            old_dict['metadata'] = {}
+            old_dict['metadata']['labels'] = store.get_old_namespace_labels(request.name)
+            diff_item.append(old_dict)
+            # new
+            new_dict = {}
+            new_dict['metadata'] = {}
+            new_dict['metadata']['labels'] = json.loads(request.labels)
+            diff_item.append(new_dict)
+            diff_items = []
+            diff_items.append(tuple(diff_item))
+            param.diff = tuple(diff_items)
+            logger.info("Namespace create param.diff =  {}".format(param.diff))
+            store.update_namespace_label_store(param.name, param.body['metadata']['labels'])
+        else:
+            param.body['metadata']['labels'] = {}
+            param.diff = tuple(tuple())
+        return run_arktos_workflow(wffactory().k8sNamespaceCreate(param=param))
 
     def CreateService(self, request, context):
         logger.info(
@@ -172,6 +231,9 @@ class ArktosService(BuiltinsServiceServicer):
     def ResumeNetworkPolicy(self, request, context):
         return self.CreateNetworkPolicy(request, context)
 
+    def ResumeNamespace(self, request, context):
+        return self.CreateNamespace(request, context)
+
     def UpdatePod(self, request, context):
         return self.CreatePod(request, context)
 
@@ -183,6 +245,9 @@ class ArktosService(BuiltinsServiceServicer):
 
     def UpdateServiceEndpoint(self, request, context):
         return self.CreateServiceEndpoint(request, context)
+
+    def UpdateNamespace(self, request, context):
+        return self.CreateNamespace(request, context)
 
     def UpdateNetworkPolicy(self, request, context):
         return self.CreateNetworkPolicy(request, context)
@@ -199,8 +264,19 @@ class ArktosService(BuiltinsServiceServicer):
             "Deleting pod from Network Controller {}".format(request.name))
         param = reset_param(HandlerParam())
         param.name = request.name
-        param.namespace = request.namespace        
+        param.namespace = request.namespace
+        store.delete_pod_label_store(param.name)
+        store.delete_pod_namespace_store(param.name)
         return run_arktos_workflow(wffactory().k8sPodDelete(param=param))
+
+    def DeleteNamespace(self, request, context):
+        logger.info(
+            "Deleting namespace from Network Controller {}".format(request.name))
+        param = reset_param(HandlerParam())
+        param.name = request.name
+        store.delete_namespace_label_store(param.name)
+        store.delete_namespace_pod_store(param.name)
+        return run_arktos_workflow(wffactory().k8sNamespaceDelete(param=param))
 
     def DeleteService(self, request, context):
         logger.info(
@@ -247,6 +323,10 @@ class ArktosServiceClient():
         resp = self.stub_builtins.CreateNetworkPolicy(BuiltinsNetworkPolicyMessage)
         return resp
 
+    def CreateNamespace(self, BuiltinsNamespaceMessage):
+        resp = self.stub_builtins.CreateNamespace(BuiltinsNamespaceMessage)
+        return resp
+
     def UpdatePod(self, BuiltinsPodMessage):
         resp = self.stub_builtins.UpdatePod(BuiltinsPodMessage)
         return resp
@@ -265,6 +345,10 @@ class ArktosServiceClient():
 
     def UpdateNetworkPolicy(self, BuiltinsNetworkPolicyMessage):
         resp = self.stub_builtins.UpdateNetworkPolicy(BuiltinsNetworkPolicyMessage)
+        return resp
+
+    def UpdateNamespace(self, BuiltinsNamespaceMessage):
+        resp = self.stub_builtins.UpdateNamespace(BuiltinsNamespaceMessage)
         return resp
 
     def ResumePod(self, BuiltinsPodMessage):
@@ -287,6 +371,10 @@ class ArktosServiceClient():
         resp = self.stub_builtins.ResumeNetworkPolicy(BuiltinsNetworkPolicyMessage)
         return resp
 
+    def ResumeNamespace(self, BuiltinsNamespaceMessage):
+        resp = self.stub_builtins.ResumeNamespace(BuiltinsNamespaceMessage)
+        return resp
+
     def DeleteNode(self, BuiltinsNodeMessage):
         resp = self.stub_builtins.DeleteNode(BuiltinsNodeMessage)
         return resp
@@ -301,4 +389,12 @@ class ArktosServiceClient():
 
     def DeleteNetworkPolicy(self, BuiltinsNetworkPolicyMessage):
         resp = self.stub_builtins.DeleteNetworkPolicy(BuiltinsNetworkPolicyMessage)
+        return resp
+
+    def DeleteNetworkPolicy(self, BuiltinsNetworkPolicyMessage):
+        resp = self.stub_builtins.DeleteNetworkPolicy(BuiltinsNetworkPolicyMessage)
+        return resp
+
+    def DeleteNamespace(self, BuiltinsNamespaceMessage):
+        resp = self.stub_builtins.DeleteNamespace(BuiltinsNamespaceMessage)
         return resp

@@ -63,7 +63,8 @@ class k8sPodCreate(WorkflowTask):
             'vpc': OBJ_DEFAULTS.default_ep_vpc,
             'subnet': OBJ_DEFAULTS.default_ep_net,
             'phase': self.param.body['status']['phase'],
-            'interfaces': [{'name': default_itf }]
+            'interfaces': [{'name': default_itf }],
+            'labels': self.param.body['metadata'].get('labels', {})
         }
         if self.param.body['metadata'].get('annotations'):
             if self.param.body['metadata'].get('annotations').get(OBJ_DEFAULTS.mizar_pod_vpc_annotation):
@@ -170,7 +171,7 @@ class k8sPodCreate(WorkflowTask):
         #     return
 
         (policy_name_list, pod_label_value, namespace_label_value) = networkpolicy_util.retrieve_change_for_networkpolicy(
-            self.param.name, self.param.namespace, self.param.body.metadata.labels, self.param.diff)
+            self.param.name, self.param.namespace, spec['labels'], self.param.diff)
         spec['pod_label_value'] = pod_label_value
         spec['namespace_label_value'] = namespace_label_value
         if spec['phase'] != 'Pending':

@@ -47,6 +47,13 @@ class OprStore(object):
         self.eps_net_store = {}
         self.eps_pod_store = {}
 
+        self.pod_label_store = {}
+        self.label_pod_store = {}
+        self.namespace_label_store = {}
+        self.label_namespace_store = {}
+        self.namespace_pod_store = {}
+        self.pod_namespace_store = {}
+
         self.networkpolicies_store = {}
         self.eps_store_to_be_updated_networkpolicy = set()
         self.pod_names_to_be_ignored_by_networkpolicy = set()
@@ -349,6 +356,94 @@ class OprStore(object):
             logger.info("Added namespace_label_value {} for {}."
                 .format(self.namespace_label_value_store[label_combination], label_combination))
         return self.namespace_label_value_store[label_combination]
+    
+    def get_old_pod_labels(self, pod_name):
+        labels_dict = {}
+        if pod_name in self.pod_label_store:
+            old_labels = self.pod_label_store[pod_name]
+            for item in old_labels:
+                label_key, label_val = item.split("=")
+                labels_dict[label_key] = label_val
+        return labels_dict
+
+    def update_pod_label_store(self, pod_name, labels):
+        if pod_name in self.pod_label_store:
+            old_labels = self.pod_label_store[pod_name]
+            for item in old_labels:
+                if item in self.label_pod_store and pod_name in self.label_pod_store[item]:
+                    self.label_pod_store[item].remove(pod_name)
+
+        if pod_name not in self.pod_label_store:
+            self.pod_label_store[pod_name] = set()
+
+        for key in labels:
+            label_str = "{}={}".format(key, labels[key])
+            self.pod_label_store[pod_name].add(label_str)
+            if label_str not in self.label_pod_store:
+                self.label_pod_store[label_str] = set()
+            self.label_pod_store[label_str].add(pod_name)
+
+    def delete_pod_label_store(self, pod_name):
+        if pod_name in self.pod_label_store:
+            old_labels = self.pod_label_store[pod_name]
+            for item in old_labels:
+                if item in self.label_pod_store and pod_name in self.label_pod_store[item]:
+                    self.label_pod_store[item].remove(pod_name)
+            del self.pod_label_store[pod_name]
+
+    def get_old_namespace_labels(self, namespace_name):
+        labels_dict = {}
+        if namespace_name in self.namespace_label_store:
+            old_labels = self.namespace_label_store[namespace_name]
+            for item in old_labels:
+                label_key, label_val = item.split("=")
+                labels_dict[label_key] = label_val
+        return labels_dict
+
+    def update_namespace_label_store(self, namespace_name, labels):
+        if namespace_name in self.namespace_label_store:
+            old_labels = self.namespace_label_store[namespace_name]
+            for item in old_labels:
+                if item in self.label_namespace_store and namespace_name in self.label_namespace_store[item]:
+                    self.label_namespace_store[item].remove(namespace_name)
+
+        if namespace_name not in self.namespace_label_store:
+            self.namespace_label_store[namespace_name] = set()
+
+        for key in labels:
+            label_str = "{}={}".format(key, labels[key])
+            self.namespace_label_store[namespace_name].add(label_str)
+            if label_str not in self.label_namespace_store:
+                self.label_namespace_store[label_str] = set()
+            self.label_namespace_store[label_str].add(namespace_name)
+
+    def delete_namespace_label_store(self, namespace_name):
+        if namespace_name in self.namespace_label_store:
+            old_labels = self.namespace_label_store[namespace_name]
+            for item in old_labels:
+                if item in self.label_namespace_store and namespace_name in self.label_namespace_store[item]:
+                    self.label_namespace_store[item].remove(namespace_name)
+            del self.namespace_label_store[namespace_name]
+
+    def update_namespace_pod_store(self, namespace_name, pod_name):
+        if namespace_name not in self.namespace_pod_store:
+            self.namespace_pod_store[namespace_name] = set()
+        self.namespace_pod_store[namespace_name].add(pod_name)
+
+    def delete_namespace_pod_store(self, namespace_name):
+        if namespace_name in self.namespace_pod_store:
+            del self.namespace_pod_store[namespace_name]
+
+    def update_pod_namespace_store(self, pod_name, namespace_name):
+        self.pod_namespace_store[pod_name] = namespace_name
+        self.update_namespace_pod_store(namespace_name, pod_name)
+
+    def delete_pod_namespace_store(self, pod_name):
+        ns = self.pod_namespace_store[pod_name]
+        if ns in self.namespace_pod_store and pod_name in self.namespace_pod_store[ns]:
+            self.namespace_pod_store[ns].remove(pod_name)
+        if pod_name in self.pod_namespace_store:
+            del self.pod_namespace_store[pod_name]
 
     def update_droplet(self, droplet):
         self.droplets_store[droplet.name] = droplet
