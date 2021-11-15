@@ -6,6 +6,7 @@ from kubernetes.stream import stream
 from teste2e.common.k8spod import *
 from teste2e.common.k8sservice import *
 from kubernetes.stream.ws_client import ERROR_CHANNEL, STDOUT_CHANNEL, STDERR_CHANNEL
+from mizar.common.constants import *
 
 
 class k8sCluster:
@@ -20,19 +21,20 @@ class k8sCluster:
     def _init(self):
         logger.info("Check or start existing cluster")
         if not self.is_running(self):
-            self.start_cluster(self)
+            logger.info("Starting Kind cluster!")
+            self.start_kind_cluster(self)
         else:
             logger.info("Test cluster is already running")
 
-    def start_cluster(self):
+    def start_kind_cluster(self):
         logger.info("Start test cluster")
         run_cmd("./kind-setup.sh dev 2")
 
     def is_running(self):
-        ret, val = run_cmd("kind get clusters")
-        return val.strip() == TEST_CLUSTER
+        ret, val = run_cmd("kubectl cluster-info | grep -c 'running'")
+        return int(val.strip()) == 2
 
-    def delete_cluster(self):
+    def delete_kind_cluster(self):
         logger.info("Delete test cluster")
         run_cmd("kind delete cluster")
 
@@ -43,12 +45,27 @@ class k8sApi:
         self.api = MizarApi()
         config.load_kube_config()
         self.k8sapi = client.CoreV1Api()
+        self.operator_logs_cmd = "kubectl get pods | grep mizar-operator | awk '{print $1}' | xargs -i kubectl logs {}"
+        self.operator_pod_name = run_cmd_text(
+            "kubectl get pods | grep mizar-operator | awk '{print $1}'")
 
-    def create_vpc(self, name, ip, prefix, dividers=1, vni=None):
-        self.api.create_vpc(name, ip, prefix, dividers, vni)
+    def create_vpc(self, name, ip, prefix, dividers=1):
+        self.api.create_vpc(name, ip, prefix, dividers)
 
-    def create_net(self, name, ip, prefix, vpc, bouncers=1, vni=None):
-        self.api.create_net(name, ip, prefix, vpc, bouncers, vni)
+    def create_net(self, name, ip, prefix, vpc, vni, bouncers=1):
+        self.api.create_net(name, ip, prefix, vpc, vni, bouncers)
+
+    def get_vpc(self, name):
+        vpc = self.api.get_vpc(name)
+        while vpc["status"] != OBJ_STATUS.obj_provisioned:
+            vpc = self.api.get_vpc(name)
+        return vpc
+
+    def get_net(self, name):
+        net = self.api.get_net(name)
+        while net["status"] != OBJ_STATUS.obj_provisioned:
+            net = self.api.get_net(name)
+        return net
 
     def delete_vpc(self, name):
         self.api.delete_vpc(name)
@@ -56,24 +73,29 @@ class k8sApi:
     def delete_net(self, name):
         self.api.delete_net(name)
 
-    def create_pod(self, name, scaledep=''):
+    def create_pod(self, name, vpc="vpc0", subnet="net0", scaledep=''):
         pod_manifest = {
             'apiVersion': 'v1',
             'kind': 'Pod',
             'metadata': {
                     'name': name,
-                    'labels': {
+                    'annotations': {
+                        OBJ_DEFAULTS.mizar_pod_vpc_annotation: vpc,
+                        OBJ_DEFAULTS.mizar_pod_subnet_annotation: subnet,
+                    },
+                'labels': {
                         'scaledep': scaledep
-                    }
+                        }
             },
             'spec': {
                 'containers': [{
-                    'image': 'localhost:5000/testpod:latest',
+                    'image': 'mizarnet/testpod:latest',
                     'name': 'box1'
                 }]
             }
         }
-
+        if not subnet:
+            del pod_manifest["metadata"]["annotations"][OBJ_DEFAULTS.mizar_pod_subnet_annotation]
         resp = self.k8sapi.create_namespaced_pod(
             body=pod_manifest, namespace='default')
 
@@ -113,7 +135,7 @@ class k8sApi:
             resp.update(timeout=1)
             err = resp.read_channel(ERROR_CHANNEL)
             if err:
-                return yaml.load(err)
+                return yaml.safe_load(err)
 
     def pod_exec_stdout(self, name, cmd):
         exec_command = cmd.split()
@@ -182,3 +204,23 @@ class k8sApi:
             except:
                 deleted = True
         logger.info("Deleted {}".format(name))
+
+    def count_operator_permanent_errors(self):
+        cmd = "{} | grep 'failed permanently' -c".format(
+            self.operator_logs_cmd)
+        return run_cmd_text(cmd)
+
+    def print_operator_errors(self):
+        logger.info("Printing errors if any!")
+        cmd = "{} | grep -E '^[A-Z][a-z].*Error:'".format(
+            self.operator_logs_cmd)
+        logger.info(run_cmd_text(cmd))
+
+    def count_operator_errors(self):
+        cmd = "{} | grep -E '^[A-Z][a-z].*Error:' -c".format(
+            self.operator_logs_cmd)
+        return run_cmd_text(cmd)
+
+    def check_errors(self):
+        self.print_operator_errors()
+        return int(self.count_operator_permanent_errors()) + int(self.count_operator_errors())

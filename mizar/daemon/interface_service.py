@@ -37,11 +37,12 @@ class InterfaceServer(InterfaceServiceServicer):
         self.queued_pods = set()  # A set of pods, with queued interfaces (to be consumed)
         self.interfaces_lock = threading.Lock()
 
-        cmd = 'ip addr show eth0 | grep "inet\\b" | awk \'{print $2}\' | cut -d/ -f1'
+        self.itf = get_itf()
+        cmd = 'ip addr show ' + f'''{self.itf}''' + ' | grep "inet\\b" | awk \'{print $2}\' | cut -d/ -f1'
         r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         self.droplet_ip = r.stdout.read().decode().strip()
 
-        cmd = 'ip addr show eth0 | grep "link/ether\\b" | awk \'{print $2}\' | cut -d/ -f1'
+        cmd = 'ip addr show ' + f'''{self.itf}''' + ' | grep "link/ether\\b" | awk \'{print $2}\' | cut -d/ -f1'
         r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         self.droplet_mac = r.stdout.read().decode().strip()
 
@@ -49,8 +50,7 @@ class InterfaceServer(InterfaceServiceServicer):
         r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         self.droplet_name = r.stdout.read().decode().strip()
 
-        self.itf = 'eth0'
-        self.rpc = LocalTransitRpc('127.0.0.1', self.droplet_mac)
+        self.rpc = LocalTransitRpc('127.0.0.1', self.droplet_mac, self.itf)
 
     def __del__(self):
         self.iproute.close()
@@ -164,7 +164,11 @@ class InterfaceServer(InterfaceServiceServicer):
         # Network namespace operations (Move these to the CNI)
 
         veth_peer_index = get_iface_index(interface.veth.peer, self.iproute)
-        self.iproute.link('set', index=veth_peer_index, state='up', mtu=9000)
+        if os.getenv('FEATUREGATE_BWQOS', 'false').lower() in ('false', '0'):
+            self.iproute.link('set', index=veth_peer_index, state='up', mtu=9000)
+        else:
+            mzbr_index = get_iface_index(CONSTANTS.MIZAR_BRIDGE, self.iproute)
+            self.iproute.link('set', index=veth_peer_index, master=mzbr_index, state='up', mtu=9000)
 
         # Configure the Transit Agent
         self._ConfigureTransitAgent(interface)
@@ -232,7 +236,7 @@ class InterfaceServer(InterfaceServiceServicer):
         """
         veth_peer_index = get_iface_index(interface.veth.peer, self.iproute)
         self.rpc.unload_transit_agent_xdp(interface)
-        self.iproute.link('del', index=veth_peer_index)
+        self.iproute.link('delete', index=veth_peer_index)
 
     def DeleteInterface(self, request, context):
         """
@@ -290,6 +294,20 @@ class InterfaceServer(InterfaceServiceServicer):
         rc, text = run_cmd(cmd)
         logger.info(
             "Disabled rx tx offload for host ep rc: {} text: {}".format(rc, text))
+
+        cmd = "nsenter -t 1 -m -u -n -i cat /sys/class/net/{}/speed".format(interface.veth.name)
+        rc, linkspeed = run_cmd(cmd)
+        linkspeed_bytes_per_sec = int(int(linkspeed.rstrip('\r\n')) * 1000 * (1000/ 8))
+        logger.info("Host interface {} Link Speed {} bytes/sec".format(interface.veth.name, linkspeed_bytes_per_sec))
+
+        # Initialize Tx stats map entry
+        #TODO: Use interface.address.ip_address for multi-NIC scenario
+        self.rpc.reset_tx_stats("0.0.0.0")
+
+        #TODO: Get user-configured default bandwidth limit percentage from config-map
+        bwlimit = int((linkspeed_bytes_per_sec * CONSTANTS.MIZAR_DEFAULT_EGRESS_BW_LIMIT_PCT) / 100)
+        self.rpc.update_bw_qos_config(interface.address.ip_address, bwlimit)
+
         return interface
 
 
@@ -320,7 +338,7 @@ class InterfaceServiceClient():
 
 
 class LocalTransitRpc:
-    def __init__(self, ip, mac, itf='eth0', benchmark=False):
+    def __init__(self, ip, mac, itf, benchmark=False):
         self.ip = ip
         self.mac = mac
         self.phy_itf = itf
@@ -351,6 +369,10 @@ class LocalTransitRpc:
         self.trn_cli_delete_agent_ep = f'''{self.trn_cli} delete-agent-ep'''
         self.trn_cli_update_packet_metadata = f'''{self.trn_cli} update-packet-metadata'''
         self.trn_cli_delete_packet_metadata = f'''{self.trn_cli} delete-packet-metadata'''
+        self.trn_cli_update_tx_stats = f'''{self.trn_cli} update-tx-stats -i {self.phy_itf} -j'''
+        self.trn_cli_update_bw_qos_config = f'''{self.trn_cli} update-bw-qos-config -i {self.phy_itf} -j'''
+        self.trn_cli_delete_bw_qos_config = f'''{self.trn_cli} delete-bw-qos-config -i {self.phy_itf} -j'''
+        self.trn_cli_get_bw_qos_config = f'''{self.trn_cli} get-bw-qos-config -i {self.phy_itf} -j'''
 
         if benchmark:
             self.xdp_path = "/trn_xdp/trn_transit_xdp_ebpf.o"
@@ -429,7 +451,10 @@ class LocalTransitRpc:
             "tunnel_id": interface.address.tunnel_id,
             "ip": interface.address.ip_address,
             "pod_label_value": interface.pod_label_value,
-            "namespace_label_value": interface.namespace_label_value
+            "namespace_label_value": interface.namespace_label_value,
+            "egress_bandwidth_bytes_per_sec": interface.egress_bandwidth_bytes_per_sec,
+            "pod_network_class": interface.pod_network_class,
+            "pod_network_priority": interface.pod_network_priority
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_update_packet_metadata} -i \'{itf}\' -j \'{jsonconf}\''''
@@ -440,6 +465,7 @@ class LocalTransitRpc:
 
     def update_agent_metadata(self, interface):
         itf = interface.veth.peer
+        default_itf = get_itf()
         netip = str(ipaddress.ip_interface(
             interface.address.ip_address + '/' + interface.address.ip_prefix).network.network_address)
         bouncers = []
@@ -453,7 +479,7 @@ class LocalTransitRpc:
                 "mac": interface.address.mac,
                 "veth": interface.veth.name,
                 "remote_ips": [interface.droplet.ip_address],
-                "hosted_iface": 'eth0'
+                "hosted_iface": default_itf
             },
             "net": {
                 "tunnel_id": interface.address.tunnel_id,
@@ -464,7 +490,7 @@ class LocalTransitRpc:
             "eth": {
                 "ip": interface.droplet.ip_address,
                 "mac": interface.droplet.mac,
-                "iface": 'eth0'
+                "iface": default_itf
             }
         }
         jsonconf = json.dumps(jsonconf)
@@ -473,3 +499,30 @@ class LocalTransitRpc:
         returncode, text = run_cmd(cmd)
         logger.info(
             "update_agent_metadata returns {} {}".format(returncode, text))
+
+    def reset_tx_stats(self, ipaddr):
+        jsonconf = {
+            "src_addr": ipaddr,
+            "tx_pkts_xdp_redirect": 0,
+            "tx_bytes_xdp_redirect": 0,
+            "tx_pkts_xdp_pass": 0,
+            "tx_bytes_xdp_pass": 0,
+            "tx_pkts_xdp_drop": 0,
+            "tx_bytes_xdp_drop": 0
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_update_tx_stats} \'{jsonconf}\''''
+        returncode, text = run_cmd(cmd)
+        logger.info(
+            "update_tx_stats returns {} {}".format(returncode, text))
+
+    def update_bw_qos_config(self, ipaddr, egress_bw_bps):
+        jsonconf = {
+            "src_addr": ipaddr,
+            "egress_bandwidth_bytes_per_sec": egress_bw_bps
+        }
+        jsonconf = json.dumps(jsonconf)
+        cmd = f'''{self.trn_cli_update_bw_qos_config} \'{jsonconf}\''''
+        returncode, text = run_cmd(cmd)
+        logger.info(
+            "update_bw_qos_config returns {} {}".format(returncode, text))

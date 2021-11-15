@@ -100,6 +100,12 @@ int trn_cli_parse_pod_and_namespace_label_policy(const cJSON *jsonobj,
 					       struct rpc_trn_pod_and_namespace_label_policy_t *ppo);
 int trn_cli_parse_pod_and_namespace_label_policy_key(const cJSON *jsonobj,
 						   struct rpc_trn_pod_and_namespace_label_policy_key_t *ppo_key);
+int trn_cli_parse_tx_stats(const cJSON *jsonobj, struct rpc_trn_tx_stats_t *tx_stats);
+int trn_cli_parse_tx_stats_key(const cJSON *jsonobj, struct rpc_trn_tx_stats_key_t *tx_stats_key);
+int trn_cli_parse_bw_qos_config(const cJSON *jsonobj,
+			struct rpc_trn_bw_qos_config_t *bw_qos_config);
+int trn_cli_parse_bw_qos_config_key(const cJSON *jsonobj,
+			struct rpc_trn_bw_qos_config_key_t *bw_qos_config_key);
 
 int trn_cli_update_port_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_update_vpc_subcmd(CLIENT *clnt, int argc, char *argv[]);
@@ -148,6 +154,13 @@ int trn_cli_delete_transit_namespace_label_policy_subcmd(CLIENT *clnt, int argc,
 int trn_cli_update_transit_pod_and_namespace_label_policy_subcmd(CLIENT *clnt, int argc, char *argv[]);
 int trn_cli_delete_transit_pod_and_namespace_label_policy_subcmd(CLIENT *clnt, int argc, char *argv[]);
 
+int trn_cli_update_tx_stats_subcmd(CLIENT *clnt, int argc, char *argv[]);
+int trn_cli_get_tx_stats_subcmd(CLIENT *clnt, int argc, char *argv[]);
+
+int trn_cli_update_bw_qos_config_subcmd(CLIENT *clnt, int argc, char *argv[]);
+int trn_cli_delete_bw_qos_config_subcmd(CLIENT *clnt, int argc, char *argv[]);
+int trn_cli_get_bw_qos_config_subcmd(CLIENT *clnt, int argc, char *argv[]);
+
 void dump_vpc(struct rpc_trn_vpc_t *vpc);
 void dump_net(struct rpc_trn_network_t *net);
 void dump_ep(struct rpc_trn_endpoint_t *ep);
@@ -160,4 +173,6 @@ void dump_protocol_port_policy(struct rpc_trn_vsip_ppo_t *ppo);
 void dump_pod_label_policy(struct rpc_trn_pod_label_policy_t *ppo);
 void dump_namespace_label_policy(struct rpc_trn_namespace_label_policy_t *ppo);
 void dump_pod_and_namespace_label_policy(struct rpc_trn_pod_and_namespace_label_policy_t *ppo);
+void dump_tx_stats(struct rpc_trn_tx_stats_t *tx_stats);
+void dump_bw_qos_config(struct rpc_trn_bw_qos_config_t *bw_qos_config);
 uint32_t parse_ip_address(const cJSON *ipobj);

@@ -345,17 +345,19 @@ class NetworkPolicyUtil:
                 elif "namespaceSelector" in rule_item and "podSelector" in rule_item:
                     self.add_label_networkpolicy(data, rule_item["podSelector"]["matchLabels"], policy_name)
                     self.add_namespace_label_networkpolicy(data, rule_item["namespaceSelector"]["matchLabels"], policy_name)
+                    # For ingress traffic, use label based policy
                     if direction == "ingress":
                         data["pod_and_namespace_label_map"][indexed_policy_name] = {
                             "pod_label_map": self.get_pod_label_values_by_label_dict(rule_item["podSelector"]["matchLabels"]),
                             "namespace_label_map": self.get_namespace_label_values_by_label_dict(rule_item["namespaceSelector"]["matchLabels"])
                         }
-
-                    namespaces = kube_list_namespaces_by_labels(networkpolicy_opr.core_api, rule_item["namespaceSelector"]["matchLabels"])
-                    if namespaces is not None:
-                        namespace_set = set()
-                        for namespace in namespaces.items:
-                            namespace_set.add(namespace.metadata.name)
+                    # For egress traffic, use ip based policy
+                    else:
+                        namespaces = kube_list_namespaces_by_labels(networkpolicy_opr.core_api, rule_item["namespaceSelector"]["matchLabels"])
+                        if namespaces is not None:
+                            namespace_set = set()
+                            for namespace in namespaces.items:
+                                namespace_set.add(namespace.metadata.name)
 
                         pods = kube_list_pods_by_labels(networkpolicy_opr.core_api, rule_item["podSelector"]["matchLabels"])
                         if pods is not None:
@@ -364,25 +366,29 @@ class NetworkPolicyUtil:
                                     self.add_pod_ip_into_cidrs_map(pod, policy_name, data["cidrs_map_no_except"][indexed_policy_name])
                 elif "namespaceSelector" in rule_item:
                     self.add_namespace_label_networkpolicy(data, rule_item["namespaceSelector"]["matchLabels"], policy_name)
+                    # For ingress traffic, use label based policy
                     if direction == "ingress":
                         data["namespace_label_map"][indexed_policy_name] = self.get_namespace_label_values_by_label_dict(rule_item["namespaceSelector"]["matchLabels"])
-
-                    namespaces = kube_list_namespaces_by_labels(networkpolicy_opr.core_api, rule_item["namespaceSelector"]["matchLabels"])
-                    if namespaces is not None:
-                        for namespace in namespaces.items:
-                            pods = kube_list_pods_by_namespace(networkpolicy_opr.core_api, namespace.metadata.name)
-                            if pods is not None:
-                                for pod in pods.items:
-                                    self.add_pod_ip_into_cidrs_map(pod, policy_name, data["cidrs_map_no_except"][indexed_policy_name])
+                    # For egress traffic, use ip based policy
+                    else:
+                        namespaces = kube_list_namespaces_by_labels(networkpolicy_opr.core_api, rule_item["namespaceSelector"]["matchLabels"])
+                        if namespaces is not None:
+                            for namespace in namespaces.items:
+                                pods = kube_list_pods_by_namespace(networkpolicy_opr.core_api, namespace.metadata.name)
+                                if pods is not None:
+                                    for pod in pods.items:
+                                        self.add_pod_ip_into_cidrs_map(pod, policy_name, data["cidrs_map_no_except"][indexed_policy_name])
                 elif "podSelector" in rule_item:
                     self.add_label_networkpolicy(data, rule_item["podSelector"]["matchLabels"], policy_name)
+                    # For ingress traffic, use label based policy
                     if direction == "ingress":
                         data["pod_label_map"][indexed_policy_name] = self.get_pod_label_values_by_label_dict(rule_item["podSelector"]["matchLabels"])
-
-                    pods = kube_list_pods_by_labels(networkpolicy_opr.core_api, rule_item["podSelector"]["matchLabels"])
-                    if pods is not None:
-                        for pod in pods.items:                            
-                            self.add_pod_ip_into_cidrs_map(pod, policy_name, data["cidrs_map_no_except"][indexed_policy_name])
+                    # For egress traffic, use ip based policy
+                    else:
+                        pods = kube_list_pods_by_labels(networkpolicy_opr.core_api, rule_item["podSelector"]["matchLabels"])
+                        if pods is not None:
+                            for pod in pods.items:                        
+                                self.add_pod_ip_into_cidrs_map(pod, policy_name, data["cidrs_map_no_except"][indexed_policy_name])
                 else:
                     raise NotImplementedError("Not implemented for {}".format(rule_item))
 
@@ -572,15 +578,20 @@ class NetworkPolicyUtil:
 
     def retrieve_change_for_networkpolicy(self, pod_name, namespace, pod_labels, diff):
         data = self.extract_label_change(diff)
+        namespace_obj = kube_get_namespace(networkpolicy_opr.core_api, namespace)
+        pod_label_combination = self.get_label_combination(pod_labels)
+        is_new_pod_label_combination = False if pod_label_combination in networkpolicy_opr.store.pod_label_value_store else True
+        namespace_label_combination = self.get_label_combination(namespace_obj.metadata.labels)
+        is_new_namespace_label_combination = False if namespace_label_combination in networkpolicy_opr.store.namespace_label_value_store else True
 
         # Followed code piece is to calculate how many policy are affected by the label change, and form data of policy_name_list.
         # Either label is added or removed, policy is affected, so for both data["add"] and data["remove"] we call same function add_affected_networkpolicy_by_pod_label.
         # Here label is defined in policy's podSelector of ingress rule or egress rule.
         policy_name_list = set()
         for label in data["add"]:
-            self.add_affected_networkpolicy_by_pod_label(policy_name_list, label)
+            self.add_affected_networkpolicy_by_pod_label(policy_name_list, label, is_new_pod_label_combination)
         for label in data["remove"]:
-            self.add_affected_networkpolicy_by_pod_label(policy_name_list, label)
+            self.add_affected_networkpolicy_by_pod_label(policy_name_list, label, is_new_pod_label_combination)
 
         endpoint_affected_policy_name_list = set()
         # Followed code piece is to calculate how many policy are affected by the label change, and form data of endpoint_affected_policy_name_list.
@@ -601,15 +612,15 @@ class NetworkPolicyUtil:
 
         # Followed code piece is to detect how many policies are affect by a pod change through namespace.
         # Policy rules have namespaceSelector. So if there is pod created in the namespace, it should affect policy map data.
-        namespace_obj = kube_get_namespace(networkpolicy_opr.core_api, namespace)
         if namespace_obj is not None and namespace_obj.metadata.labels is not None:
-            self.add_affected_networkpolicy_by_namespace_labels(policy_name_list, namespace_obj.metadata.labels)
+            self.add_affected_networkpolicy_by_namespace_labels(policy_name_list, namespace_obj.metadata.labels, is_new_namespace_label_combination)
 
-        pod_label_combination = self.get_label_combination(pod_labels)
         pod_label_value = networkpolicy_opr.store.get_or_add_pod_label_value(pod_label_combination)
-
-        namespace_label_combination = self.get_label_combination(namespace_obj.metadata.labels)
         namespace_label_value = networkpolicy_opr.store.get_or_add_namespace_label_value(namespace_label_combination)
+
+        eps = endpoint_opr.store.get_eps_in_pod(pod_name)
+        for ep in eps.values():
+            ep.update_packet_metadata(pod_label_value, namespace_label_value)
 
         return (policy_name_list, pod_label_value, namespace_label_value)
 
@@ -630,7 +641,7 @@ class NetworkPolicyUtil:
 
         policy_name_list = set()
         for label in data["remove"]:
-            self.add_affected_networkpolicy_by_pod_label(policy_name_list, label)
+            self.add_affected_networkpolicy_by_pod_label(policy_name_list, label, False)
 
         endpoint_affected_policy_name_list = set()
         for label in data["remove"]:
@@ -646,7 +657,7 @@ class NetworkPolicyUtil:
 
         namespace_obj = kube_get_namespace(networkpolicy_opr.core_api, namespace)
         if namespace_obj is not None and namespace_obj.metadata.labels is not None:
-            self.add_affected_networkpolicy_by_namespace_labels(policy_name_list, namespace_obj.metadata.labels)
+            self.add_affected_networkpolicy_by_namespace_labels(policy_name_list, namespace_obj.metadata.labels, False)
 
         for policy_name in policy_name_list:
             for endpoint_name in eps:
@@ -657,20 +668,22 @@ class NetworkPolicyUtil:
 
         self.handle_networkpolicy_change(policy_name_list)
 
-    def add_affected_networkpolicy_by_namespace_labels(self, policy_name_list, label_dict):
+    def add_affected_networkpolicy_by_namespace_labels(self, policy_name_list, label_dict, shall_add_for_ingress):
         for key in label_dict:
             label = "{}={}".format(key, label_dict[key])
-            if label in networkpolicy_opr.store.namespace_label_networkpolicies_ingress_store:
-                for policy_name in networkpolicy_opr.store.namespace_label_networkpolicies_ingress_store[label]:
-                    policy_name_list.add(policy_name)
+            if shall_add_for_ingress:
+                if label in networkpolicy_opr.store.namespace_label_networkpolicies_ingress_store:
+                    for policy_name in networkpolicy_opr.store.namespace_label_networkpolicies_ingress_store[label]:
+                        policy_name_list.add(policy_name)
             if label in networkpolicy_opr.store.namespace_label_networkpolicies_egress_store:
                 for policy_name in networkpolicy_opr.store.namespace_label_networkpolicies_egress_store[label]:
                     policy_name_list.add(policy_name)
 
-    def add_affected_networkpolicy_by_pod_label(self, policy_name_list, label):
-        if label in networkpolicy_opr.store.label_networkpolicies_ingress_store:
-            for policy_name in networkpolicy_opr.store.label_networkpolicies_ingress_store[label]:
-                policy_name_list.add(policy_name)
+    def add_affected_networkpolicy_by_pod_label(self, policy_name_list, label, shall_add_for_ingress):
+        if shall_add_for_ingress:
+            if label in networkpolicy_opr.store.label_networkpolicies_ingress_store:
+                for policy_name in networkpolicy_opr.store.label_networkpolicies_ingress_store[label]:
+                    policy_name_list.add(policy_name)
         if label in networkpolicy_opr.store.label_networkpolicies_egress_store:
             for policy_name in networkpolicy_opr.store.label_networkpolicies_egress_store[label]:
                 policy_name_list.add(policy_name)
@@ -754,11 +767,11 @@ class NetworkPolicyUtil:
             else:
                 raise NotImplementedError("Not implemented for label change type of {}".format(change_type))
         elif field is not None and len(field) == 0:
-            if change_type == "add" and "metadata" in new and new["metadata"] is not None and new["metadata"]["labels"] is not None:
+            if change_type == "add" and "metadata" in new and new["metadata"] and new["metadata"].get("labels"):
                 labels = new["metadata"]["labels"]
                 for key in labels:
                     data["add"].add("{}={}".format(key, labels[key]))
-            elif change_type == "remove" and "metadata" in old and old["metadata"] is not None and old["metadata"]["labels"] is not None:
+            elif change_type == "remove" and "metadata" in old and old["metadata"] and old["metadata"].get("labels"):
                 labels = old["metadata"]["labels"]
                 for key in labels:
                     data["remove"].add("{}={}".format(key, labels[key]))

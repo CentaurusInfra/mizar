@@ -6,14 +6,18 @@ from netaddr import *
 logger = logging.getLogger("transit_test")
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
 
-TEST_CLUSTER = 'kind'
-
 
 def run_cmd(cmd_list):
     result = subprocess.Popen(cmd_list, shell=True, stdout=subprocess.PIPE)
     text = result.stdout.read().decode()
     returncode = result.returncode
     return (returncode, text)
+
+
+def run_cmd_text(cmd_list):
+    result = subprocess.Popen(cmd_list, shell=True, stdout=subprocess.PIPE)
+    text = result.stdout.read().decode().rstrip()
+    return text
 
 
 def do_common_tests(test, ep1, ep2):

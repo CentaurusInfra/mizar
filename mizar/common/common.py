@@ -29,6 +29,7 @@ import datetime
 import json
 import dateutil.parser
 from kubernetes import watch, client
+from kubernetes.client.rest import ApiException
 from ctypes.util import find_library
 from mizar.common.constants import *
 from pathlib import Path
@@ -265,8 +266,9 @@ def kube_create_config_map(core_api, namespace, configmap):
             body=configmap
         )
         print(response)
-    except:
-        print("Exception when calling CoreV1Api -> create_namespaced_config_map")
+    except ApiException as e:
+        logger.info(
+            "Exception when creating config map: %s\n" % e)
 
 
 def kube_read_config_map(core_api, name, namespace):
@@ -426,16 +428,33 @@ def conf_list_has_max_elements(conf, conf_list):
         return True
     return False
 
+def get_default_itf():
+    """
+    Assuming "ip route" returns the following format:
+        default via 192.168.189.1 dev ens33 proto dhcp src 192.168.189.2 metric 100
+        172.17.0.0/16 dev docker0 proto kernel scope link src 172.17.0.1
+        ...
+    """
+    default_itf="eth0"
+    ret, data = run_cmd("ip route")
+    data = [i for i in data.split('\n') if i]
+    for line in data:
+        if line.startswith('default'):
+            logging.info("default_itf from ip route: {}".format(line.split()[4]))
+            return line.split()[4]
+    return default_itf
 
-def bindmount_netns(src_netns_path, dst_netns_path):
-    os.mknod(dst_netns_path)
-    bindmount = subprocess.run(
-        ["mount", "--bind", src_netns_path, dst_netns_path])
-    return bindmount.returncode
-
+def get_bridge_real_itf():
+    cmd = "ls /sys/class/net/" + CONSTANTS.MIZAR_BRIDGE + "/brif"
+    ret, data1 = run_cmd(cmd)
+    data = data1.split()
+    logger.info("Get bridge real interface {}".format(data[0]))
+    return data[0]
 
 def get_itf():
-    default_itf = "eth0"
+    default_itf = get_default_itf()
+    if default_itf == CONSTANTS.MIZAR_BRIDGE:
+        default_itf = get_bridge_real_itf()
     if "MIZAR_ITF" in os.environ:
         logger.info("MIZAR_ITF env var found!")
         return os.getenv("MIZAR_ITF")

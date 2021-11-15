@@ -24,6 +24,19 @@
 
 cp -rf /var/mizar /home/
 mkdir -p /etc/cni/net.d
+# check if python is installed ,if yes and check version and install dev pkgs accordingly
+pyversion="3.7"
+version=$(nsenter -t 1 -m -u -n -i python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
+parsedVersion=$(echo "${version//./}")
+if [[ -z "$version" ]] ; then
+  echo "No Python!"
+  # continue with 3.7
+elif [[ "$parsedVersion" -gt "37" ]] ; then
+  echo "Valid version $version"
+  pyversion=$version
+fi
+echo "python "$pyversion
+
 nsenter -t 1 -m -u -n -i apt-get update -y && nsenter -t 1 -m -u -n -i apt-get install -y \
     sudo \
     rpcbind \
@@ -32,26 +45,31 @@ nsenter -t 1 -m -u -n -i apt-get update -y && nsenter -t 1 -m -u -n -i apt-get i
     iproute2  \
     net-tools \
     iputils-ping \
+    bridge-utils \
     ethtool \
     curl \
-    python3.7 \
+    python$pyversion \
     lcov \
-    python3.7-dev \
+    python$pyversion-dev \
     python3-apt \
+    python3-testresources \
     libcmocka-dev \
     python3-pip && \
-nsenter -t 1 -m -u -n -i  update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1 && \
-nsenter -t 1 -m -u -n -i  update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 2 && \
-nsenter -t 1 -m -u -n -i  update-alternatives --set python3 /usr/bin/python3.7 && \
-nsenter -t 1 -m -u -n -i  ln -snf /usr/lib/python3/dist-packages/apt_pkg.cpython-36m-x86_64-linux-gnu.so /usr/lib/python3/dist-packages/apt_pkg.so && \
+nsenter -t 1 -m -u -n -i python3 -m pip install --upgrade pip
+if [[ "$parsedVersion" -lt "37" ]] ; then
+  nsenter -t 1 -m -u -n -i update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1 &&
+  nsenter -t 1 -m -u -n -i update-alternatives --install /usr/bin/python3 python3 /usr/bin/python$pyversion 2 &&
+  nsenter -t 1 -m -u -n -i update-alternatives --set python3 /usr/bin/python$pyversion &&
+  nsenter -t 1 -m -u -n -i ln -snf /usr/lib/python3/dist-packages/apt_pkg.cpython-36m-x86_64-linux-gnu.so /usr/lib/python3/dist-packages/apt_pkg.so
+fi
 nsenter -t 1 -m -u -n -i mkdir -p /opt/cni/bin && \
 nsenter -t 1 -m -u -n -i mkdir -p /etc/cni/net.d && \
+nsenter -t 1 -m -u -n -i cp -f /var/mizar/build/bin/mizarcni /opt/cni/bin/mizarcni && \
 nsenter -t 1 -m -u -n -i pip3 install --upgrade protobuf && \
 nsenter -t 1 -m -u -n -i pip3 install --ignore-installed /var/mizar/ && \
 nsenter -t 1 -m -u -n -i ln -snf /sys/fs/bpf /bpffs && \
 nsenter -t 1 -m -u -n -i ln -snf /var/mizar/build/bin /trn_bin && \
 nsenter -t 1 -m -u -n -i ln -snf /var/mizar/build/xdp /trn_xdp && \
-nsenter -t 1 -m -u -n -i ln -snf /var/mizar/etc/cni/10-mizarcni.conf /etc/cni/net.d/10-mizarcni.conf && \
-nsenter -t 1 -m -u -n -i ln -snf /var/mizar/mizar/cni.py /opt/cni/bin/mizarcni && \
+nsenter -t 1 -m -u -n -i cp -f /var/mizar/etc/cni/10-mizarcni.conf /etc/cni/net.d/10-mizarcni.conf && \
 nsenter -t 1 -m -u -n -i ln -snf /var/mizar/build/tests/mizarcni.config /etc/mizarcni.config && \
 echo "mizar-complete"

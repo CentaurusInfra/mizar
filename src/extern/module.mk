@@ -12,4 +12,4 @@ clean::
 	rm -f src/extern/*.o
 	rm -f src/extern/*.gcda
 	rm -rf lib/*
-	make clean -C src/extern/libbpf/src
+	if [ -d "src/extern/libbpf/src" ]; then make clean -C src/extern/libbpf/src; fi

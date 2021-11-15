@@ -79,6 +79,20 @@ struct rpc_trn_endpoint_key_t {
        uint32_t ip;
 };
 
+enum rpc_pod_network_class_t {
+        RPC_BESTEFFORT = 0,
+        RPC_EXPEDITED,
+        RPC_PREMIUM,
+        RPC_MAX_POD_NETWORK_CLASS
+};
+
+enum rpc_pod_network_priority_t {
+        RPC_PRIORITY_HIGH = 0,
+        RPC_PRIORITY_MEDIUM,
+        RPC_PRIORITY_LOW,
+        RPC_MAX_POD_NETWORK_PRIORITY
+};
+
 /* Defines an packet metadata */
 struct rpc_trn_packet_metadata_t {
        string interface<20>;
@@ -86,6 +100,9 @@ struct rpc_trn_packet_metadata_t {
        uint64_t tunid;
        uint32_t pod_label_value;
        uint32_t namespace_label_value;
+       uint64_t egress_bandwidth_bytes_per_sec;
+       enum rpc_pod_network_class_t pod_network_class;
+       enum rpc_pod_network_priority_t pod_network_priority;
 };
 
 /* Defines a unique key to get/delete an packet metadata */
@@ -271,6 +288,37 @@ struct rpc_trn_pod_and_namespace_label_policy_key_t {
        uint32_t namespace_label_value;
 };
 
+/* Defines a struct to configure EDT bandwidth limits */
+struct rpc_trn_bw_qos_config_t {
+       string interface<20>;
+       uint32_t saddr;
+       uint64_t egress_bandwidth_bytes_per_sec;
+};
+
+/* Defines a unique key to get/delete EDT bandwith configuration */
+struct rpc_trn_bw_qos_config_key_t {
+       string interface<20>;
+       uint32_t saddr;
+};
+
+/* Defines a struct for XDP Tx stats */
+struct rpc_trn_tx_stats_t {
+       string interface<20>;
+       uint32_t saddr;
+       uint32_t tx_pkts_xdp_redirect;
+       uint64_t tx_bytes_xdp_redirect;
+       uint32_t tx_pkts_xdp_pass;
+       uint64_t tx_bytes_xdp_pass;
+       uint32_t tx_pkts_xdp_drop;
+       uint64_t tx_bytes_xdp_drop;
+};
+
+/* Defines a unique key to get/update EDT XDP Tx stats */
+struct rpc_trn_tx_stats_key_t {
+       string interface<20>;
+       uint32_t saddr;
+};
+
 /*----- Protocol. -----*/
 
 program RPC_TRANSIT_REMOTE_PROTOCOL {
@@ -326,6 +374,12 @@ program RPC_TRANSIT_REMOTE_PROTOCOL {
                 int UPDATE_TRANSIT_POD_AND_NAMESPACE_LABEL_POLICY(rpc_trn_pod_and_namespace_label_policy_t) = 41;
                 int DELETE_TRANSIT_POD_AND_NAMESPACE_LABEL_POLICY(rpc_trn_pod_and_namespace_label_policy_key_t) = 42;
 
+                int UPDATE_BW_QOS_CONFIG(rpc_trn_bw_qos_config_t) = 43;
+                int DELETE_BW_QOS_CONFIG(rpc_trn_bw_qos_config_key_t) = 44;
+                rpc_trn_bw_qos_config_t GET_BW_QOS_CONFIG(rpc_trn_bw_qos_config_key_t) = 45;
+
+                int UPDATE_TX_STATS(rpc_trn_tx_stats_t) = 46;
+                rpc_trn_tx_stats_t GET_TX_STATS(rpc_trn_tx_stats_key_t) = 47;
           } = 1;
 
 } =  0x20009051;

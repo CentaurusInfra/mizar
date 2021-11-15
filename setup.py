@@ -11,6 +11,7 @@ setup(
     },
     install_requires=[
         'PyYAML',
+        'setuptools',
         'kopf',
         'netaddr',
         'ipaddress',
@@ -21,6 +22,7 @@ setup(
         'grpcio',
         'scapy',
         'protobuf',
-        'fs'
+        'fs',
+        'grpcio_tools'
     ]
 )

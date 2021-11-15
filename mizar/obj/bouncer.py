@@ -29,7 +29,7 @@ logger = logging.getLogger()
 
 
 class Bouncer(object):
-    def __init__(self, name, obj_api, opr_store, spec=None):
+    def __init__(self, name, obj_api, opr_store, spec=None, benchmark=False):
         self.name = name
         self.obj_api = obj_api
         self.store = opr_store
@@ -46,7 +46,11 @@ class Bouncer(object):
         self.dividers = {}
         self.known_substrates = {}
         self.status = OBJ_STATUS.bouncer_status_init
-        self.scaled_ep_obj = '/trn_xdp/trn_transit_scaled_endpoint_ebpf_debug.o'
+        if benchmark:
+            self.scaled_ep_obj = '/trn_xdp/trn_transit_scaled_endpoint_ebpf.o'
+        else:
+            self.scaled_ep_obj = '/trn_xdp/trn_transit_scaled_endpoint_ebpf_debug.o'
+
         if spec is not None:
             self.set_obj_spec(spec)
 
@@ -132,10 +136,12 @@ class Bouncer(object):
         self.rpc.load_transit_xdp_pipeline_stage(CONSTANTS.ON_XDP_SCALED_EP,
                                                  self.scaled_ep_obj)
 
-    def update_eps(self, eps):
+    def update_eps(self, eps, task):
         for ep in eps:
             self.eps[ep.name] = ep
             if ep.type in OBJ_DEFAULTS.droplet_eps:
+                if not ep.droplet_obj:
+                    task.raise_temporary_error("Task: {} Endpoint: {} Droplet Object not ready.".format(self.__class__.__name__, ep.name))
                 self._update_simple_ep(ep)
             if ep.type == OBJ_DEFAULTS.ep_type_scaled:
                 self._update_scaled_ep(ep)

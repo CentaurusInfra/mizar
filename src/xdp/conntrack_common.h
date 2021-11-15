@@ -73,7 +73,8 @@ static inline int is_ingress_enforced(__u64 tunnel_id, __be32 ip_addr)
     -1: ingress policy denies this packet; ingress policy denial error
 */
 __ALWAYS_INLINE__
-static inline int enforce_ingress_policy(__u64 tunnel_id, const struct ipv4_tuple_t *ipv4_tuple)
+static inline int enforce_ingress_policy(__u64 tunnel_id, const struct ipv4_tuple_t *ipv4_tuple,
+	__u32 pod_label_value, __u32 namespace_label_value)
 {
 	const __u32 full_vsip_cidr_prefix = (__u32)(sizeof(struct vsip_cidr_t) - sizeof(__u32)) * 8;
 
@@ -92,6 +93,55 @@ static inline int enforce_ingress_policy(__u64 tunnel_id, const struct ipv4_tupl
 	if (policies_l4) policies_ppo |= *policies_l4;
 
 	if (0 == policies_ppo) return -1;
+
+	if (pod_label_value > 0) {
+		bpf_debug("Checking packet for pod label policy with pod_label_value=%d",
+			pod_label_value);
+		struct pod_label_policy_t pod_label_policy = {
+			.tunnel_id = tunnel_id,
+			.pod_label_value = pod_label_value,
+		};
+		__u64 *policies_pod_label_lookup = bpf_map_lookup_elem(&ing_pod_label_policy_map, &pod_label_policy);
+		__u64 policies_pod_label = (policies_pod_label_lookup) ? *policies_pod_label_lookup : 0;
+		if (policies_ppo & policies_pod_label){
+			bpf_debug("Packet matches pod label policy with pod_label_value=%d",
+				pod_label_value);
+			return 0;
+		}		
+	}
+
+	if (namespace_label_value > 0) {
+		bpf_debug("Checking packet for namespace label policy with namespace_label_value=%d",
+			namespace_label_value);
+		struct namespace_label_policy_t namespace_label_policy = {
+			.tunnel_id = tunnel_id,
+			.namespace_label_value = namespace_label_value,
+		};
+		__u64 *policies_namespace_label_lookup = bpf_map_lookup_elem(&ing_namespace_label_policy_map, &namespace_label_policy);
+		__u64 policies_namespace_label = (policies_namespace_label_lookup) ? *policies_namespace_label_lookup : 0;
+		if (policies_ppo & policies_namespace_label){
+			bpf_debug("Packet matches namespace label policy with namespace_label_value=%d",
+				namespace_label_value);
+			return 0;
+		}
+	}
+
+	if (pod_label_value > 0 && namespace_label_value > 0) {
+		bpf_debug("Checking packet for pod and namespace label policy with pod_label_value=%d and namespace_label_value=%d",
+			pod_label_value, namespace_label_value);
+		struct pod_and_namespace_label_policy_t pod_and_namespace_label_policy = {
+			.tunnel_id = tunnel_id,
+			.pod_label_value = pod_label_value,
+			.namespace_label_value = namespace_label_value,
+		};
+		__u64 *policies_pod_and_namespace_label_lookup = bpf_map_lookup_elem(&ing_pod_and_namespace_label_policy_map, &pod_and_namespace_label_policy);
+		__u64 policies_pod_and_namespace_label = (policies_pod_and_namespace_label_lookup) ? *policies_pod_and_namespace_label_lookup : 0;
+		if (policies_ppo & policies_pod_and_namespace_label){
+			bpf_debug("Packet matches pod and namespace label policy with pod_label_value=%d and namespace_label_value=%d",
+				pod_label_value, namespace_label_value);
+			return 0;
+		}
+	}
 
 	struct vsip_cidr_t vsip_cidr = {
 		.prefixlen = full_vsip_cidr_prefix,
@@ -122,12 +172,13 @@ static inline int enforce_ingress_policy(__u64 tunnel_id, const struct ipv4_tupl
     -1: denies this packet; ingress policy denial error
 */
 __ALWAYS_INLINE__
-static inline int ingress_policy_check(__u64 tunnel_id, const struct ipv4_tuple_t *ipv4_tuple)
+static inline int ingress_policy_check(__u64 tunnel_id, const struct ipv4_tuple_t *ipv4_tuple,
+	__u32 pod_label_value, __u32 namespace_label_value)
 {
 	if (!is_ingress_enforced(tunnel_id, ipv4_tuple->daddr))
 		return 0;
 
-	return enforce_ingress_policy(tunnel_id, ipv4_tuple);
+	return enforce_ingress_policy(tunnel_id, ipv4_tuple, pod_label_value, namespace_label_value);
 }
 
 /*
@@ -231,7 +282,7 @@ static inline int egress_reply_packet_check(__u64 tunnel_id, const struct ipv4_t
 		.sport = ipv4_tuple->dport,
 		.dport = ipv4_tuple->sport,
 	};
-	return ingress_policy_check(tunnel_id, &originated_tuple);
+	return ingress_policy_check(tunnel_id, &originated_tuple, 0, 0);
 }
 
 /*

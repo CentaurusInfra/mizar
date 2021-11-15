@@ -72,6 +72,11 @@ static const struct cmd {
 	{ "delete-namespace-label-policy", trn_cli_delete_transit_namespace_label_policy_subcmd },
 	{ "update-pod-and-namespace-label-policy", trn_cli_update_transit_pod_and_namespace_label_policy_subcmd },
 	{ "delete-pod-and-namespace-label-policy", trn_cli_delete_transit_pod_and_namespace_label_policy_subcmd },
+	{ "update-tx-stats", trn_cli_update_tx_stats_subcmd },
+	{ "get-tx-stats", trn_cli_get_tx_stats_subcmd },
+	{ "update-bw-qos-config", trn_cli_update_bw_qos_config_subcmd },
+	{ "delete-bw-qos-config", trn_cli_delete_bw_qos_config_subcmd },
+	{ "get-bw-qos-config", trn_cli_get_bw_qos_config_subcmd },
 	{ 0 },
 };
 

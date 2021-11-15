@@ -345,14 +345,16 @@ class OprStore(object):
 
     def get_or_add_pod_label_value(self, label_combination):
         if label_combination not in self.pod_label_value_store:
-            self.pod_label_value_store[label_combination] = len(
-                self.pod_label_value_store)
+            self.pod_label_value_store[label_combination] = len(self.pod_label_value_store)
+            logger.info("Added pod_label_value {} for {}."
+                .format(self.pod_label_value_store[label_combination], label_combination))
         return self.pod_label_value_store[label_combination]
 
     def get_or_add_namespace_label_value(self, label_combination):
         if label_combination not in self.namespace_label_value_store:
-            self.namespace_label_value_store[label_combination] = len(
-                self.namespace_label_value_store)
+            self.namespace_label_value_store[label_combination] = len(self.namespace_label_value_store)
+            logger.info("Added namespace_label_value {} for {}."
+                .format(self.namespace_label_value_store[label_combination], label_combination))
         return self.namespace_label_value_store[label_combination]
     
     def get_old_pod_labels(self, pod_name):

@@ -88,16 +88,18 @@ class EndpointOperator(object):
         ep = Endpoint(name, self.obj_api, self.store, spec)
         self.store.update_ep(ep)
 
-    def update_bouncer_with_endpoints(self, bouncer):
+    def update_bouncer_with_endpoints(self, bouncer, task):
         eps = list(self.store.get_eps_in_net(bouncer.net).values())
-        bouncer.update_eps(eps)
+        bouncer.update_eps(eps, task)
 
-    def update_endpoints_with_bouncers(self, bouncer):
+    def update_endpoints_with_bouncers(self, bouncer, task):
         eps = list(self.store.get_eps_in_net(bouncer.net).values())
         for ep in eps:
             logger.info("EP {} update agent with bouncer {}".format(
                 bouncer.name, ep.name))
             if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
+                if not ep.droplet_obj:
+                    task.raise_temporary_error("Task: {} Endpoint: {} Droplet Object not ready.".format(self.__class__.__name__, ep.name))
                 ep.update_bouncers({bouncer.name: bouncer})
 
     def create_scaled_endpoint(self, name, ep_name, spec, net, extra, namespace="default"):
@@ -142,6 +144,15 @@ class EndpointOperator(object):
         get_body = True
         while get_body:
             endpoint = kube_get_endpoints(self.core_api, name, namespace)
+            if endpoint and \
+               endpoint.metadata and \
+               endpoint.metadata.annotations and \
+               OBJ_DEFAULTS.mizar_service_annotation_key in endpoint.metadata.annotations and \
+               endpoint.metadata.annotations[OBJ_DEFAULTS.mizar_service_annotation_key] == OBJ_DEFAULTS.mizar_service_annotation_val:
+                return
+
+            if namespace == "default" and name == "kubernetes" and not endpoint.metadata.annotations:
+                endpoint.metadata.annotations = {OBJ_DEFAULTS.mizar_service_annotation_key: OBJ_DEFAULTS.mizar_service_annotation_val}
             if not endpoint or not endpoint.metadata or not endpoint.metadata.annotations:
                 return
             endpoint.metadata.annotations[OBJ_DEFAULTS.mizar_service_annotation_key] = OBJ_DEFAULTS.mizar_service_annotation_val
@@ -295,7 +306,10 @@ class EndpointOperator(object):
             bouncers=bouncers,
             status=interface.status,
             pod_label_value=interface.pod_label_value,
-            namespace_label_value=interface.namespace_label_value
+            namespace_label_value=interface.namespace_label_value,
+            egress_bandwidth_bytes_per_sec=interface.egress_bandwidth_bytes_per_sec,
+            pod_network_class=interface.pod_network_class,
+            pod_network_priority=interface.pod_network_priority
         )]
 
         if ep.type == OBJ_DEFAULTS.ep_type_host:
@@ -404,7 +418,10 @@ class EndpointOperator(object):
                 veth=veth,
                 status=InterfaceStatus.init,
                 pod_label_value=str(spec['pod_label_value']),
-                namespace_label_value=str(spec['namespace_label_value'])
+                namespace_label_value=str(spec['namespace_label_value']),
+                egress_bandwidth_bytes_per_sec=str(spec['egress_bandwidth_bytes_per_sec']),
+                pod_network_class=str(spec['pod_network_class']),
+                pod_network_priority=str(spec['pod_network_priority'])
             ))
         if len(interfaces_list) > 0:
             interfaces = InterfacesList(interfaces=interfaces_list)

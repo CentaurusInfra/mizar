@@ -40,6 +40,12 @@ class CONSTANTS:
     XDP_GENERIC = "2"
     XDP_DRIVER = "4"
     XDP_OFFLOAD = "8"
+    MIZAR_BRIDGE = "mzbr0"
+    MIZAR_EGRESS_BW_TAG = "mizar.com/egress-bandwidth"
+    MIZAR_INGRESS_BW_TAG = "mizar.com/ingress-bandwidth"
+    MIZAR_NETWORK_CLASS_TAG = "mizar.com/network-class"
+    MIZAR_NETWORK_PRIORITY_TAG = "mizar.com/network-priority"
+    MIZAR_DEFAULT_EGRESS_BW_LIMIT_PCT = 30
 
 
 class OBJ_STATUS:
@@ -104,6 +110,8 @@ class OBJ_DEFAULTS:
 
     arktos_pod_label = "arktos.futurewei.com/network"
     arktos_pod_annotation = "arktos.futurewei.com/nic"
+    mizar_pod_vpc_annotation = "mizar.com/vpc"
+    mizar_pod_subnet_annotation = "mizar.com/subnet"
 
     # 5 minutes of retries
     kopf_max_retries = 15
