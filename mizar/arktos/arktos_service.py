@@ -38,9 +38,10 @@ store = OprStore()
 
 class ArktosService(BuiltinsServiceServicer):
 
-    def CreatePod(self, request, context):
+    def ProcessPodRequest(self, request):
+        return_code = None
         if request.host_ip == '':
-            return ReturnCode(
+            return_code = ReturnCode(
                 code=CodeType.TEMP_ERROR,
                 message="Missing hostIP during pod create or update"
             )
@@ -85,17 +86,25 @@ class ArktosService(BuiltinsServiceServicer):
             param.diff = tuple(tuple())
         if request.arktos_network != "":
             param.extra["arktos_network"] = request.arktos_network
+        interface_name = "eth0"
         if len(request.interfaces) > 0:
             param.extra["interfaces"] = list()
             itf_string = '['
             for interface in request.interfaces:
                 itf_string += '{"name": "{}", "ip": "{}", "subnet": "{}"},'.format(
                     interface.name, interface.ip, interface.subnet)
+                interface_name = interface.name
             itf_string = itf_string[:-1] + ']'
             param.extra.interfaces = itf_string
         ep_name = request.name + \
             "-{}-{}-{}".format(request.namespace,
-                               request.tenant, interface.name)
+                               request.tenant, interface_name)
+        return return_code, ep_name, param
+
+    def CreatePod(self, request, context):
+        return_code, ep_name, param = self.ProcessPodRequest(request)
+        if return_code:
+            return return_code
         if ep_opr.store.get_ep(ep_name):
             logger.info("EP {} already exists! Return OK".format(ep_name))
             return ReturnCode(
@@ -237,7 +246,10 @@ class ArktosService(BuiltinsServiceServicer):
         return self.CreateArktosNetwork(request, context)
 
     def ResumePod(self, request, context):
-        return self.CreatePod(request, context)
+        return_code, ep_name, param = self.ProcessPodRequest(request)
+        if return_code:
+            return return_code
+        return run_arktos_workflow(wffactory().k8sPodCreate(param=param))
 
     def ResumeNode(self, request, context):
         return self.CreateNode(request, context)
@@ -255,7 +267,10 @@ class ArktosService(BuiltinsServiceServicer):
         return self.CreateNamespace(request, context)
 
     def UpdatePod(self, request, context):
-        return self.CreatePod(request, context)
+        return_code, ep_name, param = self.ProcessPodRequest(request)
+        if return_code:
+            return return_code
+        return run_arktos_workflow(wffactory().k8sPodCreate(param=param))
 
     def UpdateNode(self, request, context):
         return self.CreateNode(request, context)
