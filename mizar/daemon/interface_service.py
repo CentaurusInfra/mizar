@@ -86,7 +86,7 @@ class InterfaceServer(InterfaceServiceServicer):
         veth_index = get_iface_index(veth_name, self.iproute)
 
         if veth_index == -1:
-            logger.info("Creating if {}".format(veth_name))
+            logger.info("Creating interface {}".format(veth_name))
             self.iproute.link('add', ifname=veth_name,
                               peer=veth_peer, kind='veth')
             veth_index = get_iface_index(veth_name, self.iproute)

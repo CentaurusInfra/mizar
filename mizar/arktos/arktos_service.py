@@ -55,13 +55,6 @@ class ArktosService(BuiltinsServiceServicer):
         param.body['status']['phase'] = request.phase
         param.body['metadata']['tenant'] = request.tenant
         param.extra = {}
-        ep_name = request.name+"-default-{}-eth0".format(request.tenant)
-        if ep_opr.store.get_ep(ep_name):
-            logger.info("EP {} already exists! Return OK".format(ep_name))
-            return ReturnCode(
-                code=CodeType.OK,
-                message="EP {} already exists!".format(ep_name)
-            )
         store.update_pod_namespace_store(param.name, param.namespace)
         if request.labels is not None and len(request.labels) != 0:
             param.body['metadata']['labels'] = json.loads(request.labels)
@@ -100,6 +93,15 @@ class ArktosService(BuiltinsServiceServicer):
                     interface.name, interface.ip, interface.subnet)
             itf_string = itf_string[:-1] + ']'
             param.extra.interfaces = itf_string
+        ep_name = request.name + \
+            "-{}-{}-{}".format(request.namespace,
+                               request.tenant, interface.name)
+        if ep_opr.store.get_ep(ep_name):
+            logger.info("EP {} already exists! Return OK".format(ep_name))
+            return ReturnCode(
+                code=CodeType.OK,
+                message="EP {} already exists!".format(ep_name)
+            )
         return run_arktos_workflow(wffactory().k8sPodCreate(param=param))
 
     def CreateNode(self, request, context):
