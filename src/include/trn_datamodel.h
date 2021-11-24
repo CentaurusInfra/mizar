@@ -97,7 +97,7 @@ struct endpoint_t {
 struct endpoint_t_offload {
 	__u32 eptype;
 	__u32 nremote_ips;
-	__u32 remote_ips[1]; //cause the size of remote_ips[TRAN_MAX_REMOTES] is too big to offload
+	__u32 remote_ips[7]; //cause the size of remote_ips[TRAN_MAX_REMOTES] is too big to offload
 	int hosted_iface;
 	unsigned char mac[6];
 } __attribute__((packed, aligned(4)));

@@ -280,6 +280,21 @@ int trn_update_endpoint(struct user_metadata_t *md,
 		return 1;
 	}
 
+	if (md->xdp_flags == XDP_FLAGS_HW_MODE){
+		struct endpoint_t_offload ep_offload;
+		ep_offload.eptype = ep->eptype;
+		ep_offload.nremote_ips = ep->nremote_ips;
+		memcpy(ep_offload.remote_ips, ep->remote_ips, sizeof(ep_offload.remote_ips));
+		ep_offload.hosted_iface = ep->hosted_iface;
+		memcpy(ep_offload.mac, ep->mac, sizeof(ep->mac));
+		err = bpf_map_update_elem(md->endpoints_map_offload_fd, epkey, &ep_offload, 0);
+
+		if (err) {
+			TRN_LOG_ERROR("Store offloaded endpoint mapping failed (err:%d).", err);
+			return 0;
+		}
+	}
+
 	return 0;
 }
 
@@ -725,6 +740,8 @@ int trn_user_metadata_init_offload(struct user_metadata_t *md, char *itf,
 		TRN_LOG_ERROR("Failed to store interface data.");
 		return 1;
 	}
+
+	md->xdp_flags = xdp_flags;  //overwrite xdp_flags with XDP_OFFLOAD
 
 	return 0;
 }

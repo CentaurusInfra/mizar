@@ -700,54 +700,22 @@ int *load_transit_xdp_offload_1_svc(rpc_trn_xdp_intf_t *xdp_intf, struct svc_req
 	if (!md) {
 		TRN_LOG_ERROR("Failure allocating memory for user_metadata_t");
 		result = RPC_TRN_FATAL;
-		goto error;
+		return &result;
 	}
 
-	memset(md, 0, sizeof(struct user_metadata_t));
-
-	// Set all interface index slots to unused
-	int i;
-	for (i = 0; i < TRAN_MAX_ITF; i++) {
-		md->itf_idx[i] = TRAN_UNUSED_ITF_IDX;
-	}
-
-	strcpy(md->pcapfile, xdp_intf->pcapfile);
-	md->pcapfile[255] = '\0';
-	md->xdp_flags = xdp_intf->xdp_flag;
-
-	TRN_LOG_DEBUG("load_transit_xdp_offload_1 path: %s, pcap: %s",
-		      xdp_intf->xdp_path, xdp_intf->pcapfile);
-
-	rc = trn_user_metadata_init_offload(md, itf, kern_path, 8);  // different to load_transit_xdp_1_svc
+	rc = trn_user_metadata_init_offload(md, itf, kern_path, XDP_FLAGS_HW_MODE);  // different to load_transit_xdp_1_svc
 
 	if (rc != 0) {
 		TRN_LOG_ERROR(
 			"Failure initializing or loading transit XDP offload program for interface %s",
 			itf);
 		result = RPC_TRN_FATAL;
-		goto error;
-	}
-
-	rc = trn_itf_table_insert(itf, md);
-	if (rc != 0) {
-		TRN_LOG_ERROR(
-			"Failure populating interface table when loading XDP offload program on %s",
-			itf);
-		result = RPC_TRN_ERROR;
-		unload_error = true;
-		goto error;
+		return &result;
 	}
 
 	TRN_LOG_INFO("Successfully loaded transit XDP offload on interface %s", itf);
 
 	result = 0;
-	return &result;
-
-error:
-	if (unload_error) {
-		trn_user_metadata_free(md);
-	}
-	free(md);
 	return &result;
 }
 
