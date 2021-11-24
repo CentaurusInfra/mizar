@@ -38,15 +38,11 @@ class InterfaceServer(InterfaceServiceServicer):
         self.interfaces_lock = threading.Lock()
 
         self.itf = get_itf()
-        cmd = 'ip addr show ' + \
-            f'''{self.itf}''' + \
-            ' | grep "inet\\b" | awk \'{print $2}\' | cut -d/ -f1'
+        cmd = 'ip addr show ' + f'''{self.itf}''' + ' | grep "inet\\b" | awk \'{print $2}\' | cut -d/ -f1'
         r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         self.droplet_ip = r.stdout.read().decode().strip()
 
-        cmd = 'ip addr show ' + \
-            f'''{self.itf}''' + \
-            ' | grep "link/ether\\b" | awk \'{print $2}\' | cut -d/ -f1'
+        cmd = 'ip addr show ' + f'''{self.itf}''' + ' | grep "link/ether\\b" | awk \'{print $2}\' | cut -d/ -f1'
         r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         self.droplet_mac = r.stdout.read().decode().strip()
 
@@ -85,13 +81,13 @@ class InterfaceServer(InterfaceServiceServicer):
         veth_peer = interface.veth.peer
         veth_index = get_iface_index(veth_name, self.iproute)
 
+        if veth_index != -1:
+            self.iproute.link('delete', index=veth_index)
+            veth_index = -1
         if veth_index == -1:
-            logger.info("Creating interface {}".format(veth_name))
             self.iproute.link('add', ifname=veth_name,
                               peer=veth_peer, kind='veth')
             veth_index = get_iface_index(veth_name, self.iproute)
-        else:
-            logger.info("Interface {} already exists!".format(veth_name))
 
         # Update the mac address with the interface address
         address = InterfaceAddress(
@@ -169,12 +165,10 @@ class InterfaceServer(InterfaceServiceServicer):
 
         veth_peer_index = get_iface_index(interface.veth.peer, self.iproute)
         if os.getenv('FEATUREGATE_BWQOS', 'false').lower() in ('false', '0'):
-            self.iproute.link('set', index=veth_peer_index,
-                              state='up', mtu=9000)
+            self.iproute.link('set', index=veth_peer_index, state='up', mtu=9000)
         else:
             mzbr_index = get_iface_index(CONSTANTS.MIZAR_BRIDGE, self.iproute)
-            self.iproute.link('set', index=veth_peer_index,
-                              master=mzbr_index, state='up', mtu=9000)
+            self.iproute.link('set', index=veth_peer_index, master=mzbr_index, state='up', mtu=9000)
 
         # Configure the Transit Agent
         self._ConfigureTransitAgent(interface)
@@ -301,21 +295,17 @@ class InterfaceServer(InterfaceServiceServicer):
         logger.info(
             "Disabled rx tx offload for host ep rc: {} text: {}".format(rc, text))
 
-        cmd = "nsenter -t 1 -m -u -n -i cat /sys/class/net/{}/speed".format(
-            interface.veth.name)
+        cmd = "nsenter -t 1 -m -u -n -i cat /sys/class/net/{}/speed".format(interface.veth.name)
         rc, linkspeed = run_cmd(cmd)
-        linkspeed_bytes_per_sec = int(
-            int(linkspeed.rstrip('\r\n')) * 1000 * (1000 / 8))
-        logger.info("Host interface {} Link Speed {} bytes/sec".format(
-            interface.veth.name, linkspeed_bytes_per_sec))
+        linkspeed_bytes_per_sec = int(int(linkspeed.rstrip('\r\n')) * 1000 * (1000/ 8))
+        logger.info("Host interface {} Link Speed {} bytes/sec".format(interface.veth.name, linkspeed_bytes_per_sec))
 
         # Initialize Tx stats map entry
-        # TODO: Use interface.address.ip_address for multi-NIC scenario
+        #TODO: Use interface.address.ip_address for multi-NIC scenario
         self.rpc.reset_tx_stats("0.0.0.0")
 
-        # TODO: Get user-configured default bandwidth limit percentage from config-map
-        bwlimit = int((linkspeed_bytes_per_sec *
-                      CONSTANTS.MIZAR_DEFAULT_EGRESS_BW_LIMIT_PCT) / 100)
+        #TODO: Get user-configured default bandwidth limit percentage from config-map
+        bwlimit = int((linkspeed_bytes_per_sec * CONSTANTS.MIZAR_DEFAULT_EGRESS_BW_LIMIT_PCT) / 100)
         self.rpc.update_bw_qos_config(interface.address.ip_address, bwlimit)
 
         return interface

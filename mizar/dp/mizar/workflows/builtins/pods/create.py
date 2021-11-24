@@ -63,7 +63,7 @@ class k8sPodCreate(WorkflowTask):
             'vpc': OBJ_DEFAULTS.default_ep_vpc,
             'subnet': OBJ_DEFAULTS.default_ep_net,
             'phase': self.param.body['status']['phase'],
-            'interfaces': [{'name': default_itf}],
+            'interfaces': [{'name': default_itf }],
             'labels': self.param.body['metadata'].get('labels', {})
         }
         if self.param.body['metadata'].get('annotations'):
@@ -138,12 +138,9 @@ class k8sPodCreate(WorkflowTask):
             pod_network_priority_value = "Medium"
             annotations = self.param.body['metadata'].get('annotations', {})
             if len(annotations) > 0:
-                mizar_egress_bw = annotations.get(
-                    CONSTANTS.MIZAR_EGRESS_BW_TAG)
-                mizar_pod_network_class = annotations.get(
-                    CONSTANTS.MIZAR_NETWORK_CLASS_TAG)
-                mizar_pod_network_priority = annotations.get(
-                    CONSTANTS.MIZAR_NETWORK_PRIORITY_TAG)
+                mizar_egress_bw = annotations.get(CONSTANTS.MIZAR_EGRESS_BW_TAG)
+                mizar_pod_network_class = annotations.get(CONSTANTS.MIZAR_NETWORK_CLASS_TAG)
+                mizar_pod_network_priority = annotations.get(CONSTANTS.MIZAR_NETWORK_PRIORITY_TAG)
                 # Convert [KB|MB|GB]/s to bytes per second.
                 if mizar_egress_bw is not None:
                     if mizar_egress_bw.endswith('K'):
