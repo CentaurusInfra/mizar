@@ -99,8 +99,7 @@ class EndpointOperator(object):
                 bouncer.name, ep.name))
             if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
                 if not ep.droplet_obj:
-                    task.raise_temporary_error("Task: {} Endpoint: {} Droplet Object not ready.".format(
-                        self.__class__.__name__, ep.name))
+                    task.raise_temporary_error("Task: {} Endpoint: {} Droplet Object not ready.".format(self.__class__.__name__, ep.name))
                 ep.update_bouncers({bouncer.name: bouncer})
 
     def create_scaled_endpoint(self, name, ep_name, spec, net, extra, namespace="default"):
@@ -153,8 +152,7 @@ class EndpointOperator(object):
                 return
 
             if namespace == "default" and name == "kubernetes" and not endpoint.metadata.annotations:
-                endpoint.metadata.annotations = {
-                    OBJ_DEFAULTS.mizar_service_annotation_key: OBJ_DEFAULTS.mizar_service_annotation_val}
+                endpoint.metadata.annotations = {OBJ_DEFAULTS.mizar_service_annotation_key: OBJ_DEFAULTS.mizar_service_annotation_val}
             if not endpoint or not endpoint.metadata or not endpoint.metadata.annotations:
                 return
             endpoint.metadata.annotations[OBJ_DEFAULTS.mizar_service_annotation_key] = OBJ_DEFAULTS.mizar_service_annotation_val
@@ -331,6 +329,9 @@ class EndpointOperator(object):
         for interface, net_info in zip(interfaces.interfaces, spec['interfaces']):
             logger.info("Create simple endpoint {}".format(interface))
             name = get_itf_name(interface.interface_id)
+            if self.store.get_ep(name):
+                logger.info("EP already exists!")
+                return
             ep = Endpoint(name, self.obj_api, self.store)
             ep.set_pod(spec["name"])
             ep.set_type(OBJ_DEFAULTS.ep_type_simple)
@@ -418,8 +419,7 @@ class EndpointOperator(object):
                 status=InterfaceStatus.init,
                 pod_label_value=str(spec['pod_label_value']),
                 namespace_label_value=str(spec['namespace_label_value']),
-                egress_bandwidth_bytes_per_sec=str(
-                    spec['egress_bandwidth_bytes_per_sec']),
+                egress_bandwidth_bytes_per_sec=str(spec['egress_bandwidth_bytes_per_sec']),
                 pod_network_class=str(spec['pod_network_class']),
                 pod_network_priority=str(spec['pod_network_priority'])
             ))
