@@ -77,10 +77,12 @@ async def on_startup(logger, **kwargs):
     threading.Thread(target=grpc_server).start()
     create_config_map()
     configmap = read_config_map()
-    if configmap:
-        if read_config_map().data["name"] == "arktos":
-            logger.info("Found config map, disabling builtin kopf triggers!")
-            COMPUTE_PROVIDER.k8s = False
+    if configmap and read_config_map().data["name"] == "arktos":
+        logger.info("Cluster is Arktos.")
+        COMPUTE_PROVIDER.k8s = False
+    else:
+        logger.info("Cluster is Kubernetes.")
+        COMPUTE_PROVIDER.k8s = True
     start_time = time.time()
 
     run_workflow(wffactory().DropletOperatorStart(param=param))

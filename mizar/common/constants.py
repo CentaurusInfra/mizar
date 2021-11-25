@@ -129,7 +129,7 @@ class RESOURCES:
 
 class COMPUTE_PROVIDER:
     kubernetes = "kubernetes"
-    k8s = True
+    k8s = False
     arktos = "arktos"
 
 
