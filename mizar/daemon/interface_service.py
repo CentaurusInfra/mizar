@@ -81,13 +81,13 @@ class InterfaceServer(InterfaceServiceServicer):
         veth_peer = interface.veth.peer
         veth_index = get_iface_index(veth_name, self.iproute)
 
-        if veth_index != -1:
-            self.iproute.link('delete', index=veth_index)
-            veth_index = -1
         if veth_index == -1:
+            logger.info("Creating interface {}".format(veth_name))
             self.iproute.link('add', ifname=veth_name,
                               peer=veth_peer, kind='veth')
             veth_index = get_iface_index(veth_name, self.iproute)
+        else:
+            logger.info("Interface {} already exists!".format(veth_name))
 
         # Update the mac address with the interface address
         address = InterfaceAddress(
