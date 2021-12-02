@@ -105,6 +105,7 @@ class OBJ_DEFAULTS:
     ep_type_gateway = 'gateway'
     droplet_eps = [ep_type_simple, ep_type_host]
 
+    mizar_daemon_service_port = 50051
     mizar_service_annotation_key = "service.beta.kubernetes.io/mizar-scaled-endpoint-type"
     mizar_service_annotation_val = "scaled-endpoint"
 

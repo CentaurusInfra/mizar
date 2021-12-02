@@ -7,7 +7,7 @@ from google.protobuf import empty_pb2
 from concurrent import futures
 from mizar.daemon.interface_service import InterfaceServer
 from mizar.daemon.droplet_service import DropletServer
-from mizar.common.constants import CONSTANTS
+from mizar.common.constants import CONSTANTS, OBJ_DEFAULTS
 from mizar.common.common import *
 import mizar.proto.interface_pb2_grpc as interface_pb2_grpc
 import mizar.proto.interface_pb2 as interface_pb2
@@ -179,9 +179,10 @@ def serve():
         InterfaceServer(), server
     )
 
-    server.add_insecure_port('[::]:50051')
+    addr = "[::]:{}".format(OBJ_DEFAULTS.mizar_daemon_service_port)
+    server.add_insecure_port(addr)
     server.start()
-    logger.info("Transit daemon is ready")
+    logger.info("Transit daemon is ready and listening on {}".format(addr))
     try:
         while True:
             time.sleep(100000)

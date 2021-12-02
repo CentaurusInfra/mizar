@@ -9,6 +9,7 @@ import grpc
 from concurrent import futures
 from google.protobuf import empty_pb2
 from mizar.common.common import get_itf
+from mizar.common.constants import OBJ_DEFAULTS
 
 logger = logging.getLogger()
 
@@ -47,7 +48,8 @@ class DropletServer(droplet_pb2_grpc.DropletServiceServicer):
 
 class DropletClient():
     def __init__(self, ip):
-        self.channel = grpc.insecure_channel('{}:50051'.format(ip))
+        addr = '{}:{}'.format(ip, OBJ_DEFAULTS.mizar_daemon_service_port)
+        self.channel = grpc.insecure_channel(addr)
         self.stub = droplet_pb2_grpc.DropletServiceStub(self.channel)
 
     def GetDropletInfo(self):
