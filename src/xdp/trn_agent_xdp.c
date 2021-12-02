@@ -175,7 +175,7 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	int pod_label_value = 0;
 	int namespace_label_value = 0;
 	__u64 egress_bw_bytes_per_sec = 0;
-	__u32 pod_network_class_priority = BESTEFFORT | PRIORITY_MEDIUM;
+	__u32 pod_network_class_priority = PREMIUM | PRIORITY_HIGH;
 	packet_metadata = bpf_map_lookup_elem(&packet_metadata_map, &packet_metadata_key);
 	if (packet_metadata) {
 		pod_label_value = packet_metadata->pod_label_value;

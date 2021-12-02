@@ -313,7 +313,8 @@ class InterfaceServer(InterfaceServiceServicer):
 
 class InterfaceServiceClient():
     def __init__(self, ip):
-        self.channel = grpc.insecure_channel('{}:50051'.format(ip))
+        addr = '{}:{}'.format(ip, OBJ_DEFAULTS.mizar_daemon_service_port)
+        self.channel = grpc.insecure_channel(addr)
         self.stub = InterfaceServiceStub(self.channel)
 
     def InitializeInterfaces(self, interfaces_list):
