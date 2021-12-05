@@ -543,3 +543,11 @@ spec:
           value: 'false'
         securityContext:
           privileged: true
+        volumeMounts:
+        - name: kubeconfig
+          mountPath: /admin.conf
+      volumes:
+      - name: kubeconfig
+        hostPath:
+          path: /etc/kubernetes/admin.conf
+          type: File
