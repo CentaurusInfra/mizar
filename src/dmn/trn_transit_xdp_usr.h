@@ -150,6 +150,8 @@ struct user_metadata_t {
 	int ing_namespace_label_policy_map_fd;
 	int ing_pod_and_namespace_label_policy_map_fd;
 	int tx_stats_map_fd;
+	int networks_map_offload_fd;
+	int vpc_map_offload_fd;
 	int endpoints_map_offload_fd;
 	int interface_config_map_offload_fd;
 
@@ -181,6 +183,8 @@ struct user_metadata_t {
 	struct bpf_map *ing_namespace_label_policy_map;
 	struct bpf_map *ing_pod_and_namespace_label_policy_map;
 	struct bpf_map *tx_stats_map;
+	struct bpf_map *networks_offload_map;
+	struct bpf_map *vpc_offload_map;
 	struct bpf_map *endpoints_offload_map;
 	struct bpf_map *interface_config_offload_map;
 

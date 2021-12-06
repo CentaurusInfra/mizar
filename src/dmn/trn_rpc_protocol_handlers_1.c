@@ -685,8 +685,7 @@ int *load_transit_xdp_offload_1_svc(rpc_trn_xdp_intf_t *xdp_intf, struct svc_req
 	bool unload_error = false;
 	char *itf = xdp_intf->interface;
 	int xdp_flag = xdp_intf->xdp_flag;
-	// char *kern_path = xdp_intf->xdp_path;
-	char *kern_path = "/trn_xdp/trn_transit_xdp1_ebpf.o";
+	char *kern_path = xdp_intf->xdp_path;
 	struct user_metadata_t empty_md;
 	struct user_metadata_t *md = trn_itf_table_find(itf);
 
@@ -703,7 +702,7 @@ int *load_transit_xdp_offload_1_svc(rpc_trn_xdp_intf_t *xdp_intf, struct svc_req
 		return &result;
 	}
 
-	rc = trn_user_metadata_init_offload(md, itf, kern_path, XDP_FLAGS_HW_MODE);  // different to load_transit_xdp_1_svc
+	rc = trn_user_metadata_init_offload(md, itf, kern_path, xdp_flag);  // different to load_transit_xdp_1_svc
 
 	if (rc != 0) {
 		TRN_LOG_ERROR(

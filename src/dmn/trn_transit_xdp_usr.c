@@ -705,12 +705,17 @@ int trn_user_metadata_init_offload(struct user_metadata_t *md, char *itf,
 	}
 
 	//map_init
-	md->endpoints_offload_map = bpf_map__next(NULL, md->obj_offload);
+	md->networks_offload_map = bpf_map__next(NULL, md->obj_offload);
+	md->vpc_offload_map = bpf_map__next(md->networks_offload_map, md->obj_offload);
+	md->endpoints_offload_map = bpf_map__next(md->vpc_offload_map, md->obj_offload);
 	md->interface_config_offload_map = bpf_map__next(md->endpoints_offload_map, md->obj_offload);
-	if (!md->endpoints_offload_map || !md->interface_config_offload_map ) {
+	if (!md->endpoints_offload_map || !md->interface_config_offload_map ||
+		!md->networks_offload_map || !md->vpc_offload_map) {
 		TRN_LOG_ERROR("Failure finding offloaded maps objects.");
 		return 1;
 	}
+	md->networks_map_offload_fd = bpf_map__fd(md->networks_offload_map);
+	md->vpc_map_offload_fd = bpf_map__fd(md->vpc_offload_map);
 	md->endpoints_map_offload_fd = bpf_map__fd(md->endpoints_offload_map);
 	md->interface_config_map_offload_fd = bpf_map__fd(md->interface_config_offload_map);
 	//map_init done
