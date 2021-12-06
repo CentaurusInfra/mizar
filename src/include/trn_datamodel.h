@@ -133,6 +133,13 @@ struct network_t {
 	__u32 switches_ips[TRAN_MAX_NSWITCH];
 } __attribute__((packed, aligned(4)));
 
+struct network_t_offload {
+	__u32 prefixlen; /* up to 32 for AF_INET, 128 for AF_INET6 */
+	__u32 nip[3];
+	__u32 nswitches;
+	__u32 switches_ips[5];
+} __attribute__((packed, aligned(4)));
+
 struct vpc_key_t {
 	union {
 		__be64 tunnel_id;
@@ -142,6 +149,11 @@ struct vpc_key_t {
 struct vpc_t {
 	__u32 nrouters;
 	__u32 routers_ips[TRAN_MAX_NROUTER];
+} __attribute__((packed, aligned(4)));
+
+struct vpc_t_offload {
+	__u32 nrouters;
+	__u32 routers_ips[5];
 } __attribute__((packed, aligned(4)));
 
 struct tunnel_iface_t {
