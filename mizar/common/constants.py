@@ -106,6 +106,7 @@ class OBJ_DEFAULTS:
     droplet_eps = [ep_type_simple, ep_type_host]
 
     mizar_daemon_service_port = 50051
+    mizar_operator_arktos_service_port = 50052
     mizar_service_annotation_key = "service.beta.kubernetes.io/mizar-scaled-endpoint-type"
     mizar_service_annotation_val = "scaled-endpoint"
 

@@ -253,7 +253,7 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	pkt->ip->saddr = metadata->eth.ip;
 	pkt->ip->ttl = pkt->inner_ttl;
 
-	__u8 dscp_code = 0;
+	__u8 dscp_code = DSCP_PREMIUM_HIGH;
 	switch (pod_network_class_priority) {
 	case (PREMIUM|PRIORITY_HIGH):
 		dscp_code = DSCP_PREMIUM_HIGH;
@@ -280,7 +280,7 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 		dscp_code = DSCP_BESTEFFORT_LOW;
 		break;
 	default:
-		dscp_code = 0;
+		dscp_code = DSCP_PREMIUM_HIGH;
 	}
 	pkt->ip->tos = dscp_code << 2;
 

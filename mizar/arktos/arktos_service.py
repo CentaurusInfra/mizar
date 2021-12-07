@@ -22,6 +22,7 @@ import logging
 import grpc
 import json
 from mizar.proto.builtins_pb2_grpc import BuiltinsServiceServicer, BuiltinsServiceStub
+from mizar.common.constants import OBJ_DEFAULTS
 from mizar.common.workflow import *
 from mizar.dp.mizar.operators.vpcs.vpcs_operator import *
 from mizar.proto.builtins_pb2 import *
@@ -300,7 +301,8 @@ class ArktosService(BuiltinsServiceServicer):
 
 class ArktosServiceClient():
     def __init__(self, ip):
-        self.channel = grpc.insecure_channel('{}:50052'.format(ip))
+        addr = '{}:{}'.format(ip, OBJ_DEFAULTS.mizar_operator_arktos_service_port)
+        self.channel = grpc.insecure_channel(addr)
         self.stub_builtins = BuiltinsServiceStub(self.channel)
 
     def CreatePod(self, BuiltinsPodMessage):
