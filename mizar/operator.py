@@ -104,9 +104,10 @@ def grpc_server():
     builtins_pb2_grpc.add_BuiltinsServiceServicer_to_server(
         ArktosService(), server
     )
-    server.add_insecure_port('[::]:50052')
+    addr = "[::]:{}".format(OBJ_DEFAULTS.mizar_operator_arktos_service_port)
+    server.add_insecure_port(addr)
     server.start()
-    logger.info("Running gRPC server for Network Controller!")
+    logger.info("Operator running gRPC server for Arktos Network Controller on {}".format(addr))
     server.wait_for_termination()
 
 
