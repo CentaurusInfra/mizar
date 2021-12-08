@@ -3,7 +3,7 @@
 
 # Authors: Phu Tran          <@phudtran>
 
-name: CI
+name: mizar-ci
 on:
   push:
     branches:
@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
 jobs:
   build:
-    runs-on: self-hosted
+    runs-on: [self-hosted, mizar-ci]
     strategy:
       matrix:
         python-version: ['3.8.0']
@@ -127,7 +127,7 @@ jobs:
           ssh ciw1 "sudo docker load -i ~/mizar/build/bin/mizar.tar"
           ssh ciw1 "sudo docker load -i ~/mizar/build/bin/dropletd.tar"
           ssh ciw1 "sudo docker load -i ~/mizar/build/bin/endpointopr.tar"
-    
+
           ssh ciw2 "sudo docker load -i ~/mizar/build/bin/mizar.tar"
           ssh ciw2 "sudo docker load -i ~/mizar/build/bin/dropletd.tar"
           ssh ciw2 "sudo docker load -i ~/mizar/build/bin/endpointopr.tar"
