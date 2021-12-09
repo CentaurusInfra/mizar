@@ -133,7 +133,7 @@ transit switch of that network, OW forward to the transit router. */
 	struct network_t_offload *net;
 	nkey.prefixlen = 80;//需要修改
 	__builtin_memcpy(&nkey.nip[0], &tunnel_id, sizeof(tunnel_id));
-	nkey.nip[2] = inner_dst_ip;
+	nkey.nip[2] = inner_dst_ip % 65536;
 	net = bpf_map_lookup_elem(&networks_map, &nkey);
 
 	/* Cache lookup for known ep */

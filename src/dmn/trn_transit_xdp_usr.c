@@ -220,6 +220,21 @@ int trn_update_network(struct user_metadata_t *md, struct network_key_t *netkey,
 		TRN_LOG_ERROR("Store network mapping failed (err:%d)", err);
 		return 1;
 	}
+
+	if (md->xdp_flags == XDP_FLAGS_HW_MODE){
+		struct network_t_offload net_offload;
+		net_offload.prefixlen = net->prefixlen;
+		memcpy(net_offload.nip, net->nip, sizeof(net_offload.nip));
+		net_offload.nswitches = net->nswitches;
+		memcpy(net_offload.switches_ips, net->switches_ips, sizeof(net_offload.switches_ips));
+
+		err = bpf_map_update_elem(md->networks_map_offload_fd, netkey, &net_offload, 0);
+		if (err) {
+			TRN_LOG_ERROR("Store offloaded network mapping failed (err:%d)", err);
+			return 1;
+		}
+	}
+
 	return 0;
 }
 
@@ -291,7 +306,7 @@ int trn_update_endpoint(struct user_metadata_t *md,
 
 		if (err) {
 			TRN_LOG_ERROR("Store offloaded endpoint mapping failed (err:%d).", err);
-			return 0;
+			return 1;
 		}
 	}
 
