@@ -65,6 +65,7 @@ class OBJ_STATUS:
     vpc_status_allocated = 'Alloc'
     vpc_status_ready = 'Ready'
     vpc_status_provisioned = obj_provisioned
+    vpc_status_error = 'Error'
 
     droplet_status_init = obj_init
     droplet_status_allocated = 'Alloc'

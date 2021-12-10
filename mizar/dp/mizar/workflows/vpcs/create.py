@@ -42,12 +42,16 @@ class VpcCreate(WorkflowTask):
             logger.info("VpcCreate: VPC not found in store. Creating new VPC object for {}".format(
                 self.param.name))
             v = vpcs_opr.get_vpc_stored_obj(self.param.name, self.param.spec)
-        if len(droplets_opr.store.get_all_droplets()) == 0:
-            self.raise_temporary_error(
-                "Task: {} VPC: {} No droplets available.".format(self.__class__.__name__, v.name))
-        logger.info("VpcCreate VPC IP is {}".format(v.ip))
-        vpcs_opr.allocate_vni(v)
-        vpcs_opr.create_vpc_dividers(v, v.n_dividers)
-        vpcs_opr.set_vpc_provisioned(v)
+        if vpcs_opr.is_vni_duplicated(v):
+            # Set vpc status to error instead of raising errors since the latter does not trigger the workflow in future
+            vpcs_opr.set_vpc_error(v)
+        else:
+            if len(droplets_opr.store.get_all_droplets()) == 0:
+                self.raise_temporary_error(
+                    "Task: {} VPC: {} No droplets available.".format(self.__class__.__name__, v.name))
+            logger.info("VpcCreate VPC IP is {}".format(v.ip))
+            vpcs_opr.allocate_vni(v)
+            vpcs_opr.create_vpc_dividers(v, v.n_dividers)
+            vpcs_opr.set_vpc_provisioned(v)
         vpcs_opr.store_update(v)
         self.finalize()

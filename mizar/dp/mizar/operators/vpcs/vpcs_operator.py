@@ -121,8 +121,20 @@ class VpcOperator(object):
         # TODO: There is a tiny chance of collision here, not to worry about now
         if vpc.name == OBJ_DEFAULTS.default_ep_vpc:
             return OBJ_DEFAULTS.default_vpc_vni
-        vpc.set_vni(str(uuid.uuid4().int & (1 << 24)-1))
+        # If the vni is not set, a random vni will be allocated instead.
+        if vpc.vni is None:
+            vpc.set_vni(str(uuid.uuid4().int & (1 << 24)-1))
 
     def deallocate_vni(self, vpc):
         # TODO: Keep track of VNI allocation
         pass
+
+    def set_vpc_error(self, vpc):
+        vpc.set_status(OBJ_STATUS.vpc_status_error)
+        vpc.update_obj()
+
+    def is_vni_duplicated(self, vpc):
+        for item in self.store.vpcs_store.values():
+            if item.vni == vpc.vni and item.name != vpc.name:
+                return True
+        return False
