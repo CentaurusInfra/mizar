@@ -46,6 +46,8 @@ class Net(object):
         self.status = OBJ_STATUS.net_status_init
         self.ip = OBJ_DEFAULTS.default_net_ip
         self.prefix = OBJ_DEFAULTS.default_net_prefix
+        self.external = False
+        self.portal_host = ""
         if spec is not None:
             self.set_obj_spec(spec)
         if self.prefix == "":
@@ -64,7 +66,9 @@ class Net(object):
             "vni": self.vni,
             "vpc": self.vpc,
             "bouncers": self.n_bouncers,
-            "status": self.status
+            "status": self.status,
+            "external": self.external,
+            "portal_host": self.portal_host
         }
 
         return self.obj
@@ -78,6 +82,8 @@ class Net(object):
         self.ip = get_spec_val('ip', spec, OBJ_DEFAULTS.default_net_ip)
         self.prefix = get_spec_val(
             'prefix', spec, OBJ_DEFAULTS.default_net_prefix)
+        self.external = bool(get_spec_val('external', spec))
+        self.portal_host = get_spec_val('portal_host', spec)
 
     # K8s APIs
     def get_name(self):
@@ -120,6 +126,12 @@ class Net(object):
     def get_gw_ip(self):
         return str(self.cidr.get_ip(1))
 
+    def set_external(self, external):
+        self.external = external
+
+    def set_portal_host(self, portal_host):
+        self.portal_host = portal_host
+
     def get_tunnel_id(self):
         return str(self.vni)
 
@@ -135,6 +147,12 @@ class Net(object):
             if b.ip not in bouncer_ips:
                 bouncer_ips.append(b.ip)
         return bouncer_ips
+
+    def get_external(self):
+        return bool(self.external)
+
+    def get_portal_host(self):
+        return str(self.portal_host)
 
     def create_bouncer(self):
         u = str(uuid.uuid4())

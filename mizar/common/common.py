@@ -460,3 +460,14 @@ def get_itf():
         return os.getenv("MIZAR_ITF")
     else:
         return default_itf
+
+def get_portal_host(core_api):
+    # Read portal_host_ip from configmap
+    portal_host_config = kube_read_config_map(core_api,  "portal-host-config", "default")
+    portal_host_ip = ""
+    if portal_host_config:
+        portal_host_ip = portal_host_config.data["portal_host_ip"]
+        logger.info("The portal host ip is {}".format(portal_host_ip))
+    else:
+        logger.info("No portal host is configured.")
+    return portal_host_ip

@@ -58,6 +58,11 @@ spec:
       priority: 0
       JSONPath: .spec.vpc
       description: The name of the VPC
+    - name: External
+      type: boolean
+      priority: 0
+      JSONPath: .spec.external
+      description: The flag whether the subnet belongs to an external cluster or not
     - name: Status
       type: string
       priority: 0

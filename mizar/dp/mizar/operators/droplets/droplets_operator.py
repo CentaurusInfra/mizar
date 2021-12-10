@@ -47,6 +47,7 @@ class DropletOperator(object):
         self.store = OprStore()
         config.load_incluster_config()
         self.obj_api = client.CustomObjectsApi()
+        self.core_api = client.CoreV1Api()
         self.bootstrapped = False
 
     def query_existing_droplets(self):
@@ -92,7 +93,33 @@ class DropletOperator(object):
         droplets = set(self.store.get_all_droplets())
         if len(droplets) == 0:
             return False
-        d = random.sample(droplets, 1)[0]
+        # Read portal_host_ip from configmap
+        portal_host_ip = get_portal_host(self.core_api)
+        subnets = self.store.get_nets_in_vpc(bouncer.vpc)
+        # remove portal hosts from the droplet set
+        portal_droplet = ""
+        external_subnet_ips = set()
+        for subnet in subnets.values():
+            if subnet.external:
+                external_subnet_ips.add(subnet.ip)
+                logger.info("A subnet ip {} for subnet {} has been added.".format( subnet.ip, subnet.name))
+
+        for dd in droplets:
+            if dd.ip == portal_host_ip:
+                portal_droplet = dd
+                logger.info("A droplet {} has been added as portal.".format(dd.ip))
+
+        if portal_droplet != "":
+            droplets.remove(portal_droplet)
+            logger.info("The portal droplet {} has been removed.".format(portal_droplet))
+
+        if bouncer.get_nip() in external_subnet_ips and portal_droplet != "":
+            # for external subnets, use the portal host instead of picking a host as bouncer
+            d = portal_droplet
+            logger.info("external subnet, using portal droplet {}".format(d.ip))
+        else:
+            d = random.sample(droplets, 1)[0]
+
         bouncer.set_droplet(d)
         return True
 
@@ -100,6 +127,22 @@ class DropletOperator(object):
         droplets = set(self.store.get_all_droplets())
         if len(droplets) == 0:
             return False
+
+        # Read portal_host_ip from configmap
+        portal_host_ip = get_portal_host(self.core_api)
+
+        portal_droplet = ""
+        for dd in droplets:
+            if dd.ip == portal_host_ip:
+                portal_droplet = dd
+                logger.info("The portal droplet {} has been added.".format(dd.ip))
+        if portal_droplet != "":
+            droplets.remove(portal_droplet)
+
+        # All the droplets have been removed as portal host droplet
+        if len(droplets) == 0:
+            return False
+
         d = random.sample(droplets, 1)[0]
         divider.set_droplet(d)
         return True
