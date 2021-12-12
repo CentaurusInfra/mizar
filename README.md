@@ -1,16 +1,16 @@
-# Mizar – High Scale and High Performance Cloud Network #
+# Mizar – High Scale and High Performance Cloud Networking #
 
-Mizar is a large scale and high-performance cloud network to run virtual
-machines, containers, and other compute workloads. Mizar offers flexible
-in-network processing, which simplifies the programming of data-plane to scale
-compared to traditional flow-based programming models. Unlike traditional
-networking solutions, Mizar relies on the natural partitioning of a cloud
-network to scale.
+Mizar is a large scale and high-performance cloud networking interconnect for
+containers, virtual machines, Kubernetes pods, and other compute workloads. Mizar
+offers flexible in-network processing, which simplifies the programming of data-plane
+to scale compared to traditional flow-based programming models. Unlike traditional
+networking solutions, Mizar relies on the natural partitioning of a cloud network
+to scale.
 
 We built Mizar from ground-up on top of
 [XDP](https://prototype-kernel.readthedocs.io/en/latest/networking/XDP/).
-Mizar's main building block is an XDP program that runs on each host. The
-program implements virtual functions including overlay switching, routing,
+Mizar's main building block are XDP programs that runs on each host. The
+programs implement virtual functions including overlay switching, routing,
 virtual endpoints, load-balancing, NAT, etc.
 
 Mizar network has the following advantages:
