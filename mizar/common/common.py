@@ -461,13 +461,13 @@ def get_itf():
     else:
         return default_itf
 
-def get_portal_host(core_api):
-    # Read portal_host_ip from configmap
-    portal_host_config = kube_read_config_map(core_api,  "portal-host-config", "default")
-    portal_host_ip = ""
-    if portal_host_config:
-        portal_host_ip = portal_host_config.data["portal_host_ip"]
-        logger.info("The portal host ip is {}".format(portal_host_ip))
+def get_cluster_gateway_host_ip(core_api):
+    # Read gateway_host_ip from configmap
+    cluster_gateway_config = kube_read_config_map(core_api,  "cluster-gateway-config", "default")
+    gateway_host_ip = ""
+    if cluster_gateway_config:
+        gateway_host_ip = cluster_gateway_config.data["gateway_host_ip"]
+        logger.info("The gateway host ip is {}".format(gateway_host_ip))
     else:
-        logger.info("No portal host is configured.")
-    return portal_host_ip
+        logger.info("No gateway host is configured.")
+    return gateway_host_ip

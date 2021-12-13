@@ -320,7 +320,7 @@ class TrnRpc:
             "prefixlen": net.get_prefixlen(),
             "switches_ips": net.get_bouncers_ips(),
             "external": net.get_external(),
-            "portal_host": net.get_portal_host()
+            "cluster_gateway": net.get_cluster_gateway()
         }
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_update_net} \'{jsonconf}\''''

@@ -73,26 +73,26 @@ class DividerOperator(object):
         div.update_obj()
 
     def update_divider_with_bouncers(self, bouncer, net):
+        net.set_cluster_gateway(get_cluster_gateway_host_ip(self.core_api))
+
         dividers = self.store.get_dividers_of_vpc(bouncer.vpc).values()
         for d in dividers:
             d.update_net(net)
 
     def delete_bouncer_from_dividers(self, bouncer, net):
-        net.set_portal_host(get_portal_host(self.core_api))
-
         dividers = self.store.get_dividers_of_vpc(bouncer.vpc).values()
         for d in dividers:
             d.update_net(net, False)
 
     def update_net(self, net, dividers=None):
+        net.set_cluster_gateway(get_cluster_gateway_host_ip(self.core_api))
+
         if not dividers:
             dividers = self.store.get_dividers_of_vpc(net.vpc).values()
         for d in dividers:
             d.update_net(net)
 
     def delete_net(self, net):
-        net.set_portal_host(get_portal_host(self.core_api))
-
         dividers = self.store.get_dividers_of_vpc(net.vpc).values()
         for d in dividers:
             d.delete_net(net)
@@ -100,6 +100,7 @@ class DividerOperator(object):
     def delete_nets_from_divider(self, nets, divider):
         for net in nets:
             divider.delete_net(net)
+
 
     def update_vpc(self, bouncer):
         dividers = self.store.get_dividers_of_vpc(bouncer.vpc).values()

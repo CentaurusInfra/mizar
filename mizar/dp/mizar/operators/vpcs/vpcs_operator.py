@@ -129,8 +129,8 @@ class VpcOperator(object):
         # TODO: Keep track of VNI allocation
         pass
 
-    def set_vpc_error(self, vpc):
-        vpc.set_status(OBJ_STATUS.vpc_status_error)
+    def set_vpc_duplicate_vni_error(self, vpc):
+        vpc.set_status(OBJ_STATUS.vpc_status_duplicate_vni_error)
         vpc.update_obj()
 
     def is_vni_duplicated(self, vpc):

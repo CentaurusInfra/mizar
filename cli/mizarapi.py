@@ -11,12 +11,13 @@ class MizarApi:
         config.load_kube_config()
         self.obj_api = client.CustomObjectsApi()
 
-    def create_vpc(self, name, ip, prefix, dividers=1):
+    def create_vpc(self, name, ip, prefix, dividers=1, vni=None):
         logger.info("Creating VPC {}".format(name))
         spec = {
             "ip": ip,
             "prefix": prefix,
             "dividers": dividers,
+            "vni": vni,
         }
         self.create_obj(name, "Vpc", spec, "vpcs")
 

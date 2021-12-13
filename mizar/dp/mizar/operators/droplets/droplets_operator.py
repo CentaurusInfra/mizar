@@ -93,11 +93,11 @@ class DropletOperator(object):
         droplets = set(self.store.get_all_droplets())
         if len(droplets) == 0:
             return False
-        # Read portal_host_ip from configmap
-        portal_host_ip = get_portal_host(self.core_api)
+        # Read cluster_gateway_host_ip from configmap
+        cluster_gateway_host_ip = get_cluster_gateway_host_ip(self.core_api)
         subnets = self.store.get_nets_in_vpc(bouncer.vpc)
         # remove portal hosts from the droplet set
-        portal_droplet = ""
+        cluster_gateway_droplet = ""
         external_subnet_ips = set()
         for subnet in subnets.values():
             if subnet.external:
@@ -105,18 +105,18 @@ class DropletOperator(object):
                 logger.info("A subnet ip {} for subnet {} has been added.".format( subnet.ip, subnet.name))
 
         for dd in droplets:
-            if dd.ip == portal_host_ip:
-                portal_droplet = dd
-                logger.info("A droplet {} has been added as portal.".format(dd.ip))
+            if dd.ip == cluster_gateway_host_ip:
+                cluster_gateway_droplet = dd
+                logger.info("A droplet {} has been added as cluster gateway.".format(dd.ip))
 
-        if portal_droplet != "":
-            droplets.remove(portal_droplet)
-            logger.info("The portal droplet {} has been removed.".format(portal_droplet))
+        if cluster_gateway_droplet != "":
+            droplets.remove(cluster_gateway_droplet)
+            logger.info("The cluster gateway droplet {} has been removed.".format(cluster_gateway_droplet))
 
-        if bouncer.get_nip() in external_subnet_ips and portal_droplet != "":
-            # for external subnets, use the portal host instead of picking a host as bouncer
-            d = portal_droplet
-            logger.info("external subnet, using portal droplet {}".format(d.ip))
+        if bouncer.get_nip() in external_subnet_ips and cluster_gateway_droplet != "":
+            # for external subnets, use the cluster gateway host instead of picking a host as bouncer
+            d = cluster_gateway_droplet
+            logger.info("external subnet, using cluster gateway droplet {}".format(d.ip))
         else:
             d = random.sample(droplets, 1)[0]
 
@@ -128,18 +128,18 @@ class DropletOperator(object):
         if len(droplets) == 0:
             return False
 
-        # Read portal_host_ip from configmap
-        portal_host_ip = get_portal_host(self.core_api)
+        # Read cluster_gateway_host_ip from configmap
+        cluster_gateway_host_ip = get_cluster_gateway_host_ip(self.core_api)
 
-        portal_droplet = ""
+        cluster_gateway_droplet = ""
         for dd in droplets:
-            if dd.ip == portal_host_ip:
-                portal_droplet = dd
-                logger.info("The portal droplet {} has been added.".format(dd.ip))
-        if portal_droplet != "":
-            droplets.remove(portal_droplet)
+            if dd.ip == cluster_gateway_host_ip:
+                cluster_gateway_droplet = dd
+                logger.info("The cluster gateway droplet {} has been added.".format(dd.ip))
+        if cluster_gateway_droplet != "":
+            droplets.remove(cluster_gateway_droplet)
 
-        # All the droplets have been removed as portal host droplet
+        # All the droplets have been removed as cluster gateway  host droplet
         if len(droplets) == 0:
             return False
 

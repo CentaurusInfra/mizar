@@ -1,3 +1,4 @@
+import time
 import yaml
 from teste2e.common.helper import *
 from cli.mizarapi import *
@@ -49,16 +50,24 @@ class k8sApi:
         self.operator_pod_name = run_cmd_text(
             "kubectl get pods | grep mizar-operator | awk '{print $1}'")
 
-    def create_vpc(self, name, ip, prefix, dividers=1):
-        self.api.create_vpc(name, ip, prefix, dividers)
+    def create_vpc(self, name, ip, prefix, dividers=1, vni=None):
+        self.api.create_vpc(name, ip, prefix, dividers, vni)
 
-    def create_net(self, name, ip, prefix, vpc, vni, bouncers=1):
-        self.api.create_net(name, ip, prefix, vpc, vni, bouncers)
+    def create_net(self, name, ip, prefix, vpc, vni, bouncers=1, external=False):
+        self.api.create_net(name, ip, prefix, vpc, vni, bouncers, external)
 
     def get_vpc(self, name):
         vpc = self.api.get_vpc(name)
         while vpc["status"] != OBJ_STATUS.obj_provisioned:
             vpc = self.api.get_vpc(name)
+        return vpc
+
+    def get_vpc_with_status_timeout(self, name, status=OBJ_STATUS.obj_provisioned, timeout=60):
+        timeout_start = time.time()
+        while  time.time() < timeout_start + timeout:
+            vpc = self.api.get_vpc(name)
+            if vpc["status"] == status:
+                return vpc
         return vpc
 
     def get_net(self, name):
