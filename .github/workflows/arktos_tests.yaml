@@ -1,0 +1,72 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2021 The Authors.
+
+# Authors: Phu Tran          <@phudtran>
+
+name: mizar-arktos-ci
+on:
+  push:
+    branches:
+      - dev-next
+      - 'CentaurusInfra/mizar'
+  pull_request:
+    branches:
+      - dev-next
+      - 'CentaurusInfra/mizar'
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: [self-hosted, arktos-ci]
+    strategy:
+      matrix:
+        python-version: ['3.8.0']
+    steps:
+      - name: Permissions
+        run: sudo chown -R $USER:$USER /home/
+      - uses: actions/checkout@v2
+      - name: Update apt-get
+        run: sudo apt-get update
+      - name: Set up Go 1.13
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13.9
+      - name: build container images
+        run: |
+          sudo docker build -t mizar:dev -f etc/docker/mizar.Dockerfile .
+          sudo docker build -t dropletd:dev -f etc/docker/daemon.Dockerfile .
+          sudo docker build -t endpointopr:dev -f etc/docker/operator.Dockerfile .
+      - name: Clone Arktos
+        run: git clone -b poc-2022-01-30 --single-branch https://github.com/CentaurusInfra/arktos.git
+      - name: Compile Arktos
+        run: make --directory arktos
+      - name: start arktos
+        run: CNIPLUGIN=mizar arktos/hack/arktos-up.sh &
+      - name: wait for arktos
+        run: sleep 300
+      - name: check ready
+        run: source install/common.sh && check_all_ready arktos
+      - name: cleanup interfaces
+        if: ${{ always() }}
+        continue-on-error: true
+        run: |
+          sudo ip l delete $(ip l | grep -Po "(br-\w+)(?=:)")
+          for name in $(ip l |  grep -Po '(veth-\w+)(?=@)'); do sudo ip l delete $name; done
+      - name: cleanup net namespaces
+        if: ${{ always() }}
+        continue-on-error: true
+        run: |
+          sudo ip -all netns delete
+      - name: cleanup docker containers and images
+        if: ${{ always() }}
+        continue-on-error: true
+        run: |
+          sudo docker stop $(sudo docker ps -aq) && docker system prune -f
+          sudo docker rmi -f $(docker images -a -q)
+          sudo docker volume rm $(docker volume ls -qf dangling=true)
+          sudo crictl rmi docker.io/mizarnet/dropletd:dev
+          sudo crictl rmi docker.io/mizarnet/endpointopr:dev
+          sudo crictl rmi docker.io/mizarnet/mizar:dev
+      - name: cleanup arktos
+        if: ${{ always() }}
+        continue-on-error: true
+        run: ps -aux | grep arktos| awk '{print $2}' | xargs -i sudo kill {}
