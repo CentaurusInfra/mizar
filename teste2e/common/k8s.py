@@ -53,8 +53,8 @@ class k8sApi:
     def create_vpc(self, name, ip, prefix, dividers=1, vni=None):
         self.api.create_vpc(name, ip, prefix, dividers, vni)
 
-    def create_net(self, name, ip, prefix, vpc, vni, bouncers=1, external=False):
-        self.api.create_net(name, ip, prefix, vpc, vni, bouncers, external)
+    def create_net(self, name, ip, prefix, vpc, vni, bouncers=1, remote_deployed=False):
+        self.api.create_net(name, ip, prefix, vpc, vni, bouncers, remote_deployed)
 
     def get_vpc(self, name):
         vpc = self.api.get_vpc(name)

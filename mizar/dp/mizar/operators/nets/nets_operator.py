@@ -135,6 +135,6 @@ class NetOperator(object):
         n = self.store.get_net(ep.net)
         n.deallocate_ip(ep.ip)
 
-    def process_external_change(self, net, new):
-        logger.info("Update external to {} for net: {}".format(new, net.name))
-        net.set_external(new)
+    def process_remote_deployed_change(self, net, new):
+        logger.info("Update remote_deployed to {} for net: {}".format(new, net.name))
+        net.set_remote_deployed(new)

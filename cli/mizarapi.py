@@ -27,7 +27,7 @@ class MizarApi:
         logger.info("Delete a vpc!!!")
         self.delete_obj(name, "vpcs")
 
-    def create_net(self, name, ip, prefix, vpc, vni, bouncers=1, external=False):
+    def create_net(self, name, ip, prefix, vpc, vni, bouncers=1, remoteDeployed=False):
         logger.info("Creating subnet {}".format(name))
         spec = {
             "ip": ip,
@@ -35,7 +35,7 @@ class MizarApi:
             "vni": vni,
             "vpc": vpc,
             "bouncers": bouncers,
-            "external": external
+            "remoteDeployed": remoteDeployed
         }
         self.create_obj(name, "Subnet", spec, "subnets")
 
