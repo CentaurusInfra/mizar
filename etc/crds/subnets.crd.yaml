@@ -61,7 +61,7 @@ spec:
     - name: RemoteDeployed
       type: boolean
       priority: 0
-      JSONPath: .spec.remoteDeployed
+      JSONPath: .spec.remote_deployed
       description: The flag whether the subnet belongs to an remote cluster or not
     - name: Status
       type: string
