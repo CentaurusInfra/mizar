@@ -134,7 +134,3 @@ class NetOperator(object):
     def deallocate_endpoint(self, ep):
         n = self.store.get_net(ep.net)
         n.deallocate_ip(ep.ip)
-
-    def process_remote_deployed_change(self, net, new):
-        logger.info("Update remote_deployed to {} for net: {}".format(new, net.name))
-        net.set_remote_deployed(new)

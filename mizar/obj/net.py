@@ -82,7 +82,7 @@ class Net(object):
         self.ip = get_spec_val('ip', spec, OBJ_DEFAULTS.default_net_ip)
         self.prefix = get_spec_val(
             'prefix', spec, OBJ_DEFAULTS.default_net_prefix)
-        self.remote_deployed = bool(get_spec_val('remoteDeployed', spec, 'False'))
+        self.remote_deployed = bool(get_spec_val('remoteDeployed', spec))
         self.cluster_gateway = get_spec_val('cluster_gateway', spec)
 
     # K8s APIs

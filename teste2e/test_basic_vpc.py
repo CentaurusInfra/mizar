@@ -1,6 +1,5 @@
 
 import unittest
-from mizar.common.constants import *
 from teste2e.common.k8s import *
 from teste2e.common.helper import *
 
@@ -12,30 +11,15 @@ class test_basic_vpc(unittest.TestCase):
         self.cluster = k8sCluster()
         self.api = k8sApi()
         vpc_name = "vpc1"
-        vpc_name_with_empty_vni = "vpc2"
-        vpc_name_with_dup_vni = "vpc3"
-        vni = 10
         subnet_name = "net1"
         subnet2_name = "net2"
         self.vpc = self.api.create_vpc(vpc_name, "12.0.0.0", "8")
         
-        # Test vpc creation with empty vni
-        self.api.create_vpc(vpc_name_with_empty_vni, "13.0.0.0", "8", 1, None)
-        vpc_with_empty_vni = self.api.get_vpc_with_status_timeout(vpc_name_with_empty_vni)
-        self.assertNotEqual(vpc_with_empty_vni["vni"], None, "The vni shall not be none.")
-        self.assertEqual(vpc_with_empty_vni["status"], OBJ_STATUS.obj_provisioned, "The status shall be provisioned.")
-
-        # Test vpc creation with duplicate vni
-        self.vpc_with_dup_vni = self.api.create_vpc(vpc_name_with_dup_vni, "14.0.0.0", "8", 1, vpc_with_empty_vni["vni"])
-        vpc_with_dup_vni = self.api.get_vpc_with_status_timeout(vpc_name_with_dup_vni, OBJ_STATUS.vpc_status_duplicate_vni_error)
-        self.assertEqual(vpc_with_dup_vni["status"], OBJ_STATUS.vpc_status_duplicate_vni_error, "The status shall be duplicate vni error.")
-
         vpc = self.api.get_vpc(vpc_name)
-
         self.subnet1 = self.api.create_net(
             subnet_name, "12.2.0.0", "16", vpc_name, vpc["vni"])
         self.subnet2 = self.api.create_net(
-            subnet2_name, "12.4.0.0", "16", vpc_name, vpc["vni"], 1, False)
+            subnet2_name, "12.4.0.0", "16", vpc_name, vpc["vni"])
         self.api.get_net(subnet_name)
         self.api.get_net(subnet2_name)
         self.ep1 = self.api.create_pod(

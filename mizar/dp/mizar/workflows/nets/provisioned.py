@@ -51,5 +51,3 @@ class NetProvisioned(WorkflowTask):
         logger.info("diff_field:{}, from:{}, to:{}".format(field, old, new))
         if field[0] == 'spec' and field[1] == 'bouncers':
             return nets_opr.process_bouncer_change(net, int(old), int(new))
-        if field[0] == 'spec' and field[1] == 'remoteDeployed':
-            return nets_opr.process_remote_deployed_change(net, new)

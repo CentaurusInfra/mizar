@@ -24,6 +24,7 @@ import uuid
 from kubernetes import client, config
 from mizar.common.constants import *
 from mizar.common.common import *
+from mizar.common.common_fornax import *
 from mizar.obj.bouncer import Bouncer
 from mizar.obj.divider import Divider
 from mizar.store.operator_store import OprStore
@@ -100,7 +101,6 @@ class DividerOperator(object):
     def delete_nets_from_divider(self, nets, divider):
         for net in nets:
             divider.delete_net(net)
-
 
     def update_vpc(self, bouncer):
         dividers = self.store.get_dividers_of_vpc(bouncer.vpc).values()

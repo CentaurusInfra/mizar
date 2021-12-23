@@ -23,6 +23,7 @@ import logging
 import random
 from mizar.common.constants import *
 from mizar.common.common import *
+from mizar.common.common_fornax import *
 from kubernetes import client, config
 from mizar.obj.droplet import Droplet
 from mizar.obj.bouncer import Bouncer
@@ -93,34 +94,13 @@ class DropletOperator(object):
         droplets = set(self.store.get_all_droplets())
         if len(droplets) == 0:
             return False
-        # Read cluster_gateway_host_ip from configmap
-        cluster_gateway_host_ip = get_cluster_gateway_host_ip(self.core_api)
-        subnets = self.store.get_nets_in_vpc(bouncer.vpc)
-        # remove portal hosts from the droplet set
-        cluster_gateway_droplet = ""
-        remote_deployed_subnet_ips = set()
-        for subnet in subnets.values():
-            if subnet.remote_deployed:
-                remote_deployed_subnet_ips.add(subnet.ip)
-                logger.info("A subnet ip {} for subnet {} has been added.".format( subnet.ip, subnet.name))
 
-        for dd in droplets:
-            if dd.ip == cluster_gateway_host_ip:
-                cluster_gateway_droplet = dd
-                logger.info("A droplet {} has been added as cluster gateway.".format(dd.ip))
+        bouncer_droplet = get_remote_cluster_bouncer_droplet_with_cluster_config(self.core_api, self.store, droplets, bouncer)
 
-        if cluster_gateway_droplet != "":
-            droplets.remove(cluster_gateway_droplet)
-            logger.info("The cluster gateway droplet {} has been removed.".format(cluster_gateway_droplet))
-
-        if bouncer.get_nip() in remote_deployed_subnet_ips and cluster_gateway_droplet != "":
-            # for remote deployed subnets, use the cluster gateway host instead of picking a host as bouncer
-            d = cluster_gateway_droplet
-            logger.info("remote deployed subnet, using cluster gateway droplet {}".format(d.ip))
+        if bouncer_droplet == "":
+            bouncer.set_droplet(random.sample(droplets, 1)[0])
         else:
-            d = random.sample(droplets, 1)[0]
-
-        bouncer.set_droplet(d)
+            bouncer.set_droplet(bouncer_droplet)
         return True
 
     def assign_divider_droplet(self, divider):
@@ -128,16 +108,7 @@ class DropletOperator(object):
         if len(droplets) == 0:
             return False
 
-        # Read cluster_gateway_host_ip from configmap
-        cluster_gateway_host_ip = get_cluster_gateway_host_ip(self.core_api)
-
-        cluster_gateway_droplet = ""
-        for dd in droplets:
-            if dd.ip == cluster_gateway_host_ip:
-                cluster_gateway_droplet = dd
-                logger.info("The cluster gateway droplet {} has been added.".format(dd.ip))
-        if cluster_gateway_droplet != "":
-            droplets.remove(cluster_gateway_droplet)
+        remove_cluster_gateway_droplet_with_cluster_config(self.core_api, droplets)
 
         # All the droplets have been removed as cluster gateway  host droplet
         if len(droplets) == 0:

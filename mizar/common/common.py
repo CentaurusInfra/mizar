@@ -460,14 +460,3 @@ def get_itf():
         return os.getenv("MIZAR_ITF")
     else:
         return default_itf
-
-def get_cluster_gateway_host_ip(core_api):
-    # Read gateway_host_ip from configmap
-    cluster_gateway_config = kube_read_config_map(core_api,  "cluster-gateway-config", "default")
-    gateway_host_ip = ""
-    if cluster_gateway_config:
-        gateway_host_ip = cluster_gateway_config.data["gateway_host_ip"]
-        logger.info("The gateway host ip is {}".format(gateway_host_ip))
-    else:
-        logger.info("No gateway host is configured.")
-    return gateway_host_ip
