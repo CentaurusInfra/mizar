@@ -39,7 +39,7 @@ def get_cluster_gateway_droplet(droplets, cluster_gateway_host_ip):
     for dd in droplets:
         if dd.ip == cluster_gateway_host_ip:
             cluster_gateway_droplet = dd
-            logger.info("A droplet {} has been added as cluster gateway.".format(dd.ip))
+            logger.info("A droplet {} has been selected as cluster gateway.".format(dd.ip))
     return cluster_gateway_droplet
 
 def get_remote_cluster_droplet(cluster_gateway_droplet, subnets, bouncer_subnet):
