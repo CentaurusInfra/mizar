@@ -87,7 +87,6 @@ class DividerOperator(object):
 
     def update_net(self, net, dividers=None):
         net.set_cluster_gateway(get_cluster_gateway_host_ip(self.core_api))
-
         if not dividers:
             dividers = self.store.get_dividers_of_vpc(net.vpc).values()
         for d in dividers:

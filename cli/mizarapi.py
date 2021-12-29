@@ -27,6 +27,8 @@ class MizarApi:
         logger.info("Delete a vpc!!!")
         self.delete_obj(name, "vpcs")
 
+    # remoteDeployed is to show if the subnet is deployed in a remote cluster so that
+    # the requests to the subnet can be redirected to a gateway
     def create_net(self, name, ip, prefix, vpc, vni, bouncers=1, remoteDeployed=False):
         logger.info("Creating subnet {}".format(name))
         spec = {

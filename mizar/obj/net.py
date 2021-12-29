@@ -126,7 +126,7 @@ class Net(object):
     def get_gw_ip(self):
         return str(self.cidr.get_ip(1))
 
-    def set_remote_deployed(self, remote_deployed):
+    def set_remote_deployed(self, remote_deployed=False):
         self.remote_deployed = remote_deployed
 
     def set_cluster_gateway(self, cluster_gateway):

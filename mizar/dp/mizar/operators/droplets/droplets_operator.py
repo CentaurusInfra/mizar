@@ -107,9 +107,7 @@ class DropletOperator(object):
         droplets = set(self.store.get_all_droplets())
         if len(droplets) == 0:
             return False
-
         remove_cluster_gateway_droplet_with_cluster_config(self.core_api, droplets)
-
         # All the droplets have been removed as cluster gateway  host droplet
         if len(droplets) == 0:
             return False

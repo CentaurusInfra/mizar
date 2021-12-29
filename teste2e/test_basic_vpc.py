@@ -14,7 +14,6 @@ class test_basic_vpc(unittest.TestCase):
         subnet_name = "net1"
         subnet2_name = "net2"
         self.vpc = self.api.create_vpc(vpc_name, "12.0.0.0", "8")
-        
         vpc = self.api.get_vpc(vpc_name)
         self.subnet1 = self.api.create_net(
             subnet_name, "12.2.0.0", "16", vpc_name, vpc["vni"])
