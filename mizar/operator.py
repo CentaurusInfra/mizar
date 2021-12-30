@@ -63,6 +63,7 @@ async def on_startup(logger, **kwargs):
     LOCK = asyncio.Lock()
     param = HandlerParam()
     config.load_incluster_config()
+    logger.info("environ:{}".format(os.environ))
     sched = 'luigid --background --port 8082 --pidfile /var/run/luigi/luigi.pid --logdir /var/log/luigi --state-path /var/lib/luigi/luigi.state'
     subprocess.call(sched, shell=True)
     while not os.path.exists("/var/run/luigi/luigi.pid"):
