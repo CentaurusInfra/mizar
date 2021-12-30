@@ -21,13 +21,13 @@ class test_fornax_vpc(unittest.TestCase):
         
         # Test vpc creation with empty vni
         self.api.create_vpc(vpc_name_with_empty_vni, "23.0.0.0", "8", 1, None)
-        vpc_with_empty_vni = self.api.get_vpc_with_status_timeout(vpc_name_with_empty_vni)
+        vpc_with_empty_vni = self.api.get_vpc_with_status(vpc_name_with_empty_vni)
         self.assertNotEqual(vpc_with_empty_vni["vni"], None, "The vni shall not be none.")
         self.assertEqual(vpc_with_empty_vni["status"], OBJ_STATUS.obj_provisioned, "The status shall be provisioned.")
 
         # Test vpc creation with duplicate vni
         self.vpc_with_dup_vni = self.api.create_vpc(vpc_name_with_dup_vni, "24.0.0.0", "8", 1, vpc_with_empty_vni["vni"])
-        vpc_with_dup_vni = self.api.get_vpc_with_status_timeout(vpc_name_with_dup_vni, OBJ_STATUS.vpc_status_duplicate_vni_error)
+        vpc_with_dup_vni = self.api.get_vpc_with_status(vpc_name_with_dup_vni, OBJ_STATUS.vpc_status_duplicate_vni_error)
         self.assertEqual(vpc_with_dup_vni["status"], OBJ_STATUS.vpc_status_duplicate_vni_error, "The status shall be duplicate vni error.")
 
         vpc = self.api.get_vpc(vpc_name)

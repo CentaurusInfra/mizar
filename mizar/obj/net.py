@@ -46,7 +46,7 @@ class Net(object):
         self.status = OBJ_STATUS.net_status_init
         self.ip = OBJ_DEFAULTS.default_net_ip
         self.prefix = OBJ_DEFAULTS.default_net_prefix
-        self.remote_deployed = False
+        self.virtual = False
         self.cluster_gateway = ""
         if spec is not None:
             self.set_obj_spec(spec)
@@ -67,7 +67,7 @@ class Net(object):
             "vpc": self.vpc,
             "bouncers": self.n_bouncers,
             "status": self.status,
-            "remote_deployed": self.remote_deployed,
+            "virtual": self.virtual,
             "cluster_gateway": self.cluster_gateway
         }
 
@@ -82,7 +82,7 @@ class Net(object):
         self.ip = get_spec_val('ip', spec, OBJ_DEFAULTS.default_net_ip)
         self.prefix = get_spec_val(
             'prefix', spec, OBJ_DEFAULTS.default_net_prefix)
-        self.remote_deployed = bool(get_spec_val('remoteDeployed', spec))
+        self.virtual = bool(get_spec_val('virtual', spec))
         self.cluster_gateway = get_spec_val('cluster_gateway', spec)
 
     # K8s APIs
@@ -126,8 +126,8 @@ class Net(object):
     def get_gw_ip(self):
         return str(self.cidr.get_ip(1))
 
-    def set_remote_deployed(self, remote_deployed=False):
-        self.remote_deployed = remote_deployed
+    def set_virtual(self, virtual=False):
+        self.virutal = virtual
 
     def set_cluster_gateway(self, cluster_gateway):
         self.cluster_gateway = cluster_gateway
@@ -148,8 +148,8 @@ class Net(object):
                 bouncer_ips.append(b.ip)
         return bouncer_ips
 
-    def get_remote_deployed(self):
-        return bool(self.remote_deployed)
+    def get_virtual(self):
+        return bool(self.virtual)
 
     def get_cluster_gateway(self):
         return str(self.cluster_gateway)

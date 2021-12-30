@@ -75,7 +75,6 @@ class DividerOperator(object):
 
     def update_divider_with_bouncers(self, bouncer, net):
         net.set_cluster_gateway(get_cluster_gateway_host_ip(self.core_api))
-
         dividers = self.store.get_dividers_of_vpc(bouncer.vpc).values()
         for d in dividers:
             d.update_net(net)

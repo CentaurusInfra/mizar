@@ -94,9 +94,7 @@ class DropletOperator(object):
         droplets = set(self.store.get_all_droplets())
         if len(droplets) == 0:
             return False
-
         bouncer_droplet = get_remote_cluster_bouncer_droplet_with_cluster_config(self.core_api, self.store, droplets, bouncer)
-
         if bouncer_droplet == "":
             bouncer.set_droplet(random.sample(droplets, 1)[0])
         else:

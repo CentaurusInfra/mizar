@@ -53,8 +53,8 @@ class k8sApi:
     def create_vpc(self, name, ip, prefix, dividers=1, vni=None):
         self.api.create_vpc(name, ip, prefix, dividers, vni)
 
-    def create_net(self, name, ip, prefix, vpc, vni, bouncers=1, remote_deployed=False):
-        self.api.create_net(name, ip, prefix, vpc, vni, bouncers, remote_deployed)
+    def create_net(self, name, ip, prefix, vpc, vni, bouncers=1, virtual=False):
+        self.api.create_net(name, ip, prefix, vpc, vni, bouncers, virtual)
 
     def get_vpc(self, name):
         vpc = self.api.get_vpc(name)
@@ -62,7 +62,7 @@ class k8sApi:
             vpc = self.api.get_vpc(name)
         return vpc
 
-    def get_vpc_with_status_timeout(self, name, status=OBJ_STATUS.obj_provisioned, timeout=60):
+    def get_vpc_with_status(self, name, status=OBJ_STATUS.obj_provisioned, timeout=60):
         timeout_start = time.time()
         while  time.time() < timeout_start + timeout:
             vpc = self.api.get_vpc(name)

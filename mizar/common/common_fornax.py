@@ -45,7 +45,7 @@ def get_cluster_gateway_droplet(droplets, cluster_gateway_host_ip):
 def get_remote_cluster_droplet(cluster_gateway_droplet, subnets, bouncer_subnet):
     remote_deployed_subnet_ips = set()
     for subnet in subnets.values():
-        if subnet.remote_deployed == True:
+        if subnet.virtual == True:
             remote_deployed_subnet_ips.add(subnet.ip)
             logger.info("A subnet ip {} for subnet {} has been added.".format( subnet.ip, subnet.name))
     if bouncer_subnet in remote_deployed_subnet_ips:
