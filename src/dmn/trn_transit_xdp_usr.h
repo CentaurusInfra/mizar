@@ -81,6 +81,7 @@ struct ebpf_prog_stage_t {
 	int ing_namespace_label_policy_map_ref_fd;
 	int ing_pod_and_namespace_label_policy_map_ref_fd;
 	int tx_stats_map_ref_fd;
+	int virtual_networks_map_fd;
 
 	struct bpf_map *networks_map_ref;
 	struct bpf_map *vpc_map_ref;
@@ -109,6 +110,7 @@ struct ebpf_prog_stage_t {
 	struct bpf_map *ing_namespace_label_policy_map_ref;
 	struct bpf_map *ing_pod_and_namespace_label_policy_map_ref;
 	struct bpf_map *tx_stats_map_ref;
+	struct bpf_map *virtual_networks_map_ref;
 };
 
 struct user_metadata_t {
@@ -148,6 +150,7 @@ struct user_metadata_t {
 	int ing_namespace_label_policy_map_fd;
 	int ing_pod_and_namespace_label_policy_map_fd;
 	int tx_stats_map_fd;
+	int virtual_networks_map_fd;
 
 	struct bpf_map *jmp_table_map;
 	struct bpf_map *networks_map;
@@ -177,6 +180,7 @@ struct user_metadata_t {
 	struct bpf_map *ing_namespace_label_policy_map;
 	struct bpf_map *ing_pod_and_namespace_label_policy_map;
 	struct bpf_map *tx_stats_map;
+	struct bpf_map *virtual_networks_map;
 
 	struct bpf_prog_info info;
 	struct bpf_object *obj;
@@ -287,3 +291,6 @@ int trn_delete_bw_qos_config(struct user_metadata_t *md, struct bw_qos_config_ke
 int trn_get_bw_qos_config(struct user_metadata_t *md,
 				struct bw_qos_config_key_t *bwqoskey,
 				struct bw_qos_config_t *bwqoscfg);
+
+int trn_update_virtual_network(struct user_metadata_t *md, struct network_key_t *netkey,
+		       struct network_t *net);

@@ -132,6 +132,7 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	md->ing_namespace_label_policy_map = bpf_map__next(md->ing_pod_label_policy_map, md->obj);
 	md->ing_pod_and_namespace_label_policy_map = bpf_map__next(md->ing_namespace_label_policy_map, md->obj);
 	md->tx_stats_map = bpf_map__next(md->ing_pod_and_namespace_label_policy_map, md->obj);
+	md->virtual_networks_map = bpf_map__next(md->tx_stats_map, md->obj);
 
 	if (!md->networks_map || !md->vpc_map || !md->endpoints_map ||
 	    !md->port_map || !md->hosted_endpoints_iface_map ||
@@ -146,7 +147,8 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	    !md->eg_vsip_supp_map || !md->eg_vsip_except_map ||
 	    !md->conn_track_cache || !md->ing_pod_label_policy_map ||
 	    !md->ing_namespace_label_policy_map ||
-	    !md->ing_pod_and_namespace_label_policy_map || !md->tx_stats_map) {
+	    !md->ing_pod_and_namespace_label_policy_map || !md->tx_stats_map ||
+	    !md->virtual_networks_map) {
 		TRN_LOG_ERROR("Failure finding maps objects.");
 		return 1;
 	}
@@ -179,6 +181,7 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	md->ing_namespace_label_policy_map_fd = bpf_map__fd(md->ing_namespace_label_policy_map);
 	md->ing_pod_and_namespace_label_policy_map_fd = bpf_map__fd(md->ing_pod_and_namespace_label_policy_map);
 	md->tx_stats_map_fd = bpf_map__fd(md->tx_stats_map);
+	md->virtual_networks_map_fd = bpf_map__fd(md->virtual_networks_map);
 
 	if (bpf_map__unpin(md->xdpcap_hook_map, md->pcapfile) == 0) {
 		TRN_LOG_INFO("unpin exiting pcap map file: %s", md->pcapfile);
@@ -926,6 +929,18 @@ int trn_get_bw_qos_config(struct user_metadata_t *md,
 	int err = bpf_map_lookup_elem(bw_qos_config_map_fd, bwqoskey, bwqoscfg);
 	if (err) {
 		TRN_LOG_ERROR("Lookup BPF map for bw qos config failed. Err: %d:%s.", err, strerror(err));
+		return 1;
+	}
+	return 0;
+}
+
+int trn_update_virtual_network(struct user_metadata_t *md, struct network_key_t *netkey,
+		       struct network_t *net)
+{
+	netkey->prefixlen += 64; /* tunid size */
+	int err = bpf_map_update_elem(md->virtual_networks_map_fd, netkey, net, 0);
+	if (err) {
+		TRN_LOG_ERROR("Store virtual network mapping failed (err:%d)", err);
 		return 1;
 	}
 	return 0;
