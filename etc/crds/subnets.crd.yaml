@@ -58,6 +58,11 @@ spec:
       priority: 0
       JSONPath: .spec.vpc
       description: The name of the VPC
+    - name: Virtual
+      type: boolean
+      priority: 0
+      JSONPath: .spec.virtual
+      description: The flag that the subnet is virtually in a local cluster but is deployed in a remote cluster at the same time
     - name: Status
       type: string
       priority: 0

@@ -1,0 +1,10 @@
+apiVersion: mizar.com/v1
+kind: Vpc
+metadata:
+  name: vpc10
+spec:
+  vni: 10
+  ip: "192.168.10.0"
+  prefix: "24"
+  dividers: 1
+  status: "Init"

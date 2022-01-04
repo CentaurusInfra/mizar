@@ -23,6 +23,7 @@ import logging
 import random
 from mizar.common.constants import *
 from mizar.common.common import *
+from mizar.common.common_fornax import *
 from kubernetes import client, config
 from mizar.obj.droplet import Droplet
 from mizar.obj.bouncer import Bouncer
@@ -47,6 +48,7 @@ class DropletOperator(object):
         self.store = OprStore()
         config.load_incluster_config()
         self.obj_api = client.CustomObjectsApi()
+        self.core_api = client.CoreV1Api()
         self.bootstrapped = False
 
     def query_existing_droplets(self):
@@ -92,14 +94,22 @@ class DropletOperator(object):
         droplets = set(self.store.get_all_droplets())
         if len(droplets) == 0:
             return False
-        d = random.sample(droplets, 1)[0]
-        bouncer.set_droplet(d)
+        bouncer_droplet = get_remote_cluster_bouncer_droplet_with_cluster_config(self.core_api, self.store, droplets, bouncer)
+        if bouncer_droplet == "":
+            bouncer.set_droplet(random.sample(droplets, 1)[0])
+        else:
+            bouncer.set_droplet(bouncer_droplet)
         return True
 
     def assign_divider_droplet(self, divider):
         droplets = set(self.store.get_all_droplets())
         if len(droplets) == 0:
             return False
+        remove_cluster_gateway_droplet_with_cluster_config(self.core_api, droplets)
+        # All the droplets have been removed as cluster gateway  host droplet
+        if len(droplets) == 0:
+            return False
+
         d = random.sample(droplets, 1)[0]
         divider.set_droplet(d)
         return True

@@ -46,6 +46,8 @@ class Net(object):
         self.status = OBJ_STATUS.net_status_init
         self.ip = OBJ_DEFAULTS.default_net_ip
         self.prefix = OBJ_DEFAULTS.default_net_prefix
+        self.virtual = False
+        self.cluster_gateway = ""
         if spec is not None:
             self.set_obj_spec(spec)
         if self.prefix == "":
@@ -64,7 +66,9 @@ class Net(object):
             "vni": self.vni,
             "vpc": self.vpc,
             "bouncers": self.n_bouncers,
-            "status": self.status
+            "status": self.status,
+            "virtual": self.virtual,
+            "cluster_gateway": self.cluster_gateway
         }
 
         return self.obj
@@ -78,6 +82,8 @@ class Net(object):
         self.ip = get_spec_val('ip', spec, OBJ_DEFAULTS.default_net_ip)
         self.prefix = get_spec_val(
             'prefix', spec, OBJ_DEFAULTS.default_net_prefix)
+        self.virtual = bool(get_spec_val('virtual', spec))
+        self.cluster_gateway = get_spec_val('cluster_gateway', spec)
 
     # K8s APIs
     def get_name(self):
@@ -120,6 +126,12 @@ class Net(object):
     def get_gw_ip(self):
         return str(self.cidr.get_ip(1))
 
+    def set_virtual(self, virtual=False):
+        self.virutal = virtual
+
+    def set_cluster_gateway(self, cluster_gateway):
+        self.cluster_gateway = cluster_gateway
+
     def get_tunnel_id(self):
         return str(self.vni)
 
@@ -135,6 +147,12 @@ class Net(object):
             if b.ip not in bouncer_ips:
                 bouncer_ips.append(b.ip)
         return bouncer_ips
+
+    def get_virtual(self):
+        return bool(self.virtual)
+
+    def get_cluster_gateway(self):
+        return str(self.cluster_gateway)
 
     def create_bouncer(self):
         u = str(uuid.uuid4())
