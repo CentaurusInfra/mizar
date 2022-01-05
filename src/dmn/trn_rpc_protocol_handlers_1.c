@@ -204,15 +204,15 @@ int *update_net_1_svc(rpc_trn_network_t *net, struct svc_req *rqstp)
 		goto error;
 	}
 
-	rc = trn_update_virtual_network(md, &netkey, &netval);
+	/**	rc = trn_update_virtual_network(md, &netkey, &netval);
 	if (rc != 0) {
                 TRN_LOG_ERROR(
-                        "Failure updating virutal net %ld, %d data on interface: %s",
+                        "Failure updating virtual net %ld, %d data on interface: %s",
                         net->tunid, net->netip, itf);
                 result = RPC_TRN_ERROR;
                 goto error;
 	}
-
+	*/
 	result = 0;
 	return &result;
 
