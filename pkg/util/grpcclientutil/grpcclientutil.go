@@ -63,7 +63,7 @@ func getInterfaceServiceClient() (InterfaceServiceClient, *grpc.ClientConn, cont
 		return nil, nil, nil, nil, err
 	}
 	client := NewInterfaceServiceClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*8)
 	return client, conn, ctx, cancel, nil
 }
 
