@@ -112,8 +112,8 @@ class OBJ_DEFAULTS:
 
     arktos_pod_label = "arktos.futurewei.com/network"
     arktos_pod_annotation = "arktos.futurewei.com/nic"
-    mizar_pod_vpc_annotation = "mizar.com/vpc"
-    mizar_pod_subnet_annotation = "mizar.com/subnet"
+    mizar_ep_vpc_annotation = "mizar.com/vpc"
+    mizar_ep_subnet_annotation = "mizar.com/subnet"
 
     # 5 minutes of retries
     kopf_max_retries = 15
