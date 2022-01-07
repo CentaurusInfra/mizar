@@ -306,7 +306,7 @@ int trn_agent_bpf_maps_init(struct agent_user_metadata_t *md)
 	md->ing_namespace_label_policy_map = bpf_map__next(md->ing_pod_label_policy_map, md->obj);
 	md->ing_pod_and_namespace_label_policy_map = bpf_map__next(md->ing_namespace_label_policy_map, md->obj);
 	md->tx_stats_map = bpf_map__next(md->ing_pod_and_namespace_label_policy_map, md->obj);
-	md->virtual_networks_map = bpf_map__next(md->ing_pod_and_namespace_label_policy_map, md->obj);
+	md->virtual_networks_map = bpf_map__next(md->tx_stats_map, md->obj);
 
 	if (!md->jmp_table_map || !md->agentmetadata_map ||
 	    !md->endpoints_map || !md->xdpcap_hook_map ||

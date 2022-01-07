@@ -160,3 +160,12 @@ struct bpf_map_def SEC("maps") ing_pod_and_namespace_label_policy_map = {
 	.map_flags = 0,
 };
 BPF_ANNOTATE_KV_PAIR(ing_pod_and_namespace_label_policy_map, struct pod_and_namespace_label_policy_t, __u64);
+
+struct bpf_map_def SEC("maps") virtual_networks_map = {
+	.type = BPF_MAP_TYPE_LPM_TRIE,
+	.key_size = sizeof(struct network_key_t),
+	.value_size = sizeof(struct network_t),
+	.max_entries = MAX_NETS,
+	.map_flags = BPF_F_NO_PREALLOC,
+};
+BPF_ANNOTATE_KV_PAIR(virtual_networks_map, struct network_key_t, struct network_t);
