@@ -39,3 +39,4 @@ static const char *ing_pod_label_policy_map_path = "/sys/fs/bpf/ing_pod_label_po
 static const char *ing_namespace_label_policy_map_path = "/sys/fs/bpf/ing_namespace_label_policy_map";
 static const char *ing_pod_and_namespace_label_policy_map_path = "/sys/fs/bpf/ing_pod_and_namespace_label_policy_map";
 static const char *tx_stats_map_path            = "/sys/fs/bpf/tx_stats_map";
+static const char *virtual_networks_map_path    = "/sys/fs/bbf/virtual_networks_map";

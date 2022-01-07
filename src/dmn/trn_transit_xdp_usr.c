@@ -210,6 +210,7 @@ int trn_bpf_maps_init(struct user_metadata_t *md)
 	bpf_map__pin(md->ing_namespace_label_policy_map, ing_namespace_label_policy_map_path);
 	bpf_map__pin(md->ing_pod_and_namespace_label_policy_map, ing_pod_and_namespace_label_policy_map_path);
 	bpf_map__pin(md->tx_stats_map, tx_stats_map_path);
+	bpf_map__pin(md->virtual_networks_map, virtual_networks_map_path);
 
 	return 0;
 }
@@ -405,6 +406,7 @@ int trn_add_prog(struct user_metadata_t *md, unsigned int prog_idx,
 	_SET_INNER_MAP(ing_namespace_label_policy_map);
 	_SET_INNER_MAP(ing_pod_and_namespace_label_policy_map);
 	_SET_INNER_MAP(tx_stats_map);
+	_SET_INNER_MAP(virtual_networks_map);
 
 	/* Only one prog is supported */
 	bpf_object__for_each_program(prog, stage->obj)
@@ -456,6 +458,7 @@ int trn_add_prog(struct user_metadata_t *md, unsigned int prog_idx,
 	_UPDATE_INNER_MAP(ing_namespace_label_policy_map);
 	_UPDATE_INNER_MAP(ing_pod_and_namespace_label_policy_map);
 	_UPDATE_INNER_MAP(tx_stats_map);
+	_UPDATE_INNER_MAP(virtual_networks_map);
 
 	return 0;
 error:
@@ -589,6 +592,7 @@ int trn_user_metadata_init(struct user_metadata_t *md, char *itf,
 	_REUSE_MAP_IF_PINNED(ing_namespace_label_policy_map);
 	_REUSE_MAP_IF_PINNED(ing_pod_and_namespace_label_policy_map);
 	_REUSE_MAP_IF_PINNED(tx_stats_map);
+	_REUSE_MAP_IF_PINNED(virtual_networks_map);
 
 	if (bpf_prog_load_xattr(&prog_load_attr, &md->obj, &md->prog_fd)) {
 		TRN_LOG_ERROR("Error loading bpf: %s", kern_path);
@@ -944,4 +948,18 @@ int trn_update_virtual_network(struct user_metadata_t *md, struct network_key_t 
 		return 1;
 	}
 	return 0;
+}
+
+int trn_delete_virtual_networks_map(struct user_metadata_t *md,
+						        struct network_key_t *netkey)
+{
+	int err = bpf_map_delete_elem(md->virtual_networks_map_fd, netkey);
+
+	if (err) {
+		TRN_LOG_ERROR("Deleting virtual network mapping failed (err:%d).", err);
+			return 1;
+		}
+
+		return 0;
+
 }

@@ -81,7 +81,7 @@ struct ebpf_prog_stage_t {
 	int ing_namespace_label_policy_map_ref_fd;
 	int ing_pod_and_namespace_label_policy_map_ref_fd;
 	int tx_stats_map_ref_fd;
-	int virtual_networks_map_fd;
+	int virtual_networks_map_ref_fd;
 
 	struct bpf_map *networks_map_ref;
 	struct bpf_map *vpc_map_ref;
@@ -294,3 +294,5 @@ int trn_get_bw_qos_config(struct user_metadata_t *md,
 
 int trn_update_virtual_network(struct user_metadata_t *md, struct network_key_t *netkey,
 		       struct network_t *net);
+
+int trn_delete_virtual_network(struct user_metadata_t *md, struct network_key_t *netkey);
