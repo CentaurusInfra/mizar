@@ -32,8 +32,8 @@ logger = logging.getLogger()
 
 endpoints_opr = EndpointOperator()
 bouncers_opr = BouncerOperator()
-nets_opr = NetOperator()
-vpcs_opr = VpcOperator()
+net_opr = NetOperator()
+vpc_opr = VpcOperator()
 
 
 class k8sServiceCreate(WorkflowTask):
@@ -44,24 +44,37 @@ class k8sServiceCreate(WorkflowTask):
 
     def run(self):
         logger.info("Run {task}".format(task=self.__class__.__name__))
-        net = nets_opr.store.get_net(OBJ_DEFAULTS.default_ep_net)
+        net = net_opr.store.get_net(OBJ_DEFAULTS.default_ep_net)
+        if self.param.body['metadata'].get('annotations'):
+            if self.param.body['metadata'].get('annotations').get(OBJ_DEFAULTS.mizar_ep_vpc_annotation):
+                vpc_name = self.param.body['metadata'].get(
+                    'annotations').get(OBJ_DEFAULTS.mizar_ep_vpc_annotation)
+                vpc = vpc_opr.store_get(vpc_name)
+                if not vpc:
+                    self.raise_temporary_error(
+                        "VPC {} for service {} does not exist!".format(vpc_name, self.param.name))
+                if self.param.body['metadata'].get('annotations').get(OBJ_DEFAULTS.mizar_ep_subnet_annotation):
+                    subnet_name = self.param.body['metadata'].get(
+                        'annotations').get(OBJ_DEFAULTS.mizar_ep_subnet_annotation)
+                    subnet = net_opr.store.get_net(subnet_name)
+                    if subnet.vpc != vpc_name:
+                        self.raise_temporary_error("Subnet {} of pod {} does not belong to VPC {}".format(
+                            subnet_name, self.param.name, vpc_name))
+                    if not subnet:
+                        self.raise_temporary_error(
+                            "Subnet {} of pod {} does not exist!".format(subnet_name, self.param.name))
+                else:
+                    subnets = list(net_opr.store.get_nets_in_vpc(vpc_name))
+                    if subnets:
+                        subnet_name = subnets[0]
+                        logger.info("Subnet not specified, allocating pod {} in subnet {} for VPC {}".format(
+                            self.param.name, subnet_name, vpc_name))
+                    else:
+                        self.raise_temporary_error(
+                            "VPC {} has no subnets to allocate pod {}!".format(vpc_name, self.param.name))
+                net = net_opr.store.get_net(subnet_name)
         namespace = self.param.body['metadata']['namespace']
         name = self.param.name + "-{}".format(namespace)
-        if self.param.extra:
-            arktosnet = self.param.extra['arktos_network']
-            if arktosnet != "":
-                vpc_name = vpcs_opr.store.get_vpc_in_arktosnet(arktosnet)
-                if arktosnet == "default":
-                    vpc_name = OBJ_DEFAULTS.default_ep_vpc
-                if not vpc_name:
-                    self.raise_temporary_error(
-                        "No VPC found for Arktos Network {}.".format(arktosnet))
-            else:
-                vpc_name = OBJ_DEFAULTS.default_ep_vpc
-            nets = nets_opr.store.get_nets_in_vpc(vpc_name)
-            name = name + "-{}".format(self.param.extra["tenant"])
-            if nets:
-                net = next(iter(nets.values()))
         if not net:
             self.raise_temporary_error(
                 "Task: {} Net not yet created.".format(self.__class__.__name__))

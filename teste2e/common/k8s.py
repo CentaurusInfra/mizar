@@ -80,8 +80,8 @@ class k8sApi:
             'metadata': {
                     'name': name,
                     'annotations': {
-                        OBJ_DEFAULTS.mizar_pod_vpc_annotation: vpc,
-                        OBJ_DEFAULTS.mizar_pod_subnet_annotation: subnet,
+                        OBJ_DEFAULTS.mizar_ep_vpc_annotation: vpc,
+                        OBJ_DEFAULTS.mizar_ep_subnet_annotation: subnet,
                     },
                 'labels': {
                         'scaledep': scaledep
