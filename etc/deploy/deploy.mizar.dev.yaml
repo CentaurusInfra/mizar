@@ -532,6 +532,14 @@ spec:
       tolerations:
         - effect: NoSchedule
           operator: Exists
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/master
+                operator: Exists
       serviceAccountName: mizar-operator
       terminationGracePeriodSeconds: 0
       hostNetwork: true
