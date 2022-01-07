@@ -53,7 +53,8 @@ message BuiltinsPodMessage {
   string labels = 5;
   string arktos_network = 6;
   string phase = 7;
-  repeated InterfacesMessage interfaces = 8;
+  repeated InterfacesMessage interfaces = 8 ;
+  map<string, string> annotations = 9;
 }
 
 message BuiltinsServiceMessage {

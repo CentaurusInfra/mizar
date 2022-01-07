@@ -95,7 +95,7 @@ class k8sApi:
             }
         }
         if not subnet:
-            del pod_manifest["metadata"]["annotations"][OBJ_DEFAULTS.mizar_pod_subnet_annotation]
+            del pod_manifest["metadata"]["annotations"][OBJ_DEFAULTS.mizar_ep_subnet_annotation]
         resp = self.k8sapi.create_namespaced_pod(
             body=pod_manifest, namespace='default')
 

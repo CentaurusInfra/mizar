@@ -63,20 +63,20 @@ class k8sPodCreate(WorkflowTask):
             'vpc': OBJ_DEFAULTS.default_ep_vpc,
             'subnet': OBJ_DEFAULTS.default_ep_net,
             'phase': self.param.body['status']['phase'],
-            'interfaces': [{'name': default_itf }],
+            'interfaces': [{'name': default_itf}],
             'labels': self.param.body['metadata'].get('labels', {})
         }
         if self.param.body['metadata'].get('annotations'):
-            if self.param.body['metadata'].get('annotations').get(OBJ_DEFAULTS.mizar_pod_vpc_annotation):
+            if self.param.body['metadata'].get('annotations').get(OBJ_DEFAULTS.mizar_ep_vpc_annotation):
                 vpc_name = self.param.body['metadata'].get(
-                    'annotations').get('mizar.com/vpc')
+                    'annotations').get(OBJ_DEFAULTS.mizar_ep_vpc_annotation)
                 vpc = vpc_opr.store_get(vpc_name)
                 if not vpc:
                     self.raise_temporary_error(
                         "VPC {} of pod {} does not exist!".format(vpc_name, self.param.name))
-                if self.param.body['metadata'].get('annotations').get(OBJ_DEFAULTS.mizar_pod_subnet_annotation):
+                if self.param.body['metadata'].get('annotations').get(OBJ_DEFAULTS.mizar_ep_subnet_annotation):
                     subnet_name = self.param.body['metadata'].get(
-                        'annotations').get('mizar.com/subnet')
+                        'annotations').get(OBJ_DEFAULTS.mizar_ep_subnet_annotation)
                     subnet = net_opr.store.get_net(subnet_name)
                     if subnet.vpc != vpc_name:
                         self.raise_temporary_error("Subnet {} of pod {} does not belong to VPC {}".format(
@@ -104,19 +104,6 @@ class k8sPodCreate(WorkflowTask):
 
         if self.param.extra:
             spec['type'] = COMPUTE_PROVIDER.arktos
-            if "arktos_network" in self.param.extra:
-                vpc = vpc_opr.store.get_vpc_in_arktosnet(
-                    self.param.extra["arktos_network"])
-                if self.param.extra["arktos_network"] == "default":
-                    vpc = OBJ_DEFAULTS.default_ep_vpc
-                spec['vpc'] = vpc
-                nets = net_opr.store.get_nets_in_vpc(vpc)
-                net = OBJ_DEFAULTS.default_ep_net
-                if nets:
-                    net = next(iter(nets.values())).name
-                spec["subnet"] = net
-                logger.info("Putting pod in VPC {} and Net {}".format(
-                    spec["vpc"], spec["subnet"]))
             # Example: arktos.futurewei.com/nic: [{"name": "eth0", "ip": "10.10.1.12", "subnet": "net1"}]
             # all three fields are optional. Each item in the list corresponding to an endpoint
             # which represents a network interface for a pod
@@ -138,9 +125,12 @@ class k8sPodCreate(WorkflowTask):
             pod_network_priority_value = "Medium"
             annotations = self.param.body['metadata'].get('annotations', {})
             if len(annotations) > 0:
-                mizar_egress_bw = annotations.get(CONSTANTS.MIZAR_EGRESS_BW_TAG)
-                mizar_pod_network_class = annotations.get(CONSTANTS.MIZAR_NETWORK_CLASS_TAG)
-                mizar_pod_network_priority = annotations.get(CONSTANTS.MIZAR_NETWORK_PRIORITY_TAG)
+                mizar_egress_bw = annotations.get(
+                    CONSTANTS.MIZAR_EGRESS_BW_TAG)
+                mizar_pod_network_class = annotations.get(
+                    CONSTANTS.MIZAR_NETWORK_CLASS_TAG)
+                mizar_pod_network_priority = annotations.get(
+                    CONSTANTS.MIZAR_NETWORK_PRIORITY_TAG)
                 # Convert [KB|MB|GB]/s to bytes per second.
                 if mizar_egress_bw is not None:
                     if mizar_egress_bw.endswith('K'):

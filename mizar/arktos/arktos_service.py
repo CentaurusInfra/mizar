@@ -34,6 +34,7 @@ vpc_opr = VpcOperator()
 logger = logging.getLogger()
 store = OprStore()
 
+
 class ArktosService(BuiltinsServiceServicer):
 
     def CreatePod(self, request, context):
@@ -48,22 +49,27 @@ class ArktosService(BuiltinsServiceServicer):
         param.namespace = request.namespace
         param.body['status'] = {}
         param.body['metadata'] = {}
+        param.body['metadata']['annotations'] = {}
         param.body['status']['hostIP'] = request.host_ip
         param.body['metadata']['namespace'] = request.namespace
         param.body['status']['phase'] = request.phase
         param.body['metadata']['tenant'] = request.tenant
+        param.body['metadata']['annotations'][OBJ_DEFAULTS.mizar_ep_vpc_annotation] = request.annotations[OBJ_DEFAULTS.mizar_ep_vpc_annotation]
+        param.body['metadata']['annotations'][OBJ_DEFAULTS.mizar_ep_subnet_annotation] = request.annotations[OBJ_DEFAULTS.mizar_ep_subnet_annotation]
         param.extra = {}
         store.update_pod_namespace_store(param.name, param.namespace)
         if request.labels is not None and len(request.labels) != 0:
             param.body['metadata']['labels'] = json.loads(request.labels)
-            logger.info("Labels for pod {} from Arktos Service are {}".format(request.name, request.labels))
+            logger.info("Labels for pod {} from Arktos Service are {}".format(
+                request.name, request.labels))
             diff_item = []
             diff_item.append('add')
             diff_item.append(tuple())
             # old
             old_dict = {}
             old_dict['metadata'] = {}
-            old_dict['metadata']['labels'] = store.get_old_pod_labels(request.name)
+            old_dict['metadata']['labels'] = store.get_old_pod_labels(
+                request.name)
             diff_item.append(old_dict)
             # new
             new_dict = {}
@@ -74,12 +80,11 @@ class ArktosService(BuiltinsServiceServicer):
             diff_items.append(tuple(diff_item))
             param.diff = tuple(diff_items)
             logger.info("Pod create param.diff =  {}".format(param.diff))
-            store.update_pod_label_store(param.name, param.body['metadata']['labels'])
+            store.update_pod_label_store(
+                param.name, param.body['metadata']['labels'])
         else:
             param.body['metadata']['labels'] = {}
             param.diff = tuple(tuple())
-        if request.arktos_network != "":
-            param.extra["arktos_network"] = request.arktos_network
         if len(request.interfaces) > 0:
             param.extra["interfaces"] = list()
             itf_string = '['
@@ -103,14 +108,16 @@ class ArktosService(BuiltinsServiceServicer):
         return run_arktos_workflow(wffactory().k8sDropletCreate(param=param))
 
     def CreateNamespace(self, request, context):
-        logger.info("Creating namespace from Arktos Service {}".format(request.name))
+        logger.info(
+            "Creating namespace from Arktos Service {}".format(request.name))
         param = reset_param(HandlerParam())
         param.name = request.name
         param.body['status'] = {}
         param.body['metadata'] = {}
         param.body['metadata']['tenant'] = request.tenant
         if request.labels is not None and len(request.labels) != 0:
-            logger.info("Labels for namespace {} from Arktos Service are {}".format(request.name, request.labels))
+            logger.info("Labels for namespace {} from Arktos Service are {}".format(
+                request.name, request.labels))
             param.body['metadata']['labels'] = json.loads(request.labels)
             diff_item = []
             diff_item.append('add')
@@ -118,7 +125,8 @@ class ArktosService(BuiltinsServiceServicer):
             # old
             old_dict = {}
             old_dict['metadata'] = {}
-            old_dict['metadata']['labels'] = store.get_old_namespace_labels(request.name)
+            old_dict['metadata']['labels'] = store.get_old_namespace_labels(
+                request.name)
             diff_item.append(old_dict)
             # new
             new_dict = {}
@@ -129,7 +137,8 @@ class ArktosService(BuiltinsServiceServicer):
             diff_items.append(tuple(diff_item))
             param.diff = tuple(diff_items)
             logger.info("Namespace create param.diff =  {}".format(param.diff))
-            store.update_namespace_label_store(param.name, param.body['metadata']['labels'])
+            store.update_namespace_label_store(
+                param.name, param.body['metadata']['labels'])
         else:
             param.body['metadata']['labels'] = {}
             param.diff = tuple(tuple())
@@ -146,7 +155,6 @@ class ArktosService(BuiltinsServiceServicer):
         param.body['metadata']['namespace'] = request.namespace
         param.spec["clusterIP"] = request.ip
         logger.info("From grpc server: Service IP is {}".format(request.ip))
-        param.extra["arktos_network"] = request.arktos_network
         param.extra["tenant"] = request.tenant
         return run_arktos_workflow(wffactory().k8sServiceCreate(param=param))
 
@@ -199,7 +207,8 @@ class ArktosService(BuiltinsServiceServicer):
         return rc
 
     def CreateNetworkPolicy(self, request, context):
-        logger.info("Creating network policy from Arktos Service {}".format(request.name))
+        logger.info(
+            "Creating network policy from Arktos Service {}".format(request.name))
         param = reset_param(HandlerParam())
         param.name = request.name
         param.namespace = request.namespace
@@ -299,9 +308,20 @@ class ArktosService(BuiltinsServiceServicer):
         param.extra = request.tenant
         return run_arktos_workflow(wffactory().k8sNetworkPolicyDelete(param=param))
 
+    def CreateArktosNetwork(self, request, context):
+        logger.info(
+            "CreateArktosNetwork to be removed.")
+        rc = ReturnCode(
+            code=CodeType.OK,
+            message="OK"
+        )
+        return rc
+
+
 class ArktosServiceClient():
     def __init__(self, ip):
-        addr = '{}:{}'.format(ip, OBJ_DEFAULTS.mizar_operator_arktos_service_port)
+        addr = '{}:{}'.format(
+            ip, OBJ_DEFAULTS.mizar_operator_arktos_service_port)
         self.channel = grpc.insecure_channel(addr)
         self.stub_builtins = BuiltinsServiceStub(self.channel)
 
@@ -322,7 +342,8 @@ class ArktosServiceClient():
         return resp
 
     def CreateNetworkPolicy(self, BuiltinsNetworkPolicyMessage):
-        resp = self.stub_builtins.CreateNetworkPolicy(BuiltinsNetworkPolicyMessage)
+        resp = self.stub_builtins.CreateNetworkPolicy(
+            BuiltinsNetworkPolicyMessage)
         return resp
 
     def CreateNamespace(self, BuiltinsNamespaceMessage):
@@ -346,7 +367,8 @@ class ArktosServiceClient():
         return resp
 
     def UpdateNetworkPolicy(self, BuiltinsNetworkPolicyMessage):
-        resp = self.stub_builtins.UpdateNetworkPolicy(BuiltinsNetworkPolicyMessage)
+        resp = self.stub_builtins.UpdateNetworkPolicy(
+            BuiltinsNetworkPolicyMessage)
         return resp
 
     def UpdateNamespace(self, BuiltinsNamespaceMessage):
@@ -370,7 +392,8 @@ class ArktosServiceClient():
         return resp
 
     def ResumeNetworkPolicy(self, BuiltinsNetworkPolicyMessage):
-        resp = self.stub_builtins.ResumeNetworkPolicy(BuiltinsNetworkPolicyMessage)
+        resp = self.stub_builtins.ResumeNetworkPolicy(
+            BuiltinsNetworkPolicyMessage)
         return resp
 
     def ResumeNamespace(self, BuiltinsNamespaceMessage):
@@ -390,11 +413,13 @@ class ArktosServiceClient():
         return resp
 
     def DeleteNetworkPolicy(self, BuiltinsNetworkPolicyMessage):
-        resp = self.stub_builtins.DeleteNetworkPolicy(BuiltinsNetworkPolicyMessage)
+        resp = self.stub_builtins.DeleteNetworkPolicy(
+            BuiltinsNetworkPolicyMessage)
         return resp
 
     def DeleteNetworkPolicy(self, BuiltinsNetworkPolicyMessage):
-        resp = self.stub_builtins.DeleteNetworkPolicy(BuiltinsNetworkPolicyMessage)
+        resp = self.stub_builtins.DeleteNetworkPolicy(
+            BuiltinsNetworkPolicyMessage)
         return resp
 
     def DeleteNamespace(self, BuiltinsNamespaceMessage):
