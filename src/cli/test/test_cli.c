@@ -1130,6 +1130,35 @@ static void test_trn_cli_update_net_subcmd(void **state)
 				  "switches_ips": [10.0.0.1, "10.0.0.2"]
 			  }) };
 
+	char *argv4[] = { "update-net", "-i", "eth0", "-j", QUOTE({
+                                  "tunnel_id": "3",
+                                  "nip": "10.0.0.0",
+                                  "prefixlen": "16",
+                                  "switches_ips": ["10.0.0.1", "10.0.0.2"],
+				  "cluster_gateway": "10.0.0.3",
+				  "virtual": true
+                          }) };
+
+	char *argv5[] = { "update-net", "-i", "eth0", "-j", QUOTE({
+                                  "tunnel_id": "3",
+                                  "nip": "10.0.0.0",
+                                  "prefixlen": "16",
+                                  "switches_ips": ["10.0.0.1", "10.0.0.2"],
+                                  "cluster_gateway": "10.0.0.3",
+                                  "virtual": "yes"
+                          }) };
+
+
+	char *argv6[] = { "update-net", "-i", "eth0", "-j", QUOTE({
+                                  "tunnel_id": "3",
+                                  "nip": "10.0.0.0",
+                                  "prefixlen": "16",
+                                  "switches_ips": ["10.0.0.1", "10.0.0.2"],
+                                  "cluster_gateway": "",
+                                  "virtual": false
+                          }) };
+
+
 	char itf[] = "eth0";
 	uint32_t switches[] = { 0x100000a, 0x200000a };
 
@@ -1141,6 +1170,28 @@ static void test_trn_cli_update_net_subcmd(void **state)
 		.switches_ips = { .switches_ips_len = 2,
 				  .switches_ips_val = switches }
 	};
+
+	struct rpc_trn_network_t exp_virtual_net = {
+                .interface = itf,
+                .prefixlen = 16,
+                .tunid = 3,
+                .netip = 0xa,
+                .switches_ips = { .switches_ips_len = 2,
+                                  .switches_ips_val = switches },
+		.cluster_gateway = 0x300000a,
+		.virtual = true
+        };
+
+	struct rpc_trn_network_t exp_virtual_net_empty_gateway = {
+                .interface = itf,
+                .prefixlen = 16,
+                .tunid = 3,
+                .netip = 0xa,
+                .switches_ips = { .switches_ips_len = 2,
+                                  .switches_ips_val = switches },
+                .cluster_gateway = 0x0,
+                .virtual = false
+        };
 
 	/* Test call update_net successfully */
 	TEST_CASE("update_net succeed with well formed network json input");
@@ -1180,6 +1231,31 @@ static void test_trn_cli_update_net_subcmd(void **state)
 	expect_any(__wrap_update_net_1, clnt);
 	rc = trn_cli_update_net_subcmd(NULL, argc, argv1);
 	assert_int_equal(rc, -EINVAL);
+
+	/* Test uopdate net with valid cluster gateway and virtual information*/
+        TEST_CASE("update_net succeeds with cluster gateway and virtual inforamtion");
+	update_net_1_ret_val = 0;
+	expect_function_call(__wrap_update_net_1);
+	will_return(__wrap_update_net_1, &update_net_1_ret_val);
+	expect_check(__wrap_update_net_1, net, check_net_equal, &exp_virtual_net);
+	expect_any(__wrap_update_net_1, clnt);
+	rc = trn_cli_update_net_subcmd(NULL, argc, argv4);
+	assert_int_equal(rc, 0);
+
+	 /* Test parse virtual input error*/
+        TEST_CASE("update_net fails with an invalid virtual value");
+        rc = trn_cli_update_net_subcmd(NULL, argc, argv5);
+        assert_int_equal(rc, -EINVAL);
+
+	 /* Test uopdate net with empty cluster gateway and virtual information*/
+        TEST_CASE("update_net succeeds with empty cluster gateway and virtual inforamtion");
+        update_net_1_ret_val = 0;
+        expect_function_call(__wrap_update_net_1);
+        will_return(__wrap_update_net_1, &update_net_1_ret_val);
+        expect_check(__wrap_update_net_1, net, check_net_equal, &exp_virtual_net_empty_gateway);
+        expect_any(__wrap_update_net_1, clnt);
+        rc = trn_cli_update_net_subcmd(NULL, argc, argv6);
+        assert_int_equal(rc, 0);
 }
 
 static void test_trn_cli_update_ep_subcmd(void **state)

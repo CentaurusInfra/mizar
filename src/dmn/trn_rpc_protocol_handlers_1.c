@@ -161,9 +161,11 @@ int *update_net_1_svc(rpc_trn_network_t *net, struct svc_req *rqstp)
 	struct network_t netval;
 
 	TRN_LOG_DEBUG("update_net_1 net tunid: %ld, netip: 0x%x, "
-		      "prefixlen: %d, with %d switches",
+		      "prefixlen: %d, with %d switches, "
+		      "cluster gateway: 0x%x, virtual: %d",
 		      net->tunid, net->netip, net->prefixlen,
-		      net->switches_ips.switches_ips_len);
+		      net->switches_ips.switches_ips_len,
+		      net->cluster_gateway, net->virtual);
 
 	struct user_metadata_t *md = trn_itf_table_find(itf);
 
@@ -191,6 +193,8 @@ int *update_net_1_svc(rpc_trn_network_t *net, struct svc_req *rqstp)
 	netval.nip[0] = netkey.nip[0];
 	netval.nip[1] = netkey.nip[1];
 	netval.nip[2] = netkey.nip[2];
+	netval.cluster_gateway = net->cluster_gateway;
+	netval.virtual = net->virtual;
 
 	rc = trn_update_network(md, &netkey, &netval);
 
