@@ -99,12 +99,6 @@ func DoCmdDel(netVariables *object.NetVariables, stdinData []byte) (string, erro
 	}
 	strBuilder.WriteString(fmt.Sprintf("Network variables: %s", netVariables))
 
-	strBuilder.WriteString(fmt.Sprintf("\nDeleting interface for %s/%s", netVariables.K8sPodNamespace, netVariables.K8sPodName))
-	err := grpcclientutil.DeleteInterface(*netVariables)
-	if err != nil {
-		return strBuilder.String(), err
-	}
-
 	strBuilder.WriteString(fmt.Sprintf("\nDeleting network namespace %s for interface of %s/%s", netVariables.NetNS, netVariables.K8sPodNamespace, netVariables.K8sPodName))
 	netutil.DeleteNetNS(netVariables.NetNS)
 

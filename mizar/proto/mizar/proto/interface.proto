@@ -10,7 +10,7 @@ service InterfaceService {
   rpc ProduceInterfaces(InterfacesList) returns (InterfacesList) {}
   rpc ConsumeInterfaces(CniParameters) returns (InterfacesList) {}
   rpc ActivateHostInterface(Interface) returns (Interface) {}
-  rpc DeleteInterface(CniParameters) returns (google.protobuf.Empty) {}
+  rpc DeleteInterface(Interface) returns (google.protobuf.Empty) {}
 }
 
 message PodId {

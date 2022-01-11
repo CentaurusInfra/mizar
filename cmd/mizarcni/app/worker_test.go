@@ -224,37 +224,5 @@ func Test_DoCmdDel(t *testing.T) {
 			So(info, ShouldBeEmpty)
 			So(err, ShouldEqual, expectedError)
 		})
-
-		Convey("Given DeleteInterface error, got expected result", func() {
-			expectedError := errors.New("Expected Error")
-			patches := ApplyFunc(netvariablesutil.LoadCniConfig, func(_ *object.NetVariables, _ []byte) error {
-				return nil
-			})
-			patches.ApplyFunc(grpcclientutil.DeleteInterface, func(_ object.NetVariables) error {
-				return expectedError
-			})
-			defer patches.Reset()
-
-			info, err := app.DoCmdDel(&netVariables, nil)
-			So(info, ShouldContainSubstring, "Network variables")
-			So(info, ShouldContainSubstring, "Deleting interface")
-			So(err, ShouldEqual, expectedError)
-		})
-
-		Convey("Given no error, got expected result", func() {
-			patches := ApplyFunc(netvariablesutil.LoadCniConfig, func(_ *object.NetVariables, _ []byte) error {
-				return nil
-			})
-			patches.ApplyFunc(grpcclientutil.DeleteInterface, func(_ object.NetVariables) error {
-				return nil
-			})
-			defer patches.Reset()
-
-			info, err := app.DoCmdDel(&netVariables, nil)
-			So(info, ShouldContainSubstring, "Network variables")
-			So(info, ShouldContainSubstring, "Deleting interface")
-			So(info, ShouldContainSubstring, "Deleting network namespace")
-			So(err, ShouldBeNil)
-		})
 	})
 }

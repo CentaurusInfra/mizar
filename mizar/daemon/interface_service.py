@@ -240,21 +240,22 @@ class InterfaceServer(InterfaceServiceServicer):
 
     def DeleteInterface(self, request, context):
         """
-        Delete network interfaces for a pod
+        Delete network interface
         """
-        cni_params = request
-        pod_name = get_pod_name(cni_params.pod_id)
+        interface = request
+        pod_name = get_pod_name(interface.interface_id.pod_id)
         pod_interfaces = self.interfaces.get(pod_name, [])
-        iface = cni_params.interface
+        iface = interface.interface_id.interface
         logger.info("Deleting interfaces for pod {} with interfaces {}".format(
             pod_name, pod_interfaces))
 
-        for interface in pod_interfaces:
-            self.interfaces[pod_name].remove(interface)
-            if iface == interface and interface.interface_type == InterfaceType.veth:
+        for pod_interface in pod_interfaces:
+            self.interfaces[pod_name].remove(pod_interface)
+            if iface == pod_interface and pod_interface.interface_type == InterfaceType.veth:
                 logger.info("Deleting interface: {}".format(iface))
-                self._DeleteVethInterface(interface)
-                logger.info("Removed {}".format(interface))
+                self._DeleteVethInterface(pod_interface)
+                logger.info("Removed {}".format(pod_interface))
+
         return empty_pb2.Empty()
 
     def ActivateHostInterface(self, request, context):
@@ -329,8 +330,8 @@ class InterfaceServiceClient():
         resp = self.stub.ConsumeInterfaces(pod_id)
         return resp
 
-    def DeleteInterface(self, interfaces_list):
-        resp = self.stub.DeleteInterface(interfaces_list)
+    def DeleteInterface(self, interface):
+        resp = self.stub.DeleteInterface(interface)
         return resp
 
     def ActivateHostInterface(self, interface):
