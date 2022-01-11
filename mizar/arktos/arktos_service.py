@@ -58,10 +58,17 @@ class ArktosService(BuiltinsServiceServicer):
         param.body['metadata']['annotations'][OBJ_DEFAULTS.mizar_ep_subnet_annotation] = request.annotations[OBJ_DEFAULTS.mizar_ep_subnet_annotation]
         param.extra = {}
         store.update_pod_namespace_store(param.name, param.namespace)
-        if request.labels is not None and len(request.labels) != 0:
-            param.body['metadata']['labels'] = json.loads(request.labels)
+        logger.info("===request.labels is {}===".format(request.labels))
+        try:
+            labels = json.loads(request.labels)
+        except ValueError as e:
+            logger.info(
+                "Client sent invalid JSON for pod labels: {}".format(request.labels))
+            labels = None
+        if labels:
+            param.body['metadata']['labels'] = labels
             logger.info("Labels for pod {} from Arktos Service are {}".format(
-                request.name, request.labels))
+                request.name, labels))
             diff_item = []
             diff_item.append('add')
             diff_item.append(tuple())
@@ -74,7 +81,7 @@ class ArktosService(BuiltinsServiceServicer):
             # new
             new_dict = {}
             new_dict['metadata'] = {}
-            new_dict['metadata']['labels'] = json.loads(request.labels)
+            new_dict['metadata']['labels'] = labels
             diff_item.append(new_dict)
             diff_items = []
             diff_items.append(tuple(diff_item))
