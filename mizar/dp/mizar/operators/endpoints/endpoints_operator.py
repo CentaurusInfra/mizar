@@ -357,6 +357,7 @@ class EndpointOperator(object):
             ep.set_droplet_ip(spec['droplet'].ip)
             ep.set_droplet_mac(spec['droplet'].mac)
             ep.set_interface(interface)
+            self.store_update(ep)
             ep.create_obj()
 
     def create_host_endpoint(self, ip, droplet, interfaces):
@@ -457,4 +458,8 @@ class EndpointOperator(object):
     def delete_simple_endpoint(self, ep):
         logger.info(
             "Delete endpoint object associated with interface {}".format(ep.name))
+        interface = self.store_get(ep.name).interface        
+        InterfaceServiceClient(
+                ep.droplet_obj.main_ip).DeleteInterface(Interface(interface_id=interface.interface_id))
+
         ep.delete_obj()

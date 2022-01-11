@@ -168,6 +168,8 @@ class OprStore(object):
                 ep.egress_networkpolicies = old_ep.egress_networkpolicies
             if len(old_ep.data_for_networkpolicy) > 0 and len(ep.data_for_networkpolicy) == 0:
                 ep.data_for_networkpolicy = old_ep.data_for_networkpolicy
+            if old_ep.interface is not None and ep.interface is None:
+                ep.interface = old_ep.interface
 
         # logger.info('caller name:{}'.format(inspect.stack()[1][3]))
         self.eps_store[ep.name] = ep

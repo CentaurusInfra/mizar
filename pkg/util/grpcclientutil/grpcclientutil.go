@@ -41,22 +41,6 @@ func ConsumeInterfaces(netVariables object.NetVariables) ([]*Interface, error) {
 	return clientResult.Interfaces, nil
 }
 
-func DeleteInterface(netVariables object.NetVariables) error {
-	client, conn, ctx, cancel, err := getInterfaceServiceClient()
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-	defer cancel()
-
-	_, err = client.DeleteInterface(ctx, GenerateCniParameters(netVariables))
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func getInterfaceServiceClient() (InterfaceServiceClient, *grpc.ClientConn, context.Context, context.CancelFunc, error) {
 	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
