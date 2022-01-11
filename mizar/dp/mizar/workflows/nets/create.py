@@ -26,6 +26,7 @@ from mizar.dp.mizar.operators.dividers.dividers_operator import *
 from mizar.dp.mizar.operators.bouncers.bouncers_operator import *
 from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
 from mizar.dp.mizar.operators.droplets.droplets_operator import *
+from mizar.dp.mizar.operators.vpcs.vpcs_operator import *
 
 logger = logging.getLogger()
 
@@ -34,6 +35,7 @@ dividers_opr = DividerOperator()
 bouncers_opr = BouncerOperator()
 endpoints_opr = EndpointOperator()
 droplets_opr = DropletOperator()
+vpcs_opr = VpcOperator()
 
 
 class NetCreate(WorkflowTask):
@@ -52,6 +54,11 @@ class NetCreate(WorkflowTask):
         if len(droplets_opr.store.get_all_droplets()) == 0:
             self.raise_temporary_error(
                 "Task: {} Net: {} No droplets available.".format(self.__class__.__name__, n.name))
+        vpc = vpcs_opr.store.get_vpc(n.vpc)
+        if not vpc:
+            self.raise_temporary_error(
+                "Task: {} Net: {} VPC {} not yet created".format(self.__class__.__name__, n.name, n.vpc))
+        n.set_vni(vpc.vni)
         if len(dividers_opr.store.get_dividers_of_vpc(n.vpc)) < 1:
             self.raise_temporary_error(
                 "Task: {} Net: {} Dividers not available".format(self.__class__.__name__, n.name))

@@ -182,6 +182,9 @@ class ArktosService(BuiltinsServiceServicer):
         param.name = request.name
         param.body['metadata'] = {}
         param.body["metadata"]["namespace"] = request.namespace
+        param.body['metadata']['tenant'] = request.tenant
+        logger.info("Service Endpoint name {} namespace {} tenant {}".format(
+            request.name, request.namespace, request.tenant))
         ips = json.loads(request.backend_ips_json)
         ports = json.loads(request.ports_json)
         param.extra = {}

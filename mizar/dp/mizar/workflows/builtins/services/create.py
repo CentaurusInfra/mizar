@@ -58,23 +58,25 @@ class k8sServiceCreate(WorkflowTask):
                         'annotations').get(OBJ_DEFAULTS.mizar_ep_subnet_annotation)
                     subnet = net_opr.store.get_net(subnet_name)
                     if subnet.vpc != vpc_name:
-                        self.raise_temporary_error("Subnet {} of pod {} does not belong to VPC {}".format(
+                        self.raise_temporary_error("Subnet {} of service {} does not belong to VPC {}".format(
                             subnet_name, self.param.name, vpc_name))
                     if not subnet:
                         self.raise_temporary_error(
-                            "Subnet {} of pod {} does not exist!".format(subnet_name, self.param.name))
+                            "Subnet {} of service {} does not exist!".format(subnet_name, self.param.name))
                 else:
                     subnets = list(net_opr.store.get_nets_in_vpc(vpc_name))
                     if subnets:
                         subnet_name = subnets[0]
-                        logger.info("Subnet not specified, allocating pod {} in subnet {} for VPC {}".format(
+                        logger.info("Subnet not specified, allocating service {} in subnet {} for VPC {}".format(
                             self.param.name, subnet_name, vpc_name))
                     else:
                         self.raise_temporary_error(
-                            "VPC {} has no subnets to allocate pod {}!".format(vpc_name, self.param.name))
+                            "VPC {} has no subnets to allocate service {}!".format(vpc_name, self.param.name))
                 net = net_opr.store.get_net(subnet_name)
         namespace = self.param.body['metadata']['namespace']
-        name = self.param.name + "-{}".format(namespace)
+        tenant = self.param.extra.get('tenant', '')
+        name = self.param.name + "-{}-{}".format(namespace, tenant)
+        logger.info("Service name is {}".format(name))
         if not net:
             self.raise_temporary_error(
                 "Task: {} Net not yet created.".format(self.__class__.__name__))
@@ -96,9 +98,9 @@ class k8sEndpointsUpdate(WorkflowTask):
         if 'subsets' not in self.param.body and not self.param.extra:
             return
         namespace = self.param.body["metadata"]["namespace"]
-        name = self.param.name + "-{}".format(namespace)
-        if self.param.extra:
-            name = name + "-{}".format(self.param.extra["request"].tenant)
+        tenant = self.param.body['metadata'].get('tenant', '')
+        name = self.param.name + "-{}-{}".format(namespace, tenant)
+        logger.info("Endpoint name is {}".format(name))
         ep = endpoints_opr.store.get_ep(name)
         if not ep:
             self.raise_temporary_error(
