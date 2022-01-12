@@ -163,15 +163,11 @@ int trn_cli_parse_net(const cJSON *jsonobj, struct rpc_trn_network_t *net)
         // Virtual can be NULL if it is a local subnet. 0 as false and 1 as true
 	net->virtual = 0;
 	if (virtual != NULL) {
-		if (cJSON_IsBool(virtual)) {
-			if (cJSON_IsFalse(virtual) == 0) {
-				net->virtual = 1;
-			} else {
-				net->virtual = 0;
-			}
-		} else {
+		if (!cJSON_IsBool(virtual)) {
 			print_err("Error: Net Virtual is not a valid boolean value\n");
-			return  -EINVAL;
+			return -EINVAL;
+		} else if (cJSON_IsFalse(virtual) == 0) {
+			net->virtual = 1;
 		}
 	}
 	return 0;

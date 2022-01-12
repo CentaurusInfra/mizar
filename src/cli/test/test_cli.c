@@ -1158,7 +1158,6 @@ static void test_trn_cli_update_net_subcmd(void **state)
                                   "virtual": false
                           }) };
 
-
 	char itf[] = "eth0";
 	uint32_t switches[] = { 0x100000a, 0x200000a };
 
