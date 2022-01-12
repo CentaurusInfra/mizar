@@ -54,8 +54,27 @@ class ArktosService(BuiltinsServiceServicer):
         param.body['metadata']['namespace'] = request.namespace
         param.body['status']['phase'] = request.phase
         param.body['metadata']['tenant'] = request.tenant
+        if request.annotations[OBJ_DEFAULTS.mizar_ep_vpc_annotation]:
+            logger.info("VPC annotation {}").format(
+                request.annotations[OBJ_DEFAULTS.mizar_ep_vpc_annotation])
+        else:
+            logger.info("VPC annotation is NONE")
+            return ReturnCode(
+                code=CodeType.PERM_ERROR,
+                message="Missing VPC annotation"
+            )
+        if request.annotations[OBJ_DEFAULTS.mizar_ep_subnet_annotation]:
+            logger.info("Subnet annotation {}").format(
+                request.annotations[OBJ_DEFAULTS.mizar_ep_subnet_annotation])
+        else:
+            logger.info("subnet annotation is NONE")
+            return ReturnCode(
+                code=CodeType.PERM_ERROR,
+                message="Missing Subnet annotation"
+            )
         param.body['metadata']['annotations'][OBJ_DEFAULTS.mizar_ep_vpc_annotation] = request.annotations[OBJ_DEFAULTS.mizar_ep_vpc_annotation]
         param.body['metadata']['annotations'][OBJ_DEFAULTS.mizar_ep_subnet_annotation] = request.annotations[OBJ_DEFAULTS.mizar_ep_subnet_annotation]
+
         param.extra = {}
         store.update_pod_namespace_store(param.name, param.namespace)
         logger.info("===request.labels is {}===".format(request.labels))
@@ -255,6 +274,24 @@ class ArktosService(BuiltinsServiceServicer):
         return self.CreateNamespace(request, context)
 
     def UpdatePod(self, request, context):
+        if request.annotations[OBJ_DEFAULTS.mizar_ep_vpc_annotation]:
+            logger.info("POD_UPDATE vpc annotation {}").format(
+                request.annotations[OBJ_DEFAULTS.mizar_ep_vpc_annotation])
+        else:
+            logger.info("POD_UPDATE vpc annotation is NONE")
+            return ReturnCode(
+                code=CodeType.PERM_ERROR,
+                message="Missing VPC annotation"
+            )
+        if request.annotations[OBJ_DEFAULTS.mizar_ep_subnet_annotation]:
+            logger.info("POD_UPDATE subnet annotation {}").format(
+                request.annotations[OBJ_DEFAULTS.mizar_ep_subnet_annotation])
+        else:
+            logger.info("POD_UPDATE subnet annotation is NONE")
+            return ReturnCode(
+                code=CodeType.PERM_ERROR,
+                message="Missing Subnet annotation"
+            )
         return self.CreatePod(request, context)
 
     def UpdateNode(self, request, context):
