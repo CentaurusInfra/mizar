@@ -468,7 +468,7 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 	nkey.nip[2] = pkt->inner_ip->daddr;
 	net = bpf_map_lookup_elem(&networks_map, &nkey);
 	// send pkt to user space if this is the edge gateway and dest inner ip belongs to a virtual subnet
-	if ( net && net->virtual && pkt->ip->daddr == net->cluster_gateway) {
+	if (net != NULL  && net->virtual == 1 && pkt->ip->daddr == net->cluster_gateway) {
 		bpf_debug("[Transit:%d:0x%x] Edge gateway\n", __LINE__, bpf_ntohl(pkt->inner_ip->daddr));
 		// Sent the request package to user space
 		return XDP_PASS;
