@@ -54,20 +54,12 @@ class ArktosService(BuiltinsServiceServicer):
         param.body['metadata']['namespace'] = request.namespace
         param.body['status']['phase'] = request.phase
         param.body['metadata']['tenant'] = request.tenant
-        if request.vpc:
-            logger.info("VPC annotation {}".format(
-                request.vpc))
-        else:
-            logger.info("VPC annotation is NONE")
+        if not request.vpc:
             return ReturnCode(
                 code=CodeType.PERM_ERROR,
                 message="Missing VPC annotation"
             )
-        if request.subnet:
-            logger.info("Subnet annotation {}".format(
-                request.subnet))
-        else:
-            logger.info("subnet annotation is NONE")
+        if not request.subnet:
             return ReturnCode(
                 code=CodeType.PERM_ERROR,
                 message="Missing Subnet annotation"
@@ -77,12 +69,11 @@ class ArktosService(BuiltinsServiceServicer):
 
         param.extra = {}
         store.update_pod_namespace_store(param.name, param.namespace)
-        logger.info("===request.labels is {}===".format(request.labels))
         try:
             labels = json.loads(request.labels)
         except ValueError as e:
             logger.info(
-                "Client sent invalid JSON for pod labels: {}".format(request.labels))
+                "Client sent invalid JSON for pod labels: {} {}".format(request.labels, e))
             labels = None
         if labels:
             param.body['metadata']['labels'] = labels
@@ -216,25 +207,6 @@ class ArktosService(BuiltinsServiceServicer):
             logger.info(port)
         return run_arktos_workflow(wffactory().k8sEndpointsUpdate(param=param))
 
-    def CreateArktosNetwork(self, request, context):
-        logger.info(
-            "Arktos Network create from Network Controller {} -> {}.".format(request.name, request.vpc))
-        rc = ReturnCode(
-            code=CodeType.OK,
-            message="OK"
-        )
-        vpc = request.vpc
-        if request.name == "default" and request.vpc == "system-default-network":
-            vpc = OBJ_DEFAULTS.default_ep_vpc
-        vpc_opr.store_get(vpc)
-        if not vpc_opr.store_get(request.vpc):
-            rc.code = CodeType.PERM_ERROR
-            rc.message = "ERROR: VPC {} does not exist for arktos network {}.".format(
-                request.vpc, request.name)
-        else:
-            vpc_opr.store.update_arktosnet_vpc(request.name, request.vpc)
-        return rc
-
     def CreateNetworkPolicy(self, request, context):
         logger.info(
             "Creating network policy from Arktos Service {}".format(request.name))
@@ -274,23 +246,15 @@ class ArktosService(BuiltinsServiceServicer):
         return self.CreateNamespace(request, context)
 
     def UpdatePod(self, request, context):
-        if request.vpc:
-            logger.info("POD_UPDATE vpc annotation {}".format(
-                request.vpc))
-        else:
-            logger.info("POD_UPDATE vpc annotation is NONE")
+        if not request.vpc:
             return ReturnCode(
-                code=CodeType.TEMP_ERROR,
-                message="Missing VPC annotation"
+                code=CodeType.PERM_ERROR,
+                message="Pod Update missing VPC annotation."
             )
-        if request.subnet:
-            logger.info("POD_UPDATE subnet annotation {}".format(
-                request.subnet))
-        else:
-            logger.info("POD_UPDATE subnet annotation is NONE")
+        if not request.subnet:
             return ReturnCode(
-                code=CodeType.TEMP_ERROR,
-                message="Missing Subnet annotation"
+                code=CodeType.PERM_ERROR,
+                message="Pod update missing Subnet annotation."
             )
         return self.CreatePod(request, context)
 
@@ -357,7 +321,7 @@ class ArktosService(BuiltinsServiceServicer):
 
     def CreateArktosNetwork(self, request, context):
         logger.info(
-            "CreateArktosNetwork to be removed.")
+            "CreateArktosNetwork to be deprecated.")
         rc = ReturnCode(
             code=CodeType.OK,
             message="OK"
