@@ -52,7 +52,7 @@ struct bpf_map_def SEC("maps") networks_map = {
 	.type = BPF_MAP_TYPE_HASH,
 	.key_size = sizeof(struct network_key_t),
 	.value_size = sizeof(struct network_t_offload),
-	.max_entries = 16385,
+	.max_entries = 1000001,
 	.map_flags = 0,
 };
 BPF_ANNOTATE_KV_PAIR(networks_map, struct network_key_t, struct network_t_offload);
@@ -70,7 +70,7 @@ struct bpf_map_def SEC("maps") endpoints_map = {
 	.type = BPF_MAP_TYPE_HASH,
 	.key_size = sizeof(struct endpoint_key_t),
 	.value_size = sizeof(struct endpoint_t_offload),
-	.max_entries = 65537,
+	.max_entries = 1000001,
 	.map_flags = 0,
 };
 BPF_ANNOTATE_KV_PAIR(endpoints_map, struct endpoint_key_t, struct endpoint_t_offload);
