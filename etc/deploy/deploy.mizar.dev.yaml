@@ -553,9 +553,9 @@ spec:
           privileged: true
         volumeMounts:
         - name: kubeconfig
-          mountPath: /admin.conf
+          mountPath: /kubeconf
       volumes:
       - name: kubeconfig
         hostPath:
-          path: /etc/kubernetes/admin.conf
-          type: File
+          path: /etc/kubernetes
+          type: Directory
