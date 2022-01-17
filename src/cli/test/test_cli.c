@@ -1130,7 +1130,7 @@ static void test_trn_cli_update_net_subcmd(void **state)
 
 	struct test_case tc[] = {
 		{
-			"update_transit_pod_and_namespace_label_policy succeed with well formed endpoint json input",
+			"update_net succeed with well formed network json input",
 			QUOTE({
 				"tunnel_id": "3",
 				"nip": "10.0.0.0",
