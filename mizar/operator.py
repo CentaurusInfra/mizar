@@ -46,8 +46,9 @@ from google.protobuf import empty_pb2
 from concurrent import futures
 from mizar.proto import builtins_pb2_grpc as builtins_pb2_grpc
 from mizar.arktos.arktos_service import ArktosService
-from kubernetes import client, config
+from kubernetes import client
 from subprocess import check_output
+from mizar.common.common import load_k8s_config
 from mizar.common.constants import *
 
 
@@ -63,26 +64,7 @@ async def on_startup(logger, **kwargs):
     LOCK = asyncio.Lock()
     param = HandlerParam()
 
-    k8s_config_file = os.environ.get('KUBECONFIG')
-    if k8s_config_file:
-        logger.info("Loading k8s config using KUBECONFIG file {}.".format(k8s_config_file))
-        try:
-            config.load_kube_config(config_file=k8s_config_file)
-            logger.info("K8s config successfully initialized using KUBECONFIG file {}.".format(k8s_config_file))
-        except config.ConfigException:
-            try:
-                logger.info("Failed to initialize k8s config using KUBECONFIG {}. Attempting in_cluster_config.".format(k8s_config_file))
-                config.load_incluster_config()
-                logger.info("K8s config successfully initialized using in_cluster_config as fallback.")
-            except config.ConfigException:
-                raise Exception("Could not configure kubernetes python client with either KUBECONFIG or in_cluster_config.")
-    else:
-        logger.info("Loading k8s config using in_cluster_config.")
-        try:
-            config.load_incluster_config()
-            logger.info("K8s config successfully initialized using in_cluster_config.")
-        except config.ConfigException:
-            raise Exception("Could not configure kubernetes python client from in_cluster_config.")
+    load_k8s_config()
 
     sched = 'luigid --background --port 8082 --pidfile /var/run/luigi/luigi.pid --logdir /var/log/luigi --state-path /var/lib/luigi/luigi.state'
     subprocess.call(sched, shell=True)
@@ -95,12 +77,12 @@ async def on_startup(logger, **kwargs):
         pass
     logger.info("Running luigid central scheduler pid={}!".format(pid))
 
-    threading.Thread(target=grpc_server).start()
-    create_config_map()
     configmap = read_config_map()
     if configmap and read_config_map().data["name"] == "arktos":
         logger.info("Cluster is Arktos.")
         COMPUTE_PROVIDER.k8s = False
+        threading.Thread(target=grpc_server).start()
+        create_config_map()
     else:
         logger.info("Cluster is Kubernetes.")
         COMPUTE_PROVIDER.k8s = True

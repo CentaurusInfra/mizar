@@ -22,7 +22,7 @@
 import random
 import uuid
 import logging
-from kubernetes import client, config
+from kubernetes import client
 from mizar.common.constants import *
 from mizar.common.common import *
 from mizar.common.cidr import Cidr
@@ -45,7 +45,7 @@ class VpcOperator(object):
     def _init(self, **kwargs):
         logger.info(kwargs)
         self.store = OprStore()
-        config.load_incluster_config()
+        load_k8s_config()
         self.obj_api = client.CustomObjectsApi()
 
     def query_existing_vpcs(self):
