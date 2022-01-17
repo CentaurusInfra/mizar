@@ -46,8 +46,9 @@ from google.protobuf import empty_pb2
 from concurrent import futures
 from mizar.proto import builtins_pb2_grpc as builtins_pb2_grpc
 from mizar.arktos.arktos_service import ArktosService
-from kubernetes import client, config
+from kubernetes import client
 from subprocess import check_output
+from mizar.common.common import load_k8s_config
 from mizar.common.constants import *
 
 
@@ -62,7 +63,9 @@ async def on_startup(logger, **kwargs):
     global LOCK
     LOCK = asyncio.Lock()
     param = HandlerParam()
-    config.load_incluster_config()
+
+    load_k8s_config()
+
     sched = 'luigid --background --port 8082 --pidfile /var/run/luigi/luigi.pid --logdir /var/log/luigi --state-path /var/lib/luigi/luigi.state'
     subprocess.call(sched, shell=True)
     while not os.path.exists("/var/run/luigi/luigi.pid"):
@@ -74,12 +77,12 @@ async def on_startup(logger, **kwargs):
         pass
     logger.info("Running luigid central scheduler pid={}!".format(pid))
 
-    threading.Thread(target=grpc_server).start()
-    create_config_map()
     configmap = read_config_map()
     if configmap and read_config_map().data["name"] == "arktos":
         logger.info("Cluster is Arktos.")
         COMPUTE_PROVIDER.k8s = False
+        threading.Thread(target=grpc_server).start()
+        create_config_map()
     else:
         logger.info("Cluster is Kubernetes.")
         COMPUTE_PROVIDER.k8s = True

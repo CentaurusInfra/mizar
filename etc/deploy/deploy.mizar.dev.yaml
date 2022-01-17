@@ -532,6 +532,14 @@ spec:
       tolerations:
         - effect: NoSchedule
           operator: Exists
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/master
+                operator: Exists
       serviceAccountName: mizar-operator
       terminationGracePeriodSeconds: 0
       hostNetwork: true
@@ -543,3 +551,11 @@ spec:
           value: 'false'
         securityContext:
           privileged: true
+        volumeMounts:
+        - name: kubeconfig
+          mountPath: /admin.conf
+      volumes:
+      - name: kubeconfig
+        hostPath:
+          path: /etc/kubernetes/admin.conf
+          type: File

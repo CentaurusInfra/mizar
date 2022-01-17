@@ -23,7 +23,7 @@ import logging
 import random
 from mizar.common.constants import *
 from mizar.common.common import *
-from kubernetes import client, config
+from kubernetes import client
 from mizar.obj.droplet import Droplet
 from mizar.obj.bouncer import Bouncer
 from mizar.obj.divider import Divider
@@ -45,7 +45,7 @@ class DropletOperator(object):
     def _init(self, **kwargs):
         logger.info(kwargs)
         self.store = OprStore()
-        config.load_incluster_config()
+        load_k8s_config()
         self.obj_api = client.CustomObjectsApi()
         self.bootstrapped = False
 
