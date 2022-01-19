@@ -558,4 +558,3 @@ spec:
       - name: kubeconfig
         hostPath:
           path: /etc/kubernetes
-          type: Directory
