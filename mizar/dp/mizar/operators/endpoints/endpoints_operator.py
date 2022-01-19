@@ -369,7 +369,7 @@ class EndpointOperator(object):
             ep.set_type(OBJ_DEFAULTS.ep_type_host)
             ep.set_status(OBJ_STATUS.ep_status_init)
 
-            ep.set_vni(OBJ_DEFAULTS.default_vpc_vni)
+            ep.set_vni(get_cluster_vpc_vni())
             ep.set_vpc(OBJ_DEFAULTS.default_ep_vpc)
             ep.set_net(OBJ_DEFAULTS.default_ep_net)
             ep.set_gw(OBJ_DEFAULTS.default_net_gw)

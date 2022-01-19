@@ -35,7 +35,7 @@ logger = logging.getLogger()
 class Vpc(object):
     def __init__(self, name, obj_api, opr_store, spec=None):
         self.name = name
-        self.vni = OBJ_DEFAULTS.default_vpc_vni
+        self.vni = get_cluster_vpc_vni()
         self.n_dividers = OBJ_DEFAULTS.default_n_dividers
         self.n_allocated_dividers = 0
         self.obj_api = obj_api

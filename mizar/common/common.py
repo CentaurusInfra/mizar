@@ -482,3 +482,12 @@ def load_k8s_config():
             logger.info("K8s config successfully initialized using in_cluster_config.")
         except config.ConfigException:
             raise Exception("Could not configure kubernetes python client from in_cluster_config.")
+
+def get_cluster_vpc_vni():
+    cluster_vpc_vni = os.environ.get('CLUSTER_VPC_VNI')
+    if cluster_vpc_vni:
+        logger.info("Using specified cluster VNI {}.".format(cluster_vpc_vni))
+    else:
+        cluster_vpc_vni = OBJ_DEFAULTS.default_vpc_vni
+        logger.info("Using default cluster VNI {}.".format(cluster_vpc_vni))
+    return cluster_vpc_vni
