@@ -39,7 +39,6 @@ class OprStore(object):
         self.droplets_store = {}
 
         self.vpcs_store = {}
-        self.arktosnet_vpc_store = {}
         self.nets_vpc_store = {}
         self.nets_store = {}
 
@@ -98,15 +97,6 @@ class OprStore(object):
     def get_vpc(self, name):
         if name in self.vpcs_store:
             return self.vpcs_store[name]
-        return None
-
-    def update_arktosnet_vpc(self, a, v):
-        if v in self.vpcs_store:
-            self.arktosnet_vpc_store[a] = v
-
-    def get_vpc_in_arktosnet(self, name):
-        if name in self.arktosnet_vpc_store:
-            return self.arktosnet_vpc_store[name]
         return None
 
     def contains_vpc(self, name):
@@ -347,18 +337,20 @@ class OprStore(object):
 
     def get_or_add_pod_label_value(self, label_combination):
         if label_combination not in self.pod_label_value_store:
-            self.pod_label_value_store[label_combination] = len(self.pod_label_value_store)
+            self.pod_label_value_store[label_combination] = len(
+                self.pod_label_value_store)
             logger.info("Added pod_label_value {} for {}."
-                .format(self.pod_label_value_store[label_combination], label_combination))
+                        .format(self.pod_label_value_store[label_combination], label_combination))
         return self.pod_label_value_store[label_combination]
 
     def get_or_add_namespace_label_value(self, label_combination):
         if label_combination not in self.namespace_label_value_store:
-            self.namespace_label_value_store[label_combination] = len(self.namespace_label_value_store)
+            self.namespace_label_value_store[label_combination] = len(
+                self.namespace_label_value_store)
             logger.info("Added namespace_label_value {} for {}."
-                .format(self.namespace_label_value_store[label_combination], label_combination))
+                        .format(self.namespace_label_value_store[label_combination], label_combination))
         return self.namespace_label_value_store[label_combination]
-    
+
     def get_old_pod_labels(self, pod_name):
         labels_dict = {}
         if pod_name in self.pod_label_store:
