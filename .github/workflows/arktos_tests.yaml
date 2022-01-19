@@ -45,24 +45,40 @@ jobs:
         run: sleep 300
       - name: check ready
         run: source install/common.sh && check_all_ready arktos
-      - name: cleanup interfaces
+      - name: cleanup bridge interface
         if: ${{ always() }}
         continue-on-error: true
-        run: |
+        run:
           sudo ip l delete $(ip l | grep -Po "(br-\w+)(?=:)")
+      - name: cleanup veth interfaces
+        if: ${{ always() }}
+        continue-on-error: true
+        run:
           for name in $(ip l |  grep -Po '(veth-\w+)(?=@)'); do sudo ip l delete $name; done
       - name: cleanup net namespaces
         if: ${{ always() }}
         continue-on-error: true
         run: |
           sudo ip -all netns delete
-      - name: cleanup docker containers and images
+      - name: Stop and cleanup docker containers and images
+        if: ${{ always() }}
+        continue-on-error: true
+        run:
+          sudo docker stop $(sudo docker ps -aq) && docker system prune -f
+      - name: Remove docker images
+        if: ${{ always() }}
+        continue-on-error: true
+        run:
+          sudo docker rmi -f $(docker images -a -q)
+      - name: Remove dangling containers
+        if: ${{ always() }}
+        continue-on-error: true
+        run:
+          sudo docker volume rm $(docker volume ls -qf dangling=true)
+      - name: Containerd cleanup droplet container
         if: ${{ always() }}
         continue-on-error: true
         run: |
-          sudo docker stop $(sudo docker ps -aq) && docker system prune -f
-          sudo docker rmi -f $(docker images -a -q)
-          sudo docker volume rm $(docker volume ls -qf dangling=true)
           sudo crictl rmi docker.io/mizarnet/dropletd:dev
           sudo crictl rmi docker.io/mizarnet/endpointopr:dev
           sudo crictl rmi docker.io/mizarnet/mizar:dev
