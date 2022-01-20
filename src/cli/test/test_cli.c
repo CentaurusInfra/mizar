@@ -1110,16 +1110,6 @@ static void test_trn_cli_update_net_subcmd(void **state)
 	char itf[] = "eth0";
 	uint32_t switches[] = { 0x100000a, 0x200000a };
 	/* Test cases */
-	struct rpc_trn_network_t exp_net = {
-		.interface = itf,
-		.prefixlen = 16,
-		.tunid = 3,
-		.netip = 0xa,
-		.switches_ips = { .switches_ips_len = 2,
-				  .switches_ips_val = switches },
-		.cluster_gateway = 0x0,
-		.virtual = true,
-	};
 	struct test_case {
 		char *name;
 		char *json_input;
