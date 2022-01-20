@@ -36,7 +36,7 @@ class Net(object):
     def __init__(self, name, obj_api, opr_store, spec=None):
         self.name = name
         self.vpc = OBJ_DEFAULTS.default_ep_vpc
-        self.vni = OBJ_DEFAULTS.default_vpc_vni
+        self.vni = get_cluster_vpc_vni()
         self.n_bouncers = OBJ_DEFAULTS.default_n_bouncers
         self.n_allocated_bouncers = 0
         self.bouncers = {}
