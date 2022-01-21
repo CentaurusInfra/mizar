@@ -1107,79 +1107,167 @@ static void test_trn_cli_update_net_subcmd(void **state)
 	int rc;
 	int argc = 5;
 	int update_net_1_ret_val = 0;
-
-	/* Test cases */
-	char *argv1[] = { "update-net", "-i", "eth0", "-j", QUOTE({
-				  "tunnel_id": "3",
-				  "nip": "10.0.0.0",
-				  "prefixlen": "16",
-				  "switches_ips": ["10.0.0.1", "10.0.0.2"]
-			  }) };
-
-	char *argv2[] = { "update-net", "-i", "eth0", "-j", QUOTE({
-				  "tunnel_id": 3,
-				  "nip": "10.0.0.0",
-				  "prefixlen": "16",
-				  "switches_ips": ["10.0.0.1", "10.0.0.2"]
-			  }) };
-
-	char *argv3[] = { "update-net", "-i", "eth0", "-j", QUOTE({
-				  "tunnel_id": "3",
-				  "nip": "adsfwef",
-				  "prefixlen": "16",
-				  "switches_ips": [10.0.0.1, "10.0.0.2"]
-			  }) };
-
 	char itf[] = "eth0";
 	uint32_t switches[] = { 0x100000a, 0x200000a };
-
-	struct rpc_trn_network_t exp_net = {
-		.interface = itf,
-		.prefixlen = 16,
-		.tunid = 3,
-		.netip = 0xa,
-		.switches_ips = { .switches_ips_len = 2,
-				  .switches_ips_val = switches }
+	/* Test cases */
+	struct test_case {
+		char *name;
+		char *json_input;
+		struct rpc_trn_network_t expected_net;
+		int expected_net_rc;
+		int expected_rc;
 	};
 
-	/* Test call update_net successfully */
-	TEST_CASE("update_net succeed with well formed network json input");
-	update_net_1_ret_val = 0;
-	expect_function_call(__wrap_update_net_1);
-	will_return(__wrap_update_net_1, &update_net_1_ret_val);
-	expect_check(__wrap_update_net_1, net, check_net_equal, &exp_net);
-	expect_any(__wrap_update_net_1, clnt);
-	rc = trn_cli_update_net_subcmd(NULL, argc, argv1);
-	assert_int_equal(rc, 0);
+	struct test_case tc[] = {
+		{
+			"update_net succeed with well formed network json input",
+			QUOTE({
+				"tunnel_id": "3",
+				"nip": "10.0.0.0",
+				"prefixlen": "16",
+				"switches_ips": ["10.0.0.1", "10.0.0.2"]
+			}),
+			{
+				.interface = itf,
+				.prefixlen = 16,
+				.tunid = 3,
+				.netip = 0xa,
+				.switches_ips = {
+					.switches_ips_len = 2,
+					.switches_ips_val = switches }
+			},
+			0,
+			0,
+		},
+		{
+			"update_net is not called with non-string field",
+			QUOTE({
+				"tunnel_id": 3,
+				"nip": "10.0.0.0",
+				"prefixlen": "16",
+				"switches_ips": ["10.0.0.1", "10.0.0.2"]
+			}),
+			{
+                                .interface = itf,
+                                .prefixlen = 16,
+                                .tunid = 3,
+                                .netip = 0xa,
+                                .switches_ips = {
+                                        .switches_ips_len = 2,
+                                        .switches_ips_val = switches }
+                        },
+			-EINVAL,
+			-EINVAL,
+		},
+		{
+			"update_net is not called malformed json",
+			QUOTE({
+				"tunnel_id": "3",
+				"nip": "adsfwef",
+				"prefixlen": "16",
+				"switches_ips": [10.0.0.1, "10.0.0.2"]
+			}),
+			{
+                                .interface = itf,
+                                .prefixlen = 16,
+                                .tunid = 3,
+                                .netip = 0xa,
+                                .switches_ips = {
+                                        .switches_ips_len = 2,
+                                        .switches_ips_val = switches }
+                        },
+			-EINVAL,
+			-EINVAL,
+		},
+		{
+			"update_net succeeds with cluster gateway and virtual inforamtion",
+			QUOTE({
+                                "tunnel_id": "3",
+                                "nip": "10.0.0.0",
+                                "prefixlen": "16",
+                                "switches_ips": ["10.0.0.1", "10.0.0.2"],
+                                "cluster_gateway": "10.0.0.3",
+                                "virtual": true
+                        }),
+			{
+                                .interface = itf,
+                                .prefixlen = 16,
+                                .tunid = 3,
+                                .netip = 0xa,
+                                .switches_ips = {
+                                        .switches_ips_len = 2,
+                                        .switches_ips_val = switches },
+				.cluster_gateway = 0x300000a,
+				.virtual = true
+                        },
+			0,
+			0,
+		},
+		{
+			"update_net fails with an invalid virtual value",
+			QUOTE({
+                                  "tunnel_id": "3",
+                                  "nip": "10.0.0.0",
+                                  "prefixlen": "16",
+                                  "switches_ips": ["10.0.0.1", "10.0.0.2"],
+                                  "cluster_gateway": "10.0.0.3",
+                                  "virtual": "yes"
+                        }),
+			{
+                                .interface = itf,
+                                .prefixlen = 16,
+                                .tunid = 3,
+                                .netip = 0xa,
+                                .switches_ips = {
+                                        .switches_ips_len = 2,
+                                        .switches_ips_val = switches },
+                                .cluster_gateway = 0x300000a,
+                                .virtual = true
+                        },
+			-EINVAL,
+			-EINVAL,
+		},
+		{
+			"update_net succeeds with empty cluster gateway and virtual inforamtion",
+			QUOTE({
+                                  "tunnel_id": "3",
+                                  "nip": "10.0.0.0",
+                                  "prefixlen": "16",
+                                  "switches_ips": ["10.0.0.1", "10.0.0.2"],
+                                  "cluster_gateway": "",
+                                  "virtual": false
+                        }),
+			{
+                                .interface = itf,
+                                .prefixlen = 16,
+                                .tunid = 3,
+                                .netip = 0xa,
+                                .switches_ips = {
+                                        .switches_ips_len = 2,
+                                        .switches_ips_val = switches },
+                                .cluster_gateway = 0x0,
+                                .virtual = false
+                        },
+			0,
+			0,
+		},
+	};
 
-	/* Test parse net input error*/
-	TEST_CASE("update_net is not called with non-string field");
-	rc = trn_cli_update_net_subcmd(NULL, argc, argv2);
-	assert_int_equal(rc, -EINVAL);
+	int numtc = sizeof(tc) / sizeof(tc[0]);
 
-	/* Test parse net input error 2*/
-	TEST_CASE("update_net is not called malformed json");
-	rc = trn_cli_update_net_subcmd(NULL, argc, argv3);
-	assert_int_equal(rc, -EINVAL);
+	for (int i = 0; i < numtc; i++) {
+		TEST_CASE(tc[i].name);
+		if (tc[i].expected_net_rc != -EINVAL) {
+			expect_function_call(__wrap_update_net_1);
+			will_return(__wrap_update_net_1, &tc[i].expected_net_rc);
+			expect_check(__wrap_update_net_1, net, check_net_equal, &tc[i].expected_net);
+			expect_any(__wrap_update_net_1, clnt);
+		}
+		char *args[] = { "update-net", "-i", "eth0", "-j", tc[i].json_input };
+		rc = trn_cli_update_net_subcmd(NULL, 5, args);
+		assert_int_equal(rc, tc[i].expected_rc);
+	}
 
-	/* Test call update_net_1 return error*/
-	TEST_CASE("update-net subcommand fails if update_net_1 returns error");
-	update_net_1_ret_val = -EINVAL;
-	expect_function_call(__wrap_update_net_1);
-	will_return(__wrap_update_net_1, &update_net_1_ret_val);
-	expect_any(__wrap_update_net_1, net);
-	expect_any(__wrap_update_net_1, clnt);
-	rc = trn_cli_update_net_subcmd(NULL, argc, argv1);
-	assert_int_equal(rc, -EINVAL);
-
-	/* Test call update_net_1 return NULL*/
-	TEST_CASE("update-net subcommand fails if update_net_1 returns NULl");
-	expect_function_call(__wrap_update_net_1);
-	will_return(__wrap_update_net_1, NULL);
-	expect_any(__wrap_update_net_1, net);
-	expect_any(__wrap_update_net_1, clnt);
-	rc = trn_cli_update_net_subcmd(NULL, argc, argv1);
-	assert_int_equal(rc, -EINVAL);
 }
 
 static void test_trn_cli_update_ep_subcmd(void **state)

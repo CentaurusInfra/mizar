@@ -105,6 +105,8 @@ int trn_cli_parse_net(const cJSON *jsonobj, struct rpc_trn_network_t *net)
 	cJSON *prefixlen = cJSON_GetObjectItem(jsonobj, "prefixlen");
 	cJSON *switches_ips = cJSON_GetObjectItem(jsonobj, "switches_ips");
 	cJSON *switch_ip = NULL;
+	cJSON *cluster_gateway = cJSON_GetObjectItem(jsonobj, "cluster_gateway");
+	cJSON *virtual = cJSON_GetObjectItem(jsonobj, "virtual");
 
 	if (cJSON_IsString(tunnel_id)) {
 		uint64_t tid = atoi(tunnel_id->valuestring);
@@ -151,6 +153,23 @@ int trn_cli_parse_net(const cJSON *jsonobj, struct rpc_trn_network_t *net)
 		}
 	}
 	net->switches_ips.switches_ips_len = i;
+	// Cluster gateway is NULL or empty if it is not set in a config map which is a string value
+	net->cluster_gateway = 0;
+	if (cluster_gateway != NULL && cJSON_IsString(cluster_gateway) && strlen(cluster_gateway->valuestring) > 0) {
+		struct sockaddr_in sa;
+		inet_pton(AF_INET, cluster_gateway->valuestring, &(sa.sin_addr));
+		net->cluster_gateway = sa.sin_addr.s_addr;
+	}
+        // Virtual can be NULL if it is a local subnet. 0 as false and 1 as true
+	net->virtual = 0;
+	if (virtual != NULL) {
+		if (!cJSON_IsBool(virtual)) {
+			print_err("Error: Net Virtual is not a valid boolean value\n");
+			return -EINVAL;
+		} else if (cJSON_IsFalse(virtual) == 0) {
+			net->virtual = 1;
+		}
+	}
 	return 0;
 }
 

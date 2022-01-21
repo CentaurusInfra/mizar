@@ -78,6 +78,9 @@ class DividerOperator(object):
         dividers = self.store.get_dividers_of_vpc(bouncer.vpc).values()
         for d in dividers:
             d.update_net(net)
+        # If the subnet is virtual,update its subnet on the cluster gateway(bouncer) droplet as well
+        if net.virtual:
+            bouncer.droplet_obj.update_net(net)
 
     def delete_bouncer_from_dividers(self, bouncer, net):
         dividers = self.store.get_dividers_of_vpc(bouncer.vpc).values()
