@@ -20,7 +20,9 @@
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import ipaddress
+import logging
 
+logger = logging.getLogger()
 
 class Cidr:
     def __init__(self, prefixlen, ip):
@@ -31,7 +33,7 @@ class Cidr:
         self.ip = ip
         self.ipnet = ipaddress.ip_network(
             "{}/{}".format(self.ip, self.prefixlen))
-        self.subnets = self.ipnet.subnets(new_prefix=30)
+        self.subnets = self.ipnet.subnets(new_prefix=32)
 
         self._hosts = set()
         self.gw = self.get_ip(1)
@@ -52,13 +54,13 @@ class Cidr:
         return self.hosts
 
     def allocate_ip(self):
-        if not len(self.hosts):
-            return None
         ip = self.hosts.pop()
         # TODO: bad hack, search the list and remove it!!
         while ip in self.allocated:
             ip = self.hosts.pop()
         self.allocated.add(ip)
+        logger.info("ip {} is allocated. Currently there are {} ip addresses allocated under {}/{}."
+            .format(ip, len(self.allocated), self.ip, self.prefixlen))
         return str(ip)
 
     def mark_ip_as_allocated(self, ip):

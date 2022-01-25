@@ -114,6 +114,7 @@ class k8sPodCreate(WorkflowTask):
 
         n = net_opr.store.get_net(spec['subnet'])
         ip = n.allocate_ip()
+        logger.info("ip {} from {} is allocated to Pod {}.".format(ip, spec['subnet'], self.param.name))
         spec['ip'] = ip
 
         # Get 'mizar.com/egress-bandwidth' from pod annotations
