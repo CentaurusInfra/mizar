@@ -17,7 +17,6 @@ from google.protobuf import empty_pb2
 from mizar.common.rpc import TrnRpc
 from mizar.common.constants import *
 from pyroute2 import IPRoute, NetNS
-import queue
 import ipaddress
 
 logger = logging.getLogger('mizar_interface_service')
@@ -31,18 +30,20 @@ CONSUME_INTERFACE_TIMEOUT = 5
 class InterfaceServer(InterfaceServiceServicer):
 
     def __init__(self):
-        self.interfaces_q = queue.Queue()  # Used for Produce/Consume sync
         self.iproute = IPRoute()
         self.interfaces = {}  # In-memory tracking for Pod interfaces
-        self.queued_pods = set()  # A set of pods, with queued interfaces (to be consumed)
-        self.interfaces_lock = threading.Lock()
+        self.pod_dict = {}
 
         self.itf = get_itf()
-        cmd = 'ip addr show ' + f'''{self.itf}''' + ' | grep "inet\\b" | awk \'{print $2}\' | cut -d/ -f1'
+        cmd = 'ip addr show ' + \
+            f'''{self.itf}''' + \
+            ' | grep "inet\\b" | awk \'{print $2}\' | cut -d/ -f1'
         r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         self.droplet_ip = r.stdout.read().decode().strip()
 
-        cmd = 'ip addr show ' + f'''{self.itf}''' + ' | grep "link/ether\\b" | awk \'{print $2}\' | cut -d/ -f1'
+        cmd = 'ip addr show ' + \
+            f'''{self.itf}''' + \
+            ' | grep "link/ether\\b" | awk \'{print $2}\' | cut -d/ -f1'
         r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         self.droplet_mac = r.stdout.read().decode().strip()
 
@@ -114,18 +115,15 @@ class InterfaceServer(InterfaceServiceServicer):
         pod_name = get_pod_name(interface.interface_id.pod_id)
         logger.info("Producing interface {}".format(interface))
         logger.info("Current queued interfaces {}".format(self.interfaces))
-        with self.interfaces_lock:
-            # Append the interface to the pod's interfaces (important in
-            # multi-interfaces case)
-            if pod_name not in self.interfaces:
-                self.interfaces[pod_name] = []
-            self.interfaces[pod_name].append(interface)
+        # Append the interface to the pod's interfaces (important in
+        # multi-interfaces case)
+        if pod_name not in self.interfaces:
+            self.interfaces[pod_name] = []
+        self.interfaces[pod_name].append(interface)
 
-            # Move the pod_name into interfaces_q. This tells the consume
-            # function that the pod has queued interfaces that can be consumed
-            if pod_name not in self.queued_pods:
-                self.interfaces_q.put(pod_name)
-                self.queued_pods.add(pod_name)
+        # Move the pod_name into interfaces_q. This tells the consume
+        # function that the pod has queued interfaces that can be consumed
+        self.pod_dict[pod_name] = True
 
         # Change interface status from init to queued.
         interface.status = InterfaceStatus.queued
@@ -135,14 +133,11 @@ class InterfaceServer(InterfaceServiceServicer):
         Remove the pod from the interfaces_q and provision the interface
         (program the transit agent)
         """
-        with self.interfaces_lock:
-            if pod_name in self.queued_pods:
-                self.queued_pods.remove(pod_name)
-            interfaces = self.interfaces.get(pod_name, [])
-            for interface in interfaces:
-                if interface.status == InterfaceStatus.queued:
-                    self._ProvisionInterface(interface, cni_params)
-                    interface.status = InterfaceStatus.consumed
+        interfaces = self.interfaces.get(pod_name, [])
+        for interface in interfaces:
+            if interface.status == InterfaceStatus.queued:
+                self._ProvisionInterface(interface, cni_params)
+                interface.status = InterfaceStatus.consumed
 
         interfaces = InterfacesList(interfaces=interfaces)
         logger.info("Consumed {}".format(interfaces))
@@ -165,10 +160,12 @@ class InterfaceServer(InterfaceServiceServicer):
 
         veth_peer_index = get_iface_index(interface.veth.peer, self.iproute)
         if os.getenv('FEATUREGATE_BWQOS', 'false').lower() in ('false', '0'):
-            self.iproute.link('set', index=veth_peer_index, state='up', mtu=9000)
+            self.iproute.link('set', index=veth_peer_index,
+                              state='up', mtu=9000)
         else:
             mzbr_index = get_iface_index(CONSTANTS.MIZAR_BRIDGE, self.iproute)
-            self.iproute.link('set', index=veth_peer_index, master=mzbr_index, state='up', mtu=9000)
+            self.iproute.link('set', index=veth_peer_index,
+                              master=mzbr_index, state='up', mtu=9000)
 
         # Configure the Transit Agent
         self._ConfigureTransitAgent(interface)
@@ -198,37 +195,19 @@ class InterfaceServer(InterfaceServiceServicer):
             "Call from CNI Consume: cni_params/request: {}, cni_params.pod_id {}, pod_name {}".format(request, request.pod_id, requested_pod_name))
         logger.info("Consume Interfaces {}".format(request))
         logger.info("Consuming interfaces for pod: {} Current Queue: {}".format(
-            requested_pod_name, list(self.interfaces_q.queue)))
-        start = time.time()
+            requested_pod_name, list(self.pod_dict)))
 
         # The following is a synchronization mechanism to make sure the
         # CNI calls _ConsumeInterfaces after the interfaces got produced.
         # In Arktos, this may be skipped because the Kubelet will only
         # invoke CNI after the Pod operator marks the pod's network ready
 
-        while True:
-            try:
-                queued_pod_name = self.interfaces_q.get(
-                    timeout=CONSUME_INTERFACE_TIMEOUT)
-            except:
-                break
-
-            if queued_pod_name == requested_pod_name:
+        if self.pod_dict:
+            if self.pod_dict[requested_pod_name]:
                 # Interfaces for the Pod has been produced
-                return self._ConsumeInterfaces(queued_pod_name, request)
-
-            # Update the wait time and break the wait if necessary
-            self.interfaces_q.put(queued_pod_name)
-            now = time.time()
-
-            if now - start >= CONSUME_INTERFACE_TIMEOUT:
-                break
-
+                return self._ConsumeInterfaces(requested_pod_name, request)
         # If we are here, the endpoint operator has not produced any interfaces
         # for the Pod. Typically the CNI will retry to consume the interface.
-        logger.error("Timeout, no new interface to consume! {} {}".format(
-            requested_pod_name, list(self.interfaces_q.queue)))
-        return self._ConsumeInterfaces(requested_pod_name, request)
 
     def _DeleteVethInterface(self, interface):
         """
@@ -296,17 +275,21 @@ class InterfaceServer(InterfaceServiceServicer):
         logger.info(
             "Disabled rx tx offload for host ep rc: {} text: {}".format(rc, text))
 
-        cmd = "nsenter -t 1 -m -u -n -i cat /sys/class/net/{}/speed".format(interface.veth.name)
+        cmd = "nsenter -t 1 -m -u -n -i cat /sys/class/net/{}/speed".format(
+            interface.veth.name)
         rc, linkspeed = run_cmd(cmd)
-        linkspeed_bytes_per_sec = int(int(linkspeed.rstrip('\r\n')) * 1000 * (1000/ 8))
-        logger.info("Host interface {} Link Speed {} bytes/sec".format(interface.veth.name, linkspeed_bytes_per_sec))
+        linkspeed_bytes_per_sec = int(
+            int(linkspeed.rstrip('\r\n')) * 1000 * (1000 / 8))
+        logger.info("Host interface {} Link Speed {} bytes/sec".format(
+            interface.veth.name, linkspeed_bytes_per_sec))
 
         # Initialize Tx stats map entry
-        #TODO: Use interface.address.ip_address for multi-NIC scenario
+        # TODO: Use interface.address.ip_address for multi-NIC scenario
         self.rpc.reset_tx_stats("0.0.0.0")
 
-        #TODO: Get user-configured default bandwidth limit percentage from config-map
-        bwlimit = int((linkspeed_bytes_per_sec * CONSTANTS.MIZAR_DEFAULT_EGRESS_BW_LIMIT_PCT) / 100)
+        # TODO: Get user-configured default bandwidth limit percentage from config-map
+        bwlimit = int((linkspeed_bytes_per_sec *
+                      CONSTANTS.MIZAR_DEFAULT_EGRESS_BW_LIMIT_PCT) / 100)
         self.rpc.update_bw_qos_config(interface.address.ip_address, bwlimit)
 
         return interface
