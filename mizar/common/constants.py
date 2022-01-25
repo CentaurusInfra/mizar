@@ -46,6 +46,7 @@ class CONSTANTS:
     MIZAR_NETWORK_CLASS_TAG = "mizar.com/network-class"
     MIZAR_NETWORK_PRIORITY_TAG = "mizar.com/network-priority"
     MIZAR_DEFAULT_EGRESS_BW_LIMIT_PCT = 30
+    SUBNETS_NEW_PREFIX = 32
 
 
 class OBJ_STATUS:

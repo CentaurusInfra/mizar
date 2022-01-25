@@ -21,6 +21,7 @@
 
 import ipaddress
 import logging
+from mizar.common.constants import *
 
 logger = logging.getLogger()
 
@@ -33,7 +34,7 @@ class Cidr:
         self.ip = ip
         self.ipnet = ipaddress.ip_network(
             "{}/{}".format(self.ip, self.prefixlen))
-        self.subnets = self.ipnet.subnets(new_prefix=32)
+        self.subnets = self.ipnet.subnets(new_prefix=CONSTANTS.SUBNETS_NEW_PREFIX)
 
         self._hosts = set()
         self.gw = self.get_ip(1)
