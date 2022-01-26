@@ -44,8 +44,16 @@ class Cidr:
     def hosts(self):
 
         pool = next(self.subnets)
-        self._hosts.update(set(pool.hosts()))
-        self._hosts.discard(self.gw)
+        # Avoid allocate special ip addresses such as net ip and gateway ip.
+        pool_hosts_set = set(pool.hosts())
+        pool_hosts_set.discard(ipaddress.IPv4Address(self.ip))
+        pool_hosts_set.discard(ipaddress.IPv4Address(self.gw))
+        while len(pool_hosts_set) == 0:
+            pool = next(self.subnets)
+            pool_hosts_set = set(pool.hosts())
+            pool_hosts_set.discard(ipaddress.IPv4Address(self.ip))
+            pool_hosts_set.discard(ipaddress.IPv4Address(self.gw))
+        self._hosts.update(pool_hosts_set)
         return self._hosts
 
     def get_ip(self, idx):
