@@ -100,8 +100,10 @@ class k8sEndpointsUpdate(WorkflowTask):
         if 'subsets' not in self.param.body and not self.param.extra:
             return
         namespace = self.param.body["metadata"]["namespace"]
-        tenant = self.param.body['metadata'].get('tenant', '')
-        name = self.param.name + "-{}-{}".format(namespace, tenant)
+        name = self.param.name + "-{}".format(namespace)
+        tenant = self.param.body['metadata'].get('tenant', None)
+        if tenant:
+            name = self.param.name + "-{}-{}".format(namespace, tenant)
         logger.info("Endpoint name is {}".format(name))
         ep = endpoints_opr.store.get_ep(name)
         if not ep:
