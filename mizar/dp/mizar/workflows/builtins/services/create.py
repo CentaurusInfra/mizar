@@ -74,8 +74,10 @@ class k8sServiceCreate(WorkflowTask):
                             "VPC {} has no subnets to allocate service {}!".format(vpc_name, self.param.name))
                 net = net_opr.store.get_net(subnet_name)
         namespace = self.param.body['metadata']['namespace']
-        tenant = self.param.extra.get('tenant', '')
-        name = self.param.name + "-{}-{}".format(namespace, tenant)
+        name = self.param.name + "-{}".format(namespace)
+        if self.param.extra:
+            tenant = self.param.extra.get('tenant', '')
+            name = self.param.name + "-{}-{}".format(namespace, tenant)
         logger.info("Service name is {}".format(name))
         if not net:
             self.raise_temporary_error(
