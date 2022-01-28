@@ -112,11 +112,6 @@ class k8sPodCreate(WorkflowTask):
                 configs = json.loads(net_config)
                 spec['interfaces'] = configs
 
-        n = net_opr.store.get_net(spec['subnet'])
-        ip = n.allocate_ip()
-        logger.info("ip {} from {} is allocated to Pod {}.".format(ip, spec['subnet'], self.param.name))
-        spec['ip'] = ip
-
         # Get 'mizar.com/egress-bandwidth' from pod annotations
         egress_bw = int(0)
         pod_network_class_value = "Premium"
@@ -169,6 +164,11 @@ class k8sPodCreate(WorkflowTask):
             networkpolicy_util.handle_networkpolicy_change(policy_name_list)
             self.finalize()
             return
+
+        n = net_opr.store.get_net(spec['subnet'])
+        ip = n.allocate_ip()
+        logger.info("ip {} from {} is allocated to Pod {}.".format(ip, spec['subnet'], self.param.name))
+        spec['ip'] = ip
 
         # Init all interfaces on the host
         logger.info(
