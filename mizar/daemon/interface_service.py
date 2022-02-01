@@ -19,6 +19,10 @@ from mizar.common.constants import *
 from pyroute2 import IPRoute, NetNS
 import ipaddress
 
+logging.basicConfig(
+    format='%(asctime)s %(levelname)-8s %(message)s',
+    level=logging.INFO,
+    datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger('mizar_interface_service')
 handler = SysLogHandler(address='/dev/log')
 logger.addHandler(handler)
@@ -175,6 +179,7 @@ class InterfaceServer(InterfaceServiceServicer):
         Load the Transit Agent XDP program, program all the bouncer substrate,
         update the agent metadata and endpoint.
         """
+        logger.info("Loading transit agent.")
         self.rpc.load_transit_agent_xdp(interface)
 
         for bouncer in interface.bouncers:

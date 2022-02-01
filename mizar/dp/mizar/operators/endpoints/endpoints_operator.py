@@ -99,8 +99,9 @@ class EndpointOperator(object):
                 bouncer.name, ep.name))
             if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
                 if not ep.droplet_obj:
-                    task.raise_temporary_error("Task: {} Endpoint: {} Droplet Object not ready.".format(self.__class__.__name__, ep.name))
-                ep.update_bouncers({bouncer.name: bouncer})
+                    task.raise_temporary_error("Task: {} Endpoint: {} Droplet Object not ready.".format(
+                        self.__class__.__name__, ep.name))
+                ep.update_bouncers({bouncer.name: bouncer}, task)
 
     def create_scaled_endpoint(self, name, ep_name, spec, net, extra, namespace="default"):
         logger.info("Create scaled endpoint {} spec {}".format(name, spec))
@@ -152,7 +153,8 @@ class EndpointOperator(object):
                 return
 
             if namespace == "default" and name == "kubernetes" and not endpoint.metadata.annotations:
-                endpoint.metadata.annotations = {OBJ_DEFAULTS.mizar_service_annotation_key: OBJ_DEFAULTS.mizar_service_annotation_val}
+                endpoint.metadata.annotations = {
+                    OBJ_DEFAULTS.mizar_service_annotation_key: OBJ_DEFAULTS.mizar_service_annotation_val}
             if not endpoint or not endpoint.metadata or not endpoint.metadata.annotations:
                 return
             endpoint.metadata.annotations[OBJ_DEFAULTS.mizar_service_annotation_key] = OBJ_DEFAULTS.mizar_service_annotation_val
@@ -266,11 +268,11 @@ class EndpointOperator(object):
         eps = self.store.get_eps_in_net(bouncer.net).values()
         bouncer.delete_eps(eps)
 
-    def delete_bouncer_from_endpoints(self, bouncer):
+    def delete_bouncer_from_endpoints(self, bouncer, task):
         eps = self.store.get_eps_in_net(bouncer.net).values()
         for ep in eps:
             if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
-                ep.update_bouncers({bouncer.name: bouncer}, False)
+                ep.update_bouncers({bouncer.name: bouncer}, task, False)
 
     def produce_simple_endpoint_interface(self, ep):
         """
@@ -420,7 +422,8 @@ class EndpointOperator(object):
                 status=InterfaceStatus.init,
                 pod_label_value=str(spec['pod_label_value']),
                 namespace_label_value=str(spec['namespace_label_value']),
-                egress_bandwidth_bytes_per_sec=str(spec['egress_bandwidth_bytes_per_sec']),
+                egress_bandwidth_bytes_per_sec=str(
+                    spec['egress_bandwidth_bytes_per_sec']),
                 pod_network_class=str(spec['pod_network_class']),
                 pod_network_priority=str(spec['pod_network_priority'])
             ))
@@ -458,8 +461,8 @@ class EndpointOperator(object):
     def delete_simple_endpoint(self, ep):
         logger.info(
             "Delete endpoint object associated with interface {}".format(ep.name))
-        interface = self.store_get(ep.name).interface        
+        interface = self.store_get(ep.name).interface
         InterfaceServiceClient(
-                ep.droplet_obj.main_ip).DeleteInterface(Interface(interface_id=interface.interface_id))
+            ep.droplet_obj.main_ip).DeleteInterface(Interface(interface_id=interface.interface_id))
 
         ep.delete_obj()

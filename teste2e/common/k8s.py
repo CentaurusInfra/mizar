@@ -73,7 +73,7 @@ class k8sApi:
     def delete_net(self, name):
         self.api.delete_net(name)
 
-    def create_pod(self, name, vpc="vpc0", subnet="net0", scaledep=''):
+    def create_pod(self, name, vpc=OBJ_DEFAULTS.default_ep_vpc, subnet=OBJ_DEFAULTS.default_ep_net, scaledep=''):
         pod_manifest = {
             'apiVersion': 'v1',
             'kind': 'Pod',
@@ -85,7 +85,7 @@ class k8sApi:
                     },
                 'labels': {
                         'scaledep': scaledep
-                        }
+                    }
             },
             'spec': {
                 'containers': [{
@@ -147,7 +147,7 @@ class k8sApi:
                       stdout=True, tty=False)
         return resp
 
-    def create_service(self, name):
+    def create_service(self, name, vpc=OBJ_DEFAULTS.default_ep_vpc, subnet=OBJ_DEFAULTS.default_ep_net):
         service_manifest = {
             'apiVersion': 'v1',
             'kind': 'Service',
@@ -158,7 +158,9 @@ class k8sApi:
                 'name': name,
                 'resourceversion': 'v1',
                 'annotations': {
-                    'service.beta.kubernetes.io/mizar-scaled-endpoint-type': "scaled-endpoint"
+                    OBJ_DEFAULTS.mizar_service_annotation_key: OBJ_DEFAULTS.mizar_service_annotation_val,
+                    OBJ_DEFAULTS.mizar_ep_vpc_annotation: vpc,
+                    OBJ_DEFAULTS.mizar_ep_subnet_annotation: subnet,
                 }
             },
             'spec': {

@@ -50,7 +50,7 @@ class BouncerDelete(WorkflowTask):
 
         # Call delete_ep on bouncer droplet for all endpoints
         # Call update_agent on all endpoints with new list of bouncers
-        endpoints_opr.delete_bouncer_from_endpoints(bouncer)
+        endpoints_opr.delete_bouncer_from_endpoints(bouncer, self)
         dividers_opr.delete_bouncer_from_dividers(bouncer, net)
         endpoints_opr.delete_endpoints_from_bouncers(bouncer)
         bouncers_opr.delete_vpc(bouncer)

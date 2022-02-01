@@ -29,6 +29,11 @@ class test_basic_vpc(unittest.TestCase):
             self.test_name + "ep3", vpc_name, subnet2_name)
         self.ep4 = self.api.create_pod(self.test_name + "ep4", vpc_name, None)
 
+        # DISABLED scaled ep tests
+        # self.ep11 = self.api.create_pod(self.test_name + "ep11", vpc_name, subnet_name)
+        # self.sep1 = self.api.create_service(self.test_name + "sep1", vpc_name, subnet_name)
+        # self.sep1.add_endpoint(self.test_name + "ep33", vpc_name, subnet_name)
+
     def tearDown(self):
         pass
 
@@ -39,3 +44,7 @@ class test_basic_vpc(unittest.TestCase):
         do_common_tests(self, self.ep1, self.ep3)
         logger.info("Endpoint allocated in default subnet")
         do_common_tests(self, self.ep2, self.ep4)
+        # DISABLED scaled ep tests
+        # self.assertTrue(self.ep11.do_curl_hostname(self.sep1, "scaled"))
+        # self.assertTrue(self.ep11.do_tcp_hostname(self.sep1, "scaled"))
+        # self.assertTrue(self.ep11.do_udp_hostname(self.sep1, "scaled"))
