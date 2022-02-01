@@ -184,7 +184,7 @@ class TrnRpc:
         returncode, text = run_cmd(cmd)
         logger.info("returns {} {}".format(returncode, text))
 
-    def update_agent_metadata(self, ep):
+    def update_agent_metadata(self, ep, task):
         itf = ep.get_veth_peer()
         jsonconf = {
             "ep": {
@@ -212,6 +212,8 @@ class TrnRpc:
         cmd = f'''{self.trn_cli_update_agent_metadata} -i \'{itf}\' -j \'{jsonconf}\''''
         logger.info("update_agent_metadata: {}".format(cmd))
         returncode, text = run_cmd(cmd)
+        if "error" in text:
+            task.raise_temporary_error("Update_agent_metadata returned ERROR!")
         logger.info(
             "update_agent_metadata returns {} {}".format(returncode, text))
 
@@ -497,7 +499,8 @@ class TrnRpc:
         cmd = f'''{self.trn_cli_update_pod_label_policy} \'{jsonconf}\''''
         logger.info("update_pod_label_policy: {}".format(cmd))
         returncode, text = run_cmd(cmd)
-        logger.info("update_pod_label_policy returns {} {}".format(returncode, text))
+        logger.info(
+            "update_pod_label_policy returns {} {}".format(returncode, text))
 
     def update_namespace_label_policy(self, label_policy_list):
         if len(label_policy_list) == 0:
@@ -520,7 +523,8 @@ class TrnRpc:
         cmd = f'''{self.trn_cli_update_namespace_label_policy} \'{jsonconf}\''''
         logger.info("update_namespace_label_policy: {}".format(cmd))
         returncode, text = run_cmd(cmd)
-        logger.info("update_namespace_label_policy returns {} {}".format(returncode, text))
+        logger.info(
+            "update_namespace_label_policy returns {} {}".format(returncode, text))
 
     def update_pod_and_namespace_label_policy(self, label_policy_list):
         if len(label_policy_list) == 0:
@@ -544,7 +548,8 @@ class TrnRpc:
         cmd = f'''{self.trn_cli_update_pod_and_namespace_label_policy} \'{jsonconf}\''''
         logger.info("update_pod_and_namespace_label_policy: {}".format(cmd))
         returncode, text = run_cmd(cmd)
-        logger.info("update_pod_and_namespace_label_policy returns {} {}".format(returncode, text))
+        logger.info(
+            "update_pod_and_namespace_label_policy returns {} {}".format(returncode, text))
 
     def update_network_policy_protocol_port_egress(self, ep, port_networkpolicy_list):
         if len(port_networkpolicy_list) == 0:
@@ -623,7 +628,8 @@ class TrnRpc:
         cmd = f'''{self.trn_cli_delete_pod_label_policy} \'{jsonconf}\''''
         logger.info("delete_pod_label_policy: {}".format(cmd))
         returncode, text = run_cmd(cmd)
-        logger.info("delete_pod_label_policy returns {} {}".format(returncode, text))
+        logger.info(
+            "delete_pod_label_policy returns {} {}".format(returncode, text))
 
     def delete_namespace_label_policy(self, label_policy_list):
         if len(label_policy_list) == 0:
@@ -645,7 +651,8 @@ class TrnRpc:
         cmd = f'''{self.trn_cli_delete_namespace_label_policy} \'{jsonconf}\''''
         logger.info("delete_namespace_label_policy: {}".format(cmd))
         returncode, text = run_cmd(cmd)
-        logger.info("delete_namespace_label_policy returns {} {}".format(returncode, text))
+        logger.info(
+            "delete_namespace_label_policy returns {} {}".format(returncode, text))
 
     def delete_pod_and_namespace_label_policy(self, label_policy_list):
         if len(label_policy_list) == 0:
@@ -668,7 +675,8 @@ class TrnRpc:
         cmd = f'''{self.trn_cli_delete_pod_and_namespace_label_policy} \'{jsonconf}\''''
         logger.info("delete_pod_and_namespace_label_policy: {}".format(cmd))
         returncode, text = run_cmd(cmd)
-        logger.info("delete_pod_and_namespace_label_policy returns {} {}".format(returncode, text))
+        logger.info(
+            "delete_pod_and_namespace_label_policy returns {} {}".format(returncode, text))
 
     def delete_network_policy_protocol_port_egress(self, ep, port_networkpolicy_list):
         if len(port_networkpolicy_list) == 0:

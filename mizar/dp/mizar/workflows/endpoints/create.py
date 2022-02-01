@@ -58,6 +58,6 @@ class EndpointCreate(WorkflowTask):
                 for bouncer in ep.bouncers:
                     logger.info(
                         "EP {} has bouncer {}. Updating.".format(ep.name, bouncer))
-                ep.update_bouncers(ep.bouncers)
+                ep.update_bouncers(ep.bouncers, self)
         endpoints_opr.set_endpoint_provisioned(ep)
         self.finalize()
