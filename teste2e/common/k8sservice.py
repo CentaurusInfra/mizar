@@ -1,5 +1,6 @@
 from teste2e.common.helper import *
 from time import sleep
+from mizar.common.constants import *
 
 SCRIPTS_DIR = '/var/mizar/test/scripts'
 
@@ -20,7 +21,7 @@ class k8sService:
     def backends(self):
         return set(self.endpoints.keys())
 
-    def add_endpoint(self, name, vpc_name="vpc0", subnet_name="net0"):
+    def add_endpoint(self, name, vpc_name=OBJ_DEFAULTS.default_ep_vpc, subnet_name=OBJ_DEFAULTS.default_ep_net):
         ep = self.api.create_pod(
             name, vpc_name, subnet_name, scaledep=self.name)
         self.endpoints[ep.name] = ep

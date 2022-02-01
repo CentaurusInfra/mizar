@@ -73,7 +73,7 @@ class k8sApi:
     def delete_net(self, name):
         self.api.delete_net(name)
 
-    def create_pod(self, name, vpc="vpc0", subnet="net0", scaledep=''):
+    def create_pod(self, name, vpc=OBJ_DEFAULTS.default_ep_vpc, subnet=OBJ_DEFAULTS.default_ep_net, scaledep=''):
         pod_manifest = {
             'apiVersion': 'v1',
             'kind': 'Pod',
@@ -147,7 +147,7 @@ class k8sApi:
                       stdout=True, tty=False)
         return resp
 
-    def create_service(self, name, vpc="vpc0", subnet="net0"):
+    def create_service(self, name, vpc=OBJ_DEFAULTS.default_ep_vpc, subnet=OBJ_DEFAULTS.default_ep_net):
         service_manifest = {
             'apiVersion': 'v1',
             'kind': 'Service',

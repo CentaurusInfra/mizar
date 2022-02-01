@@ -212,8 +212,9 @@ class TrnRpc:
         cmd = f'''{self.trn_cli_update_agent_metadata} -i \'{itf}\' -j \'{jsonconf}\''''
         logger.info("update_agent_metadata: {}".format(cmd))
         returncode, text = run_cmd(cmd)
-        if "error" in text:
-            task.raise_temporary_error("Update_agent_metadata returned ERROR!")
+        if CONSTANTS.RPC_ERROR_CODE in text:
+            task.raise_temporary_error(
+                "Update_agent_metadata returned ERROR! Retrying as agent may have not yet been loaded.")
         logger.info(
             "update_agent_metadata returns {} {}".format(returncode, text))
 
