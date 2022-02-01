@@ -102,6 +102,7 @@ function install-protobuf-and-pip-deps {
   GO111MODULE="on" go get google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
   GO111MODULE="on" go get github.com/smartystreets/goconvey@v1.6.4
   sudo python3 -m pip install --upgrade pip
+  sudo -H pip3 install --upgrade --ignore-installed PyYAML
   sudo pip3 install --upgrade setuptools netaddr docker scapy kubernetes
   sudo pip3 install --upgrade grpcio grpcio-tools
 }
