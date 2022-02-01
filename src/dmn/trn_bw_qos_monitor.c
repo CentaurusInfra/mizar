@@ -84,7 +84,7 @@ int get_link_speed(const char* name)
 	}
 
 	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, name, IFNAMSIZ);
+	strncpy(ifr.ifr_name, name, IFNAMSIZ-1);
 
 	fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
 	if (fd < 0)
@@ -126,7 +126,7 @@ int get_interface_ip(const char* name, unsigned int* ipaddr)
 
 	memset(&ifr, 0, sizeof(ifr));
 	ifr.ifr_addr.sa_family = AF_INET;
-	strncpy(ifr.ifr_name, name, IFNAMSIZ);
+	strncpy(ifr.ifr_name, name, IFNAMSIZ-1);
 
 	if (ioctl(fd, SIOCGIFADDR, &ifr) == -1) {
 		return -1;

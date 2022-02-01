@@ -2,6 +2,8 @@
 
 dir = src/rpcgen
 
+CFLAGS += -Wno-cast-function-type
+
 protocol.x = $(dir)/trn_rpc_protocol.x
 
 rpcgen_svc_src.c = $(dir)/trn_rpc_protocol_svc.c
@@ -23,7 +25,7 @@ $(rpcgen_hdr.h): $(protocol.x)
 	rm -f $(dir)/trn_rpc_protocol.h && rpcgen -h $(RPCGENFLAGS) $(protocol.x) -o $(dir)/trn_rpc_protocol.h
 
 $(rpcgen_svc_src.c): $(protocol.x)
-	rm -f $(dir)/trn_rpc_protocol_svc.c &&rpcgen -m $(RPCGENFLAGS) $(protocol.x) -o $(dir)/trn_rpc_protocol_svc.c
+	rm -f $(dir)/trn_rpc_protocol_svc.c && rpcgen -m $(RPCGENFLAGS) $(protocol.x) -o $(dir)/trn_rpc_protocol_svc.c
 
 $(rpcgen_clnt_src.c): $(protocol.x)
 	rm -f $(dir)/trn_rpc_protocol_clnt.c && rpcgen -l $(RPCGENFLAGS) $(protocol.x) -o $(dir)/trn_rpc_protocol_clnt.c
