@@ -108,11 +108,9 @@ class OBJ_DEFAULTS:
 
     mizar_daemon_service_port = 50051
     mizar_operator_arktos_service_port = 50052
-    mizar_service_annotation_key = "service.beta.kubernetes.io/mizar-scaled-endpoint-type"
+    mizar_service_annotation_key = "mizar.com/scaled-endpoint"
     mizar_service_annotation_val = "scaled-endpoint"
 
-    arktos_pod_label = "arktos.futurewei.com/network"
-    arktos_pod_annotation = "arktos.futurewei.com/nic"
     mizar_ep_vpc_annotation = "mizar.com/vpc"
     mizar_ep_subnet_annotation = "mizar.com/subnet"
 
