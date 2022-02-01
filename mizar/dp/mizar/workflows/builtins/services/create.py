@@ -67,7 +67,7 @@ class k8sServiceCreate(WorkflowTask):
                     subnets = list(net_opr.store.get_nets_in_vpc(vpc_name))
                     if subnets:
                         subnet_name = subnets[0]
-                        logger.info("Subnet specified, allocating service {} in subnet {} for VPC {}".format(
+                        logger.info("Subnet not specified, allocating service {} in subnet {} for VPC {}".format(
                             self.param.name, subnet_name, vpc_name))
                     else:
                         self.raise_temporary_error(

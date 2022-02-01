@@ -20,6 +20,7 @@ class k8sService:
     def backends(self):
         return set(self.endpoints.keys())
 
-    def add_endpoint(self, name):
-        ep = self.api.create_pod(name, scaledep=self.name)
+    def add_endpoint(self, name, vpc_name="vpc0", subnet_name="net0"):
+        ep = self.api.create_pod(
+            name, vpc_name, subnet_name, scaledep=self.name)
         self.endpoints[ep.name] = ep

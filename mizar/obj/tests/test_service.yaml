@@ -24,7 +24,9 @@ kind: Service
 metadata:
   name: test-service-3
   annotations:
-    service.beta.kubernetes.io/mizar-scaled-endpoint-type: "scaled-endpoint"
+    mizar.com/scaled-endpoint: "scaled-endpoint"
+    mizar.com/vpc: "vpc0"
+    mizar.com/subnet: "net0"
   labels:
     run: test-service-3
 spec:
