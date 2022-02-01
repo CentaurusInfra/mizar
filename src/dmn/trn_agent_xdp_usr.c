@@ -658,25 +658,26 @@ int trn_agent_metadata_init(struct agent_user_metadata_t *md, char *itf,
 	char *debug = strstr(agent_file_name, "debug");
 	char *prog_dir = dirname(agent_file_name);
 	for (enum tailcall_txstat t = 0; t < MAX_TXSTAT; t++) {
-		char fname[256] = {0};
-		sprintf(fname, "%s/trn_xdp_txstats_", prog_dir);
+		char fname[512] = {0};
+		char prog_name[256] = {0};
+		sprintf(prog_name, "%s/trn_xdp_txstats_", prog_dir);
 		switch (t) {
 		case txstat_redirect:
-			sprintf(fname, "%sredirect_ebpf", fname);
+			sprintf(fname, "%sredirect_ebpf", prog_name);
 			break;
 		case txstat_pass:
-			sprintf(fname, "%spass_ebpf", fname);
+			sprintf(fname, "%spass_ebpf", prog_name);
 			break;
 		case txstat_drop:
-			sprintf(fname, "%sdrop_ebpf", fname);
+			sprintf(fname, "%sdrop_ebpf", prog_name);
 			break;
 		default:
 			continue;
 		};
 		if (debug)
-			sprintf(fname, "%s_debug.o", fname);
+			strcat(fname, "_debug.o");
 		else
-			sprintf(fname, "%s.o", fname);
+			strcat(fname, ".o");
 		if (_trn_bpf_agent_prog_load_txstats(fname, &md->txstats_obj[t], &md->txstats_prog_fd[t])) {
 			TRN_LOG_ERROR("Error loading txstats xdp programs");
 			return 1;
