@@ -254,7 +254,7 @@ class Endpoint:
         for bouncer in bouncers.values():
             if add:
                 self.bouncers[bouncer.name] = bouncer
-                self.update_agent_substrate(self, bouncer)
+                self.update_agent_substrate(self, bouncer, task)
             else:
                 self.bouncers.pop(bouncer.name)
                 self.droplet_obj.delete_agent_substrate(self, bouncer)
@@ -382,8 +382,8 @@ class Endpoint:
     def unload_transit_agent_xdp(self):
         self.rpc.unload_transit_agent_xdp(self)
 
-    def update_agent_substrate(self, ep, bouncer):
-        self.rpc.update_agent_substrate_ep(ep, bouncer.ip, bouncer.mac)
+    def update_agent_substrate(self, ep, bouncer, task):
+        self.rpc.update_agent_substrate_ep(ep, bouncer.ip, bouncer.mac, task)
 
     def update_packet_metadata(self, pod_label_value, namespace_label_value):
         if(pod_label_value != self.pod_label_value or namespace_label_value != self.namespace_label_value):

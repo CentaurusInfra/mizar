@@ -105,12 +105,15 @@ class TrnRpc:
         returncode, text = run_cmd(cmd)
         logger.info("returns {} {}".format(returncode, text))
 
-    def update_agent_substrate_ep(self, ep, ip, mac):
+    def update_agent_substrate_ep(self, ep, ip, mac, task):
         itf = ep.get_veth_peer()
         jsonconf = self.get_substrate_ep_json(ip, mac)
         cmd = f'''{self.trn_cli_update_agent_ep} -i \'{itf}\' -j \'{jsonconf}\''''
         logger.info("update_agent_substrate_ep: {}".format(cmd))
         returncode, text = run_cmd(cmd)
+        if CONSTANTS.RPC_ERROR_CODE in text:
+            task.raise_temporary_error(
+                "Update_agent_substrate ep returned ERROR! Retrying as agent may have not yet been loaded.")
         logger.info(
             "update_agent_substrate_ep returns {} {}".format(returncode, text))
 
