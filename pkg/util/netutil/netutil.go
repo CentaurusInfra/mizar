@@ -39,10 +39,12 @@ func ActivateInterface(
 	gatewayIp string) (string, error) {
 
 	link, err := netlink.LinkByName(vethName)
-	if err == nil {
-		if link.Attrs().OperState == netlink.OperUp {
-			return fmt.Sprintf("Interface %s has already been UP.", vethName), nil
-		}
+	if err != nil {
+		return fmt.Sprintf("Failed to get Interface %s", vethName), err
+	}
+
+	if link.Attrs().OperState == netlink.OperUp {
+		return fmt.Sprintf("Interface %s has already been UP.", vethName), nil
 	}
 
 	netNS, err := ns.GetNS(netNSName)
