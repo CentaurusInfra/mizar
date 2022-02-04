@@ -37,7 +37,7 @@ func init() {
 	// Initial log
 	klog.InitFlags(nil)
 	flag.Set("logtostderr", "false")
-	flag.Set("log_file", "/tmp/mizarcni.log")
+	flag.Set("log_file", "/var/log/mizarcni.log")
 	defer klog.Flush()
 
 	info, err := app.DoInit(&netVariables)
