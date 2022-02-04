@@ -202,15 +202,11 @@ class InterfaceServer(InterfaceServiceServicer):
         logger.info("Consuming interfaces for pod: {} Current Queue: {}".format(
             requested_pod_name, list(self.pod_dict)))
 
-        # The following is a synchronization mechanism to make sure the
-        # CNI calls _ConsumeInterfaces after the interfaces got produced.
-        # In Arktos, this may be skipped because the Kubelet will only
-        # invoke CNI after the Pod operator marks the pod's network ready
-
         if self.pod_dict:
-            if self.pod_dict[requested_pod_name]:
-                # Interfaces for the Pod has been produced
-                return self._ConsumeInterfaces(requested_pod_name, request)
+            if requested_pod_name in self.pod_dict:
+                if self.pod_dict[requested_pod_name]:
+                    # Interfaces for the Pod has been produced
+                    return self._ConsumeInterfaces(requested_pod_name, request)
         # If we are here, the endpoint operator has not produced any interfaces
         # for the Pod. Typically the CNI will retry to consume the interface.
 
