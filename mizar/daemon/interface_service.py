@@ -207,8 +207,10 @@ class InterfaceServer(InterfaceServiceServicer):
                 if self.pod_dict[requested_pod_name]:
                     # Interfaces for the Pod has been produced
                     return self._ConsumeInterfaces(requested_pod_name, request)
+
         # If we are here, the endpoint operator has not produced any interfaces
         # for the Pod. Typically the CNI will retry to consume the interface.
+        raise RuntimeError("ConsumeInterfaces: Interface not found for pod '{}'".format(requested_pod_name))
 
     def _DeleteVethInterface(self, interface):
         """

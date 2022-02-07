@@ -33,41 +33,39 @@ func DoInit(netVariables *object.NetVariables) (string, error) {
 	return netvariablesutil.MountNetNSIfNeeded(netVariables)
 }
 
-func DoCmdAdd(netVariables *object.NetVariables, stdinData []byte) (string, error) {
-	strBuilder := strings.Builder{}
-
-	if err := netvariablesutil.LoadCniConfig(netVariables, stdinData); err != nil {
-		return strBuilder.String(), err
-	}
-	strBuilder.WriteString(fmt.Sprintf("Network variables: %s", netVariables))
-
-	strBuilder.WriteString(fmt.Sprintf("\nDoing CNI add for %s/%s", netVariables.K8sPodNamespace, netVariables.K8sPodName))
-	interfaces, err := grpcclientutil.ConsumeInterfaces(*netVariables)
-	if err != nil {
-		return strBuilder.String(), err
-	}
-	if len(interfaces) == 0 {
-		return strBuilder.String(), fmt.Errorf("no interfaces found for %s/%s", netVariables.K8sPodNamespace, netVariables.K8sPodName)
-	}
-
-	// Construct the result string
+func DoCmdAdd(netVariables *object.NetVariables, stdinData []byte) (cniTypesVer.Result, string, error) {
+	tracelog := strings.Builder{}
 	result := cniTypesVer.Result{
 		CNIVersion: netVariables.CniVersion,
 	}
+
+	if err := netvariablesutil.LoadCniConfig(netVariables, stdinData); err != nil {
+		return result, tracelog.String(), err
+	}
+	tracelog.WriteString(fmt.Sprintf("CNI_ADD: Args: '%s'\n", netVariables))
+
+	interfaces, err := grpcclientutil.ConsumeInterfaces(*netVariables)
+	if err != nil {
+		return result, tracelog.String(), err
+	}
+	if len(interfaces) == 0 {
+		return result, tracelog.String(), fmt.Errorf("No interfaces found for Pod '%s/%s'", netVariables.K8sPodNamespace, netVariables.K8sPodName)
+	}
+
 	for index, intf := range interfaces {
-		strBuilder.WriteString(fmt.Sprintf("\nActivating interface: %s", intf))
-		info, err := netutil.ActivateInterface(
+		tracelog.WriteString(fmt.Sprintf("CNI_ADD: Activating interface: '%s'\n", intf))
+		activateIfLog, err := netutil.ActivateInterface(
 			netVariables.IfName,
 			netVariables.NetNS,
 			intf.Veth.Name,
 			intf.Address.IpPrefix,
 			intf.Address.IpAddress,
 			intf.Address.GatewayIp)
-		if info != "" {
-			strBuilder.WriteString(fmt.Sprintf("\n%s", info))
+		if activateIfLog != "" {
+			tracelog.WriteString(fmt.Sprintf("CNI_ADD: Activate interface result: '%s'\n", activateIfLog))
 		}
 		if err != nil {
-			return strBuilder.String(), err
+			return result, tracelog.String(), err
 		}
 
 		result.Interfaces = append(result.Interfaces, &cniTypesVer.Interface{
@@ -78,7 +76,7 @@ func DoCmdAdd(netVariables *object.NetVariables, stdinData []byte) (string, erro
 
 		_, ipnet, err := netutil.ParseCIDR(intf.Address.IpAddress)
 		if err != nil {
-			return strBuilder.String(), err
+			return result, tracelog.String(), err
 		}
 		result.IPs = append(result.IPs, &cniTypesVer.IPConfig{
 			Version:   intf.Address.Version,
@@ -88,20 +86,20 @@ func DoCmdAdd(netVariables *object.NetVariables, stdinData []byte) (string, erro
 		})
 	}
 
-	return strBuilder.String(), result.Print()
+	return result, tracelog.String(), nil
 }
 
-func DoCmdDel(netVariables *object.NetVariables, stdinData []byte) (string, error) {
-	strBuilder := strings.Builder{}
+func DoCmdDel(netVariables *object.NetVariables, stdinData []byte) (cniTypesVer.Result, string, error) {
+	tracelog := strings.Builder{}
+	result := cniTypesVer.Result{
+		CNIVersion: netVariables.CniVersion,
+	}
 
 	if err := netvariablesutil.LoadCniConfig(netVariables, stdinData); err != nil {
-		return strBuilder.String(), err
+		return result, tracelog.String(), err
 	}
-	strBuilder.WriteString(fmt.Sprintf("Network variables: %s", netVariables))
-
-	strBuilder.WriteString(fmt.Sprintf("\nDeleting network namespace %s for interface of %s/%s", netVariables.NetNS, netVariables.K8sPodNamespace, netVariables.K8sPodName))
+	tracelog.WriteString(fmt.Sprintf("CNI_DEL: Deleting NetNS: '%s'\n", netVariables.NetNS))
 	netutil.DeleteNetNS(netVariables.NetNS)
 
-	result := cniTypesVer.Result{}
-	return strBuilder.String(), result.Print()
+	return result, tracelog.String(), nil
 }
