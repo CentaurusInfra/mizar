@@ -130,6 +130,8 @@ class NetOperator(object):
         n.mark_ip_as_allocated(ep.ip)
         self.store.update_net(n)
         ep.set_vni(n.vni)
+        ep.set_subnet_ip(n.get_nip())
+        ep.set_subnet_prefix(n.get_prefixlen())
 
     def deallocate_endpoint(self, ep):
         n = self.store.get_net(ep.net)

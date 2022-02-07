@@ -311,7 +311,9 @@ class EndpointOperator(object):
             namespace_label_value=interface.namespace_label_value,
             egress_bandwidth_bytes_per_sec=interface.egress_bandwidth_bytes_per_sec,
             pod_network_class=interface.pod_network_class,
-            pod_network_priority=interface.pod_network_priority
+            pod_network_priority=interface.pod_network_priority,
+            subnet_ip=ep.subnet_ip,
+            subnet_prefix=ep.subnet_prefix
         )]
 
         if ep.type == OBJ_DEFAULTS.ep_type_host:
@@ -362,7 +364,7 @@ class EndpointOperator(object):
             self.store_update(ep)
             ep.create_obj()
 
-    def create_host_endpoint(self, ip, droplet, interfaces):
+    def create_host_endpoint(self, ip, droplet, interfaces, vpc, subnet):
         for interface in interfaces.interfaces:
             logger.info("Create host endpoint {}".format(interface))
             name = get_itf_name(interface.interface_id)
@@ -372,9 +374,11 @@ class EndpointOperator(object):
             ep.set_status(OBJ_STATUS.ep_status_init)
 
             ep.set_vni(get_cluster_vpc_vni())
-            ep.set_vpc(OBJ_DEFAULTS.default_ep_vpc)
-            ep.set_net(OBJ_DEFAULTS.default_ep_net)
-            ep.set_gw(OBJ_DEFAULTS.default_net_gw)
+            ep.set_vpc(vpc)
+            ep.set_net(subnet.get_name())
+            ep.set_gw(subnet.get_gw_ip())
+            ep.set_subnet_ip(subnet.get_nip())
+            ep.set_subnet_prefix(subnet.get_prefixlen())
 
             ep.set_mac(interface.address.mac)
             ep.set_veth_name(interface.veth.name)
@@ -437,15 +441,15 @@ class EndpointOperator(object):
             return InterfaceServiceClient(worker_ip).InitializeInterfaces(interfaces)
         return None
 
-    def init_host_endpoint_interfaces(self, droplet):
+    def init_host_endpoint_interfaces(self, droplet, ifname, veth_name, peer_name):
         interfaces_list = []
         pod_id = PodId(k8s_pod_name=droplet.name,
                        k8s_namespace="default",
                        k8s_pod_tenant="")
         interface_id = InterfaceId(
-            pod_id=pod_id, interface="hostep")
-        veth_name = "eth-hostep"
-        veth_peer = "veth-hostep"
+            pod_id=pod_id, interface=ifname)
+        veth_name = veth_name
+        veth_peer = peer_name
         veth = VethInterface(name=veth_name, peer=veth_peer)
 
         interfaces_list.append(Interface(
@@ -453,7 +457,7 @@ class EndpointOperator(object):
             interface_type=InterfaceType.veth,
             pod_provider=PodProvider.K8S,
             veth=veth,
-            status=InterfaceStatus.init
+            status=InterfaceStatus.init,
         ))
         interfaces = InterfacesList(interfaces=interfaces_list)
         return InterfaceServiceClient(droplet.main_ip).InitializeInterfaces(interfaces)

@@ -106,6 +106,9 @@ class OBJ_DEFAULTS:
     ep_type_host = 'host'
     ep_type_gateway = 'gateway'
     droplet_eps = [ep_type_simple, ep_type_host]
+    host_ep_veth_name = "ehost"
+    host_ep_peer_name = "vehost"
+    host_ep_name = "hostep"
 
     mizar_daemon_service_port = 50051
     mizar_operator_arktos_service_port = 50052
