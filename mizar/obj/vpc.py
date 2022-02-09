@@ -116,6 +116,9 @@ class Vpc(object):
     def set_vni(self, vni):
         self.vni = vni
 
+    def get_vni(self):
+        return self.vni
+
     def set_status(self, status):
         self.status = status
 
