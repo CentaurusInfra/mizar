@@ -210,7 +210,8 @@ class InterfaceServer(InterfaceServiceServicer):
 
         # If we are here, the endpoint operator has not produced any interfaces
         # for the Pod. Typically the CNI will retry to consume the interface.
-        raise RuntimeError("ConsumeInterfaces: Interface not found for pod '{}'".format(requested_pod_name))
+        raise RuntimeError(
+            "ConsumeInterfaces: Interface not found for pod '{}'".format(requested_pod_name))
 
     def _DeleteVethInterface(self, interface):
         """
@@ -262,9 +263,8 @@ class InterfaceServer(InterfaceServiceServicer):
         self.iproute.addr('add', index=veth_index, address=interface.address.ip_address,
                           prefixlen=int(interface.address.ip_prefix))
 
-        self.iproute.route('add', dst=OBJ_DEFAULTS.default_net_ip,
-                           mask=int(OBJ_DEFAULTS.default_net_prefix), oif=veth_index)
-
+        self.iproute.route('add', dst=interface.subnet_ip,
+                           mask=int(interface.subnet_prefix), oif=veth_index)
         # Disable TSO and checksum offload as xdp currently does not support
         logger.info("Disable tso for host ep")
         cmd = "nsenter -t 1 -m -u -n -i ethtool -K {} tso off gso off ufo off".format(

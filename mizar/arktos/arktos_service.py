@@ -167,7 +167,20 @@ class ArktosService(BuiltinsServiceServicer):
         param = reset_param(HandlerParam())
         param.name = request.name
         param.body['metadata'] = {}
+        param.body['metadata']['annotations'] = {}
         param.extra = {}
+        if not request.vpc:
+            return ReturnCode(
+                code=CodeType.PERM_ERROR,
+                message="Missing VPC annotation"
+            )
+        if not request.subnet:
+            return ReturnCode(
+                code=CodeType.PERM_ERROR,
+                message="Missing Subnet annotation"
+            )
+        param.body['metadata']['annotations'][OBJ_DEFAULTS.mizar_ep_vpc_annotation] = request.vpc
+        param.body['metadata']['annotations'][OBJ_DEFAULTS.mizar_ep_subnet_annotation] = request.subnet
 
         param.body['metadata']['namespace'] = request.namespace
         param.spec["clusterIP"] = request.ip
@@ -262,6 +275,16 @@ class ArktosService(BuiltinsServiceServicer):
         return self.CreateNode(request, context)
 
     def UpdateService(self, request, context):
+        if not request.vpc:
+            return ReturnCode(
+                code=CodeType.PERM_ERROR,
+                message="Pod Update missing VPC annotation."
+            )
+        if not request.subnet:
+            return ReturnCode(
+                code=CodeType.PERM_ERROR,
+                message="Pod update missing Subnet annotation."
+            )
         return self.CreateService(request, context)
 
     def UpdateServiceEndpoint(self, request, context):

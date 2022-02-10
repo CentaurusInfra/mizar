@@ -44,6 +44,7 @@ class Droplet(object):
         self.known_bouncers = {}
         self.known_nets = {}
         self.known_eps = {}
+        self.interfaces = None
         if spec is not None:
             self.set_obj_spec(spec)
 

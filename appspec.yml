@@ -1,0 +1,22 @@
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /home/ubuntu/mizar
+hooks:
+  BeforeInstall:
+    - location: scripts/01_preinstall.sh
+      timeout: 300
+      runas: root
+  AfterInstall:
+    - location: scripts/02_postinstall.sh
+      timeout: 300
+      runas: root
+  ApplicationStart:
+    - location: scripts/03_start.sh
+      timeout: 300
+      runas: root
+  ValidateService:
+    - location: scripts/04_validate.sh
+      timeout: 300
+      runas: root

@@ -104,6 +104,9 @@ class OprStore(object):
             return True
         return False
 
+    def get_all_vpcs(self):
+        return self.vpcs_store.values()
+
     def _dump_vpcs(self):
         for v in self.vpcs_store.values():
             logger.info("VPC: {}, Spec: {}".format(v.name, v.get_obj_spec()))
