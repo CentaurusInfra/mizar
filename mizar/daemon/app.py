@@ -28,7 +28,9 @@ def init(benchmark=False):
     # Setup the droplet's host
     default_itf = get_itf()
     script = (f''' bash -c '\
-    nsenter -t 1 -m -u -n -i ls -1 /etc/cni/net.d/*conf* | grep -v '10-mizarcni.conf$' | xargs rm -rf && \
+    for file in $(nsenter -t 1 -m -u -n -i ls -1 /etc/cni/net.d/ | grep -v '10-mizarcni.conf$'); do nsenter -t 1 -m -u -n -i rm -rf /etc/cni/net.d/$file; done && \
+    for name in $(nsenter -t 1 -m -u -n -i ip l |  grep -Po "(veth-\w+)(?=@)"); do nsenter -t 1 -m -u -n -i sudo ip l delete $name; done && \
+    for name in $(nsenter -t 1 -m -u -n -i ip l |  grep -Po "(vehost-\w+)(?=@)"); do nsenter -t 1 -m -u -n -i sudo ip l delete $name; done && \
     nsenter -t 1 -m -u -n -i /etc/init.d/rpcbind restart && \
     nsenter -t 1 -m -u -n -i /etc/init.d/rsyslog restart && \
     nsenter -t 1 -m -u -n -i sysctl -w net.ipv4.tcp_mtu_probing=2 && \
@@ -39,12 +41,14 @@ def init(benchmark=False):
     output = r.stdout.read().decode().strip()
     logging.info("Setup done")
 
-    cmd = 'nsenter -t 1 -m -u -n -i ip addr show ' + f'''{default_itf}''' + ' | grep "inet\\b" | awk \'{print $2}\''
+    cmd = 'nsenter -t 1 -m -u -n -i ip addr show ' + \
+        f'''{default_itf}''' + ' | grep "inet\\b" | awk \'{print $2}\''
     r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     nodeipmask = r.stdout.read().decode().strip()
     nodeip = nodeipmask.split("/")[0]
 
-    cmd = "nsenter -t 1 -m -u -n -i ip link set dev " + f'''{default_itf}''' + " xdpgeneric off"
+    cmd = "nsenter -t 1 -m -u -n -i ip link set dev " + \
+        f'''{default_itf}''' + " xdpgeneric off"
 
     r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     output = r.stdout.read().decode().strip()
@@ -90,7 +94,8 @@ def init(benchmark=False):
         nsenter -t 1 -m -u -n -i brctl show'''
 
     dev_default_itf = f'''dev {default_itf}'''
-    rtlistcmd = 'nsenter -t 1 -m -u -n -i ip route list | grep "' + f'''{dev_default_itf}''' + '"'
+    rtlistcmd = 'nsenter -t 1 -m -u -n -i ip route list | grep "' + \
+        f'''{dev_default_itf}''' + '"'
 
     r = subprocess.Popen(rtlistcmd, shell=True, stdout=subprocess.PIPE)
     rtchanges = []
@@ -101,7 +106,8 @@ def init(benchmark=False):
         rt = line.decode().strip()
         rtkey = rt.partition(dev_default_itf)[0]
         rtdesc = rt.partition(dev_default_itf)[2]
-        rnew = 'nsenter -t 1 -m -u -n -i ip route change ' + rtkey + f'''dev {CONSTANTS.MIZAR_BRIDGE}''' + rtdesc
+        rnew = 'nsenter -t 1 -m -u -n -i ip route change ' + \
+            rtkey + f'''dev {CONSTANTS.MIZAR_BRIDGE}''' + rtdesc
         if 'default' in rt:
             rtchanges.append(rnew)
         else:
@@ -111,7 +117,7 @@ def init(benchmark=False):
     if len(rtchanges) > 0:
         for rtc in rtchanges:
             if not rtchangecmd:
-                rtchangecmd =  rtc
+                rtchangecmd = rtc
             else:
                 rtchangecmd = rtchangecmd + " && " + rtc
             rtchangecmd = rtchangecmd + " || true"
@@ -122,7 +128,7 @@ def init(benchmark=False):
     logging.info("Mizar bridge setup script:\n{}\n".format(brscript))
     r = subprocess.Popen(brscript, shell=True, stdout=subprocess.PIPE)
     output = r.stdout.read().decode().strip()
-    #TODO: Restore original network config upon error / cleanup
+    # TODO: Restore original network config upon error / cleanup
     logging.info("Mizar bridge setup complete.\n{}\n".format(output))
 
     tcscript = (f''' bash -c '\
@@ -134,9 +140,9 @@ def init(benchmark=False):
     output = r.stdout.read().decode().strip()
     logging.info("Load EDT eBPF program done.\n{}\n".format(output))
 
-    #Setup multi-level QoS for Best-effort and Expedited class traffic
-    linkspeed="10gbit"
-    burstsize="2k"
+    # Setup multi-level QoS for Best-effort and Expedited class traffic
+    linkspeed = "10gbit"
+    burstsize = "2k"
     tcscript = (f''' bash -c '\
     nsenter -t 1 -m -u -n -i tc qdisc del dev {CONSTANTS.MIZAR_BRIDGE} root 2> /dev/null || true && \
     nsenter -t 1 -m -u -n -i tc qdisc add dev {CONSTANTS.MIZAR_BRIDGE} root handle 1: prio bands 6 priomap 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 && \
