@@ -145,6 +145,7 @@ class InterfaceServer(InterfaceServiceServicer):
 
         interfaces = InterfacesList(interfaces=interfaces)
         logger.info("Consumed {}".format(interfaces))
+        self.interfaces.pop(pod_name)
         return interfaces
 
     def _ProvisionInterface(self, interface, cni_params):
@@ -206,6 +207,7 @@ class InterfaceServer(InterfaceServiceServicer):
             if requested_pod_name in self.pod_dict:
                 if self.pod_dict[requested_pod_name]:
                     # Interfaces for the Pod has been produced
+                    self.pod_dict.pop(requested_pod_name)
                     return self._ConsumeInterfaces(requested_pod_name, request)
 
         # If we are here, the endpoint operator has not produced any interfaces
