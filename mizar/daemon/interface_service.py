@@ -203,12 +203,18 @@ class InterfaceServer(InterfaceServiceServicer):
         logger.info("Consuming interfaces for pod: {} Current Queue: {}".format(
             requested_pod_name, list(self.pod_dict)))
 
-        if self.pod_dict:
-            if requested_pod_name in self.pod_dict:
-                if self.pod_dict[requested_pod_name]:
-                    # Interfaces for the Pod has been produced
-                    self.pod_dict.pop(requested_pod_name)
-                    return self._ConsumeInterfaces(requested_pod_name, request)
+        start = time.time()
+        while True:
+            if self.pod_dict:
+                if requested_pod_name in self.pod_dict:
+                    if self.pod_dict[requested_pod_name]:
+                        # Interfaces for the Pod has been produced
+                        self.pod_dict.pop(requested_pod_name)
+                        return self._ConsumeInterfaces(requested_pod_name, request)
+            time.sleep(0.5)
+            now = time.time()
+            if now - start >= CONSUME_INTERFACE_TIMEOUT:
+                break
 
         # If we are here, the endpoint operator has not produced any interfaces
         # for the Pod. Typically the CNI will retry to consume the interface.
