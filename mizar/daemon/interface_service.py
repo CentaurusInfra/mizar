@@ -203,6 +203,8 @@ class InterfaceServer(InterfaceServiceServicer):
         logger.info("Consuming interfaces for pod: {} Current Queue: {}".format(
             requested_pod_name, list(self.pod_dict)))
 
+        # The success of this function depends on ProduceInterfaces which is executed in another process.
+        # So using while here to wait until ProduceInterfaces has been done.
         start = time.time()
         while True:
             if self.pod_dict:
