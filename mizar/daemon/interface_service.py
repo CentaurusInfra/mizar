@@ -29,6 +29,7 @@ logger.addHandler(handler)
 logger = logging.getLogger()
 
 CONSUME_INTERFACE_TIMEOUT = 5
+WAITING_SLEEP_INTERVAL = 0.5
 
 
 class InterfaceServer(InterfaceServiceServicer):
@@ -213,7 +214,7 @@ class InterfaceServer(InterfaceServiceServicer):
                         # Interfaces for the Pod has been produced
                         self.pod_dict.pop(requested_pod_name)
                         return self._ConsumeInterfaces(requested_pod_name, request)
-            time.sleep(0.5)
+            time.sleep(WAITING_SLEEP_INTERVAL)
             now = time.time()
             if now - start >= CONSUME_INTERFACE_TIMEOUT:
                 break
