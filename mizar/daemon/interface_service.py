@@ -29,6 +29,7 @@ logger.addHandler(handler)
 logger = logging.getLogger()
 
 CONSUME_INTERFACE_TIMEOUT = 5
+WAITING_SLEEP_INTERVAL = 0.5
 
 
 class InterfaceServer(InterfaceServiceServicer):
@@ -203,12 +204,20 @@ class InterfaceServer(InterfaceServiceServicer):
         logger.info("Consuming interfaces for pod: {} Current Queue: {}".format(
             requested_pod_name, list(self.pod_dict)))
 
-        if self.pod_dict:
-            if requested_pod_name in self.pod_dict:
-                if self.pod_dict[requested_pod_name]:
-                    # Interfaces for the Pod has been produced
-                    self.pod_dict.pop(requested_pod_name)
-                    return self._ConsumeInterfaces(requested_pod_name, request)
+        # The success of this function depends on ProduceInterfaces which is executed in another process.
+        # So using while here to wait until ProduceInterfaces has been done.
+        start = time.time()
+        while True:
+            if self.pod_dict:
+                if requested_pod_name in self.pod_dict:
+                    if self.pod_dict[requested_pod_name]:
+                        # Interfaces for the Pod has been produced
+                        self.pod_dict.pop(requested_pod_name)
+                        return self._ConsumeInterfaces(requested_pod_name, request)
+            time.sleep(WAITING_SLEEP_INTERVAL)
+            now = time.time()
+            if now - start >= CONSUME_INTERFACE_TIMEOUT:
+                break
 
         # If we are here, the endpoint operator has not produced any interfaces
         # for the Pod. Typically the CNI will retry to consume the interface.
