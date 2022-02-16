@@ -61,7 +61,7 @@ struct bpf_map_def SEC("maps") vpc_map = {
 	.type = BPF_MAP_TYPE_HASH,
 	.key_size = sizeof(struct vpc_key_t),
 	.value_size = sizeof(struct vpc_t_offload),
-	.max_entries = 8192,
+	.max_entries = 1000001,
 	.map_flags = 0,
 };
 BPF_ANNOTATE_KV_PAIR(vpc_map, struct vpc_key_t, struct vpc_t_offload);

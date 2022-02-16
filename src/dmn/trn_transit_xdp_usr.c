@@ -321,6 +321,19 @@ int trn_update_vpc(struct user_metadata_t *md, struct vpc_key_t *vpckey,
 		TRN_LOG_ERROR("Store VPCs mapping failed (err:%d).", err);
 		return 1;
 	}
+
+	if (md->xdp_flags == XDP_FLAGS_HW_MODE){
+		struct vpc_t_offload vpc_offload;
+		vpc_offload.nrouters = vpc->nrouters;
+		memcpy(vpc_offload.routers_ips, vpc->routers_ips, sizeof(vpc_offload.routers_ips));
+		err = bpf_map_update_elem(md->vpc_map_offload_fd, vpckey, &vpc_offload, 0);
+
+		if (err) {
+			TRN_LOG_ERROR("Store offloaded vpc mapping failed (err:%d).", err);
+			return 1;
+		}
+	}
+
 	return 0;
 }
 

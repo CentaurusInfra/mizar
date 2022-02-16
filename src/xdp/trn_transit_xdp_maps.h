@@ -30,9 +30,9 @@
 
 #include "trn_datamodel.h"
 
-#define MAX_NETS 16385
-#define MAX_EP 65537
-#define MAX_VPC 8192
+#define MAX_NETS 1000001
+#define MAX_EP 1000001
+#define MAX_VPC 1000001
 #define MAX_PORTS 65536
 
 struct bpf_map_def SEC("maps") jmp_table = {
@@ -47,7 +47,7 @@ struct bpf_map_def SEC("maps") networks_map = {
 	.type = BPF_MAP_TYPE_LPM_TRIE,
 	.key_size = sizeof(struct network_key_t),
 	.value_size = sizeof(struct network_t),
-	.max_entries = 1000001,
+	.max_entries = MAX_NETS,
 	.map_flags = BPF_F_NO_PREALLOC,
 };
 BPF_ANNOTATE_KV_PAIR(networks_map, struct network_key_t, struct network_t);
@@ -65,7 +65,7 @@ struct bpf_map_def SEC("maps") endpoints_map = {
 	.type = BPF_MAP_TYPE_HASH,
 	.key_size = sizeof(struct endpoint_key_t),
 	.value_size = sizeof(struct endpoint_t),
-	.max_entries = 1000001,
+	.max_entries = MAX_EP,
 	.map_flags = 0,
 };
 BPF_ANNOTATE_KV_PAIR(endpoints_map, struct endpoint_key_t, struct endpoint_t);
