@@ -605,7 +605,7 @@ error:
 int *load_transit_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result = -1;
+	static int result = 0;
 
 	int rc;
 	bool unload_error = false;
@@ -616,12 +616,12 @@ int *load_transit_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf, struct svc_req *rqstp)
 	struct user_metadata_t *md = trn_itf_table_find(itf);
 
 	if (md) {
-		TRN_LOG_INFO("meatadata for interface %s already exist.", itf);
-	} else {
-		TRN_LOG_INFO("creating meatadata for interface %s.", itf);
-		md = malloc(sizeof(struct user_metadata_t));
+		TRN_LOG_INFO("Transit XDP for interface %s already exist.", itf);
+		return &result;
 	}
 
+	TRN_LOG_INFO("Loading transit XDP for interface %s.", itf);
+	md = malloc(sizeof(struct user_metadata_t));
 	if (!md) {
 		TRN_LOG_ERROR("Failure allocating memory for user_metadata_t");
 		result = RPC_TRN_FATAL;
@@ -629,7 +629,6 @@ int *load_transit_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf, struct svc_req *rqstp)
 	}
 
 	memset(md, 0, sizeof(struct user_metadata_t));
-
 	// Set all interface index slots to unused
 	int i;
 	for (i = 0; i < TRAN_MAX_ITF; i++) {
@@ -644,7 +643,6 @@ int *load_transit_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf, struct svc_req *rqstp)
 		      xdp_intf->xdp_path, xdp_intf->pcapfile);
 
 	rc = trn_user_metadata_init(md, itf, kern_path, md->xdp_flags);
-
 	if (rc != 0) {
 		TRN_LOG_ERROR(
 			"Failure initializing or loading transit XDP program for interface %s",
@@ -665,7 +663,6 @@ int *load_transit_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf, struct svc_req *rqstp)
 
 	TRN_LOG_INFO("Successfully loaded transit XDP on interface %s", itf);
 
-	result = 0;
 	return &result;
 
 error:
@@ -714,7 +711,7 @@ int *load_transit_agent_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf,
 				  struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result = -1;
+	static int result = 0;
 
 	int rc;
 	bool unload_error = false;
@@ -725,10 +722,12 @@ int *load_transit_agent_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf,
 
 	struct agent_user_metadata_t *md = trn_vif_table_find(itf);
 	if (md) {
-		TRN_LOG_INFO("meatadata for interface %s already exist.", itf);
-	} else {
-		md = malloc(sizeof(struct agent_user_metadata_t));
+		TRN_LOG_INFO("Agent XDP for interface %s alreay loaded.", itf);
+		return &result;
 	}
+
+	TRN_LOG_INFO("Loading agent XDP for interface %s.", itf);
+	md = malloc(sizeof(struct agent_user_metadata_t));
 	if (!md) {
 		TRN_LOG_ERROR(
 			"Failure allocating memory for agent_user_metadata_t");
@@ -737,7 +736,6 @@ int *load_transit_agent_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf,
 	}
 
 	memset(md, 0, sizeof(struct agent_user_metadata_t));
-
 	strcpy(md->pcapfile, xdp_intf->pcapfile);
 	md->pcapfile[255] = '\0';
 	md->xdp_flags = xdp_intf->xdp_flag;
@@ -746,7 +744,6 @@ int *load_transit_agent_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf,
 		      xdp_intf->xdp_path, xdp_intf->pcapfile);
 
 	rc = trn_agent_metadata_init(md, itf, kern_path, md->xdp_flags);
-
 	if (rc != 0) {
 		TRN_LOG_ERROR("Failure initializing or loading transit agent "
 			      "XDP program for interface %s",
@@ -765,7 +762,6 @@ int *load_transit_agent_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf,
 		goto error;
 	}
 
-	result = 0;
 	return &result;
 
 error:
@@ -828,7 +824,6 @@ int *update_agent_ep_1_svc(rpc_trn_endpoint_t *ep, struct svc_req *rqstp)
 		      ep->hosted_interface);
 
 	struct agent_user_metadata_t *md = trn_vif_table_find(itf);
-
 	if (!md) {
 		TRN_LOG_ERROR("Cannot find virtual interface metadata for %s",
 			      itf);
@@ -875,7 +870,6 @@ int *update_agent_ep_1_svc(rpc_trn_endpoint_t *ep, struct svc_req *rqstp)
 	}
 
 	rc = trn_agent_update_endpoint(md, &epkey, &epval);
-
 	if (rc != 0) {
 		TRN_LOG_ERROR("Cannot update agent with ep %d on interface %s",
 			      epkey.tunip[2], itf);

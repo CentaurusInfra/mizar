@@ -118,9 +118,9 @@ class OBJ_DEFAULTS:
     mizar_ep_vpc_annotation = "mizar.com/vpc"
     mizar_ep_subnet_annotation = "mizar.com/subnet"
 
-    # 5 minutes of retries
-    kopf_max_retries = 15
-    kopf_retry_delay = 20
+    # 15 minutes of retries
+    kopf_max_retries = 60
+    kopf_retry_delay = 15
 
 
 class RESOURCES:

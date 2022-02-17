@@ -219,7 +219,9 @@ int trn_agent_update_endpoint(struct agent_user_metadata_t *umd,
 {
 	int err = bpf_map_update_elem(umd->endpoints_map_fd, epkey, ep, 0);
 	if (err) {
-		TRN_LOG_ERROR("Store endpoint mapping failed (err:%d).", err);
+		int errnum = errno;
+		TRN_LOG_ERROR("Update agent endpoints_map failed for fd=%d - err: %d errno: %d '%s'.",
+				umd->endpoints_map_fd, err, errnum, strerror(errnum));
 		return 1;
 	}
 	return 0;
@@ -230,9 +232,9 @@ int trn_agent_get_endpoint(struct agent_user_metadata_t *umd,
 {
 	int err = bpf_map_lookup_elem(umd->endpoints_map_fd, epkey, ep);
 	if (err) {
-		TRN_LOG_ERROR(
-			"Querying agent endpoint mapping failed (err:%d).",
-			err);
+		int errnum = errno;
+		TRN_LOG_ERROR("Query agent endpoints_map failed for fd=%d - err: %d errno: %d '%s'.",
+				umd->endpoints_map_fd, err, errnum, strerror(errnum));
 		return 1;
 	}
 	return 0;
@@ -243,9 +245,9 @@ int trn_agent_delete_endpoint(struct agent_user_metadata_t *umd,
 {
 	int err = bpf_map_delete_elem(umd->endpoints_map_fd, epkey);
 	if (err) {
-		TRN_LOG_ERROR(
-			"Deleting agent endpoint mapping failed (err:%d).",
-			err);
+		int errnum = errno;
+		TRN_LOG_ERROR("Delete agent endpoints_map failed for fd=%d - err: %d errno: %d '%s'.",
+				umd->endpoints_map_fd, err, errnum, strerror(errnum));
 		return 1;
 	}
 	return 0;
@@ -631,7 +633,6 @@ int trn_agent_metadata_init(struct agent_user_metadata_t *md, char *itf,
 	}
 
 	rc = trn_agent_bpf_maps_init(md);
-
 	if (rc != 0) {
 		return 1;
 	}
