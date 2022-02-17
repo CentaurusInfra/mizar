@@ -82,6 +82,9 @@ class NetCreate(WorkflowTask):
                     "{}-{}".format(OBJ_DEFAULTS.host_ep_peer_name,
                                    vpc.get_vni()),
                 )
+                if not droplet.interfaces:
+                    self.raise_temporary_error(
+                        "Daemon not yet ready for droplet {}".format(droplet.main_ip))
                 droplets_opr.store_update(droplet)
                 host_ep = endpoints_opr.create_host_endpoint(
                     droplet.ip, droplet, droplet.interfaces,
