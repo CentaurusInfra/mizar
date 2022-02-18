@@ -52,7 +52,7 @@ class EndpointCreate(WorkflowTask):
         nets_opr.allocate_endpoint(ep)
         bouncers_opr.update_endpoint_with_bouncers(ep, self)
         if ep.type == OBJ_DEFAULTS.ep_type_simple:
-            endpoints_opr.produce_simple_endpoint_interface(ep)
+            endpoints_opr.produce_simple_endpoint_interface(ep, self)
         if ep.bouncers:
             if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
                 for bouncer in ep.bouncers:

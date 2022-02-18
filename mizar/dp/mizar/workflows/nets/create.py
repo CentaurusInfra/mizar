@@ -69,10 +69,8 @@ class NetCreate(WorkflowTask):
         ep = endpoints_opr.create_gw_endpoint(
             self.param.name + "_gw", n.get_gw_ip(), n.vni, n.vpc, n.name)
         endpoints_opr.store_update(ep)
-        if not vpc.get_host_ep_created():
-            if not droplets_opr.store.get_all_droplets():
-                self.raise_temporary_error("Droplets not yet ready!")
-            for droplet in droplets_opr.store.get_all_droplets():
+        for droplet in droplets_opr.store.get_all_droplets():
+            if vpc.name not in droplets_opr.store_get_vpc_to_droplet(droplet):
                 droplet.interfaces = endpoints_opr.init_host_endpoint_interfaces(
                     droplet,
                     "{}-{}".format(OBJ_DEFAULTS.host_ep_name,
@@ -89,7 +87,6 @@ class NetCreate(WorkflowTask):
                     vpc.get_name(),
                     n
                 )
-                endpoints_opr.produce_simple_endpoint_interface(host_ep)
-                vpc.set_host_ep_created(True)
-                vpcs_opr.store_update(vpc)
+                endpoints_opr.produce_simple_endpoint_interface(host_ep, self)
+                droplets_opr.store_update_vpc_to_droplet(vpc, droplet)
         self.finalize()

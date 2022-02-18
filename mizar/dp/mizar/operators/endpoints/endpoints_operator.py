@@ -274,7 +274,7 @@ class EndpointOperator(object):
             if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
                 ep.update_bouncers({bouncer.name: bouncer}, task, False)
 
-    def produce_simple_endpoint_interface(self, ep):
+    def produce_simple_endpoint_interface(self, ep, task):
         """
         Constructs the final interface message and call the ProduceInterface rpc
         on the endpoint's droplet
@@ -318,11 +318,19 @@ class EndpointOperator(object):
 
         if ep.type == OBJ_DEFAULTS.ep_type_host:
             interfaces_list[0].status = InterfaceStatus.consumed
-            interfaces = InterfaceServiceClient(
-                ep.droplet_obj.main_ip).ActivateHostInterface(interfaces_list[0])
+            try:
+                interfaces = InterfaceServiceClient(
+                    ep.droplet_obj.main_ip).ActivateHostInterface(interfaces_list[0])
+            except Exception as e:
+                task.raise_temporary_error(
+                    "Produce Endpoint: Daemon at {} not yet ready! {}".format(ep.droplet_obj.main_ip, e))
         else:
-            interfaces = InterfaceServiceClient(
-                ep.droplet_obj.main_ip).ProduceInterfaces(InterfacesList(interfaces=interfaces_list))
+            try:
+                interfaces = InterfaceServiceClient(
+                    ep.droplet_obj.main_ip).ProduceInterfaces(InterfacesList(interfaces=interfaces_list))
+            except Exception as e:
+                task.raise_temporary_error(
+                    "Produce Endpoint: Daemon at {} not yet ready!".format(ep.droplet_obj.main_ip, e))
 
         logger.info("Produced {}".format(interfaces))
 
@@ -462,9 +470,9 @@ class EndpointOperator(object):
         interfaces = InterfacesList(interfaces=interfaces_list)
         try:
             return InterfaceServiceClient(droplet.main_ip).InitializeInterfaces(interfaces)
-        except:
+        except Exception as e:
             task.raise_temporary_error(
-                "Host Endpoint init failed, Daemon at {} not yet ready".format(droplet.main_ip))
+                "Host Endpoint init failed, Daemon at {} not yet ready {}".format(droplet.main_ip, e))
 
     def delete_simple_endpoint(self, ep):
         logger.info(

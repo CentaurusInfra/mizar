@@ -44,7 +44,7 @@ class DropletProvisioned(WorkflowTask):
         droplet = droplets_opr.get_droplet_stored_obj(
             self.param.name, self.param.spec)
         for vpc in vpcs_opr.store.get_all_vpcs():
-            if not vpc.get_host_ep_created():
+            if droplet.name not in droplets_opr.store.vpc_droplet_store[vpc.name]:
                 if nets_opr.store.get_nets_in_vpc(vpc):
                     subnet = list(
                         nets_opr.store.get_nets_in_vpc(vpc).values())[0]
@@ -65,8 +65,7 @@ class DropletProvisioned(WorkflowTask):
                         subnet
                     )
                     endpoint_opr.produce_simple_endpoint_interface(host_ep)
-                    vpc.set_host_ep_created(True)
-                    vpcs_opr.store_update(vpc)
+                    droplets_opr.store_update_vpc_to_droplet(vpc, droplet)
                 else:
                     self.raise_temporary_error(
                         "Host ep creation failed: no subnet created yet for VPC {} node ip {}".format(vpc.get_name(), droplet.ip))

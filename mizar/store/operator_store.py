@@ -82,6 +82,7 @@ class OprStore(object):
 
         self.dividers_store = {}
         self.dividers_vpc_store = {}
+        self.vpc_droplet_store = {}
 
         self.bouncers_store = {}
         self.bouncers_net_store = {}
@@ -89,10 +90,12 @@ class OprStore(object):
 
     def update_vpc(self, vpc):
         self.vpcs_store[vpc.name] = vpc
+        self.vpc_droplet_store[vpc.name] = []
 
     def delete_vpc(self, name):
         if name in self.vpcs_store:
             del self.vpcs_store[name]
+            del self.vpc_droplet_store[name]
 
     def get_vpc(self, name):
         if name in self.vpcs_store:
@@ -478,6 +481,20 @@ class OprStore(object):
         for d in self.droplets_store.values():
             logger.info("Droplets: {}, Spec: {}".format(
                 d.name, d.get_obj_spec()))
+
+    def update_vpc_to_droplet(self, vpc, droplet):
+        self.vpc_droplet_store[vpc.name].append(droplet.name)
+
+    def delete_vpc_to_droplet(self, droplet):
+        for vpc in self.vpc_droplet_store:
+            self.vpc_droplet_store[vpc].remove(droplet.name)
+
+    def get_vpc_to_droplet(self, droplet):
+        vpcs = []
+        for vpc in self.vpc_droplet_store:
+            if droplet.name in self.vpc_droplet_store[vpc]:
+                vpcs.append(vpc)
+        return vpcs
 
     def update_divider(self, div):
         self.dividers_store[div.name] = div

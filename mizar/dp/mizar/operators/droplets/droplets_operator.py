@@ -81,6 +81,15 @@ class DropletOperator(object):
     def store_update(self, droplet):
         self.store.update_droplet(droplet)
 
+    def store_update_vpc_to_droplet(self, vpc, droplet):
+        self.store.update_vpc_to_droplet(vpc, droplet)
+
+    def store_delete_vpc_to_droplet(self, droplet):
+        self.store.delete_vpc_to_droplet(droplet)
+
+    def store_get_vpc_to_droplet(self, droplet):
+        return self.store.get_vpc_to_droplet(droplet)
+
     def on_droplet_provisioned(self, body, spec, **kwargs):
         name = kwargs['name']
         logger.info(

@@ -53,7 +53,6 @@ class Vpc(object):
         self.cidr = Cidr(self.prefix, self.ip)
         self.ip = self.cidr.ip
         self.prefix = self.cidr.prefixlen
-        self.host_ep_created = False
 
     def get_obj_spec(self):
         self.obj = {
@@ -84,12 +83,6 @@ class Vpc(object):
 
     def get_kind(self):
         return "Vpc"
-
-    def set_host_ep_created(self, val):
-        self.host_ep_created = val
-
-    def get_host_ep_created(self):
-        return self.host_ep_created
 
     def store_update_obj(self):
         if self.store is None:
