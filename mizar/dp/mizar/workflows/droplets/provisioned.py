@@ -68,5 +68,5 @@ class DropletProvisioned(WorkflowTask):
                     vpcs_opr.store_update(vpc)
             else:
                 self.raise_temporary_error(
-                    "Host ep creation failed: no subnet created yet for VPC {}".format(vpc.get_name()))
+                    "Host ep creation failed: no subnet created yet for VPC {} node ip {}".format(vpc.get_name(), droplet.ip))
         self.finalize()
