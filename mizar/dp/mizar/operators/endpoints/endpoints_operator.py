@@ -441,7 +441,7 @@ class EndpointOperator(object):
             return InterfaceServiceClient(worker_ip).InitializeInterfaces(interfaces)
         return None
 
-    def init_host_endpoint_interfaces(self, droplet, ifname, veth_name, peer_name):
+    def init_host_endpoint_interfaces(self, droplet, ifname, veth_name, peer_name, task):
         interfaces_list = []
         pod_id = PodId(k8s_pod_name=droplet.name,
                        k8s_namespace="default",
@@ -460,7 +460,11 @@ class EndpointOperator(object):
             status=InterfaceStatus.init,
         ))
         interfaces = InterfacesList(interfaces=interfaces_list)
-        return InterfaceServiceClient(droplet.main_ip).InitializeInterfaces(interfaces)
+        try:
+            return InterfaceServiceClient(droplet.main_ip).InitializeInterfaces(interfaces)
+        except:
+            task.raise_temporary_error(
+                "Host Endpoint init failed, Daemon at {} not yet ready".format(droplet.main_ip))
 
     def delete_simple_endpoint(self, ep):
         logger.info(
