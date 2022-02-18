@@ -212,8 +212,9 @@ class InterfaceServer(InterfaceServiceServicer):
                 if requested_pod_name in self.pod_dict:
                     if self.pod_dict[requested_pod_name]:
                         # Interfaces for the Pod has been produced
+                        interfaces = self._ConsumeInterfaces(requested_pod_name, request)
                         self.pod_dict.pop(requested_pod_name)
-                        return self._ConsumeInterfaces(requested_pod_name, request)
+                        return interfaces
             time.sleep(WAITING_SLEEP_INTERVAL)
             now = time.time()
             if now - start >= CONSUME_INTERFACE_TIMEOUT:
