@@ -71,6 +71,8 @@ class NetCreate(WorkflowTask):
         endpoints_opr.store_update(ep)
         for droplet in droplets_opr.store.get_all_droplets():
             if vpc.name not in droplets_opr.store_get_vpc_to_droplet(droplet):
+                logger.info("Net: Creating host endpoint for vpc {} on droplet {}".format(
+                    vpc.name, droplet.ip))
                 droplet.interfaces = endpoints_opr.init_host_endpoint_interfaces(
                     droplet,
                     "{}-{}".format(OBJ_DEFAULTS.host_ep_name,
@@ -89,4 +91,7 @@ class NetCreate(WorkflowTask):
                 )
                 endpoints_opr.produce_simple_endpoint_interface(host_ep, self)
                 droplets_opr.store_update_vpc_to_droplet(vpc, droplet)
+            else:
+                logger.info("Net: Host endpoint already created for vpc {} on droplet {}".format(
+                    vpc.name, droplet.ip))
         self.finalize()
