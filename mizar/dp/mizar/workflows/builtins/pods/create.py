@@ -160,7 +160,7 @@ class k8sPodCreate(WorkflowTask):
             self.param.name, self.param.namespace, spec['labels'], self.param.diff)
         spec['pod_label_value'] = pod_label_value
         spec['namespace_label_value'] = namespace_label_value
-        if spec['phase'] != 'Pending':
+        if spec['phase'] != 'Pending' and spec['phase'] != 'ContainerCreating':
             networkpolicy_util.handle_networkpolicy_change(policy_name_list)
             self.finalize()
             return
@@ -175,9 +175,6 @@ class k8sPodCreate(WorkflowTask):
             "Initing endpoint interface on for {} on host {}".format(self.param.name, spec['hostIP']))
         interfaces = endpoint_opr.init_simple_endpoint_interfaces(
             spec['hostIP'], spec)
-        if not interfaces:
-            self.raise_permanent_error(
-                "Endpoint {} already exists!".format(spec["name"]))
         # Create the corresponding simple endpoint objects
         endpoint_opr.create_simple_endpoints(interfaces, spec)
 

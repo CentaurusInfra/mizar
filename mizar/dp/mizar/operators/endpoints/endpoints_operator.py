@@ -324,7 +324,7 @@ class EndpointOperator(object):
             interfaces = InterfaceServiceClient(
                 ep.droplet_obj.main_ip).ProduceInterfaces(InterfacesList(interfaces=interfaces_list))
 
-        logger.info("Produced {}".format(interfaces))
+        logger.info("Endpoint {} Produced {}".format(ep.name, interfaces))
 
     def create_simple_endpoints(self, interfaces, spec):
         """

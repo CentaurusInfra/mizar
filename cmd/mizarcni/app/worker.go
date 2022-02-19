@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"strings"
 
+	klog "k8s.io/klog/v2"
+
 	"centaurusinfra.io/mizar/pkg/object"
 	"centaurusinfra.io/mizar/pkg/util/grpcclientutil"
 	"centaurusinfra.io/mizar/pkg/util/netutil"
@@ -38,6 +40,12 @@ func DoCmdAdd(netVariables *object.NetVariables, stdinData []byte) (cniTypesVer.
 	result := cniTypesVer.Result{
 		CNIVersion: netVariables.CniVersion,
 	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			klog.Errorf("System Error: '%+v'\n", r)
+		}
+	}()
 
 	if err := netvariablesutil.LoadCniConfig(netVariables, stdinData); err != nil {
 		return result, tracelog.String(), err

@@ -145,7 +145,7 @@ class InterfaceServer(InterfaceServiceServicer):
                 interface.status = InterfaceStatus.consumed
 
         interfaces = InterfacesList(interfaces=interfaces)
-        logger.info("Consumed {}".format(interfaces))
+        logger.info("Pod {} Consumed {}".format(pod_name, interfaces))
         self.interfaces.pop(pod_name)
         return interfaces
 
