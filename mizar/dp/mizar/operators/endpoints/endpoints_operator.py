@@ -323,23 +323,29 @@ class EndpointOperator(object):
                 interfaces = InterfaceServiceClient(
                     ep.droplet_obj.main_ip).ActivateHostInterface(interfaces_list[0])
             except grpc.RpcError as rpc_error:
-                if CONSTANTS.GRPC_DEVICE_BUSY_ERROR in rpc_error.details():
-                    task.raise_permanent_error(
-                        "Produce host endpoint: Error, repeat call, veth device already created!")
-                else:
+                if CONSTANTS.GRPC_UNAVAILABLE in rpc_error.details():
                     task.raise_temporary_error(
-                        "Produce Endpoint: Daemon at {} not yet ready! {}".format(ep.droplet_obj.main_ip, e))
+                        "Produce host endpoint temporary erorr: Daemon at {} not yet ready! {}".format(ep.droplet_obj.main_ip, rpc_error.details()))
+                elif CONSTANTS.GRPC_DEVICE_BUSY_ERROR in rpc_error.details() or CONSTANTS.GRPC_FILE_EXISTS_ERROR in rpc_error.details():
+                    task.raise_permanent_error(
+                        "Produce host endpoint permanent error: Repeat call for ep {} on droplet {}, veth device already created! RPC error: {}".format(ep.name, ep.droplet_obj.main_ip, rpc_error.details()))
+                else:
+                    task.raise_permanent_error(
+                        "Produce host endpoint permanent error: Unknown {}".format(rpc_error.details()))
         else:
             try:
                 interfaces = InterfaceServiceClient(
                     ep.droplet_obj.main_ip).ProduceInterfaces(InterfacesList(interfaces=interfaces_list))
             except grpc.RpcError as rpc_error:
-                if CONSTANTS.GRPC_DEVICE_BUSY_ERROR in rpc_error.details():
-                    task.raise_permanent_error(
-                        "Produce endpoint: Error, repeat call, veth device already created!")
-                else:
+                if CONSTANTS.GRPC_UNAVAILABLE in rpc_error.details():
                     task.raise_temporary_error(
-                        "Produce Endpoint: Daemon at {} not yet ready!".format(ep.droplet_obj.main_ip, e))
+                        "Produce endpoint temporary error: Daemon at {} not yet ready!".format(ep.droplet_obj.main_ip, rpc_error.details()))
+                elif CONSTANTS.GRPC_DEVICE_BUSY_ERROR in rpc_error.details() or CONSTANTS.GRPC_FILE_EXISTS_ERROR in rpc_error.details():
+                    task.raise_permanent_error(
+                        "Produce endpoint permanent error: Repeat call for ep {} on droplet {}, veth device already created! RPC error : {}".format(ep.name, ep.droplet_obj.main_ip, rpc_error.details()))
+                else:
+                    task.raise_permanent_error(
+                        "Produce endpoint permanent error: Unknown {}".format(rpc_error.details()))
 
         logger.info("Produced {}".format(interfaces))
 
