@@ -22,6 +22,7 @@
 import logging
 import random
 import json
+import grpc
 from kubernetes import client
 from mizar.obj.endpoint import Endpoint
 from mizar.obj.bouncer import Bouncer
@@ -321,16 +322,24 @@ class EndpointOperator(object):
             try:
                 interfaces = InterfaceServiceClient(
                     ep.droplet_obj.main_ip).ActivateHostInterface(interfaces_list[0])
-            except Exception as e:
-                task.raise_temporary_error(
-                    "Produce Endpoint: Daemon at {} not yet ready! {}".format(ep.droplet_obj.main_ip, e))
+            except grpc.RpcError as rpc_error:
+                if CONSTANTS.GRPC_DEVICE_BUSY_ERROR in rpc_error.details():
+                    task.raise_permanent_error(
+                        "Produce host endpoint: Error, repeat call, veth device already created!")
+                else:
+                    task.raise_temporary_error(
+                        "Produce Endpoint: Daemon at {} not yet ready! {}".format(ep.droplet_obj.main_ip, e))
         else:
             try:
                 interfaces = InterfaceServiceClient(
                     ep.droplet_obj.main_ip).ProduceInterfaces(InterfacesList(interfaces=interfaces_list))
-            except Exception as e:
-                task.raise_temporary_error(
-                    "Produce Endpoint: Daemon at {} not yet ready!".format(ep.droplet_obj.main_ip, e))
+            except grpc.RpcError as rpc_error:
+                if CONSTANTS.GRPC_DEVICE_BUSY_ERROR in rpc_error.details():
+                    task.raise_permanent_error(
+                        "Produce endpoint: Error, repeat call, veth device already created!")
+                else:
+                    task.raise_temporary_error(
+                        "Produce Endpoint: Daemon at {} not yet ready!".format(ep.droplet_obj.main_ip, e))
 
         logger.info("Produced {}".format(interfaces))
 

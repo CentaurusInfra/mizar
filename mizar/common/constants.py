@@ -48,6 +48,7 @@ class CONSTANTS:
     MIZAR_DEFAULT_EGRESS_BW_LIMIT_PCT = 30
     SUBNETS_NEW_PREFIX = 32
     RPC_ERROR_CODE = "error"
+    GRPC_DEVICE_BUSY_ERROR = "Device or resource busy"
 
 
 class OBJ_STATUS:
