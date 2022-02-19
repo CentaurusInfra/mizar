@@ -45,9 +45,9 @@ class DropletProvisioned(WorkflowTask):
             self.param.name, self.param.spec)
         for vpc in vpcs_opr.store.get_all_vpcs():
             if droplet.name not in droplets_opr.store.vpc_droplet_store[vpc.name]:
-                if nets_opr.store.get_nets_in_vpc(vpc):
+                if nets_opr.store.nets_vpc_store[vpc.name]:
                     subnet = list(
-                        nets_opr.store.get_nets_in_vpc(vpc).values())[0]
+                        nets_opr.store.nets_vpc_store[vpc.name].values())[0]
                     logger.info("Droplet: Creating host endpoint for vpc {} on droplet {}".format(
                         vpc.name, droplet.ip))
                     droplet.interfaces = endpoint_opr.init_host_endpoint_interfaces(
