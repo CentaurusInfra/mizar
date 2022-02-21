@@ -27,10 +27,22 @@ POOL_WORKERS = 10
 def init(benchmark=False):
     # Setup the droplet's host
     default_itf = get_itf()
+    script = (f''' bash -c 'for name in $(nsenter -t 1 -m -u -n -i ip l |  grep -Po "(vehost-\w+)(?=@)"); do nsenter -t 1 -m -u -n -i sudo ip l delete $name; done ' ''')
+    r = subprocess.Popen(script, shell=True, stdout=subprocess.PIPE)
+    output = r.stdout.read().decode().strip()
+    logging.info("Deleted preexisting host eps: {}".format(output))
+
+    script = (f''' bash -c 'for name in $(nsenter -t 1 -m -u -n -i ip l |  grep -Po "(veth-\w+)(?=@)"); do nsenter -t 1 -m -u -n -i sudo ip l delete $name; done' ''')
+    r = subprocess.Popen(script, shell=True, stdout=subprocess.PIPE)
+    output = r.stdout.read().decode().strip()
+    logging.info("Deleted preexisting veths: {}".format(output))
+
+    script = (f''' bash -c 'for file in $(nsenter -t 1 -m -u -n -i ls -1 /etc/cni/net.d/ | grep -v '10-mizarcni.conf$'); do nsenter -t 1 -m -u -n -i rm -rf /etc/cni/net.d/$file; done' ''')
+    r = subprocess.Popen(script, shell=True, stdout=subprocess.PIPE)
+    output = r.stdout.read().decode().strip()
+    logging.info("Deleted other CNI files: {}".format(output))
+
     script = (f''' bash -c '\
-    for file in $(nsenter -t 1 -m -u -n -i ls -1 /etc/cni/net.d/ | grep -v '10-mizarcni.conf$'); do nsenter -t 1 -m -u -n -i rm -rf /etc/cni/net.d/$file; done && \
-    for name in $(nsenter -t 1 -m -u -n -i ip l |  grep -Po "(veth-\w+)(?=@)"); do nsenter -t 1 -m -u -n -i sudo ip l delete $name; done && \
-    for name in $(nsenter -t 1 -m -u -n -i ip l |  grep -Po "(vehost-\w+)(?=@)"); do nsenter -t 1 -m -u -n -i sudo ip l delete $name; done && \
     nsenter -t 1 -m -u -n -i /etc/init.d/rpcbind restart && \
     nsenter -t 1 -m -u -n -i /etc/init.d/rsyslog restart && \
     nsenter -t 1 -m -u -n -i sysctl -w net.ipv4.tcp_mtu_probing=2 && \
