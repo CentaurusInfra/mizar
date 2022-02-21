@@ -45,6 +45,9 @@ class DropletProvisioned(WorkflowTask):
             self.param.name, self.param.spec)
         for vpc in vpcs_opr.store.get_all_vpcs():
             if droplet.name not in droplets_opr.store.vpc_droplet_store[vpc.name]:
+                if vpc.name not in nets_opr.store.nets_vpc_store:
+                    self.raise_temporary_error(
+                        "Subnet not yet created for VPC {}!".format(vpc.name))
                 if nets_opr.store.nets_vpc_store[vpc.name]:
                     subnet = list(
                         nets_opr.store.nets_vpc_store[vpc.name].values())[0]
