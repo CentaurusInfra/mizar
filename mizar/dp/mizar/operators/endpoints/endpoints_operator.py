@@ -22,6 +22,7 @@
 import logging
 import random
 import json
+import grpc
 from kubernetes import client
 from mizar.obj.endpoint import Endpoint
 from mizar.obj.bouncer import Bouncer
@@ -274,7 +275,7 @@ class EndpointOperator(object):
             if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
                 ep.update_bouncers({bouncer.name: bouncer}, task, False)
 
-    def produce_simple_endpoint_interface(self, ep):
+    def produce_simple_endpoint_interface(self, ep, task):
         """
         Constructs the final interface message and call the ProduceInterface rpc
         on the endpoint's droplet
@@ -319,12 +320,12 @@ class EndpointOperator(object):
         if ep.type == OBJ_DEFAULTS.ep_type_host:
             interfaces_list[0].status = InterfaceStatus.consumed
             interfaces = InterfaceServiceClient(
-                ep.droplet_obj.main_ip).ActivateHostInterface(interfaces_list[0])
+                ep.droplet_obj.main_ip).ActivateHostInterface(interfaces_list[0], task)
         else:
-            interfaces = InterfaceServiceClient(
-                ep.droplet_obj.main_ip).ProduceInterfaces(InterfacesList(interfaces=interfaces_list))
-
-        logger.info("Produced {}".format(interfaces))
+            interfaces = InterfaceServiceClient(ep.droplet_obj.main_ip).ProduceInterfaces(
+                InterfacesList(interfaces=interfaces_list), task)
+            logger.info("Produced {}".format(interfaces))
+            return interfaces
 
     def create_simple_endpoints(self, interfaces, spec):
         """
@@ -368,6 +369,9 @@ class EndpointOperator(object):
         for interface in interfaces.interfaces:
             logger.info("Create host endpoint {}".format(interface))
             name = get_itf_name(interface.interface_id)
+            if name in self.store.eps_store:
+                logger.info("Host endpoint already exists!")
+                return self.store.eps_store[name]
             ep = Endpoint(name, self.obj_api, self.store)
 
             ep.set_type(OBJ_DEFAULTS.ep_type_host)
@@ -394,7 +398,7 @@ class EndpointOperator(object):
             ep.create_obj()
             return ep
 
-    def init_simple_endpoint_interfaces(self, worker_ip, spec):
+    def init_simple_endpoint_interfaces(self, worker_ip, spec, task):
         """
         Construct the interface message and call the InitializeInterfaces gRPC on
         the hostIP
@@ -438,10 +442,10 @@ class EndpointOperator(object):
             # allocate the mac addresses for us.
             logger.info("init_simple_endpoint_interface on {} for {}".format(
                 worker_ip, spec['name']))
-            return InterfaceServiceClient(worker_ip).InitializeInterfaces(interfaces)
+            return InterfaceServiceClient(worker_ip).InitializeInterfaces(interfaces, task)
         return None
 
-    def init_host_endpoint_interfaces(self, droplet, ifname, veth_name, peer_name):
+    def init_host_endpoint_interfaces(self, droplet, ifname, veth_name, peer_name, task):
         interfaces_list = []
         pod_id = PodId(k8s_pod_name=droplet.name,
                        k8s_namespace="default",
@@ -460,13 +464,13 @@ class EndpointOperator(object):
             status=InterfaceStatus.init,
         ))
         interfaces = InterfacesList(interfaces=interfaces_list)
-        return InterfaceServiceClient(droplet.main_ip).InitializeInterfaces(interfaces)
+        return InterfaceServiceClient(droplet.main_ip).InitializeInterfaces(interfaces, task)
 
-    def delete_simple_endpoint(self, ep):
+    def delete_simple_endpoint(self, ep, task):
         logger.info(
             "Delete endpoint object associated with interface {}".format(ep.name))
         interface = self.store_get(ep.name).interface
         InterfaceServiceClient(
-            ep.droplet_obj.main_ip).DeleteInterface(Interface(interface_id=interface.interface_id))
+            ep.droplet_obj.main_ip).DeleteInterface(Interface(interface_id=interface.interface_id), task)
 
         ep.delete_obj()

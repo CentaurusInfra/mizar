@@ -64,34 +64,9 @@ class NetCreate(WorkflowTask):
                 "Task: {} Net: {} Dividers not available".format(self.__class__.__name__, n.name))
         logger.info("NetCreate Net ip is {}".format(n.ip))
         nets_opr.create_net_bouncers(n, n.n_bouncers)
-        nets_opr.set_net_provisioned(n)
         nets_opr.store_update(n)
         ep = endpoints_opr.create_gw_endpoint(
             self.param.name + "_gw", n.get_gw_ip(), n.vni, n.vpc, n.name)
         endpoints_opr.store_update(ep)
-        if not vpc.get_host_ep_created():
-            if not droplets_opr.store.get_all_droplets():
-                self.raise_temporary_error("Droplets not yet ready!")
-            for droplet in droplets_opr.store.get_all_droplets():
-                droplet.interfaces = endpoints_opr.init_host_endpoint_interfaces(
-                    droplet,
-                    "{}-{}".format(OBJ_DEFAULTS.host_ep_name,
-                                   vpc.get_vni()),
-                    "{}-{}".format(OBJ_DEFAULTS.host_ep_veth_name,
-                                   vpc.get_vni()),
-                    "{}-{}".format(OBJ_DEFAULTS.host_ep_peer_name,
-                                   vpc.get_vni()),
-                )
-                if not droplet.interfaces:
-                    self.raise_temporary_error(
-                        "Daemon not yet ready for droplet {}".format(droplet.main_ip))
-                droplets_opr.store_update(droplet)
-                host_ep = endpoints_opr.create_host_endpoint(
-                    droplet.ip, droplet, droplet.interfaces,
-                    vpc.get_name(),
-                    n
-                )
-                endpoints_opr.produce_simple_endpoint_interface(host_ep)
-                vpc.set_host_ep_created(True)
-                vpcs_opr.store_update(vpc)
+        nets_opr.set_net_provisioned(n)
         self.finalize()

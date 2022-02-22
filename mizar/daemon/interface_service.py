@@ -315,25 +315,66 @@ class InterfaceServiceClient():
         self.channel = grpc.insecure_channel(addr)
         self.stub = InterfaceServiceStub(self.channel)
 
-    def InitializeInterfaces(self, interfaces_list):
-        resp = self.stub.InitializeInterfaces(interfaces_list)
-        return resp
+    def InitializeInterfaces(self, interfaces_list, task):
+        try:
+            resp = self.stub.InitializeInterfaces(interfaces_list)
+            return resp
+        except grpc.RpcError as rpc_error:
+            if rpc_error.code() == grpc.StatusCode.UNAVAILABLE:
+                task.raise_temporary_error(
+                    "InitializeInterfaces failed, Daemon not ready {}".format(rpc_error.details()))
+            else:
+                task.raise_permanent_error(
+                    "Unknown gRPC error {}".format(rpc_error.details()))
 
-    def ProduceInterfaces(self, interfaces_list):
-        resp = self.stub.ProduceInterfaces(interfaces_list)
-        return resp
+    def ProduceInterfaces(self, interfaces_list, task):
+        try:
+            resp = self.stub.ProduceInterfaces(interfaces_list)
+            return resp
+        except grpc.RpcError as rpc_error:
+            if rpc_error.code() == grpc.StatusCode.UNAVAILABLE:
+                task.raise_temporary_error(
+                    "Produce endpoint temporary error: Daemon not yet ready! {}".format(rpc_error.details()))
+            elif CONSTANTS.GRPC_DEVICE_BUSY_ERROR in rpc_error.details() or CONSTANTS.GRPC_FILE_EXISTS_ERROR in rpc_error.details():
+                logger.info(
+                    "Produce endpoint permanent error: Repeat call veth device already created! RPC error : {}".format(rpc_error.details()))
+                return None
+            else:
+                task.raise_permanent_error(
+                    "Produce endpoint permanent error: Unknown {}".format(rpc_error.details()))
 
+    # Unused by operator
     def ConsumeInterfaces(self, pod_id):
         resp = self.stub.ConsumeInterfaces(pod_id)
         return resp
 
-    def DeleteInterface(self, interface):
-        resp = self.stub.DeleteInterface(interface)
-        return resp
+    def DeleteInterface(self, interface, task):
+        try:
+            resp = self.stub.DeleteInterface(interface)
+            return resp
+        except grpc.RpcError as rpc_error:
+            if rpc_error.code() == grpc.StatusCode.UNAVAILABLE:
+                task.raise_temporary_error(
+                    "DeleteInterface failed, Daemon not ready {}".format(rpc_error.details()))
+            else:
+                task.raise_permanent_error(
+                    "Unknown gRPC error {}".format(rpc_error.details()))
 
-    def ActivateHostInterface(self, interface):
-        resp = self.stub.ActivateHostInterface(interface)
-        return resp
+    def ActivateHostInterface(self, interface, task):
+        try:
+            resp = self.stub.ActivateHostInterface(interface)
+            return resp
+        except grpc.RpcError as rpc_error:
+            if rpc_error.code() == grpc.StatusCode.UNAVAILABLE:
+                task.raise_temporary_error(
+                    "Produce host endpoint temporary error: Daemon not yet ready! {}".format(rpc_error.details()))
+            elif CONSTANTS.GRPC_DEVICE_BUSY_ERROR in rpc_error.details() or CONSTANTS.GRPC_FILE_EXISTS_ERROR in rpc_error.details():
+                logger.info(
+                    "Produce host endpoint: Repeat call, veth device already created! RPC error: {}".format(rpc_error.details()))
+                return None
+            else:
+                task.raise_permanent_error(
+                    "Produce host endpoint permanent error: Unknown {}".format(rpc_error.details()))
 
 
 class LocalTransitRpc:
