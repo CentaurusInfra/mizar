@@ -319,35 +319,13 @@ class EndpointOperator(object):
 
         if ep.type == OBJ_DEFAULTS.ep_type_host:
             interfaces_list[0].status = InterfaceStatus.consumed
-            try:
-                interfaces = InterfaceServiceClient(
-                    ep.droplet_obj.main_ip).ActivateHostInterface(interfaces_list[0])
-            except grpc.RpcError as rpc_error:
-                if CONSTANTS.GRPC_UNAVAILABLE in rpc_error.details():
-                    task.raise_temporary_error(
-                        "Produce host endpoint temporary erorr: Daemon at {} not yet ready! {}".format(ep.droplet_obj.main_ip, rpc_error.details()))
-                elif CONSTANTS.GRPC_DEVICE_BUSY_ERROR in rpc_error.details() or CONSTANTS.GRPC_FILE_EXISTS_ERROR in rpc_error.details():
-                    task.raise_permanent_error(
-                        "Produce host endpoint permanent error: Repeat call for ep {} on droplet {}, veth device already created! RPC error: {}".format(ep.name, ep.droplet_obj.main_ip, rpc_error.details()))
-                else:
-                    task.raise_permanent_error(
-                        "Produce host endpoint permanent error: Unknown {}".format(rpc_error.details()))
+            interfaces = InterfaceServiceClient(
+                ep.droplet_obj.main_ip).ActivateHostInterface(interfaces_list[0], task)
         else:
-            try:
-                interfaces = InterfaceServiceClient(
-                    ep.droplet_obj.main_ip).ProduceInterfaces(InterfacesList(interfaces=interfaces_list))
-            except grpc.RpcError as rpc_error:
-                if CONSTANTS.GRPC_UNAVAILABLE in rpc_error.details():
-                    task.raise_temporary_error(
-                        "Produce endpoint temporary error: Daemon at {} not yet ready!".format(ep.droplet_obj.main_ip, rpc_error.details()))
-                elif CONSTANTS.GRPC_DEVICE_BUSY_ERROR in rpc_error.details() or CONSTANTS.GRPC_FILE_EXISTS_ERROR in rpc_error.details():
-                    task.raise_permanent_error(
-                        "Produce endpoint permanent error: Repeat call for ep {} on droplet {}, veth device already created! RPC error : {}".format(ep.name, ep.droplet_obj.main_ip, rpc_error.details()))
-                else:
-                    task.raise_permanent_error(
-                        "Produce endpoint permanent error: Unknown {}".format(rpc_error.details()))
-
-        logger.info("Produced {}".format(interfaces))
+            interfaces = InterfaceServiceClient(ep.droplet_obj.main_ip).ProduceInterfaces(
+                InterfacesList(interfaces=interfaces_list), task)
+            logger.info("Produced {}".format(interfaces))
+            return interfaces
 
     def create_simple_endpoints(self, interfaces, spec):
         """
@@ -391,6 +369,9 @@ class EndpointOperator(object):
         for interface in interfaces.interfaces:
             logger.info("Create host endpoint {}".format(interface))
             name = get_itf_name(interface.interface_id)
+            if name in self.store.eps_store:
+                logger.info("Host endpoint already exists!")
+                return self.store.eps_store[name]
             ep = Endpoint(name, self.obj_api, self.store)
 
             ep.set_type(OBJ_DEFAULTS.ep_type_host)
@@ -417,7 +398,7 @@ class EndpointOperator(object):
             ep.create_obj()
             return ep
 
-    def init_simple_endpoint_interfaces(self, worker_ip, spec):
+    def init_simple_endpoint_interfaces(self, worker_ip, spec, task):
         """
         Construct the interface message and call the InitializeInterfaces gRPC on
         the hostIP
@@ -461,7 +442,7 @@ class EndpointOperator(object):
             # allocate the mac addresses for us.
             logger.info("init_simple_endpoint_interface on {} for {}".format(
                 worker_ip, spec['name']))
-            return InterfaceServiceClient(worker_ip).InitializeInterfaces(interfaces)
+            return InterfaceServiceClient(worker_ip).InitializeInterfaces(interfaces, task)
         return None
 
     def init_host_endpoint_interfaces(self, droplet, ifname, veth_name, peer_name, task):
@@ -483,17 +464,13 @@ class EndpointOperator(object):
             status=InterfaceStatus.init,
         ))
         interfaces = InterfacesList(interfaces=interfaces_list)
-        try:
-            return InterfaceServiceClient(droplet.main_ip).InitializeInterfaces(interfaces)
-        except Exception as e:
-            task.raise_temporary_error(
-                "Host Endpoint init failed, Daemon at {} not yet ready {}".format(droplet.main_ip, e))
+        return InterfaceServiceClient(droplet.main_ip).InitializeInterfaces(interfaces, task)
 
-    def delete_simple_endpoint(self, ep):
+    def delete_simple_endpoint(self, ep, task):
         logger.info(
             "Delete endpoint object associated with interface {}".format(ep.name))
         interface = self.store_get(ep.name).interface
         InterfaceServiceClient(
-            ep.droplet_obj.main_ip).DeleteInterface(Interface(interface_id=interface.interface_id))
+            ep.droplet_obj.main_ip).DeleteInterface(Interface(interface_id=interface.interface_id), task)
 
         ep.delete_obj()

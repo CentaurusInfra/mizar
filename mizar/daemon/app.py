@@ -27,6 +27,12 @@ POOL_WORKERS = 10
 def init(benchmark=False):
     # Setup the droplet's host
     default_itf = get_itf()
+
+    script = (f''' bash -c 'nsenter -t 1 -m -u -n -i ip l' ''')
+    r = subprocess.Popen(script, shell=True, stdout=subprocess.PIPE)
+    output = r.stdout.read().decode().strip()
+    logging.info("Current interfaces {}".format(output))
+
     script = (f''' bash -c 'for name in $(nsenter -t 1 -m -u -n -i ip l |  grep -Po "(vehost-\w+)(?=@)"); do nsenter -t 1 -m -u -n -i sudo ip l delete $name; done ' ''')
     r = subprocess.Popen(script, shell=True, stdout=subprocess.PIPE)
     output = r.stdout.read().decode().strip()
@@ -36,6 +42,11 @@ def init(benchmark=False):
     r = subprocess.Popen(script, shell=True, stdout=subprocess.PIPE)
     output = r.stdout.read().decode().strip()
     logging.info("Deleted preexisting veths: {}".format(output))
+
+    script = (f''' bash -c 'nsenter -t 1 -m -u -n -i ip l' ''')
+    r = subprocess.Popen(script, shell=True, stdout=subprocess.PIPE)
+    output = r.stdout.read().decode().strip()
+    logging.info("Interfaces after delete. {}".format(output))
 
     script = (f''' bash -c 'for file in $(nsenter -t 1 -m -u -n -i ls -1 /etc/cni/net.d/ | grep -v '10-mizarcni.conf$'); do nsenter -t 1 -m -u -n -i rm -rf /etc/cni/net.d/$file; done' ''')
     r = subprocess.Popen(script, shell=True, stdout=subprocess.PIPE)

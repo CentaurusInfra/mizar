@@ -64,34 +64,9 @@ class NetCreate(WorkflowTask):
                 "Task: {} Net: {} Dividers not available".format(self.__class__.__name__, n.name))
         logger.info("NetCreate Net ip is {}".format(n.ip))
         nets_opr.create_net_bouncers(n, n.n_bouncers)
-        nets_opr.set_net_provisioned(n)
         nets_opr.store_update(n)
         ep = endpoints_opr.create_gw_endpoint(
             self.param.name + "_gw", n.get_gw_ip(), n.vni, n.vpc, n.name)
         endpoints_opr.store_update(ep)
-        for droplet in droplets_opr.store.get_all_droplets():
-            if vpc.name not in droplets_opr.store_get_vpc_to_droplet(droplet):
-                logger.info("Net: Creating host endpoint for vpc {} on droplet {}".format(
-                    vpc.name, droplet.ip))
-                droplet.interfaces = endpoints_opr.init_host_endpoint_interfaces(
-                    droplet,
-                    "{}-{}".format(OBJ_DEFAULTS.host_ep_name,
-                                   vpc.get_vni()),
-                    "{}-{}".format(OBJ_DEFAULTS.host_ep_veth_name,
-                                   vpc.get_vni()),
-                    "{}-{}".format(OBJ_DEFAULTS.host_ep_peer_name,
-                                   vpc.get_vni()),
-                    self
-                )
-                droplets_opr.store_update(droplet)
-                host_ep = endpoints_opr.create_host_endpoint(
-                    droplet.ip, droplet, droplet.interfaces,
-                    vpc.get_name(),
-                    n
-                )
-                endpoints_opr.produce_simple_endpoint_interface(host_ep, self)
-                droplets_opr.store_update_vpc_to_droplet(vpc, droplet)
-            else:
-                logger.info("Net: Host endpoint already created for vpc {} on droplet {}".format(
-                    vpc.name, droplet.ip))
+        nets_opr.set_net_provisioned(n)
         self.finalize()

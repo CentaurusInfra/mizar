@@ -167,14 +167,15 @@ class k8sPodCreate(WorkflowTask):
 
         n = net_opr.store.get_net(spec['subnet'])
         ip = n.allocate_ip()
-        logger.info("ip {} from {} is allocated to Pod {}.".format(ip, spec['subnet'], self.param.name))
+        logger.info("ip {} from {} is allocated to Pod {}.".format(
+            ip, spec['subnet'], self.param.name))
         spec['ip'] = ip
 
         # Init all interfaces on the host
         logger.info(
             "Initing endpoint interface on for {} on host {}".format(self.param.name, spec['hostIP']))
         interfaces = endpoint_opr.init_simple_endpoint_interfaces(
-            spec['hostIP'], spec)
+            spec['hostIP'], spec, self)
         if not interfaces:
             self.raise_permanent_error(
                 "Endpoint {} already exists!".format(spec["name"]))
