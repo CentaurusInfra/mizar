@@ -51,6 +51,9 @@ class DropletProvisioned(WorkflowTask):
                 if nets_opr.store.nets_vpc_store[vpc.name]:
                     subnet = list(
                         nets_opr.store.nets_vpc_store[vpc.name].values())[0]
+                    if subnet.status != OBJ_STATUS.net_status_provisioned:
+                        self.raise_temporary_error(
+                            "Subnet {} not yet provisioned!".format(subnet.name))
                     logger.info("Droplet: Creating host endpoint for vpc {} on droplet {}".format(
                         vpc.name, droplet.ip))
                     droplet.interfaces = endpoint_opr.init_host_endpoint_interfaces(
