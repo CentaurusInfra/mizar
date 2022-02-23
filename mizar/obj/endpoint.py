@@ -77,7 +77,7 @@ class Endpoint:
 
     @property
     def rpc(self):
-        return TrnRpc(self.droplet_ip, self.droplet_mac, self.droplet_obj.phy_itf)
+        return TrnRpc(self.droplet_ip, self.droplet_mac, self.droplet_ip)
 
     def get_nip(self):
         if self.type == OBJ_DEFAULTS.ep_type_host:
