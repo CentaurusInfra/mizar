@@ -232,6 +232,8 @@ class InterfaceServer(InterfaceServiceServicer):
         if(requested_pod_name in self.interfaces):
             self.interfaces.pop(requested_pod_name)
 
+        return empty_pb2.Empty()
+
     def _DeleteVethInterface(self, interface):
         """
         Delete a veth interface
