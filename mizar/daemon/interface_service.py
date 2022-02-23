@@ -227,7 +227,6 @@ class InterfaceServer(InterfaceServiceServicer):
         """
         requested_pod_id = request
         requested_pod_name = get_pod_name(requested_pod_id)
-        logger.info("hochan 3 {}".format(requested_pod_name))
         if(requested_pod_name in self.pod_dict):
             self.pod_dict.pop(requested_pod_name)
         if(requested_pod_name in self.interfaces):
