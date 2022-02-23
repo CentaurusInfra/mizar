@@ -11,6 +11,7 @@ service InterfaceService {
   rpc ConsumeInterfaces(CniParameters) returns (InterfacesList) {}
   rpc ActivateHostInterface(Interface) returns (Interface) {}
   rpc DeleteInterface(Interface) returns (google.protobuf.Empty) {}
+  rpc RemoveCachedInterfaces(PodId) returns (google.protobuf.Empty) {}
 }
 
 message PodId {

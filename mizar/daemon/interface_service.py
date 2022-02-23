@@ -145,8 +145,6 @@ class InterfaceServer(InterfaceServiceServicer):
                 interface.status = InterfaceStatus.consumed
 
         interfaces = InterfacesList(interfaces=interfaces)
-        logger.info("Consumed {}".format(interfaces))
-        self.interfaces.pop(pod_name)
         return interfaces
 
     def _ProvisionInterface(self, interface, cni_params):
@@ -212,7 +210,6 @@ class InterfaceServer(InterfaceServiceServicer):
                 if requested_pod_name in self.pod_dict:
                     if self.pod_dict[requested_pod_name]:
                         # Interfaces for the Pod has been produced
-                        self.pod_dict.pop(requested_pod_name)
                         return self._ConsumeInterfaces(requested_pod_name, request)
             time.sleep(WAITING_SLEEP_INTERVAL)
             now = time.time()
@@ -223,6 +220,17 @@ class InterfaceServer(InterfaceServiceServicer):
         # for the Pod. Typically the CNI will retry to consume the interface.
         raise RuntimeError(
             "ConsumeInterfaces: Interface not found for pod '{}'".format(requested_pod_name))
+
+    def RemoveCachedInterfaces(self, request, context):
+        """
+        Called by the endpoints operator to remove cached interfaces.
+        """
+        requested_pod_id = request
+        requested_pod_name = get_pod_name(requested_pod_id)
+        if(requested_pod_name in self.pod_dict):
+            self.pod_dict.pop(requested_pod_name)
+        if(requested_pod_name in self.interfaces):
+            self.interfaces.pop(requested_pod_name)
 
     def _DeleteVethInterface(self, interface):
         """
@@ -376,6 +384,17 @@ class InterfaceServiceClient():
                 task.raise_permanent_error(
                     "Produce host endpoint permanent error: Unknown {}".format(rpc_error.details()))
 
+    def RemoveCachedInterfaces(self, pod_id, task):
+        try:
+            resp = self.stub.RemoveCachedInterfaces(pod_id)
+            return resp
+        except grpc.RpcError as rpc_error:
+            if rpc_error.code() == grpc.StatusCode.UNAVAILABLE:
+                task.raise_temporary_error(
+                    "Remove cached interfaces temporary error: Daemon not yet ready! {}".format(rpc_error.details()))
+            else:
+                task.raise_permanent_error(
+                    "Remove cached interfaces temporary error: Unknown {}".format(rpc_error.details()))
 
 class LocalTransitRpc:
     def __init__(self, ip, mac, itf, benchmark=False):
