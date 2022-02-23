@@ -28,6 +28,7 @@ import (
 const (
 	GrpcConnectionTimeout = time.Second * 2
 	GrpcRequestTimeout    = time.Second * 8
+	GrpcServerAddress     = "localhost:50051"
 )
 
 func ConsumeInterfaces(netVariables object.NetVariables) ([]*Interface, error) {
@@ -48,7 +49,7 @@ func ConsumeInterfaces(netVariables object.NetVariables) ([]*Interface, error) {
 
 func getInterfaceServiceClient() (InterfaceServiceClient, *grpc.ClientConn, context.Context, context.CancelFunc, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), GrpcConnectionTimeout)
-	conn, err := grpc.DialContext(ctx, "localhost:50051", grpc.WithBlock(), grpc.WithInsecure())
+	conn, err := grpc.DialContext(ctx, GrpcServerAddress, grpc.WithBlock(), grpc.WithInsecure())
 	if err != nil {
 		return nil, nil, nil, cancel, err
 	}
