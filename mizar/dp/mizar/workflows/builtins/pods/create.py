@@ -160,6 +160,8 @@ class k8sPodCreate(WorkflowTask):
             self.param.name, self.param.namespace, spec['labels'], self.param.diff)
         spec['pod_label_value'] = pod_label_value
         spec['namespace_label_value'] = namespace_label_value
+        if spec['phase'] == 'Running':
+            endpoint_opr.remove_cached_interfaces(spec['hostIP'], spec, self)
         if spec['phase'] != 'Pending':
             networkpolicy_util.handle_networkpolicy_change(policy_name_list)
             self.finalize()

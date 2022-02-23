@@ -42,12 +42,12 @@ func ConsumeInterfaces(netVariables object.NetVariables) ([]*Interface, error) {
 }
 
 func getInterfaceServiceClient() (InterfaceServiceClient, *grpc.ClientConn, context.Context, context.CancelFunc, error) {
-	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure(), grpc.WithBlock())
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*8)
+	conn, err := grpc.DialContext(ctx, "localhost:50051", grpc.WithBlock(), grpc.WithInsecure())
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, cancel, err
 	}
 	client := NewInterfaceServiceClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*8)
 	return client, conn, ctx, cancel, nil
 }
 

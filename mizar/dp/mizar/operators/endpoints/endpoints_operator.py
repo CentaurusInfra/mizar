@@ -398,6 +398,15 @@ class EndpointOperator(object):
             ep.create_obj()
             return ep
 
+    def remove_cached_interfaces(self, worker_ip, spec, task):
+        """
+        Call the InitializeInterfaces gRPC on the hostIP to remove cached interfaces
+        """
+        pod_id = PodId(k8s_pod_name=spec['name'],
+                       k8s_namespace=spec['namespace'],
+                       k8s_pod_tenant=spec['tenant'])
+        InterfaceServiceClient(worker_ip).RemoveCachedInterfaces(pod_id, task)
+
     def init_simple_endpoint_interfaces(self, worker_ip, spec, task):
         """
         Construct the interface message and call the InitializeInterfaces gRPC on
