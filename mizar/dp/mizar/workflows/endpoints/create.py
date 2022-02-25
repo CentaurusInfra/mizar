@@ -26,6 +26,7 @@ from mizar.dp.mizar.operators.bouncers.bouncers_operator import *
 from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
 from mizar.dp.mizar.operators.nets.nets_operator import *
 from mizar.dp.mizar.operators.droplets.droplets_operator import *
+from mizar.dp.mizar.operators.vpcs.vpcs_operator import *
 
 logger = logging.getLogger()
 
@@ -33,6 +34,7 @@ bouncers_opr = BouncerOperator()
 endpoints_opr = EndpointOperator()
 nets_opr = NetOperator()
 droplets_opr = DropletOperator()
+vpcs_opr = VpcOperator()
 
 
 class EndpointCreate(WorkflowTask):
@@ -51,7 +53,12 @@ class EndpointCreate(WorkflowTask):
                 "Task: {} Endpoint: {} Droplet Object {} not ready. ".format(self.__class__.__name__, ep.name, ep.droplet))
         nets_opr.allocate_endpoint(ep)
         bouncers_opr.update_endpoint_with_bouncers(ep, self)
-        if ep.type == OBJ_DEFAULTS.ep_type_simple:
+        if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
+            if ep.type == OBJ_DEFAULTS.ep_type_host:
+                logger.info("Activate host interface for vpc {} on droplet {}".format(
+                    ep.vpc, ep.droplet_obj.ip))
+                vpc = vpcs_opr.store.get_vpc(ep.vpc)
+                droplets_opr.store_update_vpc_to_droplet(vpc, ep.droplet_obj)
             endpoints_opr.produce_simple_endpoint_interface(ep, self)
         if ep.bouncers:
             if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:

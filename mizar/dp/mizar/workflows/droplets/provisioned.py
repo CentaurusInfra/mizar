@@ -67,17 +67,11 @@ class DropletProvisioned(WorkflowTask):
                         self
                     )
                     droplets_opr.store_update(droplet)
-                    host_ep = endpoint_opr.create_host_endpoint(
+                    endpoint_opr.create_host_endpoint(
                         droplet.ip, droplet, droplet.interfaces,
                         vpc.get_name(),
                         subnet
                     )
-                    interface = endpoint_opr.produce_simple_endpoint_interface(
-                        host_ep, self)
-                    if interface:
-                        droplets_opr.store_update_vpc_to_droplet(vpc, droplet)
-                        logger.info("Droplet: Created host endpoint for vpc {} on droplet {}".format(
-                            vpc.name, droplet.ip))
                 else:
                     self.raise_temporary_error(
                         "Host ep creation failed: no subnet created yet for VPC {} node ip {}".format(vpc.get_name(), droplet.ip))

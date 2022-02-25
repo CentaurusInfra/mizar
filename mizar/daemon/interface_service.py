@@ -346,7 +346,7 @@ class InterfaceServiceClient():
                 task.raise_temporary_error(
                     "Produce endpoint temporary error: Daemon not yet ready! {}".format(rpc_error.details()))
             elif CONSTANTS.GRPC_DEVICE_BUSY_ERROR in rpc_error.details() or CONSTANTS.GRPC_FILE_EXISTS_ERROR in rpc_error.details():
-                logger.info(
+                task.raise_permanent_error(
                     "Produce endpoint permanent error: Repeat call veth device already created! RPC error : {}".format(rpc_error.details()))
                 return None
             else:
@@ -379,7 +379,7 @@ class InterfaceServiceClient():
                 task.raise_temporary_error(
                     "Produce host endpoint temporary error: Daemon not yet ready! {}".format(rpc_error.details()))
             elif CONSTANTS.GRPC_DEVICE_BUSY_ERROR in rpc_error.details() or CONSTANTS.GRPC_FILE_EXISTS_ERROR in rpc_error.details():
-                logger.info(
+                task.raise_permanent_error(
                     "Produce host endpoint: Repeat call, veth device already created! RPC error: {}".format(rpc_error.details()))
                 return None
             else:
@@ -397,6 +397,7 @@ class InterfaceServiceClient():
             else:
                 task.raise_permanent_error(
                     "Remove cached interfaces temporary error: Unknown {}".format(rpc_error.details()))
+
 
 class LocalTransitRpc:
     def __init__(self, ip, mac, itf, benchmark=False):
