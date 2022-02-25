@@ -112,6 +112,12 @@ class Vpc(object):
     def get_vni(self):
         return self.vni
 
+    def get_ip(self):
+        return str(self.ip)
+
+    def get_prefixlen(self):
+        return str(self.prefix)
+
     def set_status(self, status):
         self.status = status
 

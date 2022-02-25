@@ -63,8 +63,8 @@ class Endpoint:
         self.backends = []
         self.ports = []
         self.pod = ""
-        self.subnet_prefix = ""
-        self.subnet_ip = ""
+        self.vpc_prefix = ""
+        self.vpc_ip = ""
         self.deleted = False
         self.interface = None
         self.ingress_networkpolicies = []
@@ -252,11 +252,11 @@ class Endpoint:
     def set_pod(self, pod):
         self.pod = pod
 
-    def set_subnet_ip(self, subnet_ip):
-        self.subnet_ip = subnet_ip
+    def set_vpc_ip(self, vpc_ip):
+        self.vpc_ip = vpc_ip
 
-    def set_subnet_prefix(self, subnet_prefix):
-        self.subnet_prefix = subnet_prefix
+    def set_vpc_prefix(self, vpc_prefix):
+        self.vpc_prefix = vpc_prefix
 
     def update_bouncers(self, bouncers, task, add=True):
         for bouncer in bouncers.values():

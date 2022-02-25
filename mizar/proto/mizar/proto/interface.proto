@@ -82,8 +82,8 @@ message Interface {
   string egress_bandwidth_bytes_per_sec = 11;
   string pod_network_priority = 12;
   string pod_network_class = 13;
-  string subnet_ip = 14;
-  string subnet_prefix = 15;
+  string vpc_ip = 14;
+  string vpc_prefix = 15;
 }
 
 message InterfacesList {
