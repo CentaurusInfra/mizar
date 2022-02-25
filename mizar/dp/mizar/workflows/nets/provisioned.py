@@ -71,13 +71,12 @@ class NetProvisioned(WorkflowTask):
                 droplets_opr.store_update(droplet)
                 endpoints_opr.create_host_endpoint(
                     droplet.ip, droplet, droplet.interfaces,
-                    vpc.get_name(),
+                    vpc,
                     net
                 )
             else:
                 logger.info("Net: Host endpoint already created for vpc {} on droplet {}".format(
                     vpc.name, droplet.ip))
-                logger.info()
         self.finalize()
 
     def process_change(self, net, field, old, new):

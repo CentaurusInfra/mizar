@@ -108,7 +108,7 @@ class NetOperator(object):
 
         return
 
-    def allocate_endpoint(self, ep):
+    def allocate_endpoint(self, ep, vpc):
         n = self.store.get_net(ep.net)
         logger.info("IP {} for net {}".format(ep.ip, n.name))
         if ep.type == OBJ_DEFAULTS.ep_type_host:
@@ -130,8 +130,8 @@ class NetOperator(object):
         n.mark_ip_as_allocated(ep.ip)
         self.store.update_net(n)
         ep.set_vni(n.vni)
-        ep.set_subnet_ip(n.get_nip())
-        ep.set_subnet_prefix(n.get_prefixlen())
+        ep.set_vpc_ip(vpc.get_ip())
+        ep.set_vpc_prefix(vpc.get_prefixlen())
 
     def deallocate_endpoint(self, ep):
         n = self.store.get_net(ep.net)

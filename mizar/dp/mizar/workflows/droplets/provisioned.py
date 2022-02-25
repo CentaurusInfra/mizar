@@ -69,7 +69,7 @@ class DropletProvisioned(WorkflowTask):
                     droplets_opr.store_update(droplet)
                     endpoint_opr.create_host_endpoint(
                         droplet.ip, droplet, droplet.interfaces,
-                        vpc.get_name(),
+                        vpc,
                         subnet
                     )
                 else:

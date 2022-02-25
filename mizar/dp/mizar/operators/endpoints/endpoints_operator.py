@@ -313,8 +313,8 @@ class EndpointOperator(object):
             egress_bandwidth_bytes_per_sec=interface.egress_bandwidth_bytes_per_sec,
             pod_network_class=interface.pod_network_class,
             pod_network_priority=interface.pod_network_priority,
-            subnet_ip=ep.subnet_ip,
-            subnet_prefix=ep.subnet_prefix
+            vpc_ip=ep.vpc_ip,
+            vpc_prefix=ep.vpc_prefix
         )]
 
         if ep.type == OBJ_DEFAULTS.ep_type_host:
@@ -378,11 +378,11 @@ class EndpointOperator(object):
             ep.set_status(OBJ_STATUS.ep_status_init)
 
             ep.set_vni(get_cluster_vpc_vni())
-            ep.set_vpc(vpc)
+            ep.set_vpc(vpc.get_name())
             ep.set_net(subnet.get_name())
             ep.set_gw(subnet.get_gw_ip())
-            ep.set_subnet_ip(subnet.get_nip())
-            ep.set_subnet_prefix(subnet.get_prefixlen())
+            ep.set_vpc_ip(vpc.get_ip())
+            ep.set_vpc_prefix(vpc.get_prefixlen())
 
             ep.set_mac(interface.address.mac)
             ep.set_veth_name(interface.veth.name)

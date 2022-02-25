@@ -51,13 +51,13 @@ class EndpointCreate(WorkflowTask):
         if ep.type in OBJ_DEFAULTS.droplet_eps and not ep.droplet_obj:
             self.raise_temporary_error(
                 "Task: {} Endpoint: {} Droplet Object {} not ready. ".format(self.__class__.__name__, ep.name, ep.droplet))
-        nets_opr.allocate_endpoint(ep)
+        vpc = vpcs_opr.store.get_vpc(ep.vpc)
+        nets_opr.allocate_endpoint(ep, vpc)
         bouncers_opr.update_endpoint_with_bouncers(ep, self)
         if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
             if ep.type == OBJ_DEFAULTS.ep_type_host:
                 logger.info("Activate host interface for vpc {} on droplet {}".format(
                     ep.vpc, ep.droplet_obj.ip))
-                vpc = vpcs_opr.store.get_vpc(ep.vpc)
                 droplets_opr.store_update_vpc_to_droplet(vpc, ep.droplet_obj)
             endpoints_opr.produce_simple_endpoint_interface(ep, self)
         if ep.bouncers:
