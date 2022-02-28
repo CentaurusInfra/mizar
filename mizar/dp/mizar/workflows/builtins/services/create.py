@@ -57,12 +57,12 @@ class k8sServiceCreate(WorkflowTask):
                     subnet_name = self.param.body['metadata'].get(
                         'annotations').get(OBJ_DEFAULTS.mizar_ep_subnet_annotation)
                     subnet = net_opr.store.get_net(subnet_name)
-                    if subnet.vpc != vpc_name:
-                        self.raise_temporary_error("Subnet {} of service {} does not belong to VPC {}".format(
-                            subnet_name, self.param.name, vpc_name))
                     if not subnet:
                         self.raise_temporary_error(
                             "Subnet {} of service {} does not exist!".format(subnet_name, self.param.name))
+                    if subnet.vpc != vpc_name:
+                        self.raise_temporary_error("Subnet {} of service {} does not belong to VPC {}".format(
+                            subnet_name, self.param.name, vpc_name))
                 else:
                     subnets = list(net_opr.store.get_nets_in_vpc(vpc_name))
                     if subnets:
