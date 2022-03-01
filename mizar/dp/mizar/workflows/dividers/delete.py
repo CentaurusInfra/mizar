@@ -50,7 +50,7 @@ class DividerDelete(WorkflowTask):
 
         # Call update_vpc on all bouncer droplets
         # Call delete_substrate of divider droplet on all bouncer droplets
-        bouncers_opr.delete_divider_from_bouncers(divider)
+        bouncers_opr.delete_divider_from_bouncers(divider, self)
         divider.delete_obj()
         dividers_opr.store.delete_divider(divider.name)
         self.finalize()

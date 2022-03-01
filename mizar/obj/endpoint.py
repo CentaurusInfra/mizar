@@ -267,7 +267,7 @@ class Endpoint:
                 self.bouncers.pop(bouncer.name)
                 self.droplet_obj.delete_agent_substrate(self, bouncer)
         self.rpc.update_agent_metadata(self, task)
-        self.droplet_obj.update_ep(self.name, self)
+        self.droplet_obj.update_ep(self.name, self, task)
 
     def update_bouncers_list(self, bouncers, add=True):
         for bouncer in bouncers.values():
