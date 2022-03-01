@@ -60,11 +60,5 @@ class EndpointCreate(WorkflowTask):
                     ep.vpc, ep.droplet_obj.ip))
                 droplets_opr.store_update_vpc_to_droplet(vpc, ep.droplet_obj)
             endpoints_opr.produce_simple_endpoint_interface(ep, self)
-        if ep.bouncers:
-            if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
-                for bouncer in ep.bouncers:
-                    logger.info(
-                        "EP {} has bouncer {}. Updating.".format(ep.name, bouncer))
-                ep.update_bouncers(ep.bouncers, self)
         endpoints_opr.set_endpoint_provisioned(ep)
         self.finalize()
