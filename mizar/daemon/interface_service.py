@@ -284,8 +284,16 @@ class InterfaceServer(InterfaceServiceServicer):
         self.iproute.addr('add', index=veth_index, address=interface.address.ip_address,
                           prefixlen=int(interface.address.ip_prefix))
 
-        self.iproute.route('add', dst=interface.vpc_ip,
-                           mask=int(interface.vpc_prefix), oif=veth_index)
+        try:
+            self.iproute.route('add', dst=interface.vpc_ip,
+                               mask=int(interface.vpc_prefix), oif=veth_index)
+        except Exception as e:
+            if e.code == CONSTANTS.NETLINK_FILE_EXISTS_ERROR:
+                logger.info("Route already exists! Continuing")
+                pass
+            else:
+                logger.info(
+                    "Unknown exception occured when adding route {}".format(e))
         # Disable TSO and checksum offload as xdp currently does not support
         logger.info("Disable tso for host ep")
         cmd = "nsenter -t 1 -m -u -n -i ethtool -K {} tso off gso off ufo off".format(

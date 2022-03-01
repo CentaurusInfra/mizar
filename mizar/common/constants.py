@@ -53,6 +53,7 @@ class CONSTANTS:
     GRPC_DEVICE_BUSY_ERROR = "Device or resource busy"
     GRPC_FILE_EXISTS_ERROR = "File exists"
     GRPC_UNAVAILABLE = "failed to connect to all addresses"
+    NETLINK_FILE_EXISTS_ERROR = 17
 
 
 class OBJ_STATUS:
