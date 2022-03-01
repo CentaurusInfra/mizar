@@ -109,7 +109,7 @@ class TrnRpc:
             CONSTANTS.RPC_FAILED_CODE in text or
                 CONSTANTS.RPC_FATAL_CODE in text):
             task.raise_temporary_error(
-                "Update_agent_substrate ep returned ERROR! Retrying as agent may have not yet been loaded.")
+                "update_substrate_ep returned ERROR! Retrying as agent may have not yet been loaded.")
 
     def update_agent_substrate_ep(self, ep, ip, mac, task):
         itf = ep.get_veth_peer()
@@ -123,7 +123,7 @@ class TrnRpc:
             CONSTANTS.RPC_FAILED_CODE in text or
                 CONSTANTS.RPC_FATAL_CODE in text):
             task.raise_temporary_error(
-                "Update_agent_substrate ep returned ERROR! Retrying as agent may have not yet been loaded.")
+                "update_agent_substrate_ep returned ERROR! Retrying as agent may have not yet been loaded.")
 
     def delete_agent_substrate_ep(self, ep, ip):
         itf = ep.get_veth_peer()
@@ -178,7 +178,7 @@ class TrnRpc:
             CONSTANTS.RPC_FAILED_CODE in text or
                 CONSTANTS.RPC_FATAL_CODE in text):
             task.raise_temporary_error(
-                "update ep returned ERROR! Retrying as agent may have not yet been loaded.")
+                "update_ep returned ERROR! Retrying as agent may have not yet been loaded.")
         remote_ports = ep.get_remote_ports()
         frontend_ports = ep.get_frontend_ports()
         protocols = ep.get_port_protocols()
@@ -204,7 +204,7 @@ class TrnRpc:
             CONSTANTS.RPC_FAILED_CODE in text or
                 CONSTANTS.RPC_FATAL_CODE in text):
             task.raise_temporary_error(
-                "update port returned ERROR! Retrying as agent may have not yet been loaded.")
+                "update_port returned ERROR! Retrying as agent may have not yet been loaded.")
 
     def update_agent_metadata(self, ep, task):
         itf = ep.get_veth_peer()
@@ -240,7 +240,7 @@ class TrnRpc:
             CONSTANTS.RPC_FAILED_CODE in text or
                 CONSTANTS.RPC_FATAL_CODE in text):
             task.raise_temporary_error(
-                "Update_agent_metadata returned ERROR! Retrying as agent may have not yet been loaded.")
+                "update_agent_metadata returned ERROR! Retrying as agent may have not yet been loaded.")
 
     def load_transit_agent_xdp(self, veth_peer):
         itf = veth_peer
