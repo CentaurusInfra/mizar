@@ -65,14 +65,14 @@ class BouncerCreate(WorkflowTask):
         # Update vpc on bouncer
         # Needs a list of all dividers
         bouncer.set_vni(vpcs_opr.store.get_vpc(bouncer.vpc).vni)
-        dividers_opr.update_vpc(bouncer)
+        dividers_opr.update_vpc(bouncer, self)
 
         # Update net on dividers
 
         net.bouncers[bouncer.name] = bouncer
-        dividers_opr.update_divider_with_bouncers(bouncer, net)
+        dividers_opr.update_divider_with_bouncers(bouncer, net, self)
         endpoints_opr.update_bouncer_with_endpoints(bouncer, self)
         endpoints_opr.update_endpoints_with_bouncers(bouncer, self)
-        bouncer.load_transit_xdp_pipeline_stage()
+        bouncer.load_transit_xdp_pipeline_stage(self)
         bouncers_opr.set_bouncer_provisioned(bouncer)
         self.finalize()

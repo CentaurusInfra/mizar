@@ -51,12 +51,12 @@ class DividerCreate(WorkflowTask):
                 "Task: {} Divider: {} No droplets available.".format(self.__class__.__name__, divider.name))
 
         # Update vpc on bouncers
-        bouncers_opr.update_bouncers_with_divider(divider)
+        bouncers_opr.update_bouncers_with_divider(divider, self)
 
         # Update divider with bouncers
         nets = nets_opr.store.get_nets_in_vpc(divider.vpc)
         for net in nets.values():
-            dividers_opr.update_net(net, set([divider]))
+            dividers_opr.update_net(net, self, set([divider]))
 
         dividers_opr.set_divider_provisioned(divider)
         dividers_opr.store.update_divider(divider)

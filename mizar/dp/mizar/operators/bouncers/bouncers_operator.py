@@ -71,15 +71,15 @@ class BouncerOperator(object):
         bouncer.set_status(OBJ_STATUS.bouncer_status_provisioned)
         bouncer.update_obj()
 
-    def update_bouncers_with_divider(self, div):
+    def update_bouncers_with_divider(self, div, task):
         bouncers = self.store.get_bouncers_of_vpc(div.vpc)
         for b in bouncers.values():
-            b.update_vpc(set([div]))
+            b.update_vpc(set([div]), task)
 
-    def delete_divider_from_bouncers(self, div):
+    def delete_divider_from_bouncers(self, div, task):
         bouncers = self.store.get_bouncers_of_vpc(div.vpc)
         for b in bouncers.values():
-            b.update_vpc(set([div]), False)
+            b.update_vpc(set([div]), task, False)
 
     def update_endpoint_with_bouncers(self, ep, task):
         bouncers = self.store.get_bouncers_of_net(ep.net)
