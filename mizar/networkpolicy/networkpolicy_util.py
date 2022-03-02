@@ -581,7 +581,16 @@ class NetworkPolicyUtil:
         namespace_obj = kube_get_namespace(networkpolicy_opr.core_api, namespace)
         pod_label_combination = self.get_label_combination(pod_labels)
         is_new_pod_label_combination = False if pod_label_combination in networkpolicy_opr.store.pod_label_value_store else True
-        namespace_label_combination = self.get_label_combination(namespace_obj.metadata.labels)
+        if namespace_obj is not None and namespace_obj.metadata.labels is not None:
+            namespace_label_combination = self.get_label_combination(namespace_obj.metadata.labels)
+        else:
+            # Currently if cluster is arktos, and the namespace belongs to a tenant,
+            # kube_get_namespace will return None because the kubernetes client is not
+            # for arktos and it cannot retrieve the namespace of non-system tenant.
+            # For now we have to ignore the namespace of non-system tenant.
+            # TODO: Fix the issue in the future by sending namespace info via
+            # mizar operators inside arktos.
+            namespace_label_combination = ""
         is_new_namespace_label_combination = False if namespace_label_combination in networkpolicy_opr.store.namespace_label_value_store else True
 
         # Followed code piece is to calculate how many policy are affected by the label change, and form data of policy_name_list.
