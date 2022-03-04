@@ -88,9 +88,18 @@ class InterfaceServer(InterfaceServiceServicer):
         veth_index = get_iface_index(veth_name, self.iproute)
 
         if veth_index == -1:
-            logger.info("Creating interface {}".format(veth_name))
-            self.iproute.link('add', ifname=veth_name,
-                              peer=veth_peer, kind='veth')
+            try:
+                logger.info("Creating interface {}".format(veth_name))
+                self.iproute.link('add', ifname=veth_name,
+                                peer=veth_peer, kind='veth')
+            except Exception as e:
+                if e.code == CONSTANTS.NETLINK_FILE_EXISTS_ERROR:
+                    logger.info("Veth already exists! Continuing")
+                    pass
+
+                else:
+                    logger.info(
+                        "Unknown exception occured when creating veth {}".format(e))
             veth_index = get_iface_index(veth_name, self.iproute)
         else:
             logger.info("Interface {} already exists!".format(veth_name))
@@ -179,7 +188,8 @@ class InterfaceServer(InterfaceServiceServicer):
         Load the Transit Agent XDP program, program all the bouncer substrate,
         update the agent metadata and endpoint.
         """
-        logger.info("Loading transit agent.")
+        pod_name = get_pod_name(interface.interface_id.pod_id)
+        logger.info("Loading transit agent and configuring for pod {}".format(pod_name))
         self.rpc.load_transit_agent_xdp(interface)
 
         for bouncer in interface.bouncers:
