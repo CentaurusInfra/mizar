@@ -111,14 +111,20 @@ def kube_create_obj(obj):
         body['spec']['createtime'] = datetime.datetime.now().isoformat()
         logger.info("Init {} at {}".format(
             obj.get_name(), body['spec']['createtime']))
-
-        obj.obj_api.create_namespaced_custom_object(
-            group="mizar.com",
-            version="v1",
-            namespace="default",
-            plural=obj.get_plural(),
-            body=body,
-        )
+        try:
+            obj.obj_api.create_namespaced_custom_object(
+                group="mizar.com",
+                version="v1",
+                namespace="default",
+                plural=obj.get_plural(),
+                body=body,
+            )
+        except ApiException as e:
+            if e.status == CONSTANTS.HTTP_CONFLICT_ERROR:
+                logger.info("Object {} already exists! Skipping".format(obj.get_name()))
+                return
+            else:
+                logger.info("Unkown: Object {} failed to create error {}".format(obj.get_name(), e))
         logger.debug("Created {} {}".format(obj.get_kind(), obj.get_name()))
     obj.store_update_obj()
 

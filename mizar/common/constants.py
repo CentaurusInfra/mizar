@@ -50,6 +50,7 @@ class CONSTANTS:
     RPC_ERROR_CODE = "error"
     RPC_FATAL_CODE = "fatal"
     RPC_FAILED_CODE = "failed"
+    HTTP_CONFLICT_ERROR = 409
     GRPC_DEVICE_BUSY_ERROR = "Device or resource busy"
     GRPC_FILE_EXISTS_ERROR = "File exists"
     GRPC_UNAVAILABLE = "failed to connect to all addresses"
