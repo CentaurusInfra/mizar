@@ -59,6 +59,8 @@ class EndpointCreate(WorkflowTask):
                 logger.info("Activate host interface for vpc {} on droplet {}".format(
                     ep.vpc, ep.droplet_obj.ip))
                 droplets_opr.store_update_vpc_to_droplet(vpc, ep.droplet_obj)
-            endpoints_opr.produce_simple_endpoint_interface(ep, self)
+            itf = endpoints_opr.produce_simple_endpoint_interface(ep, self)
+            logger.info(
+                "Endpoint Create: Endpoint {} produced interface {}".format(ep.name, itf))
         endpoints_opr.set_endpoint_provisioned(ep)
         self.finalize()

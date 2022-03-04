@@ -96,12 +96,12 @@ class EndpointOperator(object):
     def update_endpoints_with_bouncers(self, bouncer, task):
         eps = list(self.store.get_eps_in_net(bouncer.net).values())
         for ep in eps:
-            logger.info("EP {} update agent with bouncer {}".format(
-                bouncer.name, ep.name))
             if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
                 if not ep.droplet_obj:
                     task.raise_temporary_error("Task: {} Endpoint: {} Droplet Object not ready.".format(
                         self.__class__.__name__, ep.name))
+                logger.info("update_endpoints_with_bouncers: ep {} update agent with bouncer {}".format(
+                    ep.name, bouncer.name))
                 ep.update_bouncers({bouncer.name: bouncer}, task)
 
     def create_scaled_endpoint(self, name, ep_name, spec, net, extra, namespace="default"):
@@ -321,10 +321,12 @@ class EndpointOperator(object):
             interfaces_list[0].status = InterfaceStatus.consumed
             interfaces = InterfaceServiceClient(
                 ep.droplet_obj.main_ip).ActivateHostInterface(interfaces_list[0], task)
+            return interfaces
         else:
+            logger.info(
+                "Producing interface for simple endpoint {}".format(ep.name))
             interfaces = InterfaceServiceClient(ep.droplet_obj.main_ip).ProduceInterfaces(
                 InterfacesList(interfaces=interfaces_list), task)
-            logger.info("Produced {}".format(interfaces))
             return interfaces
 
     def create_simple_endpoints(self, interfaces, spec):
@@ -332,11 +334,12 @@ class EndpointOperator(object):
         Create a simple endpoint object (calling the API operator)
         """
         for interface, net_info in zip(interfaces.interfaces, spec['interfaces']):
-            logger.info("Create simple endpoint {}".format(interface))
             name = get_itf_name(interface.interface_id)
             if self.store.get_ep(name):
-                logger.info("EP already exists!")
+                logger.info("EP {} already exists!".format(name))
                 return
+            logger.info("Create simple endpoint ep {} {}".format(
+                name, interface))
             ep = Endpoint(name, self.obj_api, self.store)
             ep.set_pod(spec["name"])
             ep.set_type(OBJ_DEFAULTS.ep_type_simple)
