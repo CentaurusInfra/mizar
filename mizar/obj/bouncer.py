@@ -139,15 +139,19 @@ class Bouncer(object):
     def update_eps(self, eps, task):
         for ep in eps:
             self.eps[ep.name] = ep
+            logger.info("bouncer update_ep updating: ep {}".format(ep.name))
             if ep.type in OBJ_DEFAULTS.droplet_eps:
                 if not ep.droplet_obj:
                     task.raise_temporary_error("Task: {} Endpoint: {} Droplet Object not ready.".format(
                         self.__class__.__name__, ep.name))
                 self._update_simple_ep(ep, task)
+                logger.info("bouncer update_ep updated: ep {}".format(ep.name))
             elif ep.type == OBJ_DEFAULTS.ep_type_scaled:
                 self._update_scaled_ep(ep, task)
+                logger.info("bouncer update_ep updated: ep {}".format(ep.name))
             elif ep.type == OBJ_DEFAULTS.ep_type_gateway:
                 self.update_gw_ep(ep, task)
+                logger.info("bouncer update_ep updated: ep {}".format(ep.name))
             else:
                 task.raise_permenant_error(
                     "Unknown Endpoint! {}".formatr(ep.type))
