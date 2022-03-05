@@ -105,13 +105,16 @@ class InterfaceServer(InterfaceServiceServicer):
             logger.info("Interface {} already exists!".format(veth_name))
 
         veth_index = get_iface_index(veth_name, self.iproute)
+        mac_address = ""
+        if veth_index != -1:
+            mac_address = get_iface_mac(veth_index, self.iproute)
         # Update the mac address with the interface address
         address = InterfaceAddress(
             version=interface.address.version,
             ip_address=interface.address.ip_address,
             ip_prefix=interface.address.ip_prefix,
             gateway_ip=interface.address.gateway_ip,
-            mac=get_iface_mac(veth_index, self.iproute),
+            mac=mac_address,
             tunnel_id=interface.address.tunnel_id
         )
         interface.address.CopyFrom(address)
