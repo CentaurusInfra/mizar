@@ -271,7 +271,7 @@ class EndpointOperator(object):
 
     def delete_bouncer_from_endpoints(self, bouncer, task):
         eps = self.store.get_eps_in_net(bouncer.net).values()
-        for ep in eps:
+        for ep in list(eps):
             if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
                 ep.update_bouncers({bouncer.name: bouncer}, task, False)
 

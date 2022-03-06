@@ -43,7 +43,7 @@ class DropletProvisioned(WorkflowTask):
         logger.info("Run {task}".format(task=self.__class__.__name__))
         droplet = droplets_opr.get_droplet_stored_obj(
             self.param.name, self.param.spec)
-        for vpc in vpcs_opr.store.get_all_vpcs():
+        for vpc in list(vpcs_opr.store.get_all_vpcs()):
             if droplet.name not in droplets_opr.store.vpc_droplet_store[vpc.name]:
                 if vpc.name not in nets_opr.store.nets_vpc_store:
                     self.raise_temporary_error(
