@@ -73,23 +73,23 @@ class DividerOperator(object):
 
     def update_divider_with_bouncers(self, bouncer, net, task):
         dividers = self.store.get_dividers_of_vpc(bouncer.vpc).values()
-        for d in dividers:
+        for d in list(dividers):
             d.update_net(net, task)
 
     def delete_bouncer_from_dividers(self, bouncer, net, task):
         dividers = self.store.get_dividers_of_vpc(bouncer.vpc).values()
-        for d in dividers:
+        for d in list(dividers):
             d.update_net(net, task, False)
 
     def update_net(self, net, task, dividers=None):
         if not dividers:
             dividers = self.store.get_dividers_of_vpc(net.vpc).values()
-        for d in dividers:
+        for d in list(dividers):
             d.update_net(net, task)
 
     def delete_net(self, net):
         dividers = self.store.get_dividers_of_vpc(net.vpc).values()
-        for d in dividers:
+        for d in list(dividers):
             d.delete_net(net)
 
     def delete_nets_from_divider(self, nets, divider):
