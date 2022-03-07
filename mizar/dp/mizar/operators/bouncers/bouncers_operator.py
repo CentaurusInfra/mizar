@@ -84,10 +84,10 @@ class BouncerOperator(object):
     def update_endpoint_with_bouncers(self, ep, task):
         self.update_endpoint_obj_with_bouncers(ep)
         bouncers = self.store.get_bouncers_of_net(ep.net)
-        eps = set([ep])
         if not bouncers:
             task.raise_temporary_error(
                 "Provisiond EP {}: Bouncers not yet ready!".format(ep.name))
+        eps = set([ep])
         for key in list(bouncers):
             bouncers[key].update_eps(eps, task)
 

@@ -118,7 +118,7 @@ class TrnRpc:
         logger.info("update_agent_substrate_ep: {}".format(cmd))
         returncode, text = run_cmd(cmd)
         logger.info(
-            "update_agent_substrate_ep {} returns {} {}".format(cmd, text, returncode))
+            "update_agent_substrate_ep {} {} returns {} {}".format(ep.name, cmd, text, returncode))
         if (CONSTANTS.RPC_ERROR_CODE in text or
             CONSTANTS.RPC_FAILED_CODE in text or
                 CONSTANTS.RPC_FATAL_CODE in text):
@@ -173,7 +173,8 @@ class TrnRpc:
         cmd = f'''{self.trn_cli_update_ep} \'{jsonconf}\''''
         logger.info("update_ep: {}".format(cmd))
         returncode, text = run_cmd(cmd)
-        logger.info("update_ep {} returns {} {}".format(cmd, text, returncode))
+        logger.info("update_ep {} {} returns {} {}".format(
+            ep.name, cmd, text, returncode))
         if (CONSTANTS.RPC_ERROR_CODE in text or
             CONSTANTS.RPC_FAILED_CODE in text or
                 CONSTANTS.RPC_FATAL_CODE in text):
@@ -235,7 +236,7 @@ class TrnRpc:
         logger.info("update_agent_metadata: {}".format(cmd))
         returncode, text = run_cmd(cmd)
         logger.info(
-            "update_agent_metadata {} returns {} {}".format(cmd, text, returncode))
+            "update_agent_metadata ep {} {} returns {} {}".format(ep.name, cmd, text, returncode))
         if (CONSTANTS.RPC_ERROR_CODE in text or
             CONSTANTS.RPC_FAILED_CODE in text or
                 CONSTANTS.RPC_FATAL_CODE in text):

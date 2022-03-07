@@ -261,6 +261,8 @@ class Endpoint:
     def update_bouncers(self, bouncers, task, add=True):
         for bouncer in bouncers.values():
             if add:
+                logger.info("endpoint obj: update_bouncer: ep {} update agent with bouncer {}".format(
+                    self.name, bouncer.name))
                 self.bouncers[bouncer.name] = bouncer
                 self.update_agent_substrate(self, bouncer, task)
             else:
