@@ -521,7 +521,7 @@ static int _trn_bpf_agent_prog_load_xattr(struct agent_user_metadata_t *md,
 	_REUSE_MAP_IF_PINNED(conn_track_cache);
 	_REUSE_MAP_IF_PINNED(ing_pod_label_policy_map);
 	_REUSE_MAP_IF_PINNED(ing_namespace_label_policy_map);
-	_REUSE_MAP_IF_PINNED(ing_pod_and_namespace_label_policy_map);	
+	_REUSE_MAP_IF_PINNED(ing_pod_and_namespace_label_policy_map);
 	_REUSE_MAP_IF_PINNED(tx_stats_map);
 
 	/* Only one prog is supported */
@@ -625,6 +625,7 @@ int trn_agent_metadata_init(struct agent_user_metadata_t *md, char *itf,
 		TRN_LOG_ERROR("Error retrieving index of interface");
 		return 1;
 	}
+	TRN_LOG_DEBUG("trn_agent_metadata_init: mapped hosted_interface:%s to index %d", itf, md->ifindex);
 
 	if (_trn_bpf_agent_prog_load_xattr(md, &prog_load_attr, &md->obj,
 					   &md->prog_fd)) {
