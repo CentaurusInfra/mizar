@@ -53,7 +53,17 @@ class EndpointCreate(WorkflowTask):
                 "Task: {} Endpoint: {} Droplet Object {} not ready. ".format(self.__class__.__name__, ep.name, ep.droplet))
         vpc = vpcs_opr.store.get_vpc(ep.vpc)
         nets_opr.allocate_endpoint(ep, vpc)
+        # EP create wait for bouncer
+        net_bouncer = list(
+            bouncers_opr.store.get_bouncers_of_net(ep.net).values())
+        if not net_bouncer:
+            self.raise_temporary_error(
+                "EP create {}: bouncers not yet ready for net {}".format(ep.name, ep.net))
+        if net_bouncer[0].status != OBJ_STATUS.bouncer_status_provisioned:
+            self.raise_temporary_error(
+                "EP create {}: bouncers not yet ready for net {}".format(ep.name, ep.net))
         bouncers_opr.update_endpoint_obj_with_bouncers(ep)
+
         if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
             if ep.type == OBJ_DEFAULTS.ep_type_host:
                 logger.info("Activate host interface for vpc {} on droplet {}".format(
