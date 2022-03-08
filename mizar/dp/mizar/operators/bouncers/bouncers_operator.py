@@ -69,6 +69,7 @@ class BouncerOperator(object):
 
     def set_bouncer_provisioned(self, bouncer):
         bouncer.set_status(OBJ_STATUS.bouncer_status_provisioned)
+        self.store_update(bouncer)
         bouncer.update_obj()
 
     def update_bouncers_with_divider(self, div, task):

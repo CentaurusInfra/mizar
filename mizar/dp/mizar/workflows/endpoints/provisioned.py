@@ -53,9 +53,6 @@ class EndpointProvisioned(WorkflowTask):
                     logger.info(
                         "EP {} has bouncer {}. Updating.".format(endpoint.name, bouncer))
                 endpoint.update_bouncers(endpoint.bouncers, self)
-        else:
-            self.raise_temporary_error(
-                "Endpoint {} does not have any bouncers yet!".format(endpoint.name))
         endpoints_opr.store_update(endpoint)
 
         if self.param.name in endpoints_opr.store.eps_store_to_be_updated_networkpolicy:

@@ -95,6 +95,10 @@ class k8sPodCreate(WorkflowTask):
                             "VPC {} has no subnets to allocate pod {}!".format(vpc_name, self.param.name))
                 spec['vpc'] = vpc_name
                 spec['subnet'] = subnet_name
+        else:
+            if not COMPUTE_PROVIDER.k8s:
+                self.raise_temporary_error(
+                    "VPC for pod {} not yet created!".format(self.param.name))
 
         spec['vni'] = vpc_opr.store_get(spec['vpc']).vni
         spec['droplet'] = droplet_opr.store_get_by_main_ip(spec['hostIP'])
