@@ -24,12 +24,14 @@ from mizar.common.workflow import *
 from mizar.dp.mizar.operators.bouncers.bouncers_operator import *
 from mizar.dp.mizar.operators.droplets.droplets_operator import *
 from mizar.dp.mizar.operators.vpcs.vpcs_operator import *
+from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
 
 logger = logging.getLogger()
 
 bouncers_opr = BouncerOperator()
 vpcs_opr = VpcOperator()
 droplets_opr = DropletOperator()
+endpoints_opr = EndpointOperator()
 
 
 class BouncerProvisioned(WorkflowTask):
@@ -44,5 +46,7 @@ class BouncerProvisioned(WorkflowTask):
             self.param.name, self.param.spec)
         bouncer.set_vni(vpcs_opr.store.get_vpc(bouncer.vpc).vni)
         bouncer.droplet_obj = droplets_opr.store.get_droplet(bouncer.droplet)
+        endpoints_opr.update_bouncer_with_endpoints(bouncer, self)
+        endpoints_opr.update_endpoints_with_bouncers(bouncer, self)
         bouncers_opr.store_update(bouncer)
         self.finalize()

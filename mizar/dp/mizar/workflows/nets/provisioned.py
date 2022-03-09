@@ -52,7 +52,7 @@ class NetProvisioned(WorkflowTask):
             if d[0] == 'change':
                 self.process_change(net=net, field=d[1], old=d[2], new=d[3])
         vpc = vpcs_opr.store.get_vpc(net.vpc)
-        for droplet in droplets_opr.store.get_all_droplets():
+        for droplet in list(droplets_opr.store.get_all_droplets()):
             logger.info("Net: Available droplets for vpc {}: {}".format(
                 vpc.name, droplets_opr.store.droplets_store.keys()))
             if vpc.name not in droplets_opr.store_get_vpc_to_droplet(droplet):

@@ -69,31 +69,38 @@ class BouncerOperator(object):
 
     def set_bouncer_provisioned(self, bouncer):
         bouncer.set_status(OBJ_STATUS.bouncer_status_provisioned)
+        self.store_update(bouncer)
         bouncer.update_obj()
 
     def update_bouncers_with_divider(self, div, task):
         bouncers = self.store.get_bouncers_of_vpc(div.vpc)
-        for b in bouncers.values():
+        for b in list(bouncers.values()):
             b.update_vpc(set([div]), task)
 
     def delete_divider_from_bouncers(self, div, task):
         bouncers = self.store.get_bouncers_of_vpc(div.vpc)
-        for b in bouncers.values():
+        for b in list(bouncers.values()):
             b.update_vpc(set([div]), task, False)
 
     def update_endpoint_with_bouncers(self, ep, task):
+        self.update_endpoint_obj_with_bouncers(ep)
         bouncers = self.store.get_bouncers_of_net(ep.net)
+        if not bouncers:
+            task.raise_temporary_error(
+                "Provisiond EP {}: Bouncers not yet ready!".format(ep.name))
         eps = set([ep])
-        for key in bouncers:
+        for key in list(bouncers):
             bouncers[key].update_eps(eps, task)
 
+    def update_endpoint_obj_with_bouncers(self, ep):
+        bouncers = self.store.get_bouncers_of_net(ep.net)
         if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
             ep.update_bouncers_list(bouncers)
 
     def delete_endpoint_from_bouncers(self, ep):
         bouncers = self.store.get_bouncers_of_net(ep.net)
         eps = set([ep])
-        for key in bouncers:
+        for key in list(bouncers):
             bouncers[key].delete_eps(eps)
         self.store.update_bouncers_of_net(ep.net, bouncers)
         if ep.type == OBJ_DEFAULTS.ep_type_simple:

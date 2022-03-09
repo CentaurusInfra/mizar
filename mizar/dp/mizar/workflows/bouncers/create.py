@@ -71,8 +71,6 @@ class BouncerCreate(WorkflowTask):
 
         net.bouncers[bouncer.name] = bouncer
         dividers_opr.update_divider_with_bouncers(bouncer, net, self)
-        endpoints_opr.update_bouncer_with_endpoints(bouncer, self)
-        endpoints_opr.update_endpoints_with_bouncers(bouncer, self)
         bouncer.load_transit_xdp_pipeline_stage(self)
         bouncers_opr.set_bouncer_provisioned(bouncer)
         self.finalize()

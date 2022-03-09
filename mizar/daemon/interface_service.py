@@ -91,26 +91,30 @@ class InterfaceServer(InterfaceServiceServicer):
             try:
                 logger.info("Creating interface {}".format(veth_name))
                 self.iproute.link('add', ifname=veth_name,
-                                peer=veth_peer, kind='veth')
+                                  peer=veth_peer, kind='veth')
             except Exception as e:
                 if e.code == CONSTANTS.NETLINK_FILE_EXISTS_ERROR:
-                    logger.info("Veth already exists! Continuing")
+                    veth_index = get_iface_index(veth_name, self.iproute)
+                    logger.info(
+                        "Veth already exists! veth index is {} Continuing".format(veth_index))
                     pass
-
                 else:
                     logger.info(
                         "Unknown exception occured when creating veth {}".format(e))
-            veth_index = get_iface_index(veth_name, self.iproute)
         else:
             logger.info("Interface {} already exists!".format(veth_name))
 
+        veth_index = get_iface_index(veth_name, self.iproute)
+        mac_address = ""
+        if veth_index != -1:
+            mac_address = get_iface_mac(veth_index, self.iproute)
         # Update the mac address with the interface address
         address = InterfaceAddress(
             version=interface.address.version,
             ip_address=interface.address.ip_address,
             ip_prefix=interface.address.ip_prefix,
             gateway_ip=interface.address.gateway_ip,
-            mac=get_iface_mac(veth_index, self.iproute),
+            mac=mac_address,
             tunnel_id=interface.address.tunnel_id
         )
         interface.address.CopyFrom(address)
@@ -189,7 +193,8 @@ class InterfaceServer(InterfaceServiceServicer):
         update the agent metadata and endpoint.
         """
         pod_name = get_pod_name(interface.interface_id.pod_id)
-        logger.info("Loading transit agent and configuring for pod {}".format(pod_name))
+        logger.info(
+            "Loading transit agent and configuring for pod {}".format(pod_name))
         self.rpc.load_transit_agent_xdp(interface)
 
         for bouncer in interface.bouncers:

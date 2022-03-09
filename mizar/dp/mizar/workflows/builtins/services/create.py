@@ -82,6 +82,8 @@ class k8sServiceCreate(WorkflowTask):
         if not net:
             self.raise_temporary_error(
                 "Task: {} Net not yet created.".format(self.__class__.__name__))
+        if not net.vni:
+            self.raise_temporary_error("k8sServiceCreate: Net {} does not yet have a vni!".format(net.name))
         logger.info("Creating scaled endpoint in subnet: {}.".format(net.name))
         ep = endpoints_opr.create_scaled_endpoint(
             self.param.name, name, self.param.spec, net, self.param.extra, self.param.body['metadata']['namespace'])

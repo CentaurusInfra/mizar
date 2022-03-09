@@ -439,11 +439,12 @@ class OprStore(object):
         self.update_namespace_pod_store(namespace_name, pod_name)
 
     def delete_pod_namespace_store(self, pod_name):
-        ns = self.pod_namespace_store[pod_name]
-        if ns in self.namespace_pod_store and pod_name in self.namespace_pod_store[ns]:
-            self.namespace_pod_store[ns].remove(pod_name)
         if pod_name in self.pod_namespace_store:
-            del self.pod_namespace_store[pod_name]
+            ns = self.pod_namespace_store[pod_name]
+            if ns in self.namespace_pod_store and pod_name in self.namespace_pod_store[ns]:
+                self.namespace_pod_store[ns].remove(pod_name)
+            if pod_name in self.pod_namespace_store:
+                del self.pod_namespace_store[pod_name]
 
     def update_droplet(self, droplet):
         self.droplets_store[droplet.name] = droplet
