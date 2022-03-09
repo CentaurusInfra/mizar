@@ -62,7 +62,7 @@ class NetCreate(WorkflowTask):
         if len(dividers_opr.store.get_dividers_of_vpc(n.vpc)) < 1:
             self.raise_temporary_error(
                 "Task: {} Net: {} Dividers not available".format(self.__class__.__name__, n.name))
-        logger.info("NetCreate Net ip is {}".format(n.ip))
+        logger.info("NetCreate Net ip is {}, VNI is {}".format(n.ip, n.vni))
         nets_opr.create_net_bouncers(n, n.n_bouncers)
         nets_opr.store_update(n)
         ep = endpoints_opr.create_gw_endpoint(
