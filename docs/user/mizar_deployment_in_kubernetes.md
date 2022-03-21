@@ -38,7 +38,7 @@ cluster to run Mizar at this time.**
 
 # Deploying the OS required for Mizar
 
-Kubeadm is a K8s deployment tool that can be used to easily bring up a Kubernetes.
+Kubeadm is a K8s deployment tool that can easily bring up a Kubernetes cluster.
 Before using kubeadm, we need to deploy two or more systems with either Ubuntu 20.04
 (preferred) or Ubuntu 18.04. They can either be bare-metal systems (for experimenting
 with eBPF offload NICs) or Virtual Machines deployed in AWS, GCE, or another VM
@@ -184,7 +184,7 @@ ubuntu@ip-192-168-1-95:~$ sudo kubeadm join 192.168.1.252:6443 --token dba3hs.ok
 
 ```
 
-6. Deploy Mizar Pod networking from K8s master node.
+6. Deploy Mizar Pod networking yaml from K8s master node.
 
 ```bash
 #
@@ -197,12 +197,28 @@ ubuntu@ip-192-168-1-252:~$ kubectl create -f https://github.com/CentaurusInfra/m
 
 # Verifying Mizar Deployment
 
-When a cluster is brought up with Mizar, a default VPC and default Network are created.
-We will call these **vpc0** and **net0**. The default VPC will have an initial default
-number of Dividers provisioned. Similarly the default Network will also have an initial
+Mizar control plane is broadly defined by Kubernetes Custom Resource objects (CRDs) briefly
+described below:
+- **VPC**: This object describes the entire pod network space (IP CIDR range) for all the pods
+  in the K8s cluster. A VPC may contain one or more **_Subnets_**.
+- **Subnet**: This object represents the IP CIDR range for a group of pods that belong to the
+  same subnetwork. This can be a subset of the VPC IP CIDR range.
+- **Bouncer**: This object represents the cluster node that acts as switching agent for a group
+  of K8s pods that belong to a **_Subnet_**, and is responsible for switching traffic between
+  pods that belong to the same subnet. A subnet may have one or more bouncers depending on the
+  traffic switching load.
+- **Divider**: This object represents the cluster node that connects two or more **_Subnets_**.
+  It is responsible for routing pod traffic between pods that span two different subnets.
+- **Endpoint**: This object represents the connection point (interface) that connects a K8s pod
+  or service to the subnet. Each endpoint belongs to a **_Bouncer_** and sends traffic to that
+  bouncer in order to reach other pod or service endpoints.
+
+When a cluster is brought up with Mizar, a default VPC and a default subnet are created.
+They are named **vpc0** and **net0** respectively. Default VPC will have an initial default
+number of Dividers provisioned. Similarly the default subnet will also have an initial
 default number of Bouncers provisioned.
 
-## Inspecting Mizar Resources
+## Inspecting Mizar CRDs
 
 There are two states for the resources listed below. *Init* and *Provisioned*. When a
 resource is initially brought online, its state is set to *Init*. Once it has entered
