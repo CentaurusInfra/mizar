@@ -20,11 +20,19 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-cd $HOME/go/src/k8s.io/arktos
-wget -qO- https://github.com/CentaurusInfra/containerd/releases/download/tenant-cni-args/containerd.zip | zcat > /tmp/containerd
-sudo chmod +x /tmp/containerd
-sudo systemctl stop containerd
-sudo mv /usr/bin/containerd /usr/bin/containerd.bak
-sudo mv /tmp/containerd /usr/bin/
-sudo systemctl restart containerd
-sudo systemctl restart docker
+function main {
+  cd $HOME/go/src/k8s.io/arktos
+  wget -qO- https://github.com/CentaurusInfra/containerd/releases/download/tenant-cni-args/containerd.zip | zcat > /tmp/containerd
+  sudo chmod +x /tmp/containerd
+  sudo systemctl stop containerd
+  sudo mv /usr/bin/containerd /usr/bin/containerd.bak
+  sudo mv /tmp/containerd /usr/bin/
+  sudo systemctl restart containerd
+  sudo systemctl restart docker
+}
+
+if [[ "$(arch)" == "x86_64" ]]; then
+  main
+else
+  echo "CPU architecture $(arch) not supported."
+fi
