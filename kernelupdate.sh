@@ -70,4 +70,8 @@ function check-and-install-mizar-kernel {
 }
 
 # Main
-check-and-install-mizar-kernel
+if [[ "$(arch)" == "x86_64" ]]; then
+  check-and-install-mizar-kernel
+else
+  echo "CPU architecture $(arch) not supported."
+fi
