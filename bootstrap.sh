@@ -114,7 +114,9 @@ function install-kind {
   echo ""
   echo "Installing kind ..."
   pushd /tmp
-  ver=$(curl -s https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
+  #TODO: Update Mizar to move forward to latest K8s and KinD versions
+  #ver=$(curl -s https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
+  ver="0.11.0"
   curl -Lo kind "https://github.com/kubernetes-sigs/kind/releases/download/$ver/kind-$(uname)-${cpu_arch}"
   chmod +x kind
   sudo mv kind /usr/local/bin
