@@ -53,6 +53,7 @@ nsenter -t 1 -m -u -n -i apt-get update -y && nsenter -t 1 -m -u -n -i apt-get i
     python$pyversion-dev \
     python3-apt \
     python3-testresources \
+    libaio-dev \
     libcmocka-dev \
     python3-pip && \
 nsenter -t 1 -m -u -n -i python3 -m pip install --upgrade pip

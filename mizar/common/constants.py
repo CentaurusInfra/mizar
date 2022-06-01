@@ -100,11 +100,11 @@ class OBJ_DEFAULTS:
     default_ep_net = 'net0'
     default_ep_type = 'simple'
     default_vpc_vni = '1'
-    default_vpc_ip = '20.0.0.0'
-    default_vpc_prefix = '8'
-    default_net_ip = '20.0.0.0'
-    default_net_gw = '20.0.0.1'
-    default_net_prefix = '8'
+    default_vpc_ip = '10.20.0.0'
+    default_vpc_prefix = '16'
+    default_net_ip = '10.20.0.0'
+    default_net_gw = '10.20.0.1'
+    default_net_prefix = '16'
     default_n_bouncers = 1
     default_n_dividers = 1
     default_host_ep_prefix = "32"
