@@ -19,7 +19,7 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-FROM skiibum/kindnode:latest
+FROM skiibum/kindnode-$(uname -p):latest
 COPY . /var/mizar/
 RUN pip3 install /var/mizar/
 RUN ln -snf /var/mizar/build/bin /trn_bin

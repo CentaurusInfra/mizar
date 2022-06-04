@@ -19,7 +19,8 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-FROM skiibum/python_base:latest
+ARG arch
+FROM skiibum/python_base-$arch:latest
 COPY . /var/mizar/
 RUN pip3 install /var/mizar/
 RUN ln -snf /var/mizar/build/bin /trn_bin
