@@ -66,6 +66,7 @@ fi
 nsenter -t 1 -m -u -n -i mkdir -p /opt/cni/bin && \
 nsenter -t 1 -m -u -n -i mkdir -p /etc/cni/net.d && \
 nsenter -t 1 -m -u -n -i cp -f /var/mizar/build/bin/mizarcni /opt/cni/bin/mizarcni && \
+nsenter -t 1 -m -u -n -i pip3 install --upgrade netifaces && \
 nsenter -t 1 -m -u -n -i pip3 install --upgrade protobuf && \
 nsenter -t 1 -m -u -n -i pip3 install --ignore-installed /var/mizar/ && \
 nsenter -t 1 -m -u -n -i ln -snf /sys/fs/bpf /bpffs && \
