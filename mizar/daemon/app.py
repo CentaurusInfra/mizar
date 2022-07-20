@@ -56,7 +56,7 @@ def init(benchmark=False):
     output = r.stdout.read().decode().strip()
     logging.info("Removed existing offload XDP program: {}".format(output))
 
-    cmd = "nsenter -t 1 -m -u -n -i /trn_bin/transitd &"
+    cmd = "nsenter -t 1 -m -u -n -i /trn_bin/transitd >transitd.log &"
     r = subprocess.Popen(cmd, shell=True)
     logging.info("Running transitd")
     time.sleep(1)
