@@ -457,6 +457,8 @@ spec:
         env:
         - name: FEATUREGATE_BWQOS
           value: 'false'
+        - name: OFFLOAD_XDP
+          value: 'true'
         securityContext:
           privileged: true
       volumes:

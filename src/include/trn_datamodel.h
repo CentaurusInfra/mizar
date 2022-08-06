@@ -29,9 +29,12 @@
 #define __ALWAYS_INLINE__ __attribute__((__always_inline__))
 
 #define TRAN_MAX_NEP 65537
-#define TRAN_MAX_NSWITCH 5
-#define TRAN_MAX_NROUTER 5
-#define TRAN_MAX_REMOTES 5
+#define TRAN_MAX_NSWITCH 32768
+#define TRAN_MAX_NROUTER 16384
+#define TRAN_MAX_REMOTES 256
+#define TRAN_MAX_NSWITCH_OFFLOAD 5
+#define TRAN_MAX_NROUTER_OFFLOAD 5
+#define TRAN_MAX_REMOTES_OFFLOAD 7
 #define TRAN_MAX_ITF 256
 #define TRAN_UNUSED_ITF_IDX -1
 
@@ -97,7 +100,7 @@ struct endpoint_t {
 struct endpoint_t_offload {
 	__u32 eptype;
 	__u32 nremote_ips;
-	__u32 remote_ips[7]; //cause the size of remote_ips[TRAN_MAX_REMOTES] is too big to offload
+	__u32 remote_ips[TRAN_MAX_REMOTES_OFFLOAD]; //cause the size of remote_ips[TRAN_MAX_REMOTES] is too big to offload
 	int hosted_iface;
 	unsigned char mac[6];
 } __attribute__((packed, aligned(4)));
@@ -137,7 +140,7 @@ struct network_t_offload {
 	__u32 prefixlen; /* up to 32 for AF_INET, 128 for AF_INET6 */
 	__u32 nip[3];
 	__u32 nswitches;
-	__u32 switches_ips[5];
+	__u32 switches_ips[TRAN_MAX_NSWITCH_OFFLOAD];
 } __attribute__((packed, aligned(4)));
 
 struct vpc_key_t {
@@ -153,7 +156,7 @@ struct vpc_t {
 
 struct vpc_t_offload {
 	__u32 nrouters;
-	__u32 routers_ips[5];
+	__u32 routers_ips[TRAN_MAX_NROUTER_OFFLOAD];
 } __attribute__((packed, aligned(4)));
 
 struct tunnel_iface_t {

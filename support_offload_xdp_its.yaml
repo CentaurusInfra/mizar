@@ -1,0 +1,3 @@
+# interfaces with offload XDP support
+interfaces:
+- "enp1s0np0"

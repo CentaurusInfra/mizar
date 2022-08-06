@@ -81,17 +81,20 @@ def init(benchmark=False):
     output = r.stdout.read().decode().strip()
     logging.info("Running load-transit-xdp: {}".format(output))
 
-    if default_itf in get_smart_nic_itf_names():
-        config = {
-            "xdp_path": "/trn_xdp/trn_transit_xdp1_3layers_ebpf.o",
-            "pcapfile": "/bpffs/transit_xdp.pcap",
-            "xdp_flag": CONSTANTS.XDP_OFFLOAD
-        }
-        config = json.dumps(config)
-        cmd = (f'''nsenter -t 1 -m -u -n -i /trn_bin/transit -s {nodeip} load-transit-offload-xdp -i {default_itf} -j '{config}' ''')
-        r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-        output = r.stdout.read().decode().strip()
-        logging.info("Running load-transit-offload-xdp: {}".format(output))
+    if os.getenv('OFFLOAD_XDP', 'false').lower() in ('true', '1'):
+        if default_itf in support_offload_xdp_itf_names():
+            config = {
+                "xdp_path": "/trn_xdp/trn_transit_xdp1_3layers_ebpf.o",
+                "pcapfile": "/bpffs/transit_xdp.pcap",
+                "xdp_flag": CONSTANTS.XDP_OFFLOAD
+            }
+            config = json.dumps(config)
+            cmd = (f'''nsenter -t 1 -m -u -n -i /trn_bin/transit -s {nodeip} load-transit-offload-xdp -i {default_itf} -j '{config}' ''')
+            r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+            output = r.stdout.read().decode().strip()
+            logging.info("Running load-transit-offload-xdp: {}".format(output))
+        else:
+            logging.info("NIC cannot support offload XDP with the iterface: {}".format(default_itf))
 
     if os.getenv('FEATUREGATE_BWQOS', 'false').lower() in ('false', '0'):
         logging.info("Bandwidth QoS feature is disabled.")

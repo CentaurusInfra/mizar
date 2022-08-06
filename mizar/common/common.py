@@ -28,6 +28,7 @@ import kopf
 import datetime
 import json
 import dateutil.parser
+import yaml
 from kubernetes import watch, client
 from kubernetes.client.rest import ApiException
 from ctypes.util import find_library
@@ -428,8 +429,10 @@ def conf_list_has_max_elements(conf, conf_list):
         return True
     return False
 
-def get_smart_nic_itf_names():
-    return ["enp1s0np0"] # check for specific smart_itf_name with hard code
+def support_offload_xdp_itf_names():
+    with open("/var/mizar/support_offload_xdp_its.yaml", "r", encoding="utf-8") as f:
+            data = yaml.load(f, Loader=yaml.FullLoader)
+    return data["interfaces"]
 
 def get_default_itf():
     """
@@ -438,14 +441,12 @@ def get_default_itf():
         172.17.0.0/16 dev docker0 proto kernel scope link src 172.17.0.1
         ...
     """
-    global smart_NIC_itfs
-    smart_NIC_itfs = ["enp1s0np0"] # check for specific smart_itf_name with hard code
     ret, data = run_cmd("ip route")
     data = [i for i in data.split('\n') if i]
-    for smart_NIC_itf in get_smart_nic_itf_names():
+    for offload_xdp_itf in support_offload_xdp_itf_names():
         for line in data:
-            if smart_NIC_itf in line:
-                return smart_NIC_itf
+            if offload_xdp_itf in line:
+                return offload_xdp_itf
     for line in data:
         if line.startswith('default'):
             logging.info("default_itf from ip route: {}".format(line.split()[4]))
