@@ -30,9 +30,9 @@
 
 #include "trn_datamodel.h"
 
-#define MAX_NETS 1000001
-#define MAX_EP 1000001
-#define MAX_VPC 1000001
+#define MAX_NETS 16385
+#define MAX_EP 65537
+#define MAX_VPC 8192
 #define MAX_PORTS 65536
 
 struct bpf_map_def SEC("maps") jmp_table = {

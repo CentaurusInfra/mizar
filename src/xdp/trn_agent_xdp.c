@@ -119,7 +119,7 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	__builtin_memcpy(&dst_epkey.tunip[0], &tun_id, sizeof(tun_id));
 	dst_epkey.tunip[2] = in_dst_ip;
 
-	// dst_r_ep = bpf_map_lookup_elem(ep_host_cache, &dst_epkey);
+	dst_r_ep = bpf_map_lookup_elem(ep_host_cache, &dst_epkey);
 
 	if (dst_r_ep) {
 		d_addr = dst_r_ep->ip;
