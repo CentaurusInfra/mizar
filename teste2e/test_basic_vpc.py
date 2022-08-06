@@ -1,3 +1,22 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2022 The Authors.
+
+# Authors: The Mizar Team
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:The above copyright
+# notice and this permission notice shall be included in all copies or
+# substantial portions of the Software.THE SOFTWARE IS PROVIDED "AS IS",
+# WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+# TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+# FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+# THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import unittest
 from teste2e.common.k8s import *
@@ -29,6 +48,11 @@ class test_basic_vpc(unittest.TestCase):
             self.test_name + "ep3", vpc_name, subnet2_name)
         self.ep4 = self.api.create_pod(self.test_name + "ep4", vpc_name, None)
 
+        # DISABLED scaled ep tests
+        # self.ep11 = self.api.create_pod(self.test_name + "ep11", vpc_name, subnet_name)
+        # self.sep1 = self.api.create_service(self.test_name + "sep1", vpc_name, subnet_name)
+        # self.sep1.add_endpoint(self.test_name + "ep33", vpc_name, subnet_name)
+
     def tearDown(self):
         pass
 
@@ -39,3 +63,7 @@ class test_basic_vpc(unittest.TestCase):
         do_common_tests(self, self.ep1, self.ep3)
         logger.info("Endpoint allocated in default subnet")
         do_common_tests(self, self.ep2, self.ep4)
+        # DISABLED scaled ep tests
+        # self.assertTrue(self.ep11.do_curl_hostname(self.sep1, "scaled"))
+        # self.assertTrue(self.ep11.do_tcp_hostname(self.sep1, "scaled"))
+        # self.assertTrue(self.ep11.do_udp_hostname(self.sep1, "scaled"))

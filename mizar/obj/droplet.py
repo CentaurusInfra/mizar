@@ -44,6 +44,7 @@ class Droplet(object):
         self.known_bouncers = {}
         self.known_nets = {}
         self.known_eps = {}
+        self.interfaces = None
         if spec is not None:
             self.set_obj_spec(spec)
 
@@ -104,11 +105,12 @@ class Droplet(object):
     def set_status(self, status):
         self.status = status
 
-    def update_substrate(self, obj):
+    def update_substrate(self, obj, task):
         if obj.name not in self.known_substrates.keys():
             logger.info("DROPLET_SUBSTRATE: Updated")
             self.known_substrates[obj.name] = obj.droplet_obj.ip
-        self.rpc.update_substrate_ep(obj.droplet_obj.ip, obj.droplet_obj.mac)
+        self.rpc.update_substrate_ep(
+            obj.droplet_obj.ip, obj.droplet_obj.mac, task)
 
     def delete_substrate(self, obj):
         if obj.name in self.known_substrates.keys():
@@ -117,10 +119,10 @@ class Droplet(object):
                 logger.info("DROPLET_SUBSTRATE: Deleted")
                 self.rpc.delete_substrate_ep(obj.droplet_obj.ip)
 
-    def update_vpc(self, bouncer):
+    def update_vpc(self, bouncer, task):
         if bouncer.name not in self.known_bouncers.keys():
             self.known_bouncers[bouncer.name] = bouncer.vpc
-        self.rpc.update_vpc(bouncer)
+        self.rpc.update_vpc(bouncer, task)
 
     def delete_vpc(self, bouncer):
         if bouncer.name in self.known_bouncers.keys():
@@ -128,11 +130,11 @@ class Droplet(object):
             if bouncer.vpc not in self.known_bouncers.values():
                 self.rpc.delete_vpc(bouncer)
 
-    def update_net(self, net):
+    def update_net(self, net, task):
         nip = net.get_nip()
         if net.name not in self.known_nets.keys():
             self.known_nets[net.name] = nip
-        self.rpc.update_net(net)
+        self.rpc.update_net(net, task)
 
     def delete_net(self, net):
         nip = net.get_nip()
@@ -141,11 +143,11 @@ class Droplet(object):
             if nip not in self.known_nets.values():
                 self.rpc.delete_net(net)
 
-    def update_ep(self, name, ep):
+    def update_ep(self, name, ep, task):
         name = name + ep.name
         if name not in self.known_eps.keys():
             self.known_eps[name] = ep.ip
-        self.rpc.update_ep(ep)
+        self.rpc.update_ep(ep, task)
 
     def delete_ep(self, name, ep):
         name = name + ep.name

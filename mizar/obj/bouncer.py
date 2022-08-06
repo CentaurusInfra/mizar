@@ -132,51 +132,59 @@ class Bouncer(object):
     def set_status(self, status):
         self.status = status
 
-    def load_transit_xdp_pipeline_stage(self):
+    def load_transit_xdp_pipeline_stage(self, task):
         self.rpc.load_transit_xdp_pipeline_stage(CONSTANTS.ON_XDP_SCALED_EP,
-                                                 self.scaled_ep_obj)
+                                                 self.scaled_ep_obj, task)
 
     def update_eps(self, eps, task):
         for ep in eps:
             self.eps[ep.name] = ep
+            logger.info("bouncer update_ep updating: ep {}".format(ep.name))
             if ep.type in OBJ_DEFAULTS.droplet_eps:
                 if not ep.droplet_obj:
-                    task.raise_temporary_error("Task: {} Endpoint: {} Droplet Object not ready.".format(self.__class__.__name__, ep.name))
-                self._update_simple_ep(ep)
-            if ep.type == OBJ_DEFAULTS.ep_type_scaled:
-                self._update_scaled_ep(ep)
-            if ep.type == OBJ_DEFAULTS.ep_type_gateway:
-                self.update_gw_ep(ep)
+                    task.raise_temporary_error("Task: {} Endpoint: {} Droplet Object not ready.".format(
+                        self.__class__.__name__, ep.name))
+                self._update_simple_ep(ep, task)
+                logger.info("bouncer update_ep updated: ep {}".format(ep.name))
+            elif ep.type == OBJ_DEFAULTS.ep_type_scaled:
+                self._update_scaled_ep(ep, task)
+                logger.info("bouncer update_ep updated: ep {}".format(ep.name))
+            elif ep.type == OBJ_DEFAULTS.ep_type_gateway:
+                self.update_gw_ep(ep, task)
+                logger.info("bouncer update_ep updated: ep {}".format(ep.name))
+            else:
+                task.raise_permenant_error(
+                    "Unknown Endpoint! {}".formatr(ep.type))
 
-    def update_gw_ep(self, ep):
+    def update_gw_ep(self, ep, task):
         logger.info("Update gateway endpoint")
         ep.set_backends([self.ip])
-        self.droplet_obj.update_ep(self.name, ep)
+        self.droplet_obj.update_ep(self.name, ep, task)
 
-    def _update_simple_ep(self, ep):
+    def _update_simple_ep(self, ep, task):
         logger.info(
             "Update Bouncer with Simple EP:{}, type:{}".format(ep.name, ep.type))
         logger.info("self ip {} epfuncip {}, field ip {}".format(
             self.ip, ep.get_droplet_ip(), ep.droplet_obj.ip))
-        self.droplet_obj.update_ep(self.name, ep)
-        self.droplet_obj.update_substrate(ep)
+        self.droplet_obj.update_ep(self.name, ep, task)
+        self.droplet_obj.update_substrate(ep, task)
 
-    def _update_scaled_ep(self, ep):
+    def _update_scaled_ep(self, ep, task):
         logger.info("Bouncer update scaled ep. {}".format(ep.backends))
         if ep.backends:
-            self.droplet_obj.update_ep(self.name, ep)
+            self.droplet_obj.update_ep(self.name, ep, task)
 
-    def update_vpc(self, dividers, add=True):
+    def update_vpc(self, dividers, task, add=True):
         for divider in dividers:
             if add:
                 logger.info("Divider added: {}".format(divider.name))
                 self.dividers[divider.name] = divider
-                self.droplet_obj.update_substrate(divider)
+                self.droplet_obj.update_substrate(divider, task)
             else:
                 logger.info("Divider removed: {}".format(divider.name))
                 self.dividers[divider.name] = divider
                 self.droplet_obj.delete_substrate(divider)
-        self.droplet_obj.update_vpc(self)
+        self.droplet_obj.update_vpc(self, task)
 
     def delete_vpc(self):
         for name in list(self.dividers.keys()):

@@ -22,14 +22,17 @@ import logging
 import grpc
 import json
 from mizar.proto.builtins_pb2_grpc import BuiltinsServiceServicer, BuiltinsServiceStub
+from mizar.common.constants import OBJ_DEFAULTS
 from mizar.common.workflow import *
 from mizar.dp.mizar.operators.vpcs.vpcs_operator import *
 from mizar.proto.builtins_pb2 import *
 from mizar.common.wf_param import *
 from mizar.common.wf_factory import wffactory
+from mizar.store.operator_store import OprStore
 
 vpc_opr = VpcOperator()
 logger = logging.getLogger()
+store = OprStore()
 
 
 class ArktosService(BuiltinsServiceServicer):
@@ -46,13 +49,59 @@ class ArktosService(BuiltinsServiceServicer):
         param.namespace = request.namespace
         param.body['status'] = {}
         param.body['metadata'] = {}
+        param.body['metadata']['annotations'] = {}
         param.body['status']['hostIP'] = request.host_ip
         param.body['metadata']['namespace'] = request.namespace
         param.body['status']['phase'] = request.phase
         param.body['metadata']['tenant'] = request.tenant
+        if not request.vpc:
+            return ReturnCode(
+                code=CodeType.PERM_ERROR,
+                message="Missing VPC annotation"
+            )
+        if not request.subnet:
+            return ReturnCode(
+                code=CodeType.PERM_ERROR,
+                message="Missing Subnet annotation"
+            )
+        param.body['metadata']['annotations'][OBJ_DEFAULTS.mizar_ep_vpc_annotation] = request.vpc
+        param.body['metadata']['annotations'][OBJ_DEFAULTS.mizar_ep_subnet_annotation] = request.subnet
+
         param.extra = {}
-        if request.arktos_network != "":
-            param.extra["arktos_network"] = request.arktos_network
+        store.update_pod_namespace_store(param.name, param.namespace)
+        try:
+            labels = json.loads(request.labels)
+        except ValueError as e:
+            logger.info(
+                "Client sent invalid JSON for pod labels: {} {}".format(request.labels, e))
+            labels = None
+        if labels:
+            param.body['metadata']['labels'] = labels
+            logger.info("Labels for pod {} from Arktos Service are {}".format(
+                request.name, labels))
+            diff_item = []
+            diff_item.append('add')
+            diff_item.append(tuple())
+            # old
+            old_dict = {}
+            old_dict['metadata'] = {}
+            old_dict['metadata']['labels'] = store.get_old_pod_labels(
+                request.name)
+            diff_item.append(old_dict)
+            # new
+            new_dict = {}
+            new_dict['metadata'] = {}
+            new_dict['metadata']['labels'] = labels
+            diff_item.append(new_dict)
+            diff_items = []
+            diff_items.append(tuple(diff_item))
+            param.diff = tuple(diff_items)
+            logger.info("Pod create param.diff =  {}".format(param.diff))
+            store.update_pod_label_store(
+                param.name, param.body['metadata']['labels'])
+        else:
+            param.body['metadata']['labels'] = {}
+            param.diff = tuple(tuple())
         if len(request.interfaces) > 0:
             param.extra["interfaces"] = list()
             itf_string = '['
@@ -75,18 +124,67 @@ class ArktosService(BuiltinsServiceServicer):
         param.body['status']['addresses'][0]["address"] = request.ip
         return run_arktos_workflow(wffactory().k8sDropletCreate(param=param))
 
+    def CreateNamespace(self, request, context):
+        logger.info(
+            "Creating namespace from Arktos Service {}".format(request.name))
+        param = reset_param(HandlerParam())
+        param.name = request.name
+        param.body['status'] = {}
+        param.body['metadata'] = {}
+        param.body['metadata']['tenant'] = request.tenant
+        if request.labels is not None and len(request.labels) != 0:
+            logger.info("Labels for namespace {} from Arktos Service are {}".format(
+                request.name, request.labels))
+            param.body['metadata']['labels'] = json.loads(request.labels)
+            diff_item = []
+            diff_item.append('add')
+            diff_item.append(tuple())
+            # old
+            old_dict = {}
+            old_dict['metadata'] = {}
+            old_dict['metadata']['labels'] = store.get_old_namespace_labels(
+                request.name)
+            diff_item.append(old_dict)
+            # new
+            new_dict = {}
+            new_dict['metadata'] = {}
+            new_dict['metadata']['labels'] = json.loads(request.labels)
+            diff_item.append(new_dict)
+            diff_items = []
+            diff_items.append(tuple(diff_item))
+            param.diff = tuple(diff_items)
+            logger.info("Namespace create param.diff =  {}".format(param.diff))
+            store.update_namespace_label_store(
+                param.name, param.body['metadata']['labels'])
+        else:
+            param.body['metadata']['labels'] = {}
+            param.diff = tuple(tuple())
+        return run_arktos_workflow(wffactory().k8sNamespaceCreate(param=param))
+
     def CreateService(self, request, context):
         logger.info(
             "Create scaled endpoint from Network Controller {} {} {}.".format(request.name, request.namespace, request.tenant))
         param = reset_param(HandlerParam())
         param.name = request.name
         param.body['metadata'] = {}
+        param.body['metadata']['annotations'] = {}
         param.extra = {}
+        if not request.vpc:
+            return ReturnCode(
+                code=CodeType.PERM_ERROR,
+                message="Missing VPC annotation"
+            )
+        if not request.subnet:
+            return ReturnCode(
+                code=CodeType.PERM_ERROR,
+                message="Missing Subnet annotation"
+            )
+        param.body['metadata']['annotations'][OBJ_DEFAULTS.mizar_ep_vpc_annotation] = request.vpc
+        param.body['metadata']['annotations'][OBJ_DEFAULTS.mizar_ep_subnet_annotation] = request.subnet
 
         param.body['metadata']['namespace'] = request.namespace
         param.spec["clusterIP"] = request.ip
         logger.info("From grpc server: Service IP is {}".format(request.ip))
-        param.extra["arktos_network"] = request.arktos_network
         param.extra["tenant"] = request.tenant
         return run_arktos_workflow(wffactory().k8sServiceCreate(param=param))
 
@@ -107,6 +205,9 @@ class ArktosService(BuiltinsServiceServicer):
         param.name = request.name
         param.body['metadata'] = {}
         param.body["metadata"]["namespace"] = request.namespace
+        param.body['metadata']['tenant'] = request.tenant
+        logger.info("Service Endpoint name {} namespace {} tenant {}".format(
+            request.name, request.namespace, request.tenant))
         ips = json.loads(request.backend_ips_json)
         ports = json.loads(request.ports_json)
         param.extra = {}
@@ -119,27 +220,9 @@ class ArktosService(BuiltinsServiceServicer):
             logger.info(port)
         return run_arktos_workflow(wffactory().k8sEndpointsUpdate(param=param))
 
-    def CreateArktosNetwork(self, request, context):
-        logger.info(
-            "Arktos Network create from Network Controller {} -> {}.".format(request.name, request.vpc))
-        rc = ReturnCode(
-            code=CodeType.OK,
-            message="OK"
-        )
-        vpc = request.vpc
-        if request.name == "default" and request.vpc == "system-default-network":
-            vpc = OBJ_DEFAULTS.default_ep_vpc
-        vpc_opr.store_get(vpc)
-        if not vpc_opr.store_get(request.vpc):
-            rc.code = CodeType.PERM_ERROR
-            rc.message = "ERROR: VPC {} does not exist for arktos network {}.".format(
-                request.vpc, request.name)
-        else:
-            vpc_opr.store.update_arktosnet_vpc(request.name, request.vpc)
-        return rc
-
     def CreateNetworkPolicy(self, request, context):
-        logger.info("Creating network policy from Arktos Service {}".format(request.name))
+        logger.info(
+            "Creating network policy from Arktos Service {}".format(request.name))
         param = reset_param(HandlerParam())
         param.name = request.name
         param.namespace = request.namespace
@@ -172,17 +255,43 @@ class ArktosService(BuiltinsServiceServicer):
     def ResumeNetworkPolicy(self, request, context):
         return self.CreateNetworkPolicy(request, context)
 
+    def ResumeNamespace(self, request, context):
+        return self.CreateNamespace(request, context)
+
     def UpdatePod(self, request, context):
+        if not request.vpc:
+            return ReturnCode(
+                code=CodeType.PERM_ERROR,
+                message="Pod Update missing VPC annotation."
+            )
+        if not request.subnet:
+            return ReturnCode(
+                code=CodeType.PERM_ERROR,
+                message="Pod update missing Subnet annotation."
+            )
         return self.CreatePod(request, context)
 
     def UpdateNode(self, request, context):
         return self.CreateNode(request, context)
 
     def UpdateService(self, request, context):
+        if not request.vpc:
+            return ReturnCode(
+                code=CodeType.PERM_ERROR,
+                message="Pod Update missing VPC annotation."
+            )
+        if not request.subnet:
+            return ReturnCode(
+                code=CodeType.PERM_ERROR,
+                message="Pod update missing Subnet annotation."
+            )
         return self.CreateService(request, context)
 
     def UpdateServiceEndpoint(self, request, context):
         return self.CreateServiceEndpoint(request, context)
+
+    def UpdateNamespace(self, request, context):
+        return self.CreateNamespace(request, context)
 
     def UpdateNetworkPolicy(self, request, context):
         return self.CreateNetworkPolicy(request, context)
@@ -199,8 +308,19 @@ class ArktosService(BuiltinsServiceServicer):
             "Deleting pod from Network Controller {}".format(request.name))
         param = reset_param(HandlerParam())
         param.name = request.name
-        param.namespace = request.namespace        
+        param.namespace = request.namespace
+        store.delete_pod_label_store(param.name)
+        store.delete_pod_namespace_store(param.name)
         return run_arktos_workflow(wffactory().k8sPodDelete(param=param))
+
+    def DeleteNamespace(self, request, context):
+        logger.info(
+            "Deleting namespace from Network Controller {}".format(request.name))
+        param = reset_param(HandlerParam())
+        param.name = request.name
+        store.delete_namespace_label_store(param.name)
+        store.delete_namespace_pod_store(param.name)
+        return run_arktos_workflow(wffactory().k8sNamespaceDelete(param=param))
 
     def DeleteService(self, request, context):
         logger.info(
@@ -222,9 +342,21 @@ class ArktosService(BuiltinsServiceServicer):
         param.extra = request.tenant
         return run_arktos_workflow(wffactory().k8sNetworkPolicyDelete(param=param))
 
+    def CreateArktosNetwork(self, request, context):
+        logger.info(
+            "CreateArktosNetwork to be deprecated.")
+        rc = ReturnCode(
+            code=CodeType.OK,
+            message="OK"
+        )
+        return rc
+
+
 class ArktosServiceClient():
     def __init__(self, ip):
-        self.channel = grpc.insecure_channel('{}:50052'.format(ip))
+        addr = '{}:{}'.format(
+            ip, OBJ_DEFAULTS.mizar_operator_arktos_service_port)
+        self.channel = grpc.insecure_channel(addr)
         self.stub_builtins = BuiltinsServiceStub(self.channel)
 
     def CreatePod(self, BuiltinsPodMessage):
@@ -244,7 +376,12 @@ class ArktosServiceClient():
         return resp
 
     def CreateNetworkPolicy(self, BuiltinsNetworkPolicyMessage):
-        resp = self.stub_builtins.CreateNetworkPolicy(BuiltinsNetworkPolicyMessage)
+        resp = self.stub_builtins.CreateNetworkPolicy(
+            BuiltinsNetworkPolicyMessage)
+        return resp
+
+    def CreateNamespace(self, BuiltinsNamespaceMessage):
+        resp = self.stub_builtins.CreateNamespace(BuiltinsNamespaceMessage)
         return resp
 
     def UpdatePod(self, BuiltinsPodMessage):
@@ -264,7 +401,12 @@ class ArktosServiceClient():
         return resp
 
     def UpdateNetworkPolicy(self, BuiltinsNetworkPolicyMessage):
-        resp = self.stub_builtins.UpdateNetworkPolicy(BuiltinsNetworkPolicyMessage)
+        resp = self.stub_builtins.UpdateNetworkPolicy(
+            BuiltinsNetworkPolicyMessage)
+        return resp
+
+    def UpdateNamespace(self, BuiltinsNamespaceMessage):
+        resp = self.stub_builtins.UpdateNamespace(BuiltinsNamespaceMessage)
         return resp
 
     def ResumePod(self, BuiltinsPodMessage):
@@ -284,7 +426,12 @@ class ArktosServiceClient():
         return resp
 
     def ResumeNetworkPolicy(self, BuiltinsNetworkPolicyMessage):
-        resp = self.stub_builtins.ResumeNetworkPolicy(BuiltinsNetworkPolicyMessage)
+        resp = self.stub_builtins.ResumeNetworkPolicy(
+            BuiltinsNetworkPolicyMessage)
+        return resp
+
+    def ResumeNamespace(self, BuiltinsNamespaceMessage):
+        resp = self.stub_builtins.ResumeNamespace(BuiltinsNamespaceMessage)
         return resp
 
     def DeleteNode(self, BuiltinsNodeMessage):
@@ -300,5 +447,15 @@ class ArktosServiceClient():
         return resp
 
     def DeleteNetworkPolicy(self, BuiltinsNetworkPolicyMessage):
-        resp = self.stub_builtins.DeleteNetworkPolicy(BuiltinsNetworkPolicyMessage)
+        resp = self.stub_builtins.DeleteNetworkPolicy(
+            BuiltinsNetworkPolicyMessage)
+        return resp
+
+    def DeleteNetworkPolicy(self, BuiltinsNetworkPolicyMessage):
+        resp = self.stub_builtins.DeleteNetworkPolicy(
+            BuiltinsNetworkPolicyMessage)
+        return resp
+
+    def DeleteNamespace(self, BuiltinsNamespaceMessage):
+        resp = self.stub_builtins.DeleteNamespace(BuiltinsNamespaceMessage)
         return resp

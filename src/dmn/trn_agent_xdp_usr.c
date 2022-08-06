@@ -219,7 +219,9 @@ int trn_agent_update_endpoint(struct agent_user_metadata_t *umd,
 {
 	int err = bpf_map_update_elem(umd->endpoints_map_fd, epkey, ep, 0);
 	if (err) {
-		TRN_LOG_ERROR("Store endpoint mapping failed (err:%d).", err);
+		int errnum = errno;
+		TRN_LOG_ERROR("Update agent endpoints_map failed for fd=%d - err: %d errno: %d '%s'.",
+				umd->endpoints_map_fd, err, errnum, strerror(errnum));
 		return 1;
 	}
 	return 0;
@@ -230,9 +232,9 @@ int trn_agent_get_endpoint(struct agent_user_metadata_t *umd,
 {
 	int err = bpf_map_lookup_elem(umd->endpoints_map_fd, epkey, ep);
 	if (err) {
-		TRN_LOG_ERROR(
-			"Querying agent endpoint mapping failed (err:%d).",
-			err);
+		int errnum = errno;
+		TRN_LOG_ERROR("Query agent endpoints_map failed for fd=%d - err: %d errno: %d '%s'.",
+				umd->endpoints_map_fd, err, errnum, strerror(errnum));
 		return 1;
 	}
 	return 0;
@@ -243,9 +245,9 @@ int trn_agent_delete_endpoint(struct agent_user_metadata_t *umd,
 {
 	int err = bpf_map_delete_elem(umd->endpoints_map_fd, epkey);
 	if (err) {
-		TRN_LOG_ERROR(
-			"Deleting agent endpoint mapping failed (err:%d).",
-			err);
+		int errnum = errno;
+		TRN_LOG_ERROR("Delete agent endpoints_map failed for fd=%d - err: %d errno: %d '%s'.",
+				umd->endpoints_map_fd, err, errnum, strerror(errnum));
 		return 1;
 	}
 	return 0;
@@ -519,7 +521,7 @@ static int _trn_bpf_agent_prog_load_xattr(struct agent_user_metadata_t *md,
 	_REUSE_MAP_IF_PINNED(conn_track_cache);
 	_REUSE_MAP_IF_PINNED(ing_pod_label_policy_map);
 	_REUSE_MAP_IF_PINNED(ing_namespace_label_policy_map);
-	_REUSE_MAP_IF_PINNED(ing_pod_and_namespace_label_policy_map);	
+	_REUSE_MAP_IF_PINNED(ing_pod_and_namespace_label_policy_map);
 	_REUSE_MAP_IF_PINNED(tx_stats_map);
 
 	/* Only one prog is supported */
@@ -623,6 +625,7 @@ int trn_agent_metadata_init(struct agent_user_metadata_t *md, char *itf,
 		TRN_LOG_ERROR("Error retrieving index of interface");
 		return 1;
 	}
+	TRN_LOG_DEBUG("trn_agent_metadata_init: mapped hosted_interface:%s to index %d", itf, md->ifindex);
 
 	if (_trn_bpf_agent_prog_load_xattr(md, &prog_load_attr, &md->obj,
 					   &md->prog_fd)) {
@@ -631,7 +634,6 @@ int trn_agent_metadata_init(struct agent_user_metadata_t *md, char *itf,
 	}
 
 	rc = trn_agent_bpf_maps_init(md);
-
 	if (rc != 0) {
 		return 1;
 	}
@@ -658,25 +660,26 @@ int trn_agent_metadata_init(struct agent_user_metadata_t *md, char *itf,
 	char *debug = strstr(agent_file_name, "debug");
 	char *prog_dir = dirname(agent_file_name);
 	for (enum tailcall_txstat t = 0; t < MAX_TXSTAT; t++) {
-		char fname[256] = {0};
-		sprintf(fname, "%s/trn_xdp_txstats_", prog_dir);
+		char fname[512] = {0};
+		char prog_name[256] = {0};
+		sprintf(prog_name, "%s/trn_xdp_txstats_", prog_dir);
 		switch (t) {
 		case txstat_redirect:
-			sprintf(fname, "%sredirect_ebpf", fname);
+			sprintf(fname, "%sredirect_ebpf", prog_name);
 			break;
 		case txstat_pass:
-			sprintf(fname, "%spass_ebpf", fname);
+			sprintf(fname, "%spass_ebpf", prog_name);
 			break;
 		case txstat_drop:
-			sprintf(fname, "%sdrop_ebpf", fname);
+			sprintf(fname, "%sdrop_ebpf", prog_name);
 			break;
 		default:
 			continue;
 		};
 		if (debug)
-			sprintf(fname, "%s_debug.o", fname);
+			strcat(fname, "_debug.o");
 		else
-			sprintf(fname, "%s.o", fname);
+			strcat(fname, ".o");
 		if (_trn_bpf_agent_prog_load_txstats(fname, &md->txstats_obj[t], &md->txstats_prog_fd[t])) {
 			TRN_LOG_ERROR("Error loading txstats xdp programs");
 			return 1;

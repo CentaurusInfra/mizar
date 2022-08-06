@@ -35,7 +35,7 @@ logger = logging.getLogger()
 class Vpc(object):
     def __init__(self, name, obj_api, opr_store, spec=None):
         self.name = name
-        self.vni = OBJ_DEFAULTS.default_vpc_vni
+        self.vni = get_cluster_vpc_vni()
         self.n_dividers = OBJ_DEFAULTS.default_n_dividers
         self.n_allocated_dividers = 0
         self.obj_api = obj_api
@@ -108,6 +108,15 @@ class Vpc(object):
 
     def set_vni(self, vni):
         self.vni = vni
+
+    def get_vni(self):
+        return self.vni
+
+    def get_ip(self):
+        return str(self.ip)
+
+    def get_prefixlen(self):
+        return str(self.prefix)
 
     def set_status(self, status):
         self.status = status

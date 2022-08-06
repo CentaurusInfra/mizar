@@ -1,3 +1,23 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2022 The Authors.
+
+# Authors: The Mizar Team
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:The above copyright
+# notice and this permission notice shall be included in all copies or
+# substantial portions of the Software.THE SOFTWARE IS PROVIDED "AS IS",
+# WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+# TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+# FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+# THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 import logging
 import sys
 import os
@@ -17,32 +37,38 @@ from google.protobuf import empty_pb2
 from mizar.common.rpc import TrnRpc
 from mizar.common.constants import *
 from pyroute2 import IPRoute, NetNS
-import queue
 import ipaddress
 
+logging.basicConfig(
+    format='%(asctime)s %(levelname)-8s %(message)s',
+    level=logging.INFO,
+    datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger('mizar_interface_service')
 handler = SysLogHandler(address='/dev/log')
 logger.addHandler(handler)
 logger = logging.getLogger()
 
 CONSUME_INTERFACE_TIMEOUT = 5
+WAITING_SLEEP_INTERVAL = 0.5
 
 
 class InterfaceServer(InterfaceServiceServicer):
 
     def __init__(self):
-        self.interfaces_q = queue.Queue()  # Used for Produce/Consume sync
         self.iproute = IPRoute()
         self.interfaces = {}  # In-memory tracking for Pod interfaces
-        self.queued_pods = set()  # A set of pods, with queued interfaces (to be consumed)
-        self.interfaces_lock = threading.Lock()
+        self.pod_dict = {}
 
         self.itf = get_itf()
-        cmd = 'ip addr show ' + f'''{self.itf}''' + ' | grep "inet\\b" | awk \'{print $2}\' | cut -d/ -f1'
+        cmd = 'ip addr show ' + \
+            f'''{self.itf}''' + \
+            ' | grep "inet\\b" | awk \'{print $2}\' | cut -d/ -f1'
         r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         self.droplet_ip = r.stdout.read().decode().strip()
 
-        cmd = 'ip addr show ' + f'''{self.itf}''' + ' | grep "link/ether\\b" | awk \'{print $2}\' | cut -d/ -f1'
+        cmd = 'ip addr show ' + \
+            f'''{self.itf}''' + \
+            ' | grep "link/ether\\b" | awk \'{print $2}\' | cut -d/ -f1'
         r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         self.droplet_mac = r.stdout.read().decode().strip()
 
@@ -81,21 +107,34 @@ class InterfaceServer(InterfaceServiceServicer):
         veth_peer = interface.veth.peer
         veth_index = get_iface_index(veth_name, self.iproute)
 
-        if veth_index != -1:
-            self.iproute.link('delete', index=veth_index)
-            veth_index = -1
         if veth_index == -1:
-            self.iproute.link('add', ifname=veth_name,
-                              peer=veth_peer, kind='veth')
-            veth_index = get_iface_index(veth_name, self.iproute)
+            try:
+                logger.info("Creating interface {}".format(veth_name))
+                self.iproute.link('add', ifname=veth_name,
+                                  peer=veth_peer, kind='veth')
+            except Exception as e:
+                if e.code == CONSTANTS.NETLINK_FILE_EXISTS_ERROR:
+                    veth_index = get_iface_index(veth_name, self.iproute)
+                    logger.info(
+                        "Veth already exists! veth index is {} Continuing".format(veth_index))
+                    pass
+                else:
+                    logger.info(
+                        "Unknown exception occured when creating veth {}".format(e))
+        else:
+            logger.info("Interface {} already exists!".format(veth_name))
 
+        veth_index = get_iface_index(veth_name, self.iproute)
+        mac_address = ""
+        if veth_index != -1:
+            mac_address = get_iface_mac(veth_index, self.iproute)
         # Update the mac address with the interface address
         address = InterfaceAddress(
             version=interface.address.version,
             ip_address=interface.address.ip_address,
             ip_prefix=interface.address.ip_prefix,
             gateway_ip=interface.address.gateway_ip,
-            mac=get_iface_mac(veth_index, self.iproute),
+            mac=mac_address,
             tunnel_id=interface.address.tunnel_id
         )
         interface.address.CopyFrom(address)
@@ -114,18 +153,15 @@ class InterfaceServer(InterfaceServiceServicer):
         pod_name = get_pod_name(interface.interface_id.pod_id)
         logger.info("Producing interface {}".format(interface))
         logger.info("Current queued interfaces {}".format(self.interfaces))
-        with self.interfaces_lock:
-            # Append the interface to the pod's interfaces (important in
-            # multi-interfaces case)
-            if pod_name not in self.interfaces:
-                self.interfaces[pod_name] = []
-            self.interfaces[pod_name].append(interface)
+        # Append the interface to the pod's interfaces (important in
+        # multi-interfaces case)
+        if pod_name not in self.interfaces:
+            self.interfaces[pod_name] = []
+        self.interfaces[pod_name].append(interface)
 
-            # Move the pod_name into interfaces_q. This tells the consume
-            # function that the pod has queued interfaces that can be consumed
-            if pod_name not in self.queued_pods:
-                self.interfaces_q.put(pod_name)
-                self.queued_pods.add(pod_name)
+        # Move the pod_name into interfaces_q. This tells the consume
+        # function that the pod has queued interfaces that can be consumed
+        self.pod_dict[pod_name] = True
 
         # Change interface status from init to queued.
         interface.status = InterfaceStatus.queued
@@ -135,17 +171,13 @@ class InterfaceServer(InterfaceServiceServicer):
         Remove the pod from the interfaces_q and provision the interface
         (program the transit agent)
         """
-        with self.interfaces_lock:
-            if pod_name in self.queued_pods:
-                self.queued_pods.remove(pod_name)
-            interfaces = self.interfaces.get(pod_name, [])
-            for interface in interfaces:
-                if interface.status == InterfaceStatus.queued:
-                    self._ProvisionInterface(interface, cni_params)
-                    interface.status = InterfaceStatus.consumed
+        interfaces = self.interfaces.get(pod_name, [])
+        for interface in interfaces:
+            if interface.status == InterfaceStatus.queued:
+                self._ProvisionInterface(interface, cni_params)
+                interface.status = InterfaceStatus.consumed
 
         interfaces = InterfacesList(interfaces=interfaces)
-        logger.info("Consumed {}".format(interfaces))
         return interfaces
 
     def _ProvisionInterface(self, interface, cni_params):
@@ -165,10 +197,12 @@ class InterfaceServer(InterfaceServiceServicer):
 
         veth_peer_index = get_iface_index(interface.veth.peer, self.iproute)
         if os.getenv('FEATUREGATE_BWQOS', 'false').lower() in ('false', '0'):
-            self.iproute.link('set', index=veth_peer_index, state='up', mtu=9000)
+            self.iproute.link('set', index=veth_peer_index,
+                              state='up', mtu=9000)
         else:
             mzbr_index = get_iface_index(CONSTANTS.MIZAR_BRIDGE, self.iproute)
-            self.iproute.link('set', index=veth_peer_index, master=mzbr_index, state='up', mtu=9000)
+            self.iproute.link('set', index=veth_peer_index,
+                              master=mzbr_index, state='up', mtu=9000)
 
         # Configure the Transit Agent
         self._ConfigureTransitAgent(interface)
@@ -178,6 +212,9 @@ class InterfaceServer(InterfaceServiceServicer):
         Load the Transit Agent XDP program, program all the bouncer substrate,
         update the agent metadata and endpoint.
         """
+        pod_name = get_pod_name(interface.interface_id.pod_id)
+        logger.info(
+            "Loading transit agent and configuring for pod {}".format(pod_name))
         self.rpc.load_transit_agent_xdp(interface)
 
         for bouncer in interface.bouncers:
@@ -198,37 +235,39 @@ class InterfaceServer(InterfaceServiceServicer):
             "Call from CNI Consume: cni_params/request: {}, cni_params.pod_id {}, pod_name {}".format(request, request.pod_id, requested_pod_name))
         logger.info("Consume Interfaces {}".format(request))
         logger.info("Consuming interfaces for pod: {} Current Queue: {}".format(
-            requested_pod_name, list(self.interfaces_q.queue)))
+            requested_pod_name, list(self.pod_dict)))
+
+        # The success of this function depends on ProduceInterfaces which is executed in another process.
+        # So using while here to wait until ProduceInterfaces has been done.
         start = time.time()
-
-        # The following is a synchronization mechanism to make sure the
-        # CNI calls _ConsumeInterfaces after the interfaces got produced.
-        # In Arktos, this may be skipped because the Kubelet will only
-        # invoke CNI after the Pod operator marks the pod's network ready
-
         while True:
-            try:
-                queued_pod_name = self.interfaces_q.get(
-                    timeout=CONSUME_INTERFACE_TIMEOUT)
-            except:
-                break
-
-            if queued_pod_name == requested_pod_name:
-                # Interfaces for the Pod has been produced
-                return self._ConsumeInterfaces(queued_pod_name, request)
-
-            # Update the wait time and break the wait if necessary
-            self.interfaces_q.put(queued_pod_name)
+            if self.pod_dict:
+                if requested_pod_name in self.pod_dict:
+                    if self.pod_dict[requested_pod_name]:
+                        # Interfaces for the Pod has been produced
+                        return self._ConsumeInterfaces(requested_pod_name, request)
+            time.sleep(WAITING_SLEEP_INTERVAL)
             now = time.time()
-
             if now - start >= CONSUME_INTERFACE_TIMEOUT:
                 break
 
         # If we are here, the endpoint operator has not produced any interfaces
         # for the Pod. Typically the CNI will retry to consume the interface.
-        logger.error("Timeout, no new interface to consume! {} {}".format(
-            requested_pod_name, list(self.interfaces_q.queue)))
-        return self._ConsumeInterfaces(requested_pod_name, request)
+        raise RuntimeError(
+            "ConsumeInterfaces: Interface not found for pod '{}'".format(requested_pod_name))
+
+    def RemoveCachedInterfaces(self, request, context):
+        """
+        Called by the endpoints operator to remove cached interfaces.
+        """
+        requested_pod_id = request
+        requested_pod_name = get_pod_name(requested_pod_id)
+        if(requested_pod_name in self.pod_dict):
+            self.pod_dict.pop(requested_pod_name)
+        if(requested_pod_name in self.interfaces):
+            self.interfaces.pop(requested_pod_name)
+
+        return empty_pb2.Empty()
 
     def _DeleteVethInterface(self, interface):
         """
@@ -240,21 +279,22 @@ class InterfaceServer(InterfaceServiceServicer):
 
     def DeleteInterface(self, request, context):
         """
-        Delete network interfaces for a pod
+        Delete network interface
         """
-        cni_params = request
-        pod_name = get_pod_name(cni_params.pod_id)
+        interface = request
+        pod_name = get_pod_name(interface.interface_id.pod_id)
         pod_interfaces = self.interfaces.get(pod_name, [])
-        iface = cni_params.interface
+        iface = interface.interface_id.interface
         logger.info("Deleting interfaces for pod {} with interfaces {}".format(
             pod_name, pod_interfaces))
 
-        for interface in pod_interfaces:
-            self.interfaces[pod_name].remove(interface)
-            if iface == interface and interface.interface_type == InterfaceType.veth:
+        for pod_interface in pod_interfaces:
+            self.interfaces[pod_name].remove(pod_interface)
+            if iface == pod_interface and pod_interface.interface_type == InterfaceType.veth:
                 logger.info("Deleting interface: {}".format(iface))
-                self._DeleteVethInterface(interface)
-                logger.info("Removed {}".format(interface))
+                self._DeleteVethInterface(pod_interface)
+                logger.info("Removed {}".format(pod_interface))
+
         return empty_pb2.Empty()
 
     def ActivateHostInterface(self, request, context):
@@ -279,9 +319,16 @@ class InterfaceServer(InterfaceServiceServicer):
         self.iproute.addr('add', index=veth_index, address=interface.address.ip_address,
                           prefixlen=int(interface.address.ip_prefix))
 
-        self.iproute.route('add', dst=OBJ_DEFAULTS.default_net_ip,
-                           mask=int(OBJ_DEFAULTS.default_net_prefix), oif=veth_index)
-
+        try:
+            self.iproute.route('add', dst=interface.vpc_ip,
+                               mask=int(interface.vpc_prefix), oif=veth_index)
+        except Exception as e:
+            if e.code == CONSTANTS.NETLINK_FILE_EXISTS_ERROR:
+                logger.info("Route already exists! Continuing")
+                pass
+            else:
+                logger.info(
+                    "Unknown exception occured when adding route {}".format(e))
         # Disable TSO and checksum offload as xdp currently does not support
         logger.info("Disable tso for host ep")
         cmd = "nsenter -t 1 -m -u -n -i ethtool -K {} tso off gso off ufo off".format(
@@ -295,17 +342,21 @@ class InterfaceServer(InterfaceServiceServicer):
         logger.info(
             "Disabled rx tx offload for host ep rc: {} text: {}".format(rc, text))
 
-        cmd = "nsenter -t 1 -m -u -n -i cat /sys/class/net/{}/speed".format(interface.veth.name)
+        cmd = "nsenter -t 1 -m -u -n -i cat /sys/class/net/{}/speed".format(
+            interface.veth.name)
         rc, linkspeed = run_cmd(cmd)
-        linkspeed_bytes_per_sec = int(int(linkspeed.rstrip('\r\n')) * 1000 * (1000/ 8))
-        logger.info("Host interface {} Link Speed {} bytes/sec".format(interface.veth.name, linkspeed_bytes_per_sec))
+        linkspeed_bytes_per_sec = int(
+            int(linkspeed.rstrip('\r\n')) * 1000 * (1000 / 8))
+        logger.info("Host interface {} Link Speed {} bytes/sec".format(
+            interface.veth.name, linkspeed_bytes_per_sec))
 
         # Initialize Tx stats map entry
-        #TODO: Use interface.address.ip_address for multi-NIC scenario
+        # TODO: Use interface.address.ip_address for multi-NIC scenario
         self.rpc.reset_tx_stats("0.0.0.0")
 
-        #TODO: Get user-configured default bandwidth limit percentage from config-map
-        bwlimit = int((linkspeed_bytes_per_sec * CONSTANTS.MIZAR_DEFAULT_EGRESS_BW_LIMIT_PCT) / 100)
+        # TODO: Get user-configured default bandwidth limit percentage from config-map
+        bwlimit = int((linkspeed_bytes_per_sec *
+                      CONSTANTS.MIZAR_DEFAULT_EGRESS_BW_LIMIT_PCT) / 100)
         self.rpc.update_bw_qos_config(interface.address.ip_address, bwlimit)
 
         return interface
@@ -313,28 +364,82 @@ class InterfaceServer(InterfaceServiceServicer):
 
 class InterfaceServiceClient():
     def __init__(self, ip):
-        self.channel = grpc.insecure_channel('{}:50051'.format(ip))
+        addr = '{}:{}'.format(ip, OBJ_DEFAULTS.mizar_daemon_service_port)
+        self.channel = grpc.insecure_channel(addr)
         self.stub = InterfaceServiceStub(self.channel)
 
-    def InitializeInterfaces(self, interfaces_list):
-        resp = self.stub.InitializeInterfaces(interfaces_list)
-        return resp
+    def InitializeInterfaces(self, interfaces_list, task):
+        try:
+            resp = self.stub.InitializeInterfaces(interfaces_list)
+            return resp
+        except grpc.RpcError as rpc_error:
+            if rpc_error.code() == grpc.StatusCode.UNAVAILABLE:
+                task.raise_temporary_error(
+                    "InitializeInterfaces failed, Daemon not ready {}".format(rpc_error.details()))
+            else:
+                task.raise_permanent_error(
+                    "Unknown gRPC error {}".format(rpc_error.details()))
 
-    def ProduceInterfaces(self, interfaces_list):
-        resp = self.stub.ProduceInterfaces(interfaces_list)
-        return resp
+    def ProduceInterfaces(self, interfaces_list, task):
+        try:
+            resp = self.stub.ProduceInterfaces(interfaces_list)
+            return resp
+        except grpc.RpcError as rpc_error:
+            if rpc_error.code() == grpc.StatusCode.UNAVAILABLE:
+                task.raise_temporary_error(
+                    "Produce endpoint temporary error: Daemon not yet ready! {}".format(rpc_error.details()))
+            elif CONSTANTS.GRPC_DEVICE_BUSY_ERROR in rpc_error.details() or CONSTANTS.GRPC_FILE_EXISTS_ERROR in rpc_error.details():
+                task.raise_permanent_error(
+                    "Produce endpoint permanent error: Repeat call veth device already created! RPC error : {}".format(rpc_error.details()))
+                return None
+            else:
+                task.raise_permanent_error(
+                    "Produce endpoint permanent error: Unknown {}".format(rpc_error.details()))
 
+    # Unused by operator
     def ConsumeInterfaces(self, pod_id):
         resp = self.stub.ConsumeInterfaces(pod_id)
         return resp
 
-    def DeleteInterface(self, interfaces_list):
-        resp = self.stub.DeleteInterface(interfaces_list)
-        return resp
+    def DeleteInterface(self, interface, task):
+        try:
+            resp = self.stub.DeleteInterface(interface)
+            return resp
+        except grpc.RpcError as rpc_error:
+            if rpc_error.code() == grpc.StatusCode.UNAVAILABLE:
+                task.raise_temporary_error(
+                    "DeleteInterface failed, Daemon not ready {}".format(rpc_error.details()))
+            else:
+                task.raise_permanent_error(
+                    "Unknown gRPC error {}".format(rpc_error.details()))
 
-    def ActivateHostInterface(self, interface):
-        resp = self.stub.ActivateHostInterface(interface)
-        return resp
+    def ActivateHostInterface(self, interface, task):
+        try:
+            resp = self.stub.ActivateHostInterface(interface)
+            return resp
+        except grpc.RpcError as rpc_error:
+            if rpc_error.code() == grpc.StatusCode.UNAVAILABLE:
+                task.raise_temporary_error(
+                    "Produce host endpoint temporary error: Daemon not yet ready! {} droplet {}".format(rpc_error.details(), interface.droplet))
+            elif CONSTANTS.GRPC_DEVICE_BUSY_ERROR in rpc_error.details() or CONSTANTS.GRPC_FILE_EXISTS_ERROR in rpc_error.details():
+                task.raise_permanent_error(
+                    "Produce host endpoint: Repeat call, veth device already created! RPC error: {} droplet {}".format(rpc_error.details(), interface.droplet))
+                return None
+            else:
+                task.raise_permanent_error(
+                    "Produce host endpoint permanent error: Unknown {}".format(rpc_error.details()))
+
+    def RemoveCachedInterfaces(self, pod_id, task):
+        try:
+            resp = self.stub.RemoveCachedInterfaces(pod_id)
+            return resp
+        except grpc.RpcError as rpc_error:
+            if rpc_error.code() == grpc.StatusCode.UNAVAILABLE:
+                task.raise_temporary_error(
+                    "Remove cached interfaces temporary error: Daemon not yet ready! {}".format(rpc_error.details()))
+            else:
+                task.raise_permanent_error(
+                    "Remove cached interfaces temporary error: Unknown {}".format(rpc_error.details()))
 
 
 class LocalTransitRpc:

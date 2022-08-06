@@ -46,6 +46,15 @@ class CONSTANTS:
     MIZAR_NETWORK_CLASS_TAG = "mizar.com/network-class"
     MIZAR_NETWORK_PRIORITY_TAG = "mizar.com/network-priority"
     MIZAR_DEFAULT_EGRESS_BW_LIMIT_PCT = 30
+    SUBNETS_NEW_PREFIX = 32
+    RPC_ERROR_CODE = "error"
+    RPC_FATAL_CODE = "fatal"
+    RPC_FAILED_CODE = "failed"
+    HTTP_CONFLICT_ERROR = 409
+    GRPC_DEVICE_BUSY_ERROR = "Device or resource busy"
+    GRPC_FILE_EXISTS_ERROR = "File exists"
+    GRPC_UNAVAILABLE = "failed to connect to all addresses"
+    NETLINK_FILE_EXISTS_ERROR = 17
 
 
 class OBJ_STATUS:
@@ -104,18 +113,21 @@ class OBJ_DEFAULTS:
     ep_type_host = 'host'
     ep_type_gateway = 'gateway'
     droplet_eps = [ep_type_simple, ep_type_host]
+    host_ep_veth_name = "ehost"
+    host_ep_peer_name = "vehost"
+    host_ep_name = "hostep"
 
-    mizar_service_annotation_key = "service.beta.kubernetes.io/mizar-scaled-endpoint-type"
+    mizar_daemon_service_port = 50051
+    mizar_operator_arktos_service_port = 50052
+    mizar_service_annotation_key = "mizar.com/scaled-endpoint"
     mizar_service_annotation_val = "scaled-endpoint"
 
-    arktos_pod_label = "arktos.futurewei.com/network"
-    arktos_pod_annotation = "arktos.futurewei.com/nic"
-    mizar_pod_vpc_annotation = "mizar.com/vpc"
-    mizar_pod_subnet_annotation = "mizar.com/subnet"
+    mizar_ep_vpc_annotation = "mizar.com/vpc"
+    mizar_ep_subnet_annotation = "mizar.com/subnet"
 
-    # 5 minutes of retries
-    kopf_max_retries = 15
-    kopf_retry_delay = 20
+    # 60 minutes of retries
+    kopf_max_retries = 240
+    kopf_retry_delay = 15
 
 
 class RESOURCES:
@@ -129,7 +141,7 @@ class RESOURCES:
 
 class COMPUTE_PROVIDER:
     kubernetes = "kubernetes"
-    k8s = True
+    k8s = False
     arktos = "arktos"
 
 

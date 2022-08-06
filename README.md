@@ -1,16 +1,38 @@
-# Mizar – High Scale and High Performance Cloud Network #
+<!--
+SPDX-License-Identifier: MIT
+Copyright (c) 2022 The Authors.
 
-Mizar is a large scale and high-performance cloud network to run virtual
-machines, containers, and other compute workloads. Mizar offers flexible
-in-network processing, which simplifies the programming of data-plane to scale
-compared to traditional flow-based programming models. Unlike traditional
-networking solutions, Mizar relies on the natural partitioning of a cloud
-network to scale.
+Authors: The Mizar Team
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:The above copyright
+notice and this permission notice shall be included in all copies or
+substantial portions of the Software.THE SOFTWARE IS PROVIDED "AS IS",
+WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+-->  
+
+# Mizar – High Scale and High Performance Cloud Networking #
+
+Mizar is a large scale and high-performance cloud networking interconnect for
+containers, virtual machines, Kubernetes pods, and other compute workloads. Mizar
+offers flexible in-network processing, which simplifies the programming of data-plane
+to scale compared to traditional flow-based programming models. Unlike traditional
+networking solutions, Mizar relies on the natural partitioning of a cloud network
+to scale.
 
 We built Mizar from ground-up on top of
 [XDP](https://prototype-kernel.readthedocs.io/en/latest/networking/XDP/).
-Mizar's main building block is an XDP program that runs on each host. The
-program implements virtual functions including overlay switching, routing,
+Mizar's main building block are XDP programs that runs on each host. The
+programs implement virtual functions including overlay switching, routing,
 virtual endpoints, load-balancing, NAT, etc.
 
 Mizar network has the following advantages:

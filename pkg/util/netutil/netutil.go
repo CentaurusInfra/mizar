@@ -29,7 +29,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// moves the interface to the CNI netnt, rename it, set the IP address, and the gatewey.
+// moves the interface to the CNI netns, renames it, sets the IP address and gatewey.
 func ActivateInterface(
 	ifName string,
 	netNSName string,
@@ -39,49 +39,51 @@ func ActivateInterface(
 	gatewayIp string) (string, error) {
 
 	link, err := netlink.LinkByName(vethName)
-	if err == nil {
-		if link.Attrs().OperState == netlink.OperUp {
-			return fmt.Sprintf("Interface %s has already been UP.", vethName), nil
-		}
+	if err != nil {
+		return fmt.Sprintf("Failed to get interface '%s'", vethName), err
+	}
+
+	if link.Attrs().OperState == netlink.OperUp {
+		return fmt.Sprintf("Interface '%s' already UP.", vethName), nil
 	}
 
 	netNS, err := ns.GetNS(netNSName)
 	if err != nil {
-		return fmt.Sprintf("Failed to open netns %s", netNSName), err
+		return fmt.Sprintf("Failed to open netns '%s'", netNSName), err
 	}
 	defer netNS.Close()
 
 	_, netNSFileName := path.Split(netNSName)
-	strBuilder := strings.Builder{}
+	activateIfLog := strings.Builder{}
 
-	strBuilder.WriteString(fmt.Sprintf("Move interface %s/%d to netns %s.", vethName, link.Attrs().Index, netNSFileName))
+	activateIfLog.WriteString(fmt.Sprintf("[Move interface '%s/%d' to netns '%s']", vethName, link.Attrs().Index, netNSFileName))
 	if netlink.LinkSetNsFd(link, int(netNS.Fd())); err != nil {
-		return strBuilder.String(), err
+		return activateIfLog.String(), err
 	}
 
 	if err = netNS.Do(func(_ ns.NetNS) error {
-		strBuilder.WriteString(fmt.Sprintf("\nRename interface %s to %s.", vethName, ifName))
+		activateIfLog.WriteString(fmt.Sprintf(" + [Rename interface '%s' to '%s']", vethName, ifName))
 		if netlink.LinkSetName(link, ifName); err != nil {
 			return err
 		}
 
-		strBuilder.WriteString("\nRetrieve loopback interface.")
+		activateIfLog.WriteString(" + [Retrieve loopback interface]")
 		loLink, err := netlink.LinkByName("lo")
 		if err != nil {
 			return err
 		}
 
-		strBuilder.WriteString("\nUp the loopback interface.")
+		activateIfLog.WriteString(" + [Set loopback interface UP]")
 		if err = netlink.LinkSetUp(loLink); err != nil {
 			return err
 		}
 
-		strBuilder.WriteString(fmt.Sprintf("\nUp interface %s.", ifName))
+		activateIfLog.WriteString(fmt.Sprintf(" + [Set interface '%s' UP]", ifName))
 		if err = netlink.LinkSetUp(link); err != nil {
 			return err
 		}
 
-		strBuilder.WriteString(fmt.Sprintf("\nSet ip %s to interface %s.", ipAddress, ifName))
+		activateIfLog.WriteString(fmt.Sprintf(" + [Set ip addr '%s' on interface '%s']", ipAddress, ifName))
 		ipPrefix, err := strconv.Atoi(ipPrefix)
 		if err != nil {
 			return err
@@ -95,7 +97,7 @@ func ActivateInterface(
 			return err
 		}
 
-		strBuilder.WriteString(fmt.Sprintf("\nSet gateway %s to interface %s.", gatewayIp, ifName))
+		activateIfLog.WriteString(fmt.Sprintf(" + [Set gateway '%s' for interface '%s']", gatewayIp, ifName))
 		gw := net.ParseIP(gatewayIp)
 		defaultRoute := netlink.Route{
 			Dst:      nil,
@@ -108,23 +110,23 @@ func ActivateInterface(
 
 		return nil
 	}); err != nil {
-		return strBuilder.String(), err
+		return activateIfLog.String(), err
 	}
 
-	strBuilder.WriteString("\nDisable tso for pod")
+	activateIfLog.WriteString(fmt.Sprintf(" + [Disable tso on interface '%s']", ifName))
 	cmdTxt, result, err := executil.Execute("ip", "netns", "exec", netNSFileName, "ethtool", "-K", ifName, "tso", "off", "gso", "off", "ufo", "off")
-	strBuilder.WriteString(fmt.Sprintf("\nExecuting cmd: \n%s\n%s", cmdTxt, result))
+	activateIfLog.WriteString(fmt.Sprintf(" + [Cmd: '%s -> Result: '%s']", cmdTxt, result))
 	if err != nil {
-		return strBuilder.String(), err
+		return activateIfLog.String(), err
 	}
 
 	cmdTxt, result, err = executil.Execute("ip", "netns", "exec", netNSFileName, "ethtool", "--offload", ifName, "rx", "off", "tx", "off")
-	strBuilder.WriteString(fmt.Sprintf("\nExecuting cmd: \n%s\n%s", cmdTxt, result))
+	activateIfLog.WriteString(fmt.Sprintf(" + [Cmd: '%s' -> Result: '%s']", cmdTxt, result))
 	if err != nil {
-		return strBuilder.String(), err
+		return activateIfLog.String(), err
 	}
 
-	return strBuilder.String(), nil
+	return activateIfLog.String(), nil
 }
 
 func DeleteNetNS(netNSName string) {

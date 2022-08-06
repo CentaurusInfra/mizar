@@ -175,7 +175,7 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	int pod_label_value = 0;
 	int namespace_label_value = 0;
 	__u64 egress_bw_bytes_per_sec = 0;
-	__u32 pod_network_class_priority = BESTEFFORT | PRIORITY_MEDIUM;
+	__u32 pod_network_class_priority = PREMIUM | PRIORITY_HIGH;
 	packet_metadata = bpf_map_lookup_elem(&packet_metadata_map, &packet_metadata_key);
 	if (packet_metadata) {
 		pod_label_value = packet_metadata->pod_label_value;
@@ -253,7 +253,7 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 	pkt->ip->saddr = metadata->eth.ip;
 	pkt->ip->ttl = pkt->inner_ttl;
 
-	__u8 dscp_code = 0;
+	__u8 dscp_code = DSCP_PREMIUM_HIGH;
 	switch (pod_network_class_priority) {
 	case (PREMIUM|PRIORITY_HIGH):
 		dscp_code = DSCP_PREMIUM_HIGH;
@@ -280,7 +280,7 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 		dscp_code = DSCP_BESTEFFORT_LOW;
 		break;
 	default:
-		dscp_code = 0;
+		dscp_code = DSCP_PREMIUM_HIGH;
 	}
 	pkt->ip->tos = dscp_code << 2;
 

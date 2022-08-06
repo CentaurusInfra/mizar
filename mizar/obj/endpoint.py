@@ -63,6 +63,8 @@ class Endpoint:
         self.backends = []
         self.ports = []
         self.pod = ""
+        self.vpc_prefix = ""
+        self.vpc_ip = ""
         self.deleted = False
         self.interface = None
         self.ingress_networkpolicies = []
@@ -75,7 +77,7 @@ class Endpoint:
 
     @property
     def rpc(self):
-        return TrnRpc(self.droplet_ip, self.droplet_mac, self.droplet_obj.phy_itf)
+        return TrnRpc(self.droplet_ip, self.droplet_mac, self.droplet_ip)
 
     def get_nip(self):
         if self.type == OBJ_DEFAULTS.ep_type_host:
@@ -250,16 +252,24 @@ class Endpoint:
     def set_pod(self, pod):
         self.pod = pod
 
-    def update_bouncers(self, bouncers, add=True):
+    def set_vpc_ip(self, vpc_ip):
+        self.vpc_ip = vpc_ip
+
+    def set_vpc_prefix(self, vpc_prefix):
+        self.vpc_prefix = vpc_prefix
+
+    def update_bouncers(self, bouncers, task, add=True):
         for bouncer in bouncers.values():
             if add:
+                logger.info("endpoint obj: update_bouncer: ep {} update agent with bouncer {}".format(
+                    self.name, bouncer.name))
                 self.bouncers[bouncer.name] = bouncer
-                self.update_agent_substrate(self, bouncer)
+                self.update_agent_substrate(self, bouncer, task)
             else:
                 self.bouncers.pop(bouncer.name)
                 self.droplet_obj.delete_agent_substrate(self, bouncer)
-        self.rpc.update_agent_metadata(self)
-        self.droplet_obj.update_ep(self.name, self)
+        self.rpc.update_agent_metadata(self, task)
+        self.droplet_obj.update_ep(self.name, self, task)
 
     def update_bouncers_list(self, bouncers, add=True):
         for bouncer in bouncers.values():
@@ -382,8 +392,8 @@ class Endpoint:
     def unload_transit_agent_xdp(self):
         self.rpc.unload_transit_agent_xdp(self)
 
-    def update_agent_substrate(self, ep, bouncer):
-        self.rpc.update_agent_substrate_ep(ep, bouncer.ip, bouncer.mac)
+    def update_agent_substrate(self, ep, bouncer, task):
+        self.rpc.update_agent_substrate_ep(ep, bouncer.ip, bouncer.mac, task)
 
     def update_packet_metadata(self, pod_label_value, namespace_label_value):
         if(pod_label_value != self.pod_label_value or namespace_label_value != self.namespace_label_value):
@@ -405,26 +415,43 @@ class Endpoint:
             self.delete_network_policy_egress(
                 "with_except", data["old"]["egress"]["cidr_table_with_except"])
             # When deleting policy data, except data should be after cidr data
-            self.delete_network_policy_ingress("except", data["old"]["ingress"]["cidr_table_except"])
-            self.delete_network_policy_egress("except", data["old"]["egress"]["cidr_table_except"])
-            self.delete_network_policy_protocol_port_ingress(data["old"]["ingress"]["port_table"])
-            self.delete_network_policy_protocol_port_egress(data["old"]["egress"]["port_table"])
-            self.delete_pod_label_policy(data["old"]["ingress"]["pod_label_policy_table"])
-            self.delete_namespace_label_policy(data["old"]["ingress"]["namespace_label_policy_table"])
-            self.delete_pod_and_namespace_label_policy(data["old"]["ingress"]["pod_and_namespace_label_policy_table"])
+            self.delete_network_policy_ingress(
+                "except", data["old"]["ingress"]["cidr_table_except"])
+            self.delete_network_policy_egress(
+                "except", data["old"]["egress"]["cidr_table_except"])
+            self.delete_network_policy_protocol_port_ingress(
+                data["old"]["ingress"]["port_table"])
+            self.delete_network_policy_protocol_port_egress(
+                data["old"]["egress"]["port_table"])
+            self.delete_pod_label_policy(
+                data["old"]["ingress"]["pod_label_policy_table"])
+            self.delete_namespace_label_policy(
+                data["old"]["ingress"]["namespace_label_policy_table"])
+            self.delete_pod_and_namespace_label_policy(
+                data["old"]["ingress"]["pod_and_namespace_label_policy_table"])
 
         # When updating policy data, except data should be before cidr data
-        self.update_network_policy_ingress("except", data["ingress"]["cidr_table_except"])
-        self.update_network_policy_egress("except", data["egress"]["cidr_table_except"])
-        self.update_network_policy_ingress("no_except", data["ingress"]["cidr_table_no_except"])
-        self.update_network_policy_ingress("with_except", data["ingress"]["cidr_table_with_except"])
-        self.update_network_policy_egress("no_except", data["egress"]["cidr_table_no_except"])
-        self.update_network_policy_egress("with_except", data["egress"]["cidr_table_with_except"])
-        self.update_network_policy_protocol_port_ingress(data["ingress"]["port_table"])
-        self.update_network_policy_protocol_port_egress(data["egress"]["port_table"])
+        self.update_network_policy_ingress(
+            "except", data["ingress"]["cidr_table_except"])
+        self.update_network_policy_egress(
+            "except", data["egress"]["cidr_table_except"])
+        self.update_network_policy_ingress(
+            "no_except", data["ingress"]["cidr_table_no_except"])
+        self.update_network_policy_ingress(
+            "with_except", data["ingress"]["cidr_table_with_except"])
+        self.update_network_policy_egress(
+            "no_except", data["egress"]["cidr_table_no_except"])
+        self.update_network_policy_egress(
+            "with_except", data["egress"]["cidr_table_with_except"])
+        self.update_network_policy_protocol_port_ingress(
+            data["ingress"]["port_table"])
+        self.update_network_policy_protocol_port_egress(
+            data["egress"]["port_table"])
         self.update_pod_label_policy(data["ingress"]["pod_label_policy_table"])
-        self.update_namespace_label_policy(data["ingress"]["namespace_label_policy_table"])
-        self.update_pod_and_namespace_label_policy(data["ingress"]["pod_and_namespace_label_policy_table"])
+        self.update_namespace_label_policy(
+            data["ingress"]["namespace_label_policy_table"])
+        self.update_pod_and_namespace_label_policy(
+            data["ingress"]["pod_and_namespace_label_policy_table"])
 
     def update_network_policy_ingress(self, cidr_type, cidr_table):
         cidr_networkpolicy_list = []

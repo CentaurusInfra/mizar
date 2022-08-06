@@ -1,3 +1,22 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2022 The Authors.
+
+# Authors: The Mizar Team
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:The above copyright
+# notice and this permission notice shall be included in all copies or
+# substantial portions of the Software.THE SOFTWARE IS PROVIDED "AS IS",
+# WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+# TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+# FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+# THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import grpc
 import time
@@ -7,7 +26,7 @@ from google.protobuf import empty_pb2
 from concurrent import futures
 from mizar.daemon.interface_service import InterfaceServer
 from mizar.daemon.droplet_service import DropletServer
-from mizar.common.constants import CONSTANTS
+from mizar.common.constants import CONSTANTS, OBJ_DEFAULTS
 from mizar.common.common import *
 import mizar.proto.interface_pb2_grpc as interface_pb2_grpc
 import mizar.proto.interface_pb2 as interface_pb2
@@ -27,8 +46,33 @@ POOL_WORKERS = 10
 def init(benchmark=False):
     # Setup the droplet's host
     default_itf = get_itf()
+
+    script = (f''' bash -c 'nsenter -t 1 -m -u -n -i ip l' ''')
+    r = subprocess.Popen(script, shell=True, stdout=subprocess.PIPE)
+    output = r.stdout.read().decode().strip()
+    logging.info("Current interfaces {}".format(output))
+
+    script = (f''' bash -c 'for name in $(nsenter -t 1 -m -u -n -i ip l |  grep -Po "(vehost-\w+)(?=@)"); do nsenter -t 1 -m -u -n -i sudo ip l delete $name; done ' ''')
+    r = subprocess.Popen(script, shell=True, stdout=subprocess.PIPE)
+    output = r.stdout.read().decode().strip()
+    logging.info("Deleted preexisting host eps: {}".format(output))
+
+    script = (f''' bash -c 'for name in $(nsenter -t 1 -m -u -n -i ip l |  grep -Po "(veth-\w+)(?=@)"); do nsenter -t 1 -m -u -n -i sudo ip l delete $name; done' ''')
+    r = subprocess.Popen(script, shell=True, stdout=subprocess.PIPE)
+    output = r.stdout.read().decode().strip()
+    logging.info("Deleted preexisting veths: {}".format(output))
+
+    script = (f''' bash -c 'nsenter -t 1 -m -u -n -i ip l' ''')
+    r = subprocess.Popen(script, shell=True, stdout=subprocess.PIPE)
+    output = r.stdout.read().decode().strip()
+    logging.info("Interfaces after delete. {}".format(output))
+
+    script = (f''' bash -c 'for file in $(nsenter -t 1 -m -u -n -i ls -1 /etc/cni/net.d/ | grep -v '10-mizarcni.conf$'); do nsenter -t 1 -m -u -n -i rm -rf /etc/cni/net.d/$file; done' ''')
+    r = subprocess.Popen(script, shell=True, stdout=subprocess.PIPE)
+    output = r.stdout.read().decode().strip()
+    logging.info("Deleted other CNI files: {}".format(output))
+
     script = (f''' bash -c '\
-    nsenter -t 1 -m -u -n -i ls -1 /etc/cni/net.d/*conf* | grep -v '10-mizarcni.conf$' | xargs rm -rf && \
     nsenter -t 1 -m -u -n -i /etc/init.d/rpcbind restart && \
     nsenter -t 1 -m -u -n -i /etc/init.d/rsyslog restart && \
     nsenter -t 1 -m -u -n -i sysctl -w net.ipv4.tcp_mtu_probing=2 && \
@@ -39,12 +83,14 @@ def init(benchmark=False):
     output = r.stdout.read().decode().strip()
     logging.info("Setup done")
 
-    cmd = 'nsenter -t 1 -m -u -n -i ip addr show ' + f'''{default_itf}''' + ' | grep "inet\\b" | awk \'{print $2}\''
+    cmd = 'nsenter -t 1 -m -u -n -i ip addr show ' + \
+        f'''{default_itf}''' + ' | grep "inet\\b" | awk \'{print $2}\''
     r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     nodeipmask = r.stdout.read().decode().strip()
     nodeip = nodeipmask.split("/")[0]
 
-    cmd = "nsenter -t 1 -m -u -n -i ip link set dev " + f'''{default_itf}''' + " xdpgeneric off"
+    cmd = "nsenter -t 1 -m -u -n -i ip link set dev " + \
+        f'''{default_itf}''' + " xdpgeneric off"
 
     r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     output = r.stdout.read().decode().strip()
@@ -111,7 +157,8 @@ def init(benchmark=False):
         nsenter -t 1 -m -u -n -i brctl show'''
 
     dev_default_itf = f'''dev {default_itf}'''
-    rtlistcmd = 'nsenter -t 1 -m -u -n -i ip route list | grep "' + f'''{dev_default_itf}''' + '"'
+    rtlistcmd = 'nsenter -t 1 -m -u -n -i ip route list | grep "' + \
+        f'''{dev_default_itf}''' + '"'
 
     r = subprocess.Popen(rtlistcmd, shell=True, stdout=subprocess.PIPE)
     rtchanges = []
@@ -122,7 +169,8 @@ def init(benchmark=False):
         rt = line.decode().strip()
         rtkey = rt.partition(dev_default_itf)[0]
         rtdesc = rt.partition(dev_default_itf)[2]
-        rnew = 'nsenter -t 1 -m -u -n -i ip route change ' + rtkey + f'''dev {CONSTANTS.MIZAR_BRIDGE}''' + rtdesc
+        rnew = 'nsenter -t 1 -m -u -n -i ip route change ' + \
+            rtkey + f'''dev {CONSTANTS.MIZAR_BRIDGE}''' + rtdesc
         if 'default' in rt:
             rtchanges.append(rnew)
         else:
@@ -132,7 +180,7 @@ def init(benchmark=False):
     if len(rtchanges) > 0:
         for rtc in rtchanges:
             if not rtchangecmd:
-                rtchangecmd =  rtc
+                rtchangecmd = rtc
             else:
                 rtchangecmd = rtchangecmd + " && " + rtc
             rtchangecmd = rtchangecmd + " || true"
@@ -143,7 +191,7 @@ def init(benchmark=False):
     logging.info("Mizar bridge setup script:\n{}\n".format(brscript))
     r = subprocess.Popen(brscript, shell=True, stdout=subprocess.PIPE)
     output = r.stdout.read().decode().strip()
-    #TODO: Restore original network config upon error / cleanup
+    # TODO: Restore original network config upon error / cleanup
     logging.info("Mizar bridge setup complete.\n{}\n".format(output))
 
     tcscript = (f''' bash -c '\
@@ -155,9 +203,9 @@ def init(benchmark=False):
     output = r.stdout.read().decode().strip()
     logging.info("Load EDT eBPF program done.\n{}\n".format(output))
 
-    #Setup multi-level QoS for Best-effort and Expedited class traffic
-    linkspeed="10gbit"
-    burstsize="2k"
+    # Setup multi-level QoS for Best-effort and Expedited class traffic
+    linkspeed = "10gbit"
+    burstsize = "2k"
     tcscript = (f''' bash -c '\
     nsenter -t 1 -m -u -n -i tc qdisc del dev {CONSTANTS.MIZAR_BRIDGE} root 2> /dev/null || true && \
     nsenter -t 1 -m -u -n -i tc qdisc add dev {CONSTANTS.MIZAR_BRIDGE} root handle 1: prio bands 6 priomap 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 && \
@@ -200,9 +248,10 @@ def serve():
         InterfaceServer(), server
     )
 
-    server.add_insecure_port('[::]:50051')
+    addr = "[::]:{}".format(OBJ_DEFAULTS.mizar_daemon_service_port)
+    server.add_insecure_port(addr)
     server.start()
-    logger.info("Transit daemon is ready")
+    logger.info("Transit daemon is ready and listening on {}".format(addr))
     try:
         while True:
             time.sleep(100000)

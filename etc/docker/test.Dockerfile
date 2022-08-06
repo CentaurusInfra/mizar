@@ -21,6 +21,7 @@
 
 FROM python:3.9
 RUN apt-get update -y
+RUN apt-get install -y iproute2
 RUN apt-get install -y iputils-ping
 RUN apt-get install -y netcat
 RUN apt-get install -y iperf3
@@ -29,5 +30,5 @@ RUN apt-get install -y tcpdump
 RUN apt-get install -y ethtool
 RUN apt-get install -y sudo
 COPY teste2e/ /var/mizar/test
-EXPOSE 8000 9001 5001
+EXPOSE 8000 9001 5001 7000
 CMD /var/mizar/test/scripts/run_servers.sh

@@ -21,7 +21,7 @@
 
 import random
 import uuid
-from kubernetes import client, config
+from kubernetes import client
 from mizar.common.constants import *
 from mizar.common.common import *
 from mizar.obj.bouncer import Bouncer
@@ -44,7 +44,7 @@ class DividerOperator(object):
     def _init(self, **kwargs):
         logger.info(kwargs)
         self.store = OprStore()
-        config.load_incluster_config()
+        load_k8s_config()
         self.obj_api = client.CustomObjectsApi()
 
     def query_existing_dividers(self):
@@ -71,31 +71,31 @@ class DividerOperator(object):
         div.set_status(OBJ_STATUS.divider_status_provisioned)
         div.update_obj()
 
-    def update_divider_with_bouncers(self, bouncer, net):
+    def update_divider_with_bouncers(self, bouncer, net, task):
         dividers = self.store.get_dividers_of_vpc(bouncer.vpc).values()
-        for d in dividers:
-            d.update_net(net)
+        for d in list(dividers):
+            d.update_net(net, task)
 
-    def delete_bouncer_from_dividers(self, bouncer, net):
+    def delete_bouncer_from_dividers(self, bouncer, net, task):
         dividers = self.store.get_dividers_of_vpc(bouncer.vpc).values()
-        for d in dividers:
-            d.update_net(net, False)
+        for d in list(dividers):
+            d.update_net(net, task, False)
 
-    def update_net(self, net, dividers=None):
+    def update_net(self, net, task, dividers=None):
         if not dividers:
             dividers = self.store.get_dividers_of_vpc(net.vpc).values()
-        for d in dividers:
-            d.update_net(net)
+        for d in list(dividers):
+            d.update_net(net, task)
 
     def delete_net(self, net):
         dividers = self.store.get_dividers_of_vpc(net.vpc).values()
-        for d in dividers:
+        for d in list(dividers):
             d.delete_net(net)
 
     def delete_nets_from_divider(self, nets, divider):
         for net in nets:
             divider.delete_net(net)
 
-    def update_vpc(self, bouncer):
+    def update_vpc(self, bouncer, task):
         dividers = self.store.get_dividers_of_vpc(bouncer.vpc).values()
-        bouncer.update_vpc(dividers)
+        bouncer.update_vpc(dividers, task)

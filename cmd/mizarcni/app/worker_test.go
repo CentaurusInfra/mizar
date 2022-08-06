@@ -64,8 +64,8 @@ func Test_DoCmdAdd(t *testing.T) {
 			})
 			defer patches.Reset()
 
-			info, err := app.DoCmdAdd(&netVariables, nil)
-			So(info, ShouldBeEmpty)
+			_, tracelog, err := app.DoCmdAdd(&netVariables, nil)
+			So(tracelog, ShouldBeEmpty)
 			So(err, ShouldEqual, expectedError)
 		})
 
@@ -79,9 +79,8 @@ func Test_DoCmdAdd(t *testing.T) {
 			})
 			defer patches.Reset()
 
-			info, err := app.DoCmdAdd(&netVariables, nil)
-			So(info, ShouldContainSubstring, "Network variables")
-			So(info, ShouldContainSubstring, "Doing CNI add")
+			_, tracelog, err := app.DoCmdAdd(&netVariables, nil)
+			So(tracelog, ShouldContainSubstring, "CNI_ADD: Args: ")
 			So(err, ShouldEqual, expectedError)
 		})
 
@@ -95,10 +94,9 @@ func Test_DoCmdAdd(t *testing.T) {
 			})
 			defer patches.Reset()
 
-			info, err := app.DoCmdAdd(&netVariables, nil)
-			So(info, ShouldContainSubstring, "Network variables")
-			So(info, ShouldContainSubstring, "Doing CNI add")
-			So(err.Error(), ShouldContainSubstring, "no interfaces found")
+			_, tracelog, err := app.DoCmdAdd(&netVariables, nil)
+			So(tracelog, ShouldContainSubstring, "CNI_ADD: Args: ")
+			So(err.Error(), ShouldContainSubstring, "No interfaces found for Pod")
 		})
 
 		Convey("Given ActivateInterface error, got expected result", func() {
@@ -127,11 +125,10 @@ func Test_DoCmdAdd(t *testing.T) {
 			})
 			defer patches.Reset()
 
-			info, err := app.DoCmdAdd(&netVariables, nil)
-			So(info, ShouldContainSubstring, "Network variables")
-			So(info, ShouldContainSubstring, "Doing CNI add")
-			So(info, ShouldContainSubstring, "Activating interface")
-			So(info, ShouldContainSubstring, expectedInfo)
+			_, tracelog, err := app.DoCmdAdd(&netVariables, nil)
+			So(tracelog, ShouldContainSubstring, "CNI_ADD: Args: ")
+			So(tracelog, ShouldContainSubstring, "Activating interface")
+			So(tracelog, ShouldContainSubstring, expectedInfo)
 			So(err, ShouldEqual, expectedError)
 		})
 
@@ -164,11 +161,10 @@ func Test_DoCmdAdd(t *testing.T) {
 			})
 			defer patches.Reset()
 
-			info, err := app.DoCmdAdd(&netVariables, nil)
-			So(info, ShouldContainSubstring, "Network variables")
-			So(info, ShouldContainSubstring, "Doing CNI add")
-			So(info, ShouldContainSubstring, "Activating interface")
-			So(info, ShouldContainSubstring, expectedInfo)
+			_, tracelog, err := app.DoCmdAdd(&netVariables, nil)
+			So(tracelog, ShouldContainSubstring, "CNI_ADD: Args: ")
+			So(tracelog, ShouldContainSubstring, "Activating interface")
+			So(tracelog, ShouldContainSubstring, expectedInfo)
 			So(err, ShouldEqual, expectedError)
 		})
 
@@ -201,11 +197,10 @@ func Test_DoCmdAdd(t *testing.T) {
 			})
 			defer patches.Reset()
 
-			info, err := app.DoCmdAdd(&netVariables, nil)
-			So(info, ShouldContainSubstring, "Network variables")
-			So(info, ShouldContainSubstring, "Doing CNI add")
-			So(info, ShouldContainSubstring, "Activating interface")
-			So(info, ShouldContainSubstring, expectedInfo)
+			_, tracelog, err := app.DoCmdAdd(&netVariables, nil)
+			So(tracelog, ShouldContainSubstring, "CNI_ADD: Args: ")
+			So(tracelog, ShouldContainSubstring, "Activating interface")
+			So(tracelog, ShouldContainSubstring, expectedInfo)
 			So(err, ShouldBeNil)
 		})
 	})
@@ -220,41 +215,9 @@ func Test_DoCmdDel(t *testing.T) {
 			})
 			defer patches.Reset()
 
-			info, err := app.DoCmdDel(&netVariables, nil)
-			So(info, ShouldBeEmpty)
+			_, tracelog, err := app.DoCmdDel(&netVariables, nil)
+			So(tracelog, ShouldBeEmpty)
 			So(err, ShouldEqual, expectedError)
-		})
-
-		Convey("Given DeleteInterface error, got expected result", func() {
-			expectedError := errors.New("Expected Error")
-			patches := ApplyFunc(netvariablesutil.LoadCniConfig, func(_ *object.NetVariables, _ []byte) error {
-				return nil
-			})
-			patches.ApplyFunc(grpcclientutil.DeleteInterface, func(_ object.NetVariables) error {
-				return expectedError
-			})
-			defer patches.Reset()
-
-			info, err := app.DoCmdDel(&netVariables, nil)
-			So(info, ShouldContainSubstring, "Network variables")
-			So(info, ShouldContainSubstring, "Deleting interface")
-			So(err, ShouldEqual, expectedError)
-		})
-
-		Convey("Given no error, got expected result", func() {
-			patches := ApplyFunc(netvariablesutil.LoadCniConfig, func(_ *object.NetVariables, _ []byte) error {
-				return nil
-			})
-			patches.ApplyFunc(grpcclientutil.DeleteInterface, func(_ object.NetVariables) error {
-				return nil
-			})
-			defer patches.Reset()
-
-			info, err := app.DoCmdDel(&netVariables, nil)
-			So(info, ShouldContainSubstring, "Network variables")
-			So(info, ShouldContainSubstring, "Deleting interface")
-			So(info, ShouldContainSubstring, "Deleting network namespace")
-			So(err, ShouldBeNil)
 		})
 	})
 }

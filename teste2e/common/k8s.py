@@ -1,3 +1,23 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2022 The Authors.
+
+# Authors: The Mizar Team
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:The above copyright
+# notice and this permission notice shall be included in all copies or
+# substantial portions of the Software.THE SOFTWARE IS PROVIDED "AS IS",
+# WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+# TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+# FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+# THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 import yaml
 from teste2e.common.helper import *
 from cli.mizarapi import *
@@ -73,19 +93,19 @@ class k8sApi:
     def delete_net(self, name):
         self.api.delete_net(name)
 
-    def create_pod(self, name, vpc="vpc0", subnet="net0", scaledep=''):
+    def create_pod(self, name, vpc=OBJ_DEFAULTS.default_ep_vpc, subnet=OBJ_DEFAULTS.default_ep_net, scaledep=''):
         pod_manifest = {
             'apiVersion': 'v1',
             'kind': 'Pod',
             'metadata': {
                     'name': name,
                     'annotations': {
-                        OBJ_DEFAULTS.mizar_pod_vpc_annotation: vpc,
-                        OBJ_DEFAULTS.mizar_pod_subnet_annotation: subnet,
+                        OBJ_DEFAULTS.mizar_ep_vpc_annotation: vpc,
+                        OBJ_DEFAULTS.mizar_ep_subnet_annotation: subnet,
                     },
                 'labels': {
                         'scaledep': scaledep
-                        }
+                    }
             },
             'spec': {
                 'containers': [{
@@ -95,7 +115,7 @@ class k8sApi:
             }
         }
         if not subnet:
-            del pod_manifest["metadata"]["annotations"][OBJ_DEFAULTS.mizar_pod_subnet_annotation]
+            del pod_manifest["metadata"]["annotations"][OBJ_DEFAULTS.mizar_ep_subnet_annotation]
         resp = self.k8sapi.create_namespaced_pod(
             body=pod_manifest, namespace='default')
 
@@ -147,7 +167,7 @@ class k8sApi:
                       stdout=True, tty=False)
         return resp
 
-    def create_service(self, name):
+    def create_service(self, name, vpc=OBJ_DEFAULTS.default_ep_vpc, subnet=OBJ_DEFAULTS.default_ep_net):
         service_manifest = {
             'apiVersion': 'v1',
             'kind': 'Service',
@@ -158,7 +178,9 @@ class k8sApi:
                 'name': name,
                 'resourceversion': 'v1',
                 'annotations': {
-                    'service.beta.kubernetes.io/mizar-scaled-endpoint-type': "scaled-endpoint"
+                    OBJ_DEFAULTS.mizar_service_annotation_key: OBJ_DEFAULTS.mizar_service_annotation_val,
+                    OBJ_DEFAULTS.mizar_ep_vpc_annotation: vpc,
+                    OBJ_DEFAULTS.mizar_ep_subnet_annotation: subnet,
                 }
             },
             'spec': {

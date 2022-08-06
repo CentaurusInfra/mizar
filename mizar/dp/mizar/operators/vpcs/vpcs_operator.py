@@ -22,7 +22,7 @@
 import random
 import uuid
 import logging
-from kubernetes import client, config
+from kubernetes import client
 from mizar.common.constants import *
 from mizar.common.common import *
 from mizar.common.cidr import Cidr
@@ -45,7 +45,7 @@ class VpcOperator(object):
     def _init(self, **kwargs):
         logger.info(kwargs)
         self.store = OprStore()
-        config.load_incluster_config()
+        load_k8s_config()
         self.obj_api = client.CustomObjectsApi()
 
     def query_existing_vpcs(self):
@@ -120,7 +120,7 @@ class VpcOperator(object):
         # Scrappy allocator for now!!
         # TODO: There is a tiny chance of collision here, not to worry about now
         if vpc.name == OBJ_DEFAULTS.default_ep_vpc:
-            return OBJ_DEFAULTS.default_vpc_vni
+            return get_cluster_vpc_vni()
         vpc.set_vni(str(uuid.uuid4().int & (1 << 24)-1))
 
     def deallocate_vni(self, vpc):

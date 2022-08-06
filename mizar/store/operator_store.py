@@ -39,13 +39,19 @@ class OprStore(object):
         self.droplets_store = {}
 
         self.vpcs_store = {}
-        self.arktosnet_vpc_store = {}
         self.nets_vpc_store = {}
         self.nets_store = {}
 
         self.eps_store = {}
         self.eps_net_store = {}
         self.eps_pod_store = {}
+
+        self.pod_label_store = {}
+        self.label_pod_store = {}
+        self.namespace_label_store = {}
+        self.label_namespace_store = {}
+        self.namespace_pod_store = {}
+        self.pod_namespace_store = {}
 
         self.networkpolicies_store = {}
         self.eps_store_to_be_updated_networkpolicy = set()
@@ -76,6 +82,7 @@ class OprStore(object):
 
         self.dividers_store = {}
         self.dividers_vpc_store = {}
+        self.vpc_droplet_store = {}
 
         self.bouncers_store = {}
         self.bouncers_net_store = {}
@@ -83,29 +90,25 @@ class OprStore(object):
 
     def update_vpc(self, vpc):
         self.vpcs_store[vpc.name] = vpc
+        self.vpc_droplet_store[vpc.name] = []
 
     def delete_vpc(self, name):
         if name in self.vpcs_store:
             del self.vpcs_store[name]
+            del self.vpc_droplet_store[name]
 
     def get_vpc(self, name):
         if name in self.vpcs_store:
             return self.vpcs_store[name]
         return None
 
-    def update_arktosnet_vpc(self, a, v):
-        if v in self.vpcs_store:
-            self.arktosnet_vpc_store[a] = v
-
-    def get_vpc_in_arktosnet(self, name):
-        if name in self.arktosnet_vpc_store:
-            return self.arktosnet_vpc_store[name]
-        return None
-
     def contains_vpc(self, name):
         if name in self.vpcs_store:
             return True
         return False
+
+    def get_all_vpcs(self):
+        return self.vpcs_store.values()
 
     def _dump_vpcs(self):
         for v in self.vpcs_store.values():
@@ -161,6 +164,8 @@ class OprStore(object):
                 ep.egress_networkpolicies = old_ep.egress_networkpolicies
             if len(old_ep.data_for_networkpolicy) > 0 and len(ep.data_for_networkpolicy) == 0:
                 ep.data_for_networkpolicy = old_ep.data_for_networkpolicy
+            if old_ep.interface is not None and ep.interface is None:
+                ep.interface = old_ep.interface
 
         # logger.info('caller name:{}'.format(inspect.stack()[1][3]))
         self.eps_store[ep.name] = ep
@@ -338,17 +343,108 @@ class OprStore(object):
 
     def get_or_add_pod_label_value(self, label_combination):
         if label_combination not in self.pod_label_value_store:
-            self.pod_label_value_store[label_combination] = len(self.pod_label_value_store)
+            self.pod_label_value_store[label_combination] = len(
+                self.pod_label_value_store)
             logger.info("Added pod_label_value {} for {}."
-                .format(self.pod_label_value_store[label_combination], label_combination))
+                        .format(self.pod_label_value_store[label_combination], label_combination))
         return self.pod_label_value_store[label_combination]
 
     def get_or_add_namespace_label_value(self, label_combination):
         if label_combination not in self.namespace_label_value_store:
-            self.namespace_label_value_store[label_combination] = len(self.namespace_label_value_store)
+            self.namespace_label_value_store[label_combination] = len(
+                self.namespace_label_value_store)
             logger.info("Added namespace_label_value {} for {}."
-                .format(self.namespace_label_value_store[label_combination], label_combination))
+                        .format(self.namespace_label_value_store[label_combination], label_combination))
         return self.namespace_label_value_store[label_combination]
+
+    def get_old_pod_labels(self, pod_name):
+        labels_dict = {}
+        if pod_name in self.pod_label_store:
+            old_labels = self.pod_label_store[pod_name]
+            for item in old_labels:
+                label_key, label_val = item.split("=")
+                labels_dict[label_key] = label_val
+        return labels_dict
+
+    def update_pod_label_store(self, pod_name, labels):
+        if pod_name in self.pod_label_store:
+            old_labels = self.pod_label_store[pod_name]
+            for item in old_labels:
+                if item in self.label_pod_store and pod_name in self.label_pod_store[item]:
+                    self.label_pod_store[item].remove(pod_name)
+
+        if pod_name not in self.pod_label_store:
+            self.pod_label_store[pod_name] = set()
+
+        for key in labels:
+            label_str = "{}={}".format(key, labels[key])
+            self.pod_label_store[pod_name].add(label_str)
+            if label_str not in self.label_pod_store:
+                self.label_pod_store[label_str] = set()
+            self.label_pod_store[label_str].add(pod_name)
+
+    def delete_pod_label_store(self, pod_name):
+        if pod_name in self.pod_label_store:
+            old_labels = self.pod_label_store[pod_name]
+            for item in old_labels:
+                if item in self.label_pod_store and pod_name in self.label_pod_store[item]:
+                    self.label_pod_store[item].remove(pod_name)
+            del self.pod_label_store[pod_name]
+
+    def get_old_namespace_labels(self, namespace_name):
+        labels_dict = {}
+        if namespace_name in self.namespace_label_store:
+            old_labels = self.namespace_label_store[namespace_name]
+            for item in old_labels:
+                label_key, label_val = item.split("=")
+                labels_dict[label_key] = label_val
+        return labels_dict
+
+    def update_namespace_label_store(self, namespace_name, labels):
+        if namespace_name in self.namespace_label_store:
+            old_labels = self.namespace_label_store[namespace_name]
+            for item in old_labels:
+                if item in self.label_namespace_store and namespace_name in self.label_namespace_store[item]:
+                    self.label_namespace_store[item].remove(namespace_name)
+
+        if namespace_name not in self.namespace_label_store:
+            self.namespace_label_store[namespace_name] = set()
+
+        for key in labels:
+            label_str = "{}={}".format(key, labels[key])
+            self.namespace_label_store[namespace_name].add(label_str)
+            if label_str not in self.label_namespace_store:
+                self.label_namespace_store[label_str] = set()
+            self.label_namespace_store[label_str].add(namespace_name)
+
+    def delete_namespace_label_store(self, namespace_name):
+        if namespace_name in self.namespace_label_store:
+            old_labels = self.namespace_label_store[namespace_name]
+            for item in old_labels:
+                if item in self.label_namespace_store and namespace_name in self.label_namespace_store[item]:
+                    self.label_namespace_store[item].remove(namespace_name)
+            del self.namespace_label_store[namespace_name]
+
+    def update_namespace_pod_store(self, namespace_name, pod_name):
+        if namespace_name not in self.namespace_pod_store:
+            self.namespace_pod_store[namespace_name] = set()
+        self.namespace_pod_store[namespace_name].add(pod_name)
+
+    def delete_namespace_pod_store(self, namespace_name):
+        if namespace_name in self.namespace_pod_store:
+            del self.namespace_pod_store[namespace_name]
+
+    def update_pod_namespace_store(self, pod_name, namespace_name):
+        self.pod_namespace_store[pod_name] = namespace_name
+        self.update_namespace_pod_store(namespace_name, pod_name)
+
+    def delete_pod_namespace_store(self, pod_name):
+        if pod_name in self.pod_namespace_store:
+            ns = self.pod_namespace_store[pod_name]
+            if ns in self.namespace_pod_store and pod_name in self.namespace_pod_store[ns]:
+                self.namespace_pod_store[ns].remove(pod_name)
+            if pod_name in self.pod_namespace_store:
+                del self.pod_namespace_store[pod_name]
 
     def update_droplet(self, droplet):
         self.droplets_store[droplet.name] = droplet
@@ -386,6 +482,20 @@ class OprStore(object):
         for d in self.droplets_store.values():
             logger.info("Droplets: {}, Spec: {}".format(
                 d.name, d.get_obj_spec()))
+
+    def update_vpc_to_droplet(self, vpc, droplet):
+        self.vpc_droplet_store[vpc.name].append(droplet.name)
+
+    def delete_vpc_to_droplet(self, droplet):
+        for vpc in self.vpc_droplet_store:
+            self.vpc_droplet_store[vpc].remove(droplet.name)
+
+    def get_vpc_to_droplet(self, droplet):
+        vpcs = []
+        for vpc in self.vpc_droplet_store:
+            if droplet.name in self.vpc_droplet_store[vpc]:
+                vpcs.append(vpc)
+        return vpcs
 
     def update_divider(self, div):
         self.dividers_store[div.name] = div

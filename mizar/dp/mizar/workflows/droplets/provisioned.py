@@ -23,10 +23,14 @@ import logging
 from mizar.common.workflow import *
 from mizar.dp.mizar.operators.droplets.droplets_operator import *
 from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
+from mizar.dp.mizar.operators.vpcs.vpcs_operator import *
+from mizar.dp.mizar.operators.nets.nets_operator import *
 logger = logging.getLogger()
 
 droplets_opr = DropletOperator()
 endpoint_opr = EndpointOperator()
+vpcs_opr = VpcOperator()
+nets_opr = NetOperator()
 
 
 class DropletProvisioned(WorkflowTask):
@@ -39,10 +43,39 @@ class DropletProvisioned(WorkflowTask):
         logger.info("Run {task}".format(task=self.__class__.__name__))
         droplet = droplets_opr.get_droplet_stored_obj(
             self.param.name, self.param.spec)
-        droplets_opr.store_update(droplet)
-        interfaces = endpoint_opr.init_host_endpoint_interfaces(
-            droplet)
-        # TODO: Create host endpoint in seperate network.
-        ep = endpoint_opr.create_host_endpoint(droplet.ip, droplet, interfaces)
-        endpoint_opr.produce_simple_endpoint_interface(ep)
+        for vpc in list(vpcs_opr.store.get_all_vpcs()):
+            if droplet.name not in droplets_opr.store.vpc_droplet_store[vpc.name]:
+                if vpc.name not in nets_opr.store.nets_vpc_store:
+                    self.raise_temporary_error(
+                        "Subnet not yet created for VPC {}!".format(vpc.name))
+                if nets_opr.store.nets_vpc_store[vpc.name]:
+                    subnet = list(
+                        nets_opr.store.nets_vpc_store[vpc.name].values())[0]
+                    if subnet.status != OBJ_STATUS.net_status_provisioned:
+                        self.raise_temporary_error(
+                            "Subnet {} not yet provisioned!".format(subnet.name))
+                    logger.info("Droplet: Creating host endpoint for vpc {} on droplet {}".format(
+                        vpc.name, droplet.ip))
+                    droplet.interfaces = endpoint_opr.init_host_endpoint_interfaces(
+                        droplet,
+                        "{}-{}".format(OBJ_DEFAULTS.host_ep_name,
+                                       vpc.get_vni()),
+                        "{}-{}".format(OBJ_DEFAULTS.host_ep_veth_name,
+                                       vpc.get_vni()),
+                        "{}-{}".format(OBJ_DEFAULTS.host_ep_peer_name,
+                                       vpc.get_vni()),
+                        self
+                    )
+                    droplets_opr.store_update(droplet)
+                    endpoint_opr.create_host_endpoint(
+                        droplet.ip, droplet, droplet.interfaces,
+                        vpc,
+                        subnet
+                    )
+                else:
+                    self.raise_temporary_error(
+                        "Host ep creation failed: no subnet created yet for VPC {} node ip {}".format(vpc.get_name(), droplet.ip))
+            else:
+                logger.info("Droplet: Host endpoint already created for vpc {} on droplet {}".format(
+                    vpc.name, droplet.ip))
         self.finalize()

@@ -25,12 +25,14 @@ from mizar.common.workflow import *
 from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
 from mizar.dp.mizar.operators.droplets.droplets_operator import *
 from mizar.networkpolicy.networkpolicy_util import *
+from mizar.dp.mizar.operators.bouncers.bouncers_operator import *
 
 logger = logging.getLogger()
 
 endpoints_opr = EndpointOperator()
 droplets_opr = DropletOperator()
 networkpolicy_util = NetworkPolicyUtil()
+bouncers_opr = BouncerOperator()
 
 
 class EndpointProvisioned(WorkflowTask):
@@ -44,11 +46,20 @@ class EndpointProvisioned(WorkflowTask):
         endpoint = endpoints_opr.get_endpoint_stored_obj(
             self.param.name, self.param.spec)
         endpoint.droplet_obj = droplets_opr.store.get_droplet(endpoint.droplet)
+        bouncers_opr.update_endpoint_with_bouncers(endpoint, self)
+        if endpoint.bouncers:
+            if endpoint.type == OBJ_DEFAULTS.ep_type_simple or endpoint.type == OBJ_DEFAULTS.ep_type_host:
+                for bouncer in endpoint.bouncers:
+                    logger.info(
+                        "EP {} has bouncer {}. Updating.".format(endpoint.name, bouncer))
+                endpoint.update_bouncers(endpoint.bouncers, self)
         endpoints_opr.store_update(endpoint)
 
         if self.param.name in endpoints_opr.store.eps_store_to_be_updated_networkpolicy:
-            endpoints_opr.store.eps_store_to_be_updated_networkpolicy.remove(self.param.name)
-            time.sleep(1) # Wait a little time for newly created endpoint network.
+            endpoints_opr.store.eps_store_to_be_updated_networkpolicy.remove(
+                self.param.name)
+            # Wait a little time for newly created endpoint network.
+            time.sleep(1)
             if len(endpoint.ingress_networkpolicies) == 1:
                 endpoint.update_network_policy_enforcement_map_ingress()
             if len(endpoint.egress_networkpolicies) == 1:
@@ -57,7 +68,9 @@ class EndpointProvisioned(WorkflowTask):
 
         if endpoint.pod in endpoints_opr.store.networkpolicies_to_be_updated_store:
             networkpolicy_util.wait_until_pod_has_ip(endpoint.pod)
-            networkpolicy_util.handle_networkpolicy_change(endpoints_opr.store.networkpolicies_to_be_updated_store[endpoint.pod])
-            endpoints_opr.store.networkpolicies_to_be_updated_store.pop(endpoint.pod)
+            networkpolicy_util.handle_networkpolicy_change(
+                endpoints_opr.store.networkpolicies_to_be_updated_store[endpoint.pod])
+            endpoints_opr.store.networkpolicies_to_be_updated_store.pop(
+                endpoint.pod)
 
         self.finalize()

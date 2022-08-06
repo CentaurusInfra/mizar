@@ -29,7 +29,7 @@ import datetime
 import json
 import dateutil.parser
 import yaml
-from kubernetes import watch, client
+from kubernetes import watch, client, config
 from kubernetes.client.rest import ApiException
 from ctypes.util import find_library
 from mizar.common.constants import *
@@ -112,14 +112,20 @@ def kube_create_obj(obj):
         body['spec']['createtime'] = datetime.datetime.now().isoformat()
         logger.info("Init {} at {}".format(
             obj.get_name(), body['spec']['createtime']))
-
-        obj.obj_api.create_namespaced_custom_object(
-            group="mizar.com",
-            version="v1",
-            namespace="default",
-            plural=obj.get_plural(),
-            body=body,
-        )
+        try:
+            obj.obj_api.create_namespaced_custom_object(
+                group="mizar.com",
+                version="v1",
+                namespace="default",
+                plural=obj.get_plural(),
+                body=body,
+            )
+        except ApiException as e:
+            if e.status == CONSTANTS.HTTP_CONFLICT_ERROR:
+                logger.info("Object {} already exists! Skipping".format(obj.get_name()))
+                return
+            else:
+                logger.info("Unkown: Object {} failed to create error {}".format(obj.get_name(), e))
         logger.debug("Created {} {}".format(obj.get_kind(), obj.get_name()))
     obj.store_update_obj()
 
@@ -469,3 +475,34 @@ def get_itf():
         return os.getenv("MIZAR_ITF")
     else:
         return default_itf
+
+def load_k8s_config():
+    k8s_config_file = os.environ.get('KUBECONFIG')
+    if k8s_config_file:
+        logger.info("Loading k8s config using KUBECONFIG file {}.".format(k8s_config_file))
+        try:
+            config.load_kube_config(config_file=k8s_config_file)
+            logger.info("K8s config successfully initialized using KUBECONFIG file {}.".format(k8s_config_file))
+        except config.ConfigException:
+            try:
+                logger.info("Failed to initialize k8s config using KUBECONFIG {}. Attempting in_cluster_config.".format(k8s_config_file))
+                config.load_incluster_config()
+                logger.info("K8s config successfully initialized using in_cluster_config as fallback.")
+            except config.ConfigException:
+                raise Exception("Could not configure kubernetes python client with either KUBECONFIG or in_cluster_config.")
+    else:
+        logger.info("Loading k8s config using in_cluster_config.")
+        try:
+            config.load_incluster_config()
+            logger.info("K8s config successfully initialized using in_cluster_config.")
+        except config.ConfigException:
+            raise Exception("Could not configure kubernetes python client from in_cluster_config.")
+
+def get_cluster_vpc_vni():
+    cluster_vpc_vni = os.environ.get('CLUSTER_VPC_VNI')
+    if cluster_vpc_vni:
+        logger.info("Using specified cluster VNI {}.".format(cluster_vpc_vni))
+    else:
+        cluster_vpc_vni = OBJ_DEFAULTS.default_vpc_vni
+        logger.info("Using default cluster VNI {}.".format(cluster_vpc_vni))
+    return cluster_vpc_vni

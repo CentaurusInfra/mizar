@@ -22,9 +22,16 @@
 import logging
 from mizar.common.workflow import *
 from mizar.dp.mizar.operators.nets.nets_operator import *
+from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
+from mizar.dp.mizar.operators.droplets.droplets_operator import *
+from mizar.dp.mizar.operators.vpcs.vpcs_operator import *
 logger = logging.getLogger()
 
+
 nets_opr = NetOperator()
+endpoints_opr = EndpointOperator()
+droplets_opr = DropletOperator()
+vpcs_opr = VpcOperator()
 
 
 class NetProvisioned(WorkflowTask):
@@ -44,7 +51,32 @@ class NetProvisioned(WorkflowTask):
         for d in self.param.diff:
             if d[0] == 'change':
                 self.process_change(net=net, field=d[1], old=d[2], new=d[3])
-
+        vpc = vpcs_opr.store.get_vpc(net.vpc)
+        for droplet in list(droplets_opr.store.get_all_droplets()):
+            logger.info("Net: Available droplets for vpc {}: {}".format(
+                vpc.name, droplets_opr.store.droplets_store.keys()))
+            if vpc.name not in droplets_opr.store_get_vpc_to_droplet(droplet):
+                logger.info("Net: Creating host endpoint for vpc {} on droplet {}".format(
+                    vpc.name, droplet.ip))
+                droplet.interfaces = endpoints_opr.init_host_endpoint_interfaces(
+                    droplet,
+                    "{}-{}".format(OBJ_DEFAULTS.host_ep_name,
+                                   vpc.get_vni()),
+                    "{}-{}".format(OBJ_DEFAULTS.host_ep_veth_name,
+                                   vpc.get_vni()),
+                    "{}-{}".format(OBJ_DEFAULTS.host_ep_peer_name,
+                                   vpc.get_vni()),
+                    self
+                )
+                droplets_opr.store_update(droplet)
+                endpoints_opr.create_host_endpoint(
+                    droplet.ip, droplet, droplet.interfaces,
+                    vpc,
+                    net
+                )
+            else:
+                logger.info("Net: Host endpoint already created for vpc {} on droplet {}".format(
+                    vpc.name, droplet.ip))
         self.finalize()
 
     def process_change(self, net, field, old, new):

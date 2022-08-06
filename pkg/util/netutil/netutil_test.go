@@ -48,7 +48,7 @@ func Test_ActivateInterface(t *testing.T) {
 			hostVeth, _, err := ip.SetupVeth(ifName, 1500, netNS)
 			So(err, ShouldBeNil)
 
-			info, err := netutil.ActivateInterface(
+			log, err := netutil.ActivateInterface(
 				hostVeth.Name,
 				netNSName,
 				ifName,
@@ -56,7 +56,7 @@ func Test_ActivateInterface(t *testing.T) {
 				"20.0.0.81",
 				"20.0.0.1")
 			So(err, ShouldBeNil)
-			So(info, ShouldEqual, "Interface eth-894cad92 has already been UP.")
+			So(log, ShouldEqual, "Interface 'eth-894cad92' already UP.")
 		})
 
 		Reset(func() {

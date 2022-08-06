@@ -46,8 +46,9 @@ from google.protobuf import empty_pb2
 from concurrent import futures
 from mizar.proto import builtins_pb2_grpc as builtins_pb2_grpc
 from mizar.arktos.arktos_service import ArktosService
-from kubernetes import client, config
+from kubernetes import client
 from subprocess import check_output
+from mizar.common.common import load_k8s_config
 from mizar.common.constants import *
 
 
@@ -62,7 +63,9 @@ async def on_startup(logger, **kwargs):
     global LOCK
     LOCK = asyncio.Lock()
     param = HandlerParam()
-    config.load_incluster_config()
+
+    load_k8s_config()
+
     sched = 'luigid --background --port 8082 --pidfile /var/run/luigi/luigi.pid --logdir /var/log/luigi --state-path /var/lib/luigi/luigi.state'
     subprocess.call(sched, shell=True)
     while not os.path.exists("/var/run/luigi/luigi.pid"):
@@ -74,13 +77,15 @@ async def on_startup(logger, **kwargs):
         pass
     logger.info("Running luigid central scheduler pid={}!".format(pid))
 
-    threading.Thread(target=grpc_server).start()
-    create_config_map()
     configmap = read_config_map()
-    if configmap:
-        if read_config_map().data["name"] == "arktos":
-            logger.info("Found config map, disabling builtin kopf triggers!")
-            COMPUTE_PROVIDER.k8s = False
+    if configmap and read_config_map().data["name"] == "arktos":
+        logger.info("Cluster is Arktos.")
+        COMPUTE_PROVIDER.k8s = False
+        threading.Thread(target=grpc_server).start()
+        create_config_map()
+    else:
+        logger.info("Cluster is Kubernetes.")
+        COMPUTE_PROVIDER.k8s = True
     start_time = time.time()
 
     run_workflow(wffactory().DropletOperatorStart(param=param))
@@ -102,9 +107,10 @@ def grpc_server():
     builtins_pb2_grpc.add_BuiltinsServiceServicer_to_server(
         ArktosService(), server
     )
-    server.add_insecure_port('[::]:50052')
+    addr = "[::]:{}".format(OBJ_DEFAULTS.mizar_operator_arktos_service_port)
+    server.add_insecure_port(addr)
     server.start()
-    logger.info("Running gRPC server for Network Controller!")
+    logger.info("Operator running gRPC server for Arktos Network Controller on {}".format(addr))
     server.wait_for_termination()
 
 

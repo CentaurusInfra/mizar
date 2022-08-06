@@ -33,6 +33,11 @@ service BuiltinsService {
     rpc ResumeNetworkPolicy(BuiltinsNetworkPolicyMessage) returns (ReturnCode) {}
     rpc UpdateNetworkPolicy(BuiltinsNetworkPolicyMessage) returns (ReturnCode) {}
     rpc DeleteNetworkPolicy(BuiltinsNetworkPolicyMessage) returns (ReturnCode) {}
+
+    rpc CreateNamespace(BuiltinsNamespaceMessage) returns (ReturnCode) {}
+    rpc ResumeNamespace(BuiltinsNamespaceMessage) returns (ReturnCode) {}
+    rpc UpdateNamespace(BuiltinsNamespaceMessage) returns (ReturnCode) {}
+    rpc DeleteNamespace(BuiltinsNamespaceMessage) returns (ReturnCode) {}
 }
 
 message BuiltinsNodeMessage {
@@ -45,9 +50,12 @@ message BuiltinsPodMessage {
   string host_ip = 2;
   string namespace = 3;
   string tenant = 4;
-  string arktos_network = 5;
-  string phase = 6;
-  repeated InterfacesMessage interfaces = 7;
+  string labels = 5;
+  string arktos_network = 6;
+  string phase = 7;
+  repeated InterfacesMessage interfaces = 8 ;
+  string vpc = 9;
+  string subnet = 10;
 }
 
 message BuiltinsServiceMessage {
@@ -56,6 +64,8 @@ message BuiltinsServiceMessage {
   string namespace = 3;
   string tenant = 4;
   string ip = 5;
+  string vpc = 6;
+  string subnet = 7;
 }
 
 message BuiltinsServiceEndpointMessage {
@@ -78,6 +88,12 @@ message BuiltinsNetworkPolicyMessage {
   string namespace = 2;
   string tenant = 3;
   string policy = 4;
+}
+
+message BuiltinsNamespaceMessage {
+  string name = 1;
+  string tenant = 2;
+  string labels = 3;
 }
 
 message PortsMessage {

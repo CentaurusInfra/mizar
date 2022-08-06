@@ -22,7 +22,8 @@
 import logging
 import random
 import json
-from kubernetes import client, config
+import grpc
+from kubernetes import client
 from mizar.obj.endpoint import Endpoint
 from mizar.obj.bouncer import Bouncer
 from mizar.common.constants import *
@@ -47,7 +48,7 @@ class EndpointOperator(object):
     def _init(self, **kwargs):
         logger.info(kwargs)
         self.store = OprStore()
-        config.load_incluster_config()
+        load_k8s_config()
         self.obj_api = client.CustomObjectsApi()
         self.core_api = client.CoreV1Api()
 
@@ -95,12 +96,13 @@ class EndpointOperator(object):
     def update_endpoints_with_bouncers(self, bouncer, task):
         eps = list(self.store.get_eps_in_net(bouncer.net).values())
         for ep in eps:
-            logger.info("EP {} update agent with bouncer {}".format(
-                bouncer.name, ep.name))
             if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
                 if not ep.droplet_obj:
-                    task.raise_temporary_error("Task: {} Endpoint: {} Droplet Object not ready.".format(self.__class__.__name__, ep.name))
-                ep.update_bouncers({bouncer.name: bouncer})
+                    task.raise_temporary_error("Task: {} Endpoint: {} Droplet Object not ready.".format(
+                        self.__class__.__name__, ep.name))
+                logger.info("update_endpoints_with_bouncers: ep {} update agent with bouncer {}".format(
+                    ep.name, bouncer.name))
+                ep.update_bouncers({bouncer.name: bouncer}, task)
 
     def create_scaled_endpoint(self, name, ep_name, spec, net, extra, namespace="default"):
         logger.info("Create scaled endpoint {} spec {}".format(name, spec))
@@ -144,8 +146,16 @@ class EndpointOperator(object):
         get_body = True
         while get_body:
             endpoint = kube_get_endpoints(self.core_api, name, namespace)
+            if endpoint and \
+               endpoint.metadata and \
+               endpoint.metadata.annotations and \
+               OBJ_DEFAULTS.mizar_service_annotation_key in endpoint.metadata.annotations and \
+               endpoint.metadata.annotations[OBJ_DEFAULTS.mizar_service_annotation_key] == OBJ_DEFAULTS.mizar_service_annotation_val:
+                return
+
             if namespace == "default" and name == "kubernetes" and not endpoint.metadata.annotations:
-                endpoint.metadata.annotations = {OBJ_DEFAULTS.mizar_service_annotation_key: OBJ_DEFAULTS.mizar_service_annotation_val}
+                endpoint.metadata.annotations = {
+                    OBJ_DEFAULTS.mizar_service_annotation_key: OBJ_DEFAULTS.mizar_service_annotation_val}
             if not endpoint or not endpoint.metadata or not endpoint.metadata.annotations:
                 return
             endpoint.metadata.annotations[OBJ_DEFAULTS.mizar_service_annotation_key] = OBJ_DEFAULTS.mizar_service_annotation_val
@@ -259,13 +269,13 @@ class EndpointOperator(object):
         eps = self.store.get_eps_in_net(bouncer.net).values()
         bouncer.delete_eps(eps)
 
-    def delete_bouncer_from_endpoints(self, bouncer):
+    def delete_bouncer_from_endpoints(self, bouncer, task):
         eps = self.store.get_eps_in_net(bouncer.net).values()
-        for ep in eps:
+        for ep in list(eps):
             if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
-                ep.update_bouncers({bouncer.name: bouncer}, False)
+                ep.update_bouncers({bouncer.name: bouncer}, task, False)
 
-    def produce_simple_endpoint_interface(self, ep):
+    def produce_simple_endpoint_interface(self, ep, task):
         """
         Constructs the final interface message and call the ProduceInterface rpc
         on the endpoint's droplet
@@ -302,29 +312,34 @@ class EndpointOperator(object):
             namespace_label_value=interface.namespace_label_value,
             egress_bandwidth_bytes_per_sec=interface.egress_bandwidth_bytes_per_sec,
             pod_network_class=interface.pod_network_class,
-            pod_network_priority=interface.pod_network_priority
+            pod_network_priority=interface.pod_network_priority,
+            vpc_ip=ep.vpc_ip,
+            vpc_prefix=ep.vpc_prefix
         )]
 
         if ep.type == OBJ_DEFAULTS.ep_type_host:
             interfaces_list[0].status = InterfaceStatus.consumed
             interfaces = InterfaceServiceClient(
-                ep.droplet_obj.main_ip).ActivateHostInterface(interfaces_list[0])
+                ep.droplet_obj.main_ip).ActivateHostInterface(interfaces_list[0], task)
+            return interfaces
         else:
-            interfaces = InterfaceServiceClient(
-                ep.droplet_obj.main_ip).ProduceInterfaces(InterfacesList(interfaces=interfaces_list))
-
-        logger.info("Produced {}".format(interfaces))
+            logger.info(
+                "Producing interface for simple endpoint {}".format(ep.name))
+            interfaces = InterfaceServiceClient(ep.droplet_obj.main_ip).ProduceInterfaces(
+                InterfacesList(interfaces=interfaces_list), task)
+            return interfaces
 
     def create_simple_endpoints(self, interfaces, spec):
         """
         Create a simple endpoint object (calling the API operator)
         """
         for interface, net_info in zip(interfaces.interfaces, spec['interfaces']):
-            logger.info("Create simple endpoint {}".format(interface))
             name = get_itf_name(interface.interface_id)
             if self.store.get_ep(name):
-                logger.info("EP already exists!")
+                logger.info("EP {} already exists!".format(name))
                 return
+            logger.info("Create simple endpoint ep {} {}".format(
+                name, interface))
             ep = Endpoint(name, self.obj_api, self.store)
             ep.set_pod(spec["name"])
             ep.set_type(OBJ_DEFAULTS.ep_type_simple)
@@ -350,21 +365,27 @@ class EndpointOperator(object):
             ep.set_droplet_ip(spec['droplet'].ip)
             ep.set_droplet_mac(spec['droplet'].mac)
             ep.set_interface(interface)
+            self.store_update(ep)
             ep.create_obj()
 
-    def create_host_endpoint(self, ip, droplet, interfaces):
+    def create_host_endpoint(self, ip, droplet, interfaces, vpc, subnet):
         for interface in interfaces.interfaces:
             logger.info("Create host endpoint {}".format(interface))
             name = get_itf_name(interface.interface_id)
+            if name in self.store.eps_store:
+                logger.info("Host endpoint already exists!")
+                return self.store.eps_store[name]
             ep = Endpoint(name, self.obj_api, self.store)
 
             ep.set_type(OBJ_DEFAULTS.ep_type_host)
             ep.set_status(OBJ_STATUS.ep_status_init)
 
-            ep.set_vni(OBJ_DEFAULTS.default_vpc_vni)
-            ep.set_vpc(OBJ_DEFAULTS.default_ep_vpc)
-            ep.set_net(OBJ_DEFAULTS.default_ep_net)
-            ep.set_gw(OBJ_DEFAULTS.default_net_gw)
+            ep.set_vni(get_cluster_vpc_vni())
+            ep.set_vpc(vpc.get_name())
+            ep.set_net(subnet.get_name())
+            ep.set_gw(subnet.get_gw_ip())
+            ep.set_vpc_ip(vpc.get_ip())
+            ep.set_vpc_prefix(vpc.get_prefixlen())
 
             ep.set_mac(interface.address.mac)
             ep.set_veth_name(interface.veth.name)
@@ -380,7 +401,16 @@ class EndpointOperator(object):
             ep.create_obj()
             return ep
 
-    def init_simple_endpoint_interfaces(self, worker_ip, spec):
+    def remove_cached_interfaces(self, worker_ip, spec, task):
+        """
+        Call the InitializeInterfaces gRPC on the hostIP to remove cached interfaces
+        """
+        pod_id = PodId(k8s_pod_name=spec['name'],
+                       k8s_namespace=spec['namespace'],
+                       k8s_pod_tenant=spec['tenant'])
+        InterfaceServiceClient(worker_ip).RemoveCachedInterfaces(pod_id, task)
+
+    def init_simple_endpoint_interfaces(self, worker_ip, spec, task):
         """
         Construct the interface message and call the InitializeInterfaces gRPC on
         the hostIP
@@ -412,7 +442,8 @@ class EndpointOperator(object):
                 status=InterfaceStatus.init,
                 pod_label_value=str(spec['pod_label_value']),
                 namespace_label_value=str(spec['namespace_label_value']),
-                egress_bandwidth_bytes_per_sec=str(spec['egress_bandwidth_bytes_per_sec']),
+                egress_bandwidth_bytes_per_sec=str(
+                    spec['egress_bandwidth_bytes_per_sec']),
                 pod_network_class=str(spec['pod_network_class']),
                 pod_network_priority=str(spec['pod_network_priority'])
             ))
@@ -423,18 +454,24 @@ class EndpointOperator(object):
             # allocate the mac addresses for us.
             logger.info("init_simple_endpoint_interface on {} for {}".format(
                 worker_ip, spec['name']))
-            return InterfaceServiceClient(worker_ip).InitializeInterfaces(interfaces)
+            interfaces = InterfaceServiceClient(
+                worker_ip).InitializeInterfaces(interfaces, task)
+            for interface in interfaces.interfaces:
+                if not interface.address.mac:
+                    task.raise_temporary_error(
+                        "Veth did not come up in time for pod {} interface {}".format(pod_id, interface))
+            return interfaces
         return None
 
-    def init_host_endpoint_interfaces(self, droplet):
+    def init_host_endpoint_interfaces(self, droplet, ifname, veth_name, peer_name, task):
         interfaces_list = []
         pod_id = PodId(k8s_pod_name=droplet.name,
                        k8s_namespace="default",
                        k8s_pod_tenant="")
         interface_id = InterfaceId(
-            pod_id=pod_id, interface="hostep")
-        veth_name = "eth-hostep"
-        veth_peer = "veth-hostep"
+            pod_id=pod_id, interface=ifname)
+        veth_name = veth_name
+        veth_peer = peer_name
         veth = VethInterface(name=veth_name, peer=veth_peer)
 
         interfaces_list.append(Interface(
@@ -442,12 +479,16 @@ class EndpointOperator(object):
             interface_type=InterfaceType.veth,
             pod_provider=PodProvider.K8S,
             veth=veth,
-            status=InterfaceStatus.init
+            status=InterfaceStatus.init,
         ))
         interfaces = InterfacesList(interfaces=interfaces_list)
-        return InterfaceServiceClient(droplet.main_ip).InitializeInterfaces(interfaces)
+        return InterfaceServiceClient(droplet.main_ip).InitializeInterfaces(interfaces, task)
 
-    def delete_simple_endpoint(self, ep):
+    def delete_simple_endpoint(self, ep, task):
         logger.info(
             "Delete endpoint object associated with interface {}".format(ep.name))
+        interface = self.store_get(ep.name).interface
+        InterfaceServiceClient(
+            ep.droplet_obj.main_ip).DeleteInterface(Interface(interface_id=interface.interface_id), task)
+
         ep.delete_obj()

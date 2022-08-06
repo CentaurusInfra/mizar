@@ -114,21 +114,21 @@ class Divider(object):
         self.ip = droplet.ip
         self.mac = droplet.mac
 
-    def update_net(self, net, add=True):
+    def update_net(self, net, task, add=True):
         for bouncer in list(net.bouncers.values()):
             if add:
                 if bouncer.name not in self.bouncers.keys():
                     logger.info("Bouncer {} added for Net {}".format(
                         bouncer.name, net.name))
                     self.bouncers[bouncer.name] = bouncer
-                    self.droplet_obj.update_substrate(bouncer)
+                    self.droplet_obj.update_substrate(bouncer, task)
             else:
                 if bouncer.name in self.bouncers.keys():
                     logger.info("Bouncer {} removed from Net {}".format(
                         bouncer.name, net.name))
                     self.bouncers[bouncer.name] = bouncer
                     self.droplet_obj.delete_substrate(bouncer)
-        self.droplet_obj.update_net(net)
+        self.droplet_obj.update_net(net, task)
 
     def delete_net(self, net):
         for name in net.bouncers.values():

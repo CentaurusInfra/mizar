@@ -20,7 +20,10 @@
 # THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import ipaddress
+import logging
+from mizar.common.constants import *
 
+logger = logging.getLogger()
 
 class Cidr:
     def __init__(self, prefixlen, ip):
@@ -31,7 +34,7 @@ class Cidr:
         self.ip = ip
         self.ipnet = ipaddress.ip_network(
             "{}/{}".format(self.ip, self.prefixlen))
-        self.subnets = self.ipnet.subnets(new_prefix=30)
+        self.subnets = self.ipnet.subnets(new_prefix=CONSTANTS.SUBNETS_NEW_PREFIX)
 
         self._hosts = set()
         self.gw = self.get_ip(1)
@@ -41,8 +44,16 @@ class Cidr:
     def hosts(self):
 
         pool = next(self.subnets)
-        self._hosts.update(set(pool.hosts()))
-        self._hosts.discard(self.gw)
+        # Avoid allocate special ip addresses such as net ip and gateway ip.
+        pool_hosts_set = set(pool.hosts())
+        pool_hosts_set.discard(ipaddress.IPv4Address(self.ip))
+        pool_hosts_set.discard(ipaddress.IPv4Address(self.gw))
+        while len(pool_hosts_set) == 0:
+            pool = next(self.subnets)
+            pool_hosts_set = set(pool.hosts())
+            pool_hosts_set.discard(ipaddress.IPv4Address(self.ip))
+            pool_hosts_set.discard(ipaddress.IPv4Address(self.gw))
+        self._hosts.update(pool_hosts_set)
         return self._hosts
 
     def get_ip(self, idx):
@@ -52,13 +63,13 @@ class Cidr:
         return self.hosts
 
     def allocate_ip(self):
-        if not len(self.hosts):
-            return None
         ip = self.hosts.pop()
         # TODO: bad hack, search the list and remove it!!
         while ip in self.allocated:
             ip = self.hosts.pop()
         self.allocated.add(ip)
+        logger.info("ip {} is allocated. Currently there are {} ip addresses allocated under {}/{}."
+            .format(ip, len(self.allocated), self.ip, self.prefixlen))
         return str(ip)
 
     def mark_ip_as_allocated(self, ip):

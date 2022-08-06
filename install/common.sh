@@ -55,15 +55,27 @@ function common:check_cluster_ready {
 # Checks for status: Provisioned for given object
 function common:get_object_status {
     local object=$1
+    local cluster=$2
 
-    kubectl get $object 2> ${KUBECTL_LOG} | awk '
-    NR==1 {
-        for (i=1; i<=NF; i++) {
-            f[$i] = i
+    if [[ "$cluster" == "arktos" ]]; then
+        ./arktos/cluster/kubectl.sh get $object 2> ${KUBECTL_LOG} | awk '
+        NR==1 {
+            for (i=1; i<=NF; i++) {
+                f[$i] = i
+            }
         }
-    }
-    { print $f["STATUS"] }
-    ' | grep Provisioned > /dev/null
+        { print $f["STATUS"] }
+        ' | grep Provisioned > /dev/null
+    else
+        kubectl get $object 2> ${KUBECTL_LOG} | awk '
+        NR==1 {
+            for (i=1; i<=NF; i++) {
+                f[$i] = i
+            }
+        }
+        { print $f["STATUS"] }
+        ' | grep Provisioned > /dev/null
+    fi
 
     return $?
 }
@@ -72,9 +84,10 @@ function common:get_object_status {
 function common:check_mizar_ready {
     local objects=("droplets" "vpcs" "subnets" "dividers" "bouncers")
     local sum=0
+    local cluster=$1
     for i in "${objects[@]}"
     do
-        common:get_object_status $i
+        common:get_object_status $i $cluster
         let sum+=$((sum + $?))
     done
     if [[ $sum == 0 ]]; then
@@ -87,11 +100,17 @@ function common:check_mizar_ready {
 
 function check_all_ready {
     timeout=360
+    local cluster="kubernetes"
+    if [[ $# -gt 0 ]]; then
+        if [[ $1 == "arktos" ]]; then
+            cluster=$1
+        fi
+    fi
     KUBECTL_LOG="/tmp/${USER}_kubetctl.err"
     end=$((SECONDS + $timeout))
     echo -n "Waiting for cluster to come up."
     while [[ $SECONDS -lt $end ]]; do
-        common:check_mizar_ready || break
+        common:check_mizar_ready $cluster || break
     done
     echo
     if [[ $SECONDS -lt $end ]]; then
@@ -103,7 +122,7 @@ function check_all_ready {
 }
 
 # Polymorphism implementation: There are multiple environment adaptors. Each one is implementation differently based on environment, but share same function.
-function common:source_environment_adaptor {    
+function common:source_environment_adaptor {
     local mizar_environment=${1:-"k8s_kind"}
     adaptor_file_name="install/environment_adaptors/${mizar_environment}_adaptor.sh"
     if [[ -f $adaptor_file_name ]]; then
@@ -183,7 +202,7 @@ function common:check_pod_by_image {
 
 function common:check_pod_running_in_mizar {
     local image_name="pod-test"
-    
+
     kubectl run $image_name --image=localhost:5000/testpod
     sleep 2
     kubectl wait --for=condition=Ready pod -l run=$image_name --timeout=60s

@@ -1,3 +1,27 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/**
+ * @file trn_agent_xdp_usr.c
+ * @author The Mizar Team
+ *
+ * @brief User space APIs to program transit agent
+ *
+ * @copyright Copyright (c) 2022 The Authors.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -84,7 +108,7 @@ int get_link_speed(const char* name)
 	}
 
 	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, name, IFNAMSIZ);
+	strncpy(ifr.ifr_name, name, IFNAMSIZ-1);
 
 	fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
 	if (fd < 0)
@@ -126,7 +150,7 @@ int get_interface_ip(const char* name, unsigned int* ipaddr)
 
 	memset(&ifr, 0, sizeof(ifr));
 	ifr.ifr_addr.sa_family = AF_INET;
-	strncpy(ifr.ifr_name, name, IFNAMSIZ);
+	strncpy(ifr.ifr_name, name, IFNAMSIZ-1);
 
 	if (ioctl(fd, SIOCGIFADDR, &ifr) == -1) {
 		return -1;

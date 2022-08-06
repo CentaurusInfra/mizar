@@ -609,7 +609,7 @@ int trn_user_metadata_init(struct user_metadata_t *md, char *itf,
 		TRN_LOG_ERROR("if_nametoindex");
 		return 1;
 	}
-
+	TRN_LOG_DEBUG("trn_user_metadata_init: mapped hosted_interface:%s to index %d", itf, md->ifindex);
 	md->eth.ip = trn_get_interface_ipv4(md->ifindex);
 	md->eth.iface_index = md->ifindex;
 

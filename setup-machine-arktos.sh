@@ -1,234 +1,263 @@
 #!/bin/bash
 
-####################
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2022 The Authors.
 
-echo Setup: Install go \(currently limited to version 1.13.9\)
+# Authors: The Mizar Team
 
-sudo apt-get update -y -q
-sudo apt-get install build-essential -y -q
-sudo apt-get install zlib1g-dev -y -q
-sudo apt-get install libreadline-gplv2-dev -y -q
-sudo apt-get install libncursesw5-dev -y -q
-sudo apt-get install libssl-dev -y -q
-sudo apt-get install libnss3-dev -y -q
-sudo apt-get install libsqlite3-dev -y -q
-sudo apt-get install tk-dev -y -q
-sudo apt-get install libgdbm-dev -y -q
-sudo apt-get install libc6-dev -y -q
-sudo apt-get install libbz2-dev -y -q
-sudo apt-get install libreadline-dev -y -q
-sudo apt-get install libffi-dev -y -q
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:The above copyright
+# notice and this permission notice shall be included in all copies or
+# substantial portions of the Software.THE SOFTWARE IS PROVIDED "AS IS",
+# WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+# TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+# FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+# THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-wget -O /tmp/go1.13.9.linux-amd64.tar.gz https://dl.google.com/go/go1.13.9.linux-amd64.tar.gz
-sudo tar -C /usr/local -xzf /tmp/go1.13.9.linux-amd64.tar.gz
-rm -rf /tmp/go1.13.9.linux-amd64.tar.gz
 
-####################
+function main {
+  ####################
 
-echo Setup: Install bazel
+  echo Setup: Install go \(currently limited to version 1.13.9\)
 
-sudo apt install g++ unzip zip -y -q
-sudo apt-get install openjdk-8-jdk -y -q
-wget -O /tmp/bazel-0.26.1-installer-linux-x86_64.sh https://github.com/bazelbuild/bazel/releases/download/0.26.1/bazel-0.26.1-installer-linux-x86_64.sh
-chmod +x /tmp/bazel-0.26.1-installer-linux-x86_64.sh
-/tmp/bazel-0.26.1-installer-linux-x86_64.sh --user
+  sudo apt-get update -y -q
+  sudo apt-get install build-essential -y -q
+  sudo apt-get install zlib1g-dev -y -q
+  sudo apt-get install libreadline-gplv2-dev -y -q
+  sudo apt-get install libncursesw5-dev -y -q
+  sudo apt-get install libssl-dev -y -q
+  sudo apt-get install libnss3-dev -y -q
+  sudo apt-get install libsqlite3-dev -y -q
+  sudo apt-get install tk-dev -y -q
+  sudo apt-get install libgdbm-dev -y -q
+  sudo apt-get install libc6-dev -y -q
+  sudo apt-get install libbz2-dev -y -q
+  sudo apt-get install libreadline-dev -y -q
+  sudo apt-get install libffi-dev -y -q
 
-####################
+  wget -O /tmp/go1.13.9.linux-amd64.tar.gz https://dl.google.com/go/go1.13.9.linux-amd64.tar.gz
+  sudo tar -C /usr/local -xzf /tmp/go1.13.9.linux-amd64.tar.gz
+  rm -rf /tmp/go1.13.9.linux-amd64.tar.gz
 
-echo Setup: Enlist arktos
+  ####################
 
-cd ~
-git clone https://github.com/CentaurusInfra/arktos.git ~/go/src/k8s.io/arktos
-cd ~/go/src/k8s.io
-ln -s ./arktos kubernetes
+  echo Setup: Install bazel
 
-git config --global credential.helper 'cache --timeout=3600000'
+  sudo apt install g++ unzip zip -y -q
+  sudo apt-get install openjdk-8-jdk -y -q
+  wget -O /tmp/bazel-0.26.1-installer-linux-x86_64.sh https://github.com/bazelbuild/bazel/releases/download/0.26.1/bazel-0.26.1-installer-linux-x86_64.sh
+  chmod +x /tmp/bazel-0.26.1-installer-linux-x86_64.sh
+  /tmp/bazel-0.26.1-installer-linux-x86_64.sh --user
 
-####################
+  ####################
 
-echo Setup: Install etcd
+  echo Setup: Enlist arktos
 
-cd ~/go/src/k8s.io/arktos/
-git tag v1.15.0
-./hack/install-etcd.sh
+  cd ~
+  git clone https://github.com/CentaurusInfra/arktos.git ~/go/src/k8s.io/arktos
+  cd ~/go/src/k8s.io
+  ln -s ./arktos kubernetes
 
-####################
+  git config --global credential.helper 'cache --timeout=3600000'
 
-echo Setup: Install Docker
+  ####################
 
-sudo apt -y install docker.io
-sudo gpasswd -a $USER docker
+  echo Setup: Install etcd
 
-####################
+  cd ~/go/src/k8s.io/arktos/
+  git tag v1.15.0
+  ./hack/install-etcd.sh
 
-echo Setup: Install crictl
+  ####################
 
-wget -O /tmp/crictl-v1.17.0-linux-amd64.tar.gz https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.17.0/crictl-v1.17.0-linux-amd64.tar.gz
-sudo tar -zxvf /tmp/crictl-v1.17.0-linux-amd64.tar.gz -C /usr/local/bin
-rm -f /tmp/crictl-v1.17.0-linux-amd64.tar.gz
+  echo Setup: Install Docker
 
-touch /tmp/crictl.yaml
-echo runtime-endpoint: unix:///run/containerd/containerd.sock >> /tmp/crictl.yaml
-echo image-endpoint: unix:///run/containerd/containerd.sock >> /tmp/crictl.yaml
-echo timeout: 10 >> /tmp/crictl.yaml
-echo debug: true >> /tmp/crictl.yaml
-sudo mv /tmp/crictl.yaml /etc/crictl.yaml
+  sudo apt -y install docker.io
+  sudo gpasswd -a $USER docker
 
-sudo mkdir -p /etc/containerd
-sudo rm -rf /etc/containerd/config.toml
-sudo containerd config default > /tmp/config.toml
-sudo mv /tmp/config.toml /etc/containerd/config.toml
-sudo systemctl restart containerd
+  ####################
 
-####################
+  echo Setup: Install crictl
 
-echo Setup: Install miscellaneous
+  wget -O /tmp/crictl-v1.17.0-linux-amd64.tar.gz https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.17.0/crictl-v1.17.0-linux-amd64.tar.gz
+  sudo tar -zxvf /tmp/crictl-v1.17.0-linux-amd64.tar.gz -C /usr/local/bin
+  rm -f /tmp/crictl-v1.17.0-linux-amd64.tar.gz
 
-wget -O $HOME/Python-3.8.8.tgz https://www.python.org/ftp/python/3.8.8/Python-3.8.8.tgz
-tar -C $HOME -xzf $HOME/Python-3.8.8.tgz
-cd $HOME/Python-3.8.8
-sudo ./configure --enable-optimizations
-sudo make
-sudo make altinstall
-sudo ln -sfn /usr/local/bin/python3.8 /usr/bin/python3
-sudo apt remove -fy python3-apt
-sudo apt install -fy python3-apt
-sudo apt update
-sudo apt install -fy python3-pip
+  touch /tmp/crictl.yaml
+  echo runtime-endpoint: unix:///run/containerd/containerd.sock >> /tmp/crictl.yaml
+  echo image-endpoint: unix:///run/containerd/containerd.sock >> /tmp/crictl.yaml
+  echo timeout: 10 >> /tmp/crictl.yaml
+  echo debug: true >> /tmp/crictl.yaml
+  sudo mv /tmp/crictl.yaml /etc/crictl.yaml
 
-sudo sed -i '1c\#!/usr/bin/python3.6 -Es' /usr/bin/lsb_release
-sudo /usr/local/bin/python3.8 -m pip install --upgrade pip
+  sudo mkdir -p /etc/containerd
+  sudo rm -rf /etc/containerd/config.toml
+  sudo containerd config default > /tmp/config.toml
+  sudo mv /tmp/config.toml /etc/containerd/config.toml
+  sudo systemctl restart containerd
 
-sudo apt install awscli -y -q
-sudo apt install jq -y -q
+  ####################
 
-sudo rm -rf $HOME/Python-3.8.8.tgz
-sudo rm -rf $HOME/Python-3.8.8
+  echo Setup: Install miscellaneous
 
-####################
+  wget -O $HOME/Python-3.8.8.tgz https://www.python.org/ftp/python/3.8.8/Python-3.8.8.tgz
+  tar -C $HOME -xzf $HOME/Python-3.8.8.tgz
+  cd $HOME/Python-3.8.8
+  sudo ./configure --enable-optimizations
+  sudo make
+  sudo make altinstall
+  sudo ln -sfn /usr/local/bin/python3.8 /usr/bin/python3
+  sudo apt remove -fy python3-apt
+  sudo apt install -fy python3-apt
+  sudo apt update
+  sudo apt install -fy python3-pip
 
-echo Setup: Mizar Related
+  sudo sed -i '1c\#!/usr/bin/python3.6 -Es' /usr/bin/lsb_release
+  sudo /usr/local/bin/python3.8 -m pip install --upgrade pip
 
-cd ~/mizar
-sudo apt-get update
-sudo apt-get install -y \
-    build-essential clang-7 llvm-7 \
-    libelf-dev \
-    python3 \
-    python3-pip \
-    libcmocka-dev \
-    lcov \
-    protobuf-compiler \
-    libprotobuf-dev
-sudo python3 -m pip install --upgrade pip
+  sudo apt install awscli -y -q
+  sudo apt install jq -y -q
 
-GO111MODULE="on" go get google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
-GO111MODULE="on" go get google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
+  sudo rm -rf $HOME/Python-3.8.8.tgz
+  sudo rm -rf $HOME/Python-3.8.8
 
-sudo pip3 install netaddr docker scapy
-sudo systemctl unmask docker.service
-sudo systemctl unmask docker.socket
-sudo systemctl start docker
-sudo systemctl enable docker
+  ####################
 
-sudo docker build -f ./test/Dockerfile -t buildbox:v2 ./test
+  echo Setup: Mizar Related
 
-git submodule update --init --recursive
+  cd ~/mizar
+  sudo apt-get update
+  sudo apt-get install -y \
+      build-essential clang-7 llvm-7 \
+      libelf-dev \
+      python3 \
+      python3-pip \
+      libcmocka-dev \
+      lcov \
+      protobuf-compiler \
+      libprotobuf-dev
+  sudo python3 -m pip install --upgrade pip
 
-ver=$(curl -s https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
-curl -Lo kind https://github.com/kubernetes-sigs/kind/releases/download/$ver/kind-$(uname)-amd64
-chmod +x kind
-sudo mv kind /usr/local/bin
+  GO111MODULE="on" go get google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
+  GO111MODULE="on" go get google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
 
-curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
-chmod +x ./kubectl
-sudo mv ./kubectl /usr/local/bin/kubectl
+  sudo pip3 install netaddr docker scapy
+  sudo systemctl unmask docker.service
+  sudo systemctl unmask docker.socket
+  sudo systemctl start docker
+  sudo systemctl enable docker
 
-sudo pip3 install fs
-sudo pip3 install protobuf
-sudo pip3 install grpcio
-sudo pip3 install grpcio-tools
-sudo pip3 install luigi==2.8.12
-sudo pip3 install kubernetes==11.0.0
-sudo pip3 install rpyc
-sudo pip3 install pyroute2
-sudo pip3 install ipaddress
-sudo pip3 install netaddr
-sudo pip3 install kopf
-sudo pip3 install PyYAML
+  sudo docker build -f ./test/Dockerfile -t buildbox:v2 ./test
 
-#####################
+  git submodule update --init --recursive
 
-echo Setup: Install Containerd
+  ver=$(curl -s https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
+  curl -Lo kind https://github.com/kubernetes-sigs/kind/releases/download/$ver/kind-$(uname)-amd64
+  chmod +x kind
+  sudo mv kind /usr/local/bin
 
-cd $HOME
-wget https://github.com/containerd/containerd/releases/download/v1.4.2/containerd-1.4.2-linux-amd64.tar.gz
-cd /usr
-sudo tar -xvf $HOME/containerd-1.4.2-linux-amd64.tar.gz
-sudo rm -rf $HOME/containerd-1.4.2-linux-amd64.tar.gz
+  curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
+  chmod +x ./kubectl
+  sudo mv ./kubectl /usr/local/bin/kubectl
 
-####################
+  sudo pip3 install fs
+  sudo pip3 install protobuf
+  sudo pip3 install grpcio
+  sudo pip3 install grpcio-tools
+  sudo pip3 install luigi==2.8.12
+  sudo pip3 install kubernetes==11.0.0
+  sudo pip3 install rpyc
+  sudo pip3 install pyroute2
+  sudo pip3 install ipaddress
+  sudo pip3 install netaddr
+  sudo pip3 install kopf
+  sudo pip3 install PyYAML
 
-echo Setup: Setup profile
+  #####################
 
-echo PATH=\"\$HOME/go/src/k8s.io/arktos/third_party/etcd:/usr/local/go/bin:\$HOME/go/bin:\$HOME/go/src/k8s.io/arktos/_output/bin:\$HOME/go/src/k8s.io/arktos/_output/dockerized/bin/linux/amd64:\$PATH\" >> ~/.profile
-echo GOPATH=\"\$HOME/go\" >> ~/.profile
-echo GOROOT=\"/usr/local/go\" >> ~/.profile
-echo >> ~/.profile
-echo alias arktos=\"cd \$HOME/go/src/k8s.io/arktos\" >> ~/.profile
-echo alias k8s=\"cd \$HOME/go/src/k8s.io/kubernetes\" >> ~/.profile
-echo alias mizar=\"cd \$HOME/mizar\" >> ~/.profile
-echo alias up=\"\$HOME/go/src/k8s.io/arktos/hack/arktos-up.sh\" >> ~/.profile
-echo alias status=\"git status\" >> ~/.profile
-echo alias pods=\"kubectl get pods -A -o wide\" >> ~/.profile
-echo alias nets=\"echo 'kubectl get subnets'\; kubectl get subnets\; echo\; echo 'kubectl get droplets'\; kubectl get droplets\; echo\; echo 'kubectl get bouncers'\; kubectl get bouncers\; echo\; echo 'kubectl get dividers'\; kubectl get dividers\; echo\; echo 'kubectl get vpcs'\; kubectl get vpcs\; echo\; echo 'kubectl get eps'\; kubectl get eps\; echo\; echo 'kubectl get networks'\; kubectl get networks\" >> ~/.profile
+  echo Setup: Install Containerd
 
-echo alias kubectl=\'$HOME/go/src/k8s.io/arktos/cluster/kubectl.sh\'  >> ~/.profile
-echo alias kubeop=\"kubectl get pods \|\ grep mizar-operator \|\ awk \'{print \$1}\' \|\ xargs -i kubectl logs {}\"  >> ~/.profile
-echo alias kubed=\"kubectl get pods \|\ grep mizar-daemon \|\ awk \'{print \$1}\' \|\ xargs -i kubectl logs {}\"  >> ~/.profile
-echo export CONTAINER_RUNTIME_ENDPOINT=\"\containerRuntime,container,/run/containerd/containerd.sock\" >> ~/.profile
-echo export PYTHONPATH=\"\$HOME/mizar/\" >> ~/.profile
-echo export KUBECTL_LOG=\"\/tmp/${USER}_kubetctl.err\" >> ~/.profile
-echo export GPG_TTY=\$\(tty\) >> ~/.profile
+  cd $HOME
+  wget https://github.com/containerd/containerd/releases/download/v1.4.2/containerd-1.4.2-linux-amd64.tar.gz
+  cd /usr
+  sudo tar -xvf $HOME/containerd-1.4.2-linux-amd64.tar.gz
+  sudo rm -rf $HOME/containerd-1.4.2-linux-amd64.tar.gz
 
-echo cd \$HOME/go/src/k8s.io/arktos >> ~/.profile
+  ####################
 
-source "$HOME/.profile"
+  echo Setup: Setup profile
 
-####################
+  echo PATH=\"\$HOME/go/src/k8s.io/arktos/third_party/etcd:/usr/local/go/bin:\$HOME/go/bin:\$HOME/go/src/k8s.io/arktos/_output/bin:\$HOME/go/src/k8s.io/arktos/_output/dockerized/bin/linux/amd64:\$PATH\" >> ~/.profile
+  echo GOPATH=\"\$HOME/go\" >> ~/.profile
+  echo GOROOT=\"/usr/local/go\" >> ~/.profile
+  echo >> ~/.profile
+  echo alias arktos=\"cd \$HOME/go/src/k8s.io/arktos\" >> ~/.profile
+  echo alias k8s=\"cd \$HOME/go/src/k8s.io/kubernetes\" >> ~/.profile
+  echo alias mizar=\"cd \$HOME/mizar\" >> ~/.profile
+  echo alias up=\"\$HOME/go/src/k8s.io/arktos/hack/arktos-up.sh\" >> ~/.profile
+  echo alias status=\"git status\" >> ~/.profile
+  echo alias pods=\"kubectl get pods -A -o wide\" >> ~/.profile
+  echo alias nets=\"echo 'kubectl get subnets'\; kubectl get subnets\; echo\; echo 'kubectl get droplets'\; kubectl get droplets\; echo\; echo 'kubectl get bouncers'\; kubectl get bouncers\; echo\; echo 'kubectl get dividers'\; kubectl get dividers\; echo\; echo 'kubectl get vpcs'\; kubectl get vpcs\; echo\; echo 'kubectl get eps'\; kubectl get eps\; echo\; echo 'kubectl get networks'\; kubectl get networks\" >> ~/.profile
 
-echo Setup: Install Kind
+  echo alias kubectl=\'$HOME/go/src/k8s.io/arktos/cluster/kubectl.sh\'  >> ~/.profile
+  echo alias kubeop=\"kubectl get pods \|\ grep mizar-operator \|\ awk \'{print \$1}\' \|\ xargs -i kubectl logs {}\"  >> ~/.profile
+  echo alias kubed=\"kubectl get pods \|\ grep mizar-daemon \|\ awk \'{print \$1}\' \|\ xargs -i kubectl logs {}\"  >> ~/.profile
+  echo export CONTAINER_RUNTIME_ENDPOINT=\"\containerRuntime,container,/run/containerd/containerd.sock\" >> ~/.profile
+  echo export PYTHONPATH=\"\$HOME/mizar/\" >> ~/.profile
+  echo export KUBECTL_LOG=\"\/tmp/${USER}_kubetctl.err\" >> ~/.profile
+  echo export GPG_TTY=\$\(tty\) >> ~/.profile
 
-cd ~/go/src/
-GO111MODULE="on" go get sigs.k8s.io/kind@v0.7.0
+  echo cd \$HOME/go/src/k8s.io/arktos >> ~/.profile
 
-####################
+  source "$HOME/.profile"
 
-echo Setup: Install kubetest
+  ####################
 
-cd ~/go/src/k8s.io
-git clone https://github.com/kubernetes/test-infra.git
-cd ~/go/src/k8s.io/test-infra/
-GO111MODULE=on go install ./kubetest
-GO111MODULE=on go mod vendor
+  echo Setup: Install Kind
 
-####################
+  cd ~/go/src/
+  GO111MODULE="on" go get sigs.k8s.io/kind@v0.7.0
 
-echo Setup: Basic settings
+  ####################
 
-sudo systemctl stop ufw
-sudo systemctl disable ufw
-sudo swapoff -a
-sudo sed -i '/swap/s/^/#/g' /etc/fstab
-sudo partprobe
-IP_ADDR=$(hostname -I | awk '{print $1}')
-HOSTNAME=$(hostname)
-sudo sed -i '2s/.*/'$IP_ADDR' '$HOSTNAME'/' /etc/hosts
-sudo rm -f /etc/resolv.conf
-sudo ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
+  echo Setup: Install kubetest
 
-#####################
+  cd ~/go/src/k8s.io
+  git clone https://github.com/kubernetes/test-infra.git
+  cd ~/go/src/k8s.io/test-infra/
+  GO111MODULE=on go install ./kubetest
+  GO111MODULE=on go mod vendor
 
-echo Setup: Machine setup completed!
+  ####################
 
-sudo reboot
+  echo Setup: Basic settings
+
+  sudo systemctl stop ufw
+  sudo systemctl disable ufw
+  sudo swapoff -a
+  sudo sed -i '/swap/s/^/#/g' /etc/fstab
+  sudo partprobe
+  IP_ADDR=$(hostname -I | awk '{print $1}')
+  HOSTNAME=$(hostname)
+  sudo sed -i '2s/.*/'$IP_ADDR' '$HOSTNAME'/' /etc/hosts
+  sudo rm -f /etc/resolv.conf
+  sudo ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
+
+  #####################
+
+  echo Setup: Machine setup completed!
+
+  sudo reboot
+}
+
+if [[ "$(arch)" == "x86_64" ]]; then
+  main
+else
+  echo "CPU architecture $(arch) not supported."
+fi

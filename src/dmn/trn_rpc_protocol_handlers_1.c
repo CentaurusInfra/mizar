@@ -253,6 +253,7 @@ int *update_ep_1_svc(rpc_trn_endpoint_t *ep, struct svc_req *rqstp)
 
 	if (strcmp(ep->hosted_interface, "") != 0) {
 		epval.hosted_iface = if_nametoindex(ep->hosted_interface);
+		TRN_LOG_DEBUG("update_ep: mapped hosted_interface:%s to index %d", ep->hosted_interface, epval.hosted_iface);
 	} else {
 		epval.hosted_iface = -1;
 	}
@@ -605,7 +606,7 @@ error:
 int *load_transit_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf, struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result = -1;
+	static int result = 0;
 
 	int rc;
 	bool unload_error = false;
@@ -616,12 +617,12 @@ int *load_transit_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf, struct svc_req *rqstp)
 	struct user_metadata_t *md = trn_itf_table_find(itf);
 
 	if (md) {
-		TRN_LOG_INFO("meatadata for interface %s already exist.", itf);
-	} else {
-		TRN_LOG_INFO("creating meatadata for interface %s.", itf);
-		md = malloc(sizeof(struct user_metadata_t));
+		TRN_LOG_INFO("Transit XDP for interface %s already exist.", itf);
+		return &result;
 	}
 
+	TRN_LOG_INFO("Loading transit XDP for interface %s.", itf);
+	md = malloc(sizeof(struct user_metadata_t));
 	if (!md) {
 		TRN_LOG_ERROR("Failure allocating memory for user_metadata_t");
 		result = RPC_TRN_FATAL;
@@ -629,7 +630,6 @@ int *load_transit_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf, struct svc_req *rqstp)
 	}
 
 	memset(md, 0, sizeof(struct user_metadata_t));
-
 	// Set all interface index slots to unused
 	int i;
 	for (i = 0; i < TRAN_MAX_ITF; i++) {
@@ -644,7 +644,6 @@ int *load_transit_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf, struct svc_req *rqstp)
 		      xdp_intf->xdp_path, xdp_intf->pcapfile);
 
 	rc = trn_user_metadata_init(md, itf, kern_path, md->xdp_flags);
-
 	if (rc != 0) {
 		TRN_LOG_ERROR(
 			"Failure initializing or loading transit XDP program for interface %s",
@@ -665,7 +664,6 @@ int *load_transit_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf, struct svc_req *rqstp)
 
 	TRN_LOG_INFO("Successfully loaded transit XDP on interface %s", itf);
 
-	result = 0;
 	return &result;
 
 error:
@@ -756,7 +754,7 @@ int *load_transit_agent_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf,
 				  struct svc_req *rqstp)
 {
 	UNUSED(rqstp);
-	static int result = -1;
+	static int result = 0;
 
 	int rc;
 	bool unload_error = false;
@@ -767,10 +765,12 @@ int *load_transit_agent_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf,
 
 	struct agent_user_metadata_t *md = trn_vif_table_find(itf);
 	if (md) {
-		TRN_LOG_INFO("meatadata for interface %s already exist.", itf);
-	} else {
-		md = malloc(sizeof(struct agent_user_metadata_t));
+		TRN_LOG_INFO("Agent XDP for interface %s alreay loaded.", itf);
+		return &result;
 	}
+
+	TRN_LOG_INFO("Loading agent XDP for interface %s.", itf);
+	md = malloc(sizeof(struct agent_user_metadata_t));
 	if (!md) {
 		TRN_LOG_ERROR(
 			"Failure allocating memory for agent_user_metadata_t");
@@ -779,7 +779,6 @@ int *load_transit_agent_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf,
 	}
 
 	memset(md, 0, sizeof(struct agent_user_metadata_t));
-
 	strcpy(md->pcapfile, xdp_intf->pcapfile);
 	md->pcapfile[255] = '\0';
 	md->xdp_flags = xdp_intf->xdp_flag;
@@ -788,7 +787,6 @@ int *load_transit_agent_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf,
 		      xdp_intf->xdp_path, xdp_intf->pcapfile);
 
 	rc = trn_agent_metadata_init(md, itf, kern_path, md->xdp_flags);
-
 	if (rc != 0) {
 		TRN_LOG_ERROR("Failure initializing or loading transit agent "
 			      "XDP program for interface %s",
@@ -807,7 +805,6 @@ int *load_transit_agent_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf,
 		goto error;
 	}
 
-	result = 0;
 	return &result;
 
 error:
@@ -870,7 +867,6 @@ int *update_agent_ep_1_svc(rpc_trn_endpoint_t *ep, struct svc_req *rqstp)
 		      ep->hosted_interface);
 
 	struct agent_user_metadata_t *md = trn_vif_table_find(itf);
-
 	if (!md) {
 		TRN_LOG_ERROR("Cannot find virtual interface metadata for %s",
 			      itf);
@@ -901,6 +897,7 @@ int *update_agent_ep_1_svc(rpc_trn_endpoint_t *ep, struct svc_req *rqstp)
 
 	if (strcmp(ep->hosted_interface, "") != 0) {
 		epval.hosted_iface = if_nametoindex(ep->hosted_interface);
+		TRN_LOG_DEBUG("update_agent_md: mapped hosted_interface:%s to index %d", ep->hosted_interface, epval.hosted_iface);
 	} else {
 		epval.hosted_iface = -1;
 	}
@@ -917,7 +914,6 @@ int *update_agent_ep_1_svc(rpc_trn_endpoint_t *ep, struct svc_req *rqstp)
 	}
 
 	rc = trn_agent_update_endpoint(md, &epkey, &epval);
-
 	if (rc != 0) {
 		TRN_LOG_ERROR("Cannot update agent with ep %d on interface %s",
 			      epkey.tunip[2], itf);
@@ -1062,7 +1058,7 @@ int *update_packet_metadata_1_svc(rpc_trn_packet_metadata_t *packet_metadata, st
 		goto error;
 	}
 
-	memcpy(key.tunip, &packet_metadata->tunid, sizeof(packet_metadata->tunid));	
+	memcpy(key.tunip, &packet_metadata->tunid, sizeof(packet_metadata->tunid));
 	key.tunip[2] = packet_metadata->ip;
 	value.pod_label_value = packet_metadata->pod_label_value;
 	value.namespace_label_value = packet_metadata->namespace_label_value;
@@ -1460,7 +1456,7 @@ int *update_transit_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc
 	cidr.prefixlen = policy->cidr_prefixlen + 96;
 	cidr.local_ip = policy->local_ip;
 	cidr.remote_ip = policy->cidr_ip;
-	TRN_LOG_INFO("policy: tunnel_id  %ld; local ip  0x%x; cidr ip  0x%x\n", 
+	TRN_LOG_INFO("policy: tunnel_id  %ld; local ip  0x%x; cidr ip  0x%x\n",
 			policy->tunid, policy->local_ip, policy->cidr_ip);
 
 	if (type == PRIMARY) {
@@ -1516,7 +1512,7 @@ int *update_agent_network_policy_1_svc(rpc_trn_vsip_cidr_t *policy, struct svc_r
 	cidr.prefixlen = policy->cidr_prefixlen + 96;
 	cidr.local_ip = policy->local_ip;
 	cidr.remote_ip = policy->cidr_ip;
-	TRN_LOG_INFO("policy: tunnel_id  %ld; local ip  0x%x; cidr ip  0x%x \n", 
+	TRN_LOG_INFO("policy: tunnel_id  %ld; local ip  0x%x; cidr ip  0x%x \n",
 			policy->tunid, policy->local_ip, policy->cidr_ip);
 
 	if (type == PRIMARY) {
@@ -1571,7 +1567,7 @@ int *delete_transit_network_policy_1_svc(rpc_trn_vsip_cidr_key_t *policy_key, st
 	cidr.prefixlen = policy_key->cidr_prefixlen + 96;
 	cidr.local_ip = policy_key->local_ip;
 	cidr.remote_ip = policy_key->cidr_ip;
-	TRN_LOG_INFO("policy: tunnel_id  %ld; local ip  0x%x; cidr ip  0x%x\n", 
+	TRN_LOG_INFO("policy: tunnel_id  %ld; local ip  0x%x; cidr ip  0x%x\n",
 			policy_key->tunid, policy_key->local_ip, policy_key->cidr_ip);
 
 	if (type == PRIMARY) {
@@ -1626,7 +1622,7 @@ int *delete_agent_network_policy_1_svc(rpc_trn_vsip_cidr_key_t *policy_key, stru
 	cidr.prefixlen = policy_key->cidr_prefixlen + 96;
 	cidr.local_ip = policy_key->local_ip;
 	cidr.remote_ip = policy_key->cidr_ip;
-	TRN_LOG_INFO("policy: tunnel_id  %ld; local ip  0x%x; cidr ip  0x%x\n", 
+	TRN_LOG_INFO("policy: tunnel_id  %ld; local ip  0x%x; cidr ip  0x%x\n",
 			policy_key->tunid, policy_key->local_ip, policy_key->cidr_ip);
 
 	if (type == PRIMARY) {
@@ -1810,7 +1806,7 @@ int *update_transit_network_policy_protocol_port_1_svc(rpc_trn_vsip_ppo_t *ppo, 
 	static int result = -1;
 	int rc;
 	char *itf = ppo->interface;
-	
+
 	TRN_LOG_INFO("update_transit_network_policy_protocol_port_1_svc service");
 	struct vsip_ppo_t policy;
 	struct user_metadata_t *md = trn_itf_table_find(itf);
@@ -1824,7 +1820,7 @@ int *update_transit_network_policy_protocol_port_1_svc(rpc_trn_vsip_ppo_t *ppo, 
 	policy.local_ip = ppo->local_ip;
 	policy.proto = ppo->proto;
 	policy.port = ppo->port;
-	TRN_LOG_INFO("ppo: tunnel_id  %ld; local ip  0x%x; protocol  %d; port  %d\n", 
+	TRN_LOG_INFO("ppo: tunnel_id  %ld; local ip  0x%x; protocol  %d; port  %d\n",
 				ppo->tunid, ppo->local_ip, ppo->proto, ppo->port);
 
 	rc = trn_update_transit_network_policy_protocol_port_map(md, &policy, ppo->bit_val);
@@ -1862,7 +1858,7 @@ int *update_agent_network_policy_protocol_port_1_svc(rpc_trn_vsip_ppo_t *ppo, st
 	policy.local_ip = ppo->local_ip;
 	policy.proto = ppo->proto;
 	policy.port = ppo->port;
-	TRN_LOG_INFO("ppo: tunnel_id  %ld; local ip  0x%x; protocol  %d; port  %d\n", 
+	TRN_LOG_INFO("ppo: tunnel_id  %ld; local ip  0x%x; protocol  %d; port  %d\n",
 				ppo->tunid, ppo->local_ip, ppo->proto, ppo->port);
 
 	rc = trn_update_agent_network_policy_protocol_port_map(md, &policy, ppo->bit_val);
@@ -1886,7 +1882,7 @@ int *delete_transit_network_policy_protocol_port_1_svc(rpc_trn_vsip_ppo_key_t *p
 	static int result = -1;
 	int rc;
 	char *itf = ppo_key->interface;
-	
+
 	TRN_LOG_INFO("delete_transit_network_policy_protocol_port_1 service");
 	struct vsip_ppo_t policy;
 	struct user_metadata_t *md = trn_itf_table_find(itf);
@@ -1900,7 +1896,7 @@ int *delete_transit_network_policy_protocol_port_1_svc(rpc_trn_vsip_ppo_key_t *p
 	policy.local_ip = ppo_key->local_ip;
 	policy.proto = ppo_key->proto;
 	policy.port = ppo_key->port;
-	TRN_LOG_INFO("ppo: tunnel_id  %ld; local ip  0x%x; protocol  %d; port  %d\n", 
+	TRN_LOG_INFO("ppo: tunnel_id  %ld; local ip  0x%x; protocol  %d; port  %d\n",
 				ppo_key->tunid, ppo_key->local_ip, ppo_key->proto, ppo_key->port);
 
 	rc = trn_delete_transit_network_policy_protocol_port_map(md, &policy);
@@ -1939,7 +1935,7 @@ int *delete_agent_network_policy_protocol_port_1_svc(rpc_trn_vsip_ppo_key_t *ppo
 	policy.proto = ppo_key->proto;
 	policy.port = ppo_key->port;
 
-	TRN_LOG_INFO("ppo: tunnel_id  %ld; local ip  0x%x; protocol  %d; port  %d \n", 
+	TRN_LOG_INFO("ppo: tunnel_id  %ld; local ip  0x%x; protocol  %d; port  %d \n",
 				ppo_key->tunid, ppo_key->local_ip, ppo_key->proto, ppo_key->port);
 
 	rc = trn_delete_agent_network_policy_protocol_port_map(md, &policy);
@@ -1963,7 +1959,7 @@ int *update_transit_pod_label_policy_1_svc(rpc_trn_pod_label_policy_t *rpc_obj, 
 	static int result = -1;
 	int rc;
 	char *itf = rpc_obj->interface;
-	
+
 	TRN_LOG_INFO("update_transit_pod_label_policy_1_svc service");
 	struct pod_label_policy_t policy;
 	struct user_metadata_t *md = trn_itf_table_find(itf);
@@ -1972,10 +1968,10 @@ int *update_transit_pod_label_policy_1_svc(rpc_trn_pod_label_policy_t *rpc_obj, 
 		result = RPC_TRN_ERROR;
 		goto error;
 	}
-	
+
 	policy.tunnel_id = rpc_obj->tunid;
 	policy.pod_label_value = rpc_obj->pod_label_value;
-	TRN_LOG_INFO("rpc_obj: pod_label_value %d\n", 
+	TRN_LOG_INFO("rpc_obj: pod_label_value %d\n",
 				rpc_obj->pod_label_value);
 
 	rc = trn_update_transit_pod_label_policy_map(md, &policy, rpc_obj->bit_val);
@@ -1999,7 +1995,7 @@ int *delete_transit_pod_label_policy_1_svc(rpc_trn_pod_label_policy_key_t *key, 
 	static int result = -1;
 	int rc;
 	char *itf = key->interface;
-	
+
 	TRN_LOG_INFO("delete_transit_network_policy_protocol_port_1 service");
 	struct pod_label_policy_t policy;
 	struct user_metadata_t *md = trn_itf_table_find(itf);
@@ -2011,7 +2007,7 @@ int *delete_transit_pod_label_policy_1_svc(rpc_trn_pod_label_policy_key_t *key, 
 
 	policy.tunnel_id = key->tunid;
 	policy.pod_label_value = key->pod_label_value;
-	TRN_LOG_INFO("key: pod_label_value %d\n", 
+	TRN_LOG_INFO("key: pod_label_value %d\n",
 				key->pod_label_value);
 
 	rc = trn_delete_transit_pod_label_policy_map(md, &policy);
@@ -2035,7 +2031,7 @@ int *update_transit_namespace_label_policy_1_svc(rpc_trn_namespace_label_policy_
 	static int result = -1;
 	int rc;
 	char *itf = rpc_obj->interface;
-	
+
 	TRN_LOG_INFO("update_transit_namespace_label_policy_1_svc service");
 	struct namespace_label_policy_t policy;
 	struct user_metadata_t *md = trn_itf_table_find(itf);
@@ -2044,10 +2040,10 @@ int *update_transit_namespace_label_policy_1_svc(rpc_trn_namespace_label_policy_
 		result = RPC_TRN_ERROR;
 		goto error;
 	}
-	
+
 	policy.tunnel_id = rpc_obj->tunid;
 	policy.namespace_label_value = rpc_obj->namespace_label_value;
-	TRN_LOG_INFO("rpc_obj: namespace_label_value %d\n", 
+	TRN_LOG_INFO("rpc_obj: namespace_label_value %d\n",
 				rpc_obj->namespace_label_value);
 
 	rc = trn_update_transit_namespace_label_policy_map(md, &policy, rpc_obj->bit_val);
@@ -2071,7 +2067,7 @@ int *delete_transit_namespace_label_policy_1_svc(rpc_trn_namespace_label_policy_
 	static int result = -1;
 	int rc;
 	char *itf = key->interface;
-	
+
 	TRN_LOG_INFO("delete_transit_network_policy_protocol_port_1 service");
 	struct namespace_label_policy_t policy;
 	struct user_metadata_t *md = trn_itf_table_find(itf);
@@ -2083,7 +2079,7 @@ int *delete_transit_namespace_label_policy_1_svc(rpc_trn_namespace_label_policy_
 
 	policy.tunnel_id = key->tunid;
 	policy.namespace_label_value = key->namespace_label_value;
-	TRN_LOG_INFO("key: namespace_label_value %d\n", 
+	TRN_LOG_INFO("key: namespace_label_value %d\n",
 				key->namespace_label_value);
 
 	rc = trn_delete_transit_namespace_label_policy_map(md, &policy);
@@ -2107,7 +2103,7 @@ int *update_transit_pod_and_namespace_label_policy_1_svc(rpc_trn_pod_and_namespa
 	static int result = -1;
 	int rc;
 	char *itf = rpc_obj->interface;
-	
+
 	TRN_LOG_INFO("update_transit_pod_and_namespace_label_policy_1_svc service");
 	struct pod_and_namespace_label_policy_t policy;
 	struct user_metadata_t *md = trn_itf_table_find(itf);
@@ -2116,11 +2112,11 @@ int *update_transit_pod_and_namespace_label_policy_1_svc(rpc_trn_pod_and_namespa
 		result = RPC_TRN_ERROR;
 		goto error;
 	}
-	
+
 	policy.tunnel_id = rpc_obj->tunid;
 	policy.pod_label_value = rpc_obj->pod_label_value;
 	policy.namespace_label_value = rpc_obj->namespace_label_value;
-	TRN_LOG_INFO("rpc_obj: pod_label_value %d namespace_label_value %d\n", 
+	TRN_LOG_INFO("rpc_obj: pod_label_value %d namespace_label_value %d\n",
 				rpc_obj->pod_label_value, rpc_obj->namespace_label_value);
 
 	rc = trn_update_transit_pod_and_namespace_label_policy_map(md, &policy, rpc_obj->bit_val);
@@ -2144,7 +2140,7 @@ int *delete_transit_pod_and_namespace_label_policy_1_svc(rpc_trn_pod_and_namespa
 	static int result = -1;
 	int rc;
 	char *itf = key->interface;
-	
+
 	TRN_LOG_INFO("delete_transit_network_policy_protocol_port_1 service");
 	struct pod_and_namespace_label_policy_t policy;
 	struct user_metadata_t *md = trn_itf_table_find(itf);
@@ -2157,7 +2153,7 @@ int *delete_transit_pod_and_namespace_label_policy_1_svc(rpc_trn_pod_and_namespa
 	policy.tunnel_id = key->tunid;
 	policy.pod_label_value = key->pod_label_value;
 	policy.namespace_label_value = key->namespace_label_value;
-	TRN_LOG_INFO("key: pod_label_value %d namespace_label_value %d\n", 
+	TRN_LOG_INFO("key: pod_label_value %d namespace_label_value %d\n",
 				key->pod_label_value, key->namespace_label_value);
 
 	rc = trn_delete_transit_pod_and_namespace_label_policy_map(md, &policy);

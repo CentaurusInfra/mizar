@@ -3,7 +3,7 @@
 
 # Authors: Phu Tran          <@phudtran>
 
-name: CI
+name: mizar-ci
 on:
   push:
     branches:
@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
 jobs:
   build:
-    runs-on: self-hosted
+    runs-on: [self-hosted, mizar-ci]
     strategy:
       matrix:
         python-version: ['3.8.0']
@@ -107,13 +107,13 @@ jobs:
           ssh ciw2 "sudo $(sudo kubeadm token create --print-join-command)"
       - name: build container images
         run: |
-          sudo docker build -t mizar:0.9 -f etc/docker/mizar.Dockerfile .
-          sudo docker build -t dropletd:0.9 -f etc/docker/daemon.Dockerfile .
-          sudo docker build -t endpointopr:0.9 -f etc/docker/operator.Dockerfile .
+          sudo docker build -t mizar:ci -f etc/docker/mizar.Dockerfile .
+          sudo docker build -t dropletd:ci -f etc/docker/daemon.Dockerfile .
+          sudo docker build -t endpointopr:ci -f etc/docker/operator.Dockerfile .
 
-          sudo docker save mizar:0.9 -o build/bin/mizar.tar
-          sudo docker save dropletd:0.9 -o build/bin/dropletd.tar
-          sudo docker save endpointopr:0.9 -o build/bin/endpointopr.tar
+          sudo docker save mizar:ci -o build/bin/mizar.tar
+          sudo docker save dropletd:ci -o build/bin/dropletd.tar
+          sudo docker save endpointopr:ci -o build/bin/endpointopr.tar
 
           sudo chmod +r build/bin/mizar.tar
           sudo chmod +r build/bin/dropletd.tar
@@ -127,7 +127,7 @@ jobs:
           ssh ciw1 "sudo docker load -i ~/mizar/build/bin/mizar.tar"
           ssh ciw1 "sudo docker load -i ~/mizar/build/bin/dropletd.tar"
           ssh ciw1 "sudo docker load -i ~/mizar/build/bin/endpointopr.tar"
-    
+
           ssh ciw2 "sudo docker load -i ~/mizar/build/bin/mizar.tar"
           ssh ciw2 "sudo docker load -i ~/mizar/build/bin/dropletd.tar"
           ssh ciw2 "sudo docker load -i ~/mizar/build/bin/endpointopr.tar"

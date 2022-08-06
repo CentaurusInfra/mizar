@@ -22,7 +22,7 @@
 import logging
 import random
 import json
-from kubernetes import client, config
+from kubernetes import client
 from mizar.obj.endpoint import Endpoint
 from mizar.obj.bouncer import Bouncer
 from mizar.obj.networkpolicy import NetworkPolicy
@@ -48,7 +48,7 @@ class NetworkPolicyOperator(object):
     def _init(self, **kwargs):
         logger.info(kwargs)
         self.store = OprStore()
-        config.load_incluster_config()
+        load_k8s_config()
         self.obj_api = client.CustomObjectsApi()
         self.core_api = client.CoreV1Api()
 

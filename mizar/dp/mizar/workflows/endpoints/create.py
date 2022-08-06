@@ -26,6 +26,7 @@ from mizar.dp.mizar.operators.bouncers.bouncers_operator import *
 from mizar.dp.mizar.operators.endpoints.endpoints_operator import *
 from mizar.dp.mizar.operators.nets.nets_operator import *
 from mizar.dp.mizar.operators.droplets.droplets_operator import *
+from mizar.dp.mizar.operators.vpcs.vpcs_operator import *
 
 logger = logging.getLogger()
 
@@ -33,6 +34,7 @@ bouncers_opr = BouncerOperator()
 endpoints_opr = EndpointOperator()
 nets_opr = NetOperator()
 droplets_opr = DropletOperator()
+vpcs_opr = VpcOperator()
 
 
 class EndpointCreate(WorkflowTask):
@@ -48,16 +50,27 @@ class EndpointCreate(WorkflowTask):
         ep.droplet_obj = droplets_opr.store.get_droplet(ep.droplet)
         if ep.type in OBJ_DEFAULTS.droplet_eps and not ep.droplet_obj:
             self.raise_temporary_error(
-                "Task: {} Endpoint: {} Droplet Object not ready.".format(self.__class__.__name__, ep.name))
-        nets_opr.allocate_endpoint(ep)
-        bouncers_opr.update_endpoint_with_bouncers(ep, self)
-        if ep.type == OBJ_DEFAULTS.ep_type_simple:
-            endpoints_opr.produce_simple_endpoint_interface(ep)
-        if ep.bouncers:
-            if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
-                for bouncer in ep.bouncers:
-                    logger.info(
-                        "EP {} has bouncer {}. Updating.".format(ep.name, bouncer))
-                ep.update_bouncers(ep.bouncers)
+                "Task: {} Endpoint: {} Droplet Object {} not ready. ".format(self.__class__.__name__, ep.name, ep.droplet))
+        vpc = vpcs_opr.store.get_vpc(ep.vpc)
+        # EP create wait for bouncer
+        net_bouncer = list(
+            bouncers_opr.store.get_bouncers_of_net(ep.net).values())
+        if not net_bouncer:
+            self.raise_temporary_error(
+                "EP create {}: bouncers not yet ready for net {}".format(ep.name, ep.net))
+        if net_bouncer[0].status != OBJ_STATUS.bouncer_status_provisioned:
+            self.raise_temporary_error(
+                "EP create {}: bouncers not yet ready for net {}".format(ep.name, ep.net))
+        nets_opr.allocate_endpoint(ep, vpc)
+        bouncers_opr.update_endpoint_obj_with_bouncers(ep)
+
+        if ep.type == OBJ_DEFAULTS.ep_type_simple or ep.type == OBJ_DEFAULTS.ep_type_host:
+            if ep.type == OBJ_DEFAULTS.ep_type_host:
+                logger.info("Activate host interface for vpc {} on droplet {}".format(
+                    ep.vpc, ep.droplet_obj.ip))
+                droplets_opr.store_update_vpc_to_droplet(vpc, ep.droplet_obj)
+            itf = endpoints_opr.produce_simple_endpoint_interface(ep, self)
+            logger.info(
+                "Endpoint Create: Endpoint {} produced interface {}".format(ep.name, itf))
         endpoints_opr.set_endpoint_provisioned(ep)
         self.finalize()

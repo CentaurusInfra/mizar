@@ -10,7 +10,8 @@ service InterfaceService {
   rpc ProduceInterfaces(InterfacesList) returns (InterfacesList) {}
   rpc ConsumeInterfaces(CniParameters) returns (InterfacesList) {}
   rpc ActivateHostInterface(Interface) returns (Interface) {}
-  rpc DeleteInterface(CniParameters) returns (google.protobuf.Empty) {}
+  rpc DeleteInterface(Interface) returns (google.protobuf.Empty) {}
+  rpc RemoveCachedInterfaces(PodId) returns (google.protobuf.Empty) {}
 }
 
 message PodId {
@@ -81,10 +82,11 @@ message Interface {
   string egress_bandwidth_bytes_per_sec = 11;
   string pod_network_priority = 12;
   string pod_network_class = 13;
+  string vpc_ip = 14;
+  string vpc_prefix = 15;
 }
 
 message InterfacesList {
   repeated Interface interfaces = 1;
 }
-
 

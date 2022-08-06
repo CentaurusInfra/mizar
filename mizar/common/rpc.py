@@ -98,21 +98,32 @@ class TrnRpc:
         jsonconf = json.dumps(jsonconf)
         return jsonconf
 
-    def update_substrate_ep(self, ip, mac):
+    def update_substrate_ep(self, ip, mac, task):
         jsonconf = self.get_substrate_ep_json(ip, mac)
         cmd = f'''{self.trn_cli_update_ep} \'{jsonconf}\''''
         logger.info("update_substrate_ep: {}".format(cmd))
         returncode, text = run_cmd(cmd)
-        logger.info("returns {} {}".format(returncode, text))
+        logger.info("update_subpstrate_ep {} returns {} {}".format(
+            cmd, text, returncode))
+        if (CONSTANTS.RPC_ERROR_CODE in text or
+            CONSTANTS.RPC_FAILED_CODE in text or
+                CONSTANTS.RPC_FATAL_CODE in text):
+            task.raise_temporary_error(
+                "update_substrate_ep returned ERROR! IP {} Retrying as agent may have not yet been loaded.".format(ip))
 
-    def update_agent_substrate_ep(self, ep, ip, mac):
+    def update_agent_substrate_ep(self, ep, ip, mac, task):
         itf = ep.get_veth_peer()
         jsonconf = self.get_substrate_ep_json(ip, mac)
         cmd = f'''{self.trn_cli_update_agent_ep} -i \'{itf}\' -j \'{jsonconf}\''''
         logger.info("update_agent_substrate_ep: {}".format(cmd))
         returncode, text = run_cmd(cmd)
         logger.info(
-            "update_agent_substrate_ep returns {} {}".format(returncode, text))
+            "update_agent_substrate_ep {} {} returns {} {}".format(ep.name, cmd, text, returncode))
+        if (CONSTANTS.RPC_ERROR_CODE in text or
+            CONSTANTS.RPC_FAILED_CODE in text or
+                CONSTANTS.RPC_FATAL_CODE in text):
+            task.raise_temporary_error(
+                "update_agent_substrate_ep returned ERROR! Endpoint {} Retrying as agent may have not yet been loaded.".format(ep.name))
 
     def delete_agent_substrate_ep(self, ep, ip):
         itf = ep.get_veth_peer()
@@ -141,7 +152,7 @@ class TrnRpc:
         logger.info(
             "update_packet_metadata returns {} {}".format(returncode, text))
 
-    def update_ep(self, ep):
+    def update_ep(self, ep, task):
         peer = ""
         droplet_ip = ep.get_droplet_ip()
         # Only detail veth info if the droplet is also a host
@@ -162,15 +173,21 @@ class TrnRpc:
         cmd = f'''{self.trn_cli_update_ep} \'{jsonconf}\''''
         logger.info("update_ep: {}".format(cmd))
         returncode, text = run_cmd(cmd)
-        logger.info("returns {} {}".format(returncode, text))
+        logger.info("update_ep {} {} returns {} {}".format(
+            ep.name, cmd, text, returncode))
+        if (CONSTANTS.RPC_ERROR_CODE in text or
+            CONSTANTS.RPC_FAILED_CODE in text or
+                CONSTANTS.RPC_FATAL_CODE in text):
+            task.raise_temporary_error(
+                "update_ep returned ERROR! Endpoint {} Retrying as transit may have not yet been loaded.".format(ep.name))
         remote_ports = ep.get_remote_ports()
         frontend_ports = ep.get_frontend_ports()
         protocols = ep.get_port_protocols()
         for i in range(len(remote_ports)):
             self.update_port(ep.get_tunnel_id(), ep.get_ip(),
-                             frontend_ports[i], remote_ports[i], protocols[i])
+                             frontend_ports[i], remote_ports[i], protocols[i], task)
 
-    def update_port(self, tunid, ip, port, target_port, protocol):
+    def update_port(self, tunid, ip, port, target_port, protocol, task):
         jsonconf = {
             "tunnel_id": tunid,
             "ip": ip,
@@ -182,9 +199,15 @@ class TrnRpc:
         cmd = f'''{self.trn_cli_update_port} \'{jsonconf}\''''
         logger.info("update_port: {}".format(cmd))
         returncode, text = run_cmd(cmd)
-        logger.info("returns {} {}".format(returncode, text))
+        logger.info("update_port {} returns {} {}".format(
+            cmd, text, returncode))
+        if (CONSTANTS.RPC_ERROR_CODE in text or
+            CONSTANTS.RPC_FAILED_CODE in text or
+                CONSTANTS.RPC_FATAL_CODE in text):
+            task.raise_temporary_error(
+                "update_port returned ERROR! IP {} Retrying as agent may have not yet been loaded.".format(ip))
 
-    def update_agent_metadata(self, ep):
+    def update_agent_metadata(self, ep, task):
         itf = ep.get_veth_peer()
         jsonconf = {
             "ep": {
@@ -213,7 +236,12 @@ class TrnRpc:
         logger.info("update_agent_metadata: {}".format(cmd))
         returncode, text = run_cmd(cmd)
         logger.info(
-            "update_agent_metadata returns {} {}".format(returncode, text))
+            "update_agent_metadata ep {} {} returns {} {}".format(ep.name, cmd, text, returncode))
+        if (CONSTANTS.RPC_ERROR_CODE in text or
+            CONSTANTS.RPC_FAILED_CODE in text or
+                CONSTANTS.RPC_FATAL_CODE in text):
+            task.raise_temporary_error(
+                "update_agent_metadata returned ERROR! Endpoint {} Retrying as agent may have not yet been loaded.".format(ep.name))
 
     def load_transit_agent_xdp(self, veth_peer):
         itf = veth_peer
@@ -230,7 +258,7 @@ class TrnRpc:
         logger.info(
             "load_transit_agent_xdp returns {} {}".format(returncode, text))
 
-    def load_transit_xdp_pipeline_stage(self, stage, obj_file):
+    def load_transit_xdp_pipeline_stage(self, stage, obj_file, task):
         jsonconf = {
             "xdp_path": obj_file,
             "stage": stage
@@ -240,7 +268,12 @@ class TrnRpc:
         logger.info("load_transit_xdp_pipeline_stage: {}".format(cmd))
         returncode, text = run_cmd(cmd)
         logger.info(
-            "load_transit_xdp_pipeline_stage returns {} {}".format(returncode, text))
+            "load_transit_xdp_pipeline_stage returns {} {}".format(text, returncode))
+        if (CONSTANTS.RPC_ERROR_CODE in text or
+            CONSTANTS.RPC_FAILED_CODE in text or
+                CONSTANTS.RPC_FATAL_CODE in text):
+            task.raise_temporary_error(
+                "load_transit_xdp_pipeline_stage returned ERROR! Retrying as agent may have not yet been loaded.")
 
     def unload_transit_xdp_pipeline_stage(self, stage, obj_file):
         jsonconf = {
@@ -286,7 +319,7 @@ class TrnRpc:
         logger.info(
             "unload_transit_agent_xdp returns {} {}".format(returncode, text))
 
-    def update_vpc(self, bouncer):
+    def update_vpc(self, bouncer, task):
         if len(bouncer.get_divider_ips()) < 1:
             logger.info("Bouncer list of dividers, LEN IS ZERO")
             return
@@ -299,6 +332,11 @@ class TrnRpc:
         logger.info("update_vpc: {}".format(cmd))
         returncode, text = run_cmd(cmd)
         logger.info("update_vpc returns {} {}".format(returncode, text))
+        if (CONSTANTS.RPC_ERROR_CODE in text or
+            CONSTANTS.RPC_FAILED_CODE in text or
+                CONSTANTS.RPC_FATAL_CODE in text):
+            task.raise_temporary_error(
+                "update_vpc returned ERROR! VNI {} Retrying as agent may have not yet been loaded.".format(bouncer.vni))
 
     def delete_vpc(self, bouncer):
         jsonconf = {
@@ -310,7 +348,7 @@ class TrnRpc:
         returncode, text = run_cmd(cmd)
         logger.info("delete_vpc returns {} {}".format(returncode, text))
 
-    def update_net(self, net):
+    def update_net(self, net, task):
         if len(net.get_bouncers_ips()) < 1:
             logger.info("net list of bouncers LEN IS ZERO")
             return
@@ -324,7 +362,13 @@ class TrnRpc:
         cmd = f'''{self.trn_cli_update_net} \'{jsonconf}\''''
         logger.info("update_net: {}".format(cmd))
         returncode, text = run_cmd(cmd)
-        logger.info("update_net returns {} {}".format(returncode, text))
+        logger.info("update_net {} returns {} {}".format(
+            cmd, text, returncode))
+        if (CONSTANTS.RPC_ERROR_CODE in text or
+            CONSTANTS.RPC_FAILED_CODE in text or
+                CONSTANTS.RPC_FATAL_CODE in text):
+            task.raise_temporary_error(
+                "update_net returned ERROR! VNI {} Retrying as agent may have not yet been loaded.".format(net.vni))
 
     def delete_net(self, net):
         jsonconf = {
@@ -497,7 +541,8 @@ class TrnRpc:
         cmd = f'''{self.trn_cli_update_pod_label_policy} \'{jsonconf}\''''
         logger.info("update_pod_label_policy: {}".format(cmd))
         returncode, text = run_cmd(cmd)
-        logger.info("update_pod_label_policy returns {} {}".format(returncode, text))
+        logger.info(
+            "update_pod_label_policy returns {} {}".format(returncode, text))
 
     def update_namespace_label_policy(self, label_policy_list):
         if len(label_policy_list) == 0:
@@ -520,7 +565,8 @@ class TrnRpc:
         cmd = f'''{self.trn_cli_update_namespace_label_policy} \'{jsonconf}\''''
         logger.info("update_namespace_label_policy: {}".format(cmd))
         returncode, text = run_cmd(cmd)
-        logger.info("update_namespace_label_policy returns {} {}".format(returncode, text))
+        logger.info(
+            "update_namespace_label_policy returns {} {}".format(returncode, text))
 
     def update_pod_and_namespace_label_policy(self, label_policy_list):
         if len(label_policy_list) == 0:
@@ -544,7 +590,8 @@ class TrnRpc:
         cmd = f'''{self.trn_cli_update_pod_and_namespace_label_policy} \'{jsonconf}\''''
         logger.info("update_pod_and_namespace_label_policy: {}".format(cmd))
         returncode, text = run_cmd(cmd)
-        logger.info("update_pod_and_namespace_label_policy returns {} {}".format(returncode, text))
+        logger.info(
+            "update_pod_and_namespace_label_policy returns {} {}".format(returncode, text))
 
     def update_network_policy_protocol_port_egress(self, ep, port_networkpolicy_list):
         if len(port_networkpolicy_list) == 0:
@@ -623,7 +670,8 @@ class TrnRpc:
         cmd = f'''{self.trn_cli_delete_pod_label_policy} \'{jsonconf}\''''
         logger.info("delete_pod_label_policy: {}".format(cmd))
         returncode, text = run_cmd(cmd)
-        logger.info("delete_pod_label_policy returns {} {}".format(returncode, text))
+        logger.info(
+            "delete_pod_label_policy returns {} {}".format(returncode, text))
 
     def delete_namespace_label_policy(self, label_policy_list):
         if len(label_policy_list) == 0:
@@ -645,7 +693,8 @@ class TrnRpc:
         cmd = f'''{self.trn_cli_delete_namespace_label_policy} \'{jsonconf}\''''
         logger.info("delete_namespace_label_policy: {}".format(cmd))
         returncode, text = run_cmd(cmd)
-        logger.info("delete_namespace_label_policy returns {} {}".format(returncode, text))
+        logger.info(
+            "delete_namespace_label_policy returns {} {}".format(returncode, text))
 
     def delete_pod_and_namespace_label_policy(self, label_policy_list):
         if len(label_policy_list) == 0:
@@ -668,7 +717,8 @@ class TrnRpc:
         cmd = f'''{self.trn_cli_delete_pod_and_namespace_label_policy} \'{jsonconf}\''''
         logger.info("delete_pod_and_namespace_label_policy: {}".format(cmd))
         returncode, text = run_cmd(cmd)
-        logger.info("delete_pod_and_namespace_label_policy returns {} {}".format(returncode, text))
+        logger.info(
+            "delete_pod_and_namespace_label_policy returns {} {}".format(returncode, text))
 
     def delete_network_policy_protocol_port_egress(self, ep, port_networkpolicy_list):
         if len(port_networkpolicy_list) == 0:
