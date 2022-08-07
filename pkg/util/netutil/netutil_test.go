@@ -52,9 +52,9 @@ func Test_ActivateInterface(t *testing.T) {
 				hostVeth.Name,
 				netNSName,
 				ifName,
-				"8",
-				"20.0.0.81",
-				"20.0.0.1")
+				"16",
+				"10.20.0.81",
+				"10.20.0.1")
 			So(err, ShouldBeNil)
 			So(log, ShouldEqual, "Interface 'eth-894cad92' already UP.")
 		})
@@ -94,16 +94,16 @@ func createNetNS() (ns.NetNS, string) {
 func Test_ParseCIDR(t *testing.T) {
 	Convey("Subject: netutil.ParseCIDR", t, func() {
 		Convey("Given correct input, get expected result", func() {
-			ip, ipNet, err := netutil.ParseCIDR("20.0.0.8/16")
-			So(ip.String(), ShouldEqual, "20.0.0.8")
-			So(ipNet.String(), ShouldEqual, "20.0.0.0/16")
+			ip, ipNet, err := netutil.ParseCIDR("10.20.0.8/16")
+			So(ip.String(), ShouldEqual, "10.20.0.8")
+			So(ipNet.String(), ShouldEqual, "10.20.0.0/16")
 			So(err, ShouldBeNil)
 		})
 
 		Convey("Given no mask, get expected result", func() {
-			ip, ipNet, err := netutil.ParseCIDR("20.0.0.8")
-			So(ip.String(), ShouldEqual, "20.0.0.8")
-			So(ipNet.String(), ShouldEqual, "20.0.0.8/32")
+			ip, ipNet, err := netutil.ParseCIDR("10.20.0.8")
+			So(ip.String(), ShouldEqual, "10.20.0.8")
+			So(ipNet.String(), ShouldEqual, "10.20.0.8/32")
 			So(err, ShouldBeNil)
 		})
 
@@ -119,12 +119,12 @@ func Test_ParseCIDR(t *testing.T) {
 func Test_ParseIP(t *testing.T) {
 	Convey("Subject: netutil.ParseIP", t, func() {
 		Convey("Given correct input, get expected result", func() {
-			ip := netutil.ParseIP("20.0.0.8")
-			So(ip.String(), ShouldEqual, "20.0.0.8")
+			ip := netutil.ParseIP("10.20.0.8")
+			So(ip.String(), ShouldEqual, "10.20.0.8")
 		})
 
 		Convey("Given wrong input, get nil", func() {
-			ip := netutil.ParseIP("20.0.0.8/16")
+			ip := netutil.ParseIP("10.20.0.8/16")
 			So(ip, ShouldBeNil)
 		})
 	})

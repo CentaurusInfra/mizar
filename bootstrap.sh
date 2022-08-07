@@ -39,10 +39,6 @@ function install-dev-packages {
   sudo apt-get install -y \
     ${llvm_pkg} \
     ${clang_pkg}
-  if [[ "$(arch)" == "aarch64" ]]; then
-    sudo apt-get install -y \
-      libtirpc-dev
-  fi
 }
 
 function install-python {
@@ -203,15 +199,13 @@ function main {
 if [[ "$(arch)" == "x86_64" ]]; then
   main
 elif [[ "$(arch)" == "aarch64" ]]; then
-  cat /etc/os-release | grep VERSION_ID | grep "2[1-9].04"
+  cat /etc/os-release | grep VERSION_ID | grep "20.04"
   if [ $? -eq 0 ]; then
     cpu_arch="arm64"
-    llvm_pkg="llvm"
-    clang_pkg="clang"
     main
   else
-    echo "CPU architecture $(arch) not supported below Ubuntu 22.04"
+    echo "bootstrap.sh: CPU architecture $(arch) not supported for this OS version"
   fi
 else
-  echo "CPU architecture $(arch) not supported."
+  echo "bootstrap.sh: CPU architecture $(arch) not supported."
 fi
