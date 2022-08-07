@@ -447,6 +447,7 @@ def get_default_itf():
         172.17.0.0/16 dev docker0 proto kernel scope link src 172.17.0.1
         ...
     """
+    default_itf="eth0"
     ret, data = run_cmd("ip route")
     data = [i for i in data.split('\n') if i]
     for offload_xdp_itf in support_offload_xdp_itf_names():
@@ -457,7 +458,7 @@ def get_default_itf():
         if line.startswith('default'):
             logging.info("default_itf from ip route: {}".format(line.split()[4]))
             return line.split()[4]
-    return "eth0"
+    return default_itf
 
 def get_bridge_real_itf():
     cmd = "ls /sys/class/net/" + CONSTANTS.MIZAR_BRIDGE + "/brif"
