@@ -22,5 +22,6 @@
 FROM mizarnet/python_base:latest
 COPY . /var/mizar/
 RUN apt update && apt-get install -y iproute2
+RUN pip3 install netifaces
 RUN pip3 install /var/mizar/
 CMD mizard
