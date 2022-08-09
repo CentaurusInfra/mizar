@@ -112,7 +112,7 @@ determines which bouncer has the host information of the destination endpoint
 **according to the network partitioning logic** and rewrites the destination IP
 of the outer packet to the bouncer.
 
-This overall architecture allows - among many advantages - to accelerate
+This overall architecture allows, among other advantages, to accelerate
 endpoints provisioning, as the management plane programs a finite number of
 hosts designated as Bouncers instead of propagating the endpoint configuration
 to each host.
