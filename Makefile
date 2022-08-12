@@ -37,9 +37,6 @@ SANITIZE += -fno-omit-frame-pointer
 ## CFLAGS
 CFLAGS += -I.
 CFLAGS += -Ilib/usr/include
-ifeq (${ARCH},aarch64)
-  CFLAGS += -I/usr/include/tirpc
-endif
 CFLAGS += -g -O3 -DDEBUG -Llib
 CFLAGS += -std=c11
 CFLAGS += -D_POSIX_C_SOURCE
@@ -64,19 +61,12 @@ LDFLAGS += -l:libbpf.a
 LDFLAGS += -l:libelf.a
 LDFLAGS += -lz
 LDFLAGS += -lnsl
-ifeq (${ARCH},aarch64)
-  LDFLAGS += -ltirpc
-endif
 LDFLAGS += -static-liblsan
 LDFLAGS += -static-libubsan
 $(info LDFLAGS=$(LDFLAGS))
 
 LLC=llc-7 -march=bpf -filetype=obj
 CLANG=clang-7
-ifeq (${ARCH},aarch64)
-  LLC=llc -march=bpf -filetype=obj
-  CLANG=clang
-endif
 CLANGFLAGS= -I.\
 			-Wno-unused-value -Wno-pointer-sign\
 			-Wno-compare-distinct-pointer-types \

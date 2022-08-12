@@ -41,10 +41,16 @@ jobs:
         run: python3 -m pip install --upgrade pip
       - name: Install python packages
         run: sudo pip3 install setuptools netaddr docker grpcio grpcio-tools kubernetes
-      - name: install kind
+      # TODO: Update mizar to work with latest k8s version (and consequently latest kind versions)
+      #- name: install kind
+      #  run: |
+      #    ver=$(curl -s https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
+      #    curl -Lo kind "https://github.com/kubernetes-sigs/kind/releases/download/$ver/kind-$(uname)-amd64"
+      #    chmod +x ./kind
+      #    sudo mv ./kind /usr/local/bin
+      - name: install kind v0.11.0
         run: |
-          ver=$(curl -s https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
-          curl -Lo kind "https://github.com/kubernetes-sigs/kind/releases/download/$ver/kind-$(uname)-amd64"
+          curl -Lo kind "https://github.com/kubernetes-sigs/kind/releases/download/v0.11.0/kind-$(uname)-amd64"
           chmod +x ./kind
           sudo mv ./kind /usr/local/bin
       - name: Install kubectl

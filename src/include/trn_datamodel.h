@@ -28,14 +28,15 @@
 #define __ALIGNED_64__ __attribute__((aligned(64)))
 #define __ALWAYS_INLINE__ __attribute__((__always_inline__))
 
-#define TRAN_MAX_NEP 65537
-#define TRAN_MAX_NSWITCH 32768
-#define TRAN_MAX_NROUTER 16384
-#define TRAN_MAX_REMOTES 256
+#define TRAN_MAX_NEP 4096
+#define TRAN_MAX_NSWITCH 128
+#define TRAN_MAX_NROUTER 128
+#define TRAN_MAX_REMOTES 128
 #define TRAN_MAX_NSWITCH_OFFLOAD 5
 #define TRAN_MAX_NROUTER_OFFLOAD 5
 #define TRAN_MAX_REMOTES_OFFLOAD 7
-#define TRAN_MAX_ITF 256
+#define TRAN_MAX_ITF 128
+
 #define TRAN_UNUSED_ITF_IDX -1
 
 #define TRAN_SUBSTRT_VNI 0
@@ -64,7 +65,7 @@ enum tailcall_txstat { TAILCALL_SUPPORTED_TXSTATS MAX_TXSTAT };
 static const char * const tailcall_txstat_name[] = { TAILCALL_SUPPORTED_TXSTATS };
 
 /* Cache related const */
-#define TRAN_MAX_CACHE_SIZE 1000000
+#define TRAN_MAX_CACHE_SIZE 50000
 
 /* XDP programs keys in transit XDP */
 enum trn_xdp_stage_t {
