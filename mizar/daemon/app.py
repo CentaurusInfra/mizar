@@ -22,6 +22,7 @@ import grpc
 import time
 import subprocess
 import json
+import netifaces as ni
 from google.protobuf import empty_pb2
 from concurrent import futures
 from mizar.daemon.interface_service import InterfaceServer
@@ -83,11 +84,8 @@ def init(benchmark=False):
     output = r.stdout.read().decode().strip()
     logging.info("Setup done")
 
-    cmd = 'nsenter -t 1 -m -u -n -i ip addr show ' + \
-        f'''{default_itf}''' + ' | grep "inet\\b" | awk \'{print $2}\''
-    r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-    nodeipmask = r.stdout.read().decode().strip()
-    nodeip = nodeipmask.split("/")[0]
+    nodeip = ni.ifaddresses(default_itf)[ni.AF_INET][0]['addr']
+    logging.info("default_itf: '{}' nodeip: '{}'".format(default_itf, nodeip))
 
     cmd = "nsenter -t 1 -m -u -n -i ip link set dev " + \
         f'''{default_itf}''' + " xdpgeneric off"
@@ -147,7 +145,7 @@ def init(benchmark=False):
         return
 
     # Setup mizar bridge, update routes, and load EDT TC eBPF program
-    logging.info("Node IP: {}".format(nodeipmask))
+    logging.info("Node IP: {}".format(nodeip))
 
     brcmd = f'''nsenter -t 1 -m -u -n -i sysctl -w net.bridge.bridge-nf-call-iptables=0 && \
         nsenter -t 1 -m -u -n -i ip link add {CONSTANTS.MIZAR_BRIDGE} type bridge && \

@@ -65,7 +65,7 @@ enum tailcall_txstat { TAILCALL_SUPPORTED_TXSTATS MAX_TXSTAT };
 static const char * const tailcall_txstat_name[] = { TAILCALL_SUPPORTED_TXSTATS };
 
 /* Cache related const */
-#define TRAN_MAX_CACHE_SIZE 1000000
+#define TRAN_MAX_CACHE_SIZE 50000
 
 /* XDP programs keys in transit XDP */
 enum trn_xdp_stage_t {
