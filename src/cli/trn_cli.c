@@ -41,6 +41,7 @@ static const struct cmd {
 	{ "load-transit-offload-xdp", trn_cli_load_transit_offload_subcmd },
 	{ "load-agent-xdp", trn_cli_load_agent_subcmd },
 	{ "unload-transit-xdp", trn_cli_unload_transit_subcmd },
+	{ "unload-transit-offload-xdp", trn_cli_unload_transit_offload_subcmd },
 	{ "unload-agent-xdp", trn_cli_unload_agent_subcmd },
 	{ "get-vpc", trn_cli_get_vpc_subcmd },
 	{ "get-net", trn_cli_get_net_subcmd },

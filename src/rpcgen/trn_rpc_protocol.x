@@ -381,6 +381,7 @@ program RPC_TRANSIT_REMOTE_PROTOCOL {
                 int UPDATE_TX_STATS(rpc_trn_tx_stats_t) = 46;
                 rpc_trn_tx_stats_t GET_TX_STATS(rpc_trn_tx_stats_key_t) = 47;
                 int LOAD_TRANSIT_XDP_OFFLOAD(rpc_trn_xdp_intf_t) = 48;
+                int UNLOAD_TRANSIT_XDP_OFFLOAD(rpc_intf_t) = 49;
           } = 1;
 
 } =  0x20009051;
