@@ -269,6 +269,36 @@ int trn_cli_unload_transit_subcmd(CLIENT *clnt, int argc, char *argv[])
 	return 0;
 }
 
+int trn_cli_unload_transit_offload_subcmd(CLIENT *clnt, int argc, char *argv[])
+{
+	ketopt_t om = KETOPT_INIT;
+	struct cli_conf_data_t conf;
+
+	if (trn_cli_read_conf_str(&om, argc, argv, &conf)) {
+		return -EINVAL;
+	}
+
+	int *rc;
+	char rpc[] = "unload_transit_xdp_1";
+	rpc_intf_t intf;
+	intf.interface = conf.intf;
+
+	rc = unload_transit_xdp_offload_1(&intf, clnt);
+	if (rc == (int *)NULL) {
+		print_err("Error: call failed: unload_transit_xdp_offload_1.\n");
+		return -EINVAL;
+	}
+
+	if (*rc != 0) {
+		printf("%s fatal error, see transitd logs for details.\n", rpc);
+		return -EINVAL;
+	}
+
+	printf("unload_transit_xdp_offload_1 successfully unloaded transit xdp on interface %s.\n",
+	       intf.interface);
+	return 0;
+}
+
 int trn_cli_load_agent_subcmd(CLIENT *clnt, int argc, char *argv[])
 {
 	ketopt_t om = KETOPT_INIT;

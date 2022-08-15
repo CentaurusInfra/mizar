@@ -750,6 +750,40 @@ error:
 	return &result;
 }
 
+int *unload_transit_xdp_offload_1_svc(rpc_intf_t *argp, struct svc_req *rqstp)
+{
+	UNUSED(rqstp);
+	static int result = -1;
+	int rc;
+	char *itf = argp->interface;
+
+	TRN_LOG_DEBUG("unload_transit_xdp_offload_1 interface: %s", itf);
+
+	struct user_metadata_t *md = trn_itf_table_find(itf);
+
+	if (!md) {
+		TRN_LOG_DEBUG("Interface metadata for %s has been freed", itf);
+		result = 0;
+		return &result;
+	}
+
+	rc = trn_user_metadata_free(md);
+
+	if (rc != 0) {
+		TRN_LOG_ERROR(
+			"Cannot free XDP metadata, transit program may still be running");
+		result = RPC_TRN_ERROR;
+		goto error;
+	}
+	trn_itf_table_delete(itf);
+
+	result = 0;
+	return &result;
+
+error:
+	return &result;
+}
+
 int *load_transit_agent_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf,
 				  struct svc_req *rqstp)
 {

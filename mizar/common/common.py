@@ -436,9 +436,23 @@ def conf_list_has_max_elements(conf, conf_list):
     return False
 
 def support_offload_xdp_itf_names():
-    with open("/var/mizar/support_offload_xdp_its.yaml", "r", encoding="utf-8") as f:
-            data = yaml.load(f, Loader=yaml.FullLoader)
-    return data["interfaces"]
+    """
+    According to the list of NIC names, corresponding logic interface names are returned.
+    """
+    ret, data = run_cmd("lshw -class network")
+    lines = [i for i in data.split('\n') if i]
+    with open("/var/mizar/support_XDP_offload_NIC_names.yaml", "r", encoding="utf-8") as f:
+            support_NIC_names = yaml.load(f, Loader=yaml.FullLoader)
+    logical_itf_names = []
+    for target_NIC in support_NIC_names["NIC_names"]:
+        find_itf_name_flag = False
+        for line in lines:
+            if target_NIC.lower() in line.lower() and find_itf_name_flag is False:
+                find_itf_name_flag = True
+            elif find_itf_name_flag is True and "logical name" in line:
+                logical_itf_names.append(line[line.index(":")+2:])
+                find_itf_name_flag = False
+    return logical_itf_names
 
 def get_default_itf():
     """
