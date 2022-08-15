@@ -26,5 +26,6 @@ COPY ./etc/sources.list /etc/apt/sources.list
 RUN apt update && apt-get install -y iproute2
 RUN mkdir /root/.pip
 COPY ./etc/pip.conf /root/.pip/
+RUN pip3 install netifaces
 RUN pip3 install /var/mizar/
 CMD mizard
