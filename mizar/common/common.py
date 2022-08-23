@@ -439,15 +439,17 @@ def support_offload_xdp_itf_names():
     """
     According to the list of NIC names, corresponding logic interface names are returned.
     """
-    ret, data = run_cmd("lshw -class network")
-    lines = [i for i in data.split('\n') if i]
-    with open("/var/mizar/support_XDP_offload_NIC_names.yaml", "r", encoding="utf-8") as f:
-            support_NIC_names = yaml.load(f, Loader=yaml.FullLoader)
     logical_itf_names = []
-    for target_NIC in support_NIC_names["NIC_names"]:
+    ret, data = run_cmd("lshw -class network")
+    if ret is not None:
+        return logical_itf_names
+    lines = [i for i in data.split('\n') if i]
+    with open("/var/mizar/supported_xdp_offload_nics.yaml", "r", encoding="utf-8") as f:
+            supported_nic_names = yaml.load(f, Loader=yaml.FullLoader)
+    for target_nic in supported_nic_names["xdp_offload_nic_names"]:
         find_itf_name_flag = False
         for line in lines:
-            if target_NIC.lower() in line.lower() and find_itf_name_flag is False:
+            if target_nic.lower() in line.lower() and find_itf_name_flag is False:
                 find_itf_name_flag = True
             elif find_itf_name_flag is True and "logical name" in line:
                 logical_itf_names.append(line[line.index(":")+2:])

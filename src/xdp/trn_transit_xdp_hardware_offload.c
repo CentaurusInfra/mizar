@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /**
- * @file trn_transit_xdp.c
- * @author Sherif Abdelwahab (@zasherif)
- *         Phu Tran          (@phudtran)
+ * @file trn_transit_xdp_hardware_offload.c
+ * @author Peng Yang (@yangpenger)
  *
- * @brief Implements the Transit XDP program (switching and routing logic)
+ * @brief Offloads functions of bouncers and dividers about Direct Path.
+ *        This offloaded program works before original Transit XDP program, 
+ * 		  i.e., multiple programs on the same XDP interface.
+ * 		  Thus, non-offload functions are performed by original Transit XDP program.
  *
  * @copyright Copyright (c) 2019 The Authors.
  *
@@ -38,12 +40,9 @@
 #include <linux/udp.h>
 #include <stddef.h>
 #include <string.h>
-
 #include "extern/bpf_endian.h"
 #include "extern/bpf_helpers.h"
-
 #include "trn_datamodel.h"
-
 #include "trn_kern.h"
 
 int _version SEC("version") = 1;
@@ -51,30 +50,29 @@ int _version SEC("version") = 1;
 struct bpf_map_def SEC("maps") networks_map = {
 	.type = BPF_MAP_TYPE_HASH,
 	.key_size = sizeof(struct network_key_t),
-	.value_size = sizeof(struct network_t_offload),
+	.value_size = sizeof(struct network_offload_t),
 	.max_entries = 1000001,
 	.map_flags = 0,
 };
-BPF_ANNOTATE_KV_PAIR(networks_map, struct network_key_t, struct network_t_offload);
+BPF_ANNOTATE_KV_PAIR(networks_map, struct network_key_t, struct network_offload_t);
 
 struct bpf_map_def SEC("maps") vpc_map = {
 	.type = BPF_MAP_TYPE_HASH,
 	.key_size = sizeof(struct vpc_key_t),
-	.value_size = sizeof(struct vpc_t_offload),
+	.value_size = sizeof(struct vpc_offload_t),
 	.max_entries = 1000001,
 	.map_flags = 0,
 };
-BPF_ANNOTATE_KV_PAIR(vpc_map, struct vpc_key_t, struct vpc_t_offload);
+BPF_ANNOTATE_KV_PAIR(vpc_map, struct vpc_key_t, struct vpc_offload_t);
 
 struct bpf_map_def SEC("maps") endpoints_map = {
 	.type = BPF_MAP_TYPE_HASH,
 	.key_size = sizeof(struct endpoint_key_t),
-	.value_size = sizeof(struct endpoint_t_offload),
+	.value_size = sizeof(struct endpoint_offload_t),
 	.max_entries = 1000001,
 	.map_flags = 0,
 };
-BPF_ANNOTATE_KV_PAIR(endpoints_map, struct endpoint_key_t, struct endpoint_t_offload);
-
+BPF_ANNOTATE_KV_PAIR(endpoints_map, struct endpoint_key_t, struct endpoint_offload_t);
 
 struct bpf_map_def SEC("maps") interface_config_map = {
 	.type = BPF_MAP_TYPE_ARRAY,
@@ -85,18 +83,14 @@ struct bpf_map_def SEC("maps") interface_config_map = {
 };
 BPF_ANNOTATE_KV_PAIR(interface_config_map, int, struct tunnel_iface_t);
 
-
-
 static __inline int trn_rewrite_remote_mac(struct transit_packet *pkt)
 {
 	/* The TTL must have been decremented before this step, Drop the
 	packet if TTL is zero */
-	
-	
 	if (!pkt->ip->ttl)
 		return XDP_DROP;
 
-	struct endpoint_t_offload *remote_ep;
+	struct endpoint_offload_t *remote_ep;
 	struct endpoint_key_t epkey;
 	epkey.tunip[0] = 0;
 	epkey.tunip[1] = 0;
@@ -115,8 +109,6 @@ static __inline int trn_rewrite_remote_mac(struct transit_packet *pkt)
 		return XDP_PASS;
 	}
 
-
-
 	return XDP_TX;
 }
 
@@ -126,25 +118,16 @@ static __inline int trn_router_handle_pkt(struct transit_packet *pkt,
 {
 	__be64 tunnel_id = trn_vni_to_tunnel_id(pkt->geneve->vni);
 	/* This is where we forward the packet to the transit router:  First lookup
-the network of the inner_ip->daddr, if found hash and forward to the
-transit switch of that network, OW forward to the transit router. */
+	the network of the inner_ip->daddr, if found hash and forward to the
+	transit switch of that network, OW forward to the transit router. */
 
 	struct network_key_t nkey;
-	struct network_t_offload *net;
+	struct network_offload_t *net;
 	nkey.prefixlen = 80;//需要修改
 	__builtin_memcpy(&nkey.nip[0], &tunnel_id, sizeof(tunnel_id));
 	nkey.nip[2] = inner_dst_ip % 65536;
 	net = bpf_map_lookup_elem(&networks_map, &nkey);
 
-	/* Cache lookup for known ep */
-	
-	/* struct remote_endpoint_t *dst_r_ep;
-	struct endpoint_key_t dst_epkey;
-	__builtin_memcpy(&dst_epkey.tunip[0], &tunnel_id, sizeof(tunnel_id));
-	dst_epkey.tunip[2] = inner_dst_ip;
-	dst_r_ep = bpf_map_lookup_elem(&ep_host_cache, &dst_epkey); */
-
-	/* Rewrite RTS and update cache*/
 	if (net) {
 		//trn_update_ep_host_cache(pkt, tunnel_id, inner_src_ip);
 		pkt->rts_opt->rts_data.host.ip = pkt->ip->daddr;
@@ -152,31 +135,13 @@ transit switch of that network, OW forward to the transit router. */
 				 pkt->eth->h_dest, 6 * sizeof(unsigned char));
 	}
 
-	/* if (dst_r_ep) {
-		if (!pkt->ip->ttl)
-			return XDP_DROP;
-		bpf_debug(
-			"[Transit:%ld.0x%x] Host of 0x%x, found sending directly!\n",
-			pkt->agent_ep_tunid, bpf_ntohl(pkt->agent_ep_ipv4),
-			bpf_ntohl(inner_dst_ip));
-
-		trn_set_src_dst_ip_csum(pkt, pkt->ip->daddr, dst_r_ep->ip);
-		trn_set_src_mac(pkt->data, pkt->eth->h_dest);
-		trn_set_dst_mac(pkt->data, dst_r_ep->mac);
-		return XDP_TX;
-	} */
-
-
 	if (net) {
 
 		if (net->nip[0] != nkey.nip[0] || net->nip[1] != nkey.nip[1]) {
 			return XDP_DROP;
 		}
 		
-		//创建subnet时要把bouncer设置为1
-		/* __u32 swidx = jhash_2words(inner_src_ip, inner_dst_ip,
-					   INIT_JHASH_SEED) %
-			      net->nswitches; */
+		/* Only send to the first switch. */
 		__u32 swidx = 0;
 
 		if (swidx > TRAN_MAX_NSWITCH - 1) {
@@ -191,7 +156,7 @@ transit switch of that network, OW forward to the transit router. */
 
 	/* Now forward the packet to the VPC router */
 	struct vpc_key_t vpckey;
-	struct vpc_t_offload *vpc;
+	struct vpc_offload_t *vpc;
 
 	vpckey.tunnel_id = tunnel_id;
 	vpc = bpf_map_lookup_elem(&vpc_map, &vpckey);
@@ -199,10 +164,8 @@ transit switch of that network, OW forward to the transit router. */
 	if (!vpc) {
 		return XDP_DROP;
 	}
-	//同上
-	/* __u32 routeridx =
-		jhash_2words(inner_src_ip, inner_dst_ip, INIT_JHASH_SEED) %
-		vpc->nrouters; */
+
+	/* Only send to the first router. */
 	__u32 routeridx = 0;
 
 	if (routeridx > TRAN_MAX_NROUTER - 1) {
@@ -221,11 +184,8 @@ static __inline int trn_switch_handle_pkt(struct transit_packet *pkt,
 					  __u32 inner_src_ip,
 					  __u32 inner_dst_ip, __u32 orig_src_ip)
 {
-	
-	/* dump debug received packet header info */
-
 	__be64 tunnel_id = trn_vni_to_tunnel_id(pkt->geneve->vni);
-	struct endpoint_t_offload *ep;
+	struct endpoint_offload_t *ep;
 	struct endpoint_key_t epkey;
 
 	__builtin_memcpy(&epkey.tunip[0], &tunnel_id, sizeof(tunnel_id));
@@ -235,21 +195,12 @@ static __inline int trn_switch_handle_pkt(struct transit_packet *pkt,
 	ep = bpf_map_lookup_elem(&endpoints_map, &epkey);
 
 	if (!ep) {
-		/* If the scaled endpoint modify option is present,
-		   make TR route to the inner packet source */
-		   
-		// switch测试点1
-
-		
 		if (pkt->scaled_ep_opt->type == TRN_GNV_SCALED_EP_OPT_TYPE &&
 		    pkt->scaled_ep_opt->scaled_ep_data.msg_type ==
 			    TRN_SCALED_EP_MODIFY)
 			return XDP_PASS;
 		
 		return trn_router_handle_pkt(pkt, inner_src_ip, inner_dst_ip);
-							 
-		
-		
 	}
 
 	/* The packet may be sent first to a gw mac address */
@@ -258,28 +209,10 @@ static __inline int trn_switch_handle_pkt(struct transit_packet *pkt,
 	// TODO: Currently all endpoints are attached to one host, for some
 	// ep types, they will have multiple attachments (e.g. LB endpoint).
 	if (ep->hosted_iface != -1) {
-
-
-		/* If this is the endpoint host, check first if the source has RTS opt included.
-		* This is a no-fail operation.
-		*/
-		//trn_update_ep_host_cache(pkt, tunnel_id, orig_src_ip);
-		//switch测试点2
-		
-		
-		
 		return XDP_PASS;
 	}
 
 	if (ep->eptype == TRAN_SCALED_EP) {
-		/* bpf_debug(
-			"[Transit:%d:] This is a scaled endpoint, the transit switch will handle it!\n",
-			__LINE__);
-		__u32 key = XDP_SCALED_EP_PROC;
-		bpf_tail_call(pkt->xdp, &jmp_table, key);
-		bpf_debug(
-			"[Transit:%d:] DROP (BUG): Scaled endpoint stage is not loaded!\n",
-			__LINE__); */
 		return XDP_PASS;
 	}
 
@@ -295,10 +228,6 @@ static __inline int trn_switch_handle_pkt(struct transit_packet *pkt,
 
 static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 {
-	
-	
-	
-	
 	pkt->inner_ip = (void *)pkt->inner_eth + pkt->inner_eth_off;
 	__u32 ipproto;
 
@@ -337,90 +266,14 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 			return XDP_ABORTED;
 		}
 
-
-
 		pkt->inner_ipv4_tuple.sport = pkt->inner_udp->source;
 		pkt->inner_ipv4_tuple.dport = pkt->inner_udp->dest;
 	}
 
 	__be64 tunnel_id = trn_vni_to_tunnel_id(pkt->geneve->vni);
 
-	/* if (pkt->inner_ipv4_tuple.protocol == IPPROTO_TCP || pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
-		__u8 *tracked_state = get_originated_conn_state(&conn_track_cache, tunnel_id, &pkt->inner_ipv4_tuple);
-		// todo: only check for bi-directional connections
-		if (NULL != tracked_state) {
-			// reply packet is usually allowed, unless re-eval blocks it
-			if (0 != ingress_reply_packet_check(tunnel_id, &pkt->inner_ipv4_tuple, *tracked_state))
-			{
-				bpf_debug("[Transit:vpc 0x%lx] ABORTED: packet to 0x%x from 0x%x ingress denied, reply of a denied conn\n",
-					tunnel_id,
-					bpf_ntohl(pkt->inner_ipv4_tuple.daddr),
-					bpf_ntohl(pkt->inner_ipv4_tuple.saddr));
-				return XDP_ABORTED;
-			}
-		} else {
-			pkt->pod_label_value_opt = (void *)pkt->scaled_ep_opt + sizeof(*pkt->scaled_ep_opt);
-	
-			if (pkt->pod_label_value_opt + 1 > pkt->data_end) {
-				bpf_debug("[Scaled_EP:%d:0x%x] ABORTED: Bad offset\n", __LINE__,
-					bpf_ntohl(pkt->itf_ipv4));
-				return XDP_ABORTED;
-			}
-
-			if (pkt->pod_label_value_opt->opt_class != TRN_GNV_OPT_CLASS) {
-				bpf_debug("[Scaled_EP:%d:0x%x] ABORTED: Unsupported Geneve option class\n",
-					__LINE__, bpf_ntohl(pkt->itf_ipv4));
-				return XDP_ABORTED;
-			}
-
-			if (pkt->pod_label_value_opt->type != TRN_GNV_POD_LABEL_VALUE_OPT_TYPE) {
-				bpf_debug("[Scaled_EP:%d:0x%x] ABORTED: Unsupported Geneve option type\n",
-					__LINE__, bpf_ntohl(pkt->itf_ipv4));
-				return XDP_ABORTED;
-			}
-
-			pkt->namespace_label_value_opt = (void *)pkt->pod_label_value_opt + sizeof(*pkt->pod_label_value_opt);
-
-			if (pkt->namespace_label_value_opt + 1 > pkt->data_end) {
-				bpf_debug("[Scaled_EP:%d:0x%x] ABORTED: Bad offset\n", __LINE__,
-					bpf_ntohl(pkt->itf_ipv4));
-				return XDP_ABORTED;
-			}
-
-			if (pkt->namespace_label_value_opt->opt_class != TRN_GNV_OPT_CLASS) {
-				bpf_debug("[Scaled_EP:%d:0x%x] ABORTED: Unsupported Geneve option class\n",
-					__LINE__, bpf_ntohl(pkt->itf_ipv4));
-				return XDP_ABORTED;
-			}
-
-			if (pkt->namespace_label_value_opt->type != TRN_GNV_NAMESPACE_LABEL_VALUE_OPT_TYPE) {
-				bpf_debug("[Scaled_EP:%d:0x%x] ABORTED: Unsupported Geneve option type\n",
-					__LINE__, bpf_ntohl(pkt->itf_ipv4));
-				return XDP_ABORTED;
-			}
-
-			// originated-directional packet subjects to policy check, if required so
-			if (0 != ingress_policy_check(tunnel_id, &pkt->inner_ipv4_tuple,
-				pkt->pod_label_value_opt->label_value_data.value,
-				pkt->namespace_label_value_opt->label_value_data.value)){
-				bpf_debug(
-					"[Transit:vpc 0x%lx] ABORTED: packet to 0x%x from 0x%x ingress policy denied\n",
-					tunnel_id,
-					bpf_ntohl(pkt->inner_ipv4_tuple.daddr),
-					bpf_ntohl(pkt->inner_ipv4_tuple.saddr));
-				__u8 conn_denied = (pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) ? FLAG_REEVAL | TRFFIC_DENIED : TRFFIC_DENIED;
-				conntrack_set_conn_state(&conn_track_cache, tunnel_id, &pkt->inner_ipv4_tuple, conn_denied);
-				return XDP_ABORTED;
-			}
-
-			// todo: consider to handle error in case it happens
-			__u8 conn_allowed = (pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) ? FLAG_REEVAL : 0;
-			conntrack_set_conn_state(&conn_track_cache, tunnel_id, &pkt->inner_ipv4_tuple, conn_allowed);
-		}
-	} */
-
 	/* Lookup the source endpoint*/
-	struct endpoint_t_offload *src_ep;
+	struct endpoint_offload_t *src_ep;
 	struct endpoint_key_t src_epkey;
 	__builtin_memcpy(&src_epkey.tunip[0], &tunnel_id, sizeof(tunnel_id));
 	src_epkey.tunip[2] = pkt->inner_ip->saddr;
@@ -456,15 +309,11 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 
 static __inline int trn_process_inner_arp(struct transit_packet *pkt)
 {
-	
-
-
-
 	unsigned char *sha;
 	unsigned char *tha = NULL;
-	struct endpoint_t_offload *ep;
+	struct endpoint_offload_t *ep;
 	struct endpoint_key_t epkey;
-	struct endpoint_t_offload *remote_ep;
+	struct endpoint_offload_t *remote_ep;
 	__u32 *sip, *tip;
 	__u64 csum = 0;
 
@@ -532,8 +381,6 @@ static __inline int trn_process_inner_arp(struct transit_packet *pkt)
 
 		return trn_switch_handle_pkt(pkt, *sip, *tip, *sip);
 	}
-
-
 
 	/* Respond to ARP */
 	pkt->inner_arp->ar_op = bpf_htons(ARPOP_REPLY);

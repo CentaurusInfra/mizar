@@ -98,7 +98,7 @@ struct endpoint_t {
 	unsigned char mac[6];
 } __attribute__((packed, aligned(4)));
 
-struct endpoint_t_offload {
+struct endpoint_offload_t {
 	__u32 eptype;
 	__u32 nremote_ips;
 	__u32 remote_ips[TRAN_MAX_REMOTES_OFFLOAD]; //cause the size of remote_ips[TRAN_MAX_REMOTES] is too big to offload
@@ -137,7 +137,7 @@ struct network_t {
 	__u32 switches_ips[TRAN_MAX_NSWITCH];
 } __attribute__((packed, aligned(4)));
 
-struct network_t_offload {
+struct network_offload_t {
 	__u32 prefixlen; /* up to 32 for AF_INET, 128 for AF_INET6 */
 	__u32 nip[3];
 	__u32 nswitches;
@@ -155,7 +155,7 @@ struct vpc_t {
 	__u32 routers_ips[TRAN_MAX_NROUTER];
 } __attribute__((packed, aligned(4)));
 
-struct vpc_t_offload {
+struct vpc_offload_t {
 	__u32 nrouters;
 	__u32 routers_ips[TRAN_MAX_NROUTER_OFFLOAD];
 } __attribute__((packed, aligned(4)));

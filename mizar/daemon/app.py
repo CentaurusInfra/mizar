@@ -128,7 +128,7 @@ def init(benchmark=False):
     if os.getenv('FEATUREGATE_OFFLOAD_XDP', 'false').lower() in ('true', '1'):
         if default_itf in support_offload_xdp_itf_names():
             config = {
-                "xdp_path": "/trn_xdp/trn_transit_xdp1_3layers_ebpf.o",
+                "xdp_path": "/trn_xdp/trn_transit_xdp_hardware_offload_ebpf.o",
                 "pcapfile": "/bpffs/transit_xdp.pcap",
                 "xdp_flag": CONSTANTS.XDP_OFFLOAD
             }
