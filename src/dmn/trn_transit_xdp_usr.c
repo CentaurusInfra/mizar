@@ -222,7 +222,12 @@ int trn_update_network(struct user_metadata_t *md, struct network_key_t *netkey,
 	}
 
 	if (md->xdp_flags == XDP_FLAGS_HW_MODE){
-		struct network_t_offload net_offload;
+		struct network_offload_t net_offload;
+		if (net->nswitches > sizeof(net_offload.switches_ips) / sizeof(__u32)){
+			TRN_LOG_ERROR("Store offloaded network mapping failed for exceeding TRAN_MAX_NSWITCH_OFFLOAD");
+			return 1;
+		}
+
 		net_offload.prefixlen = net->prefixlen;
 		memcpy(net_offload.nip, net->nip, sizeof(net_offload.nip));
 		net_offload.nswitches = net->nswitches;
@@ -296,7 +301,12 @@ int trn_update_endpoint(struct user_metadata_t *md,
 	}
 
 	if (md->xdp_flags == XDP_FLAGS_HW_MODE){
-		struct endpoint_t_offload ep_offload;
+		struct endpoint_offload_t ep_offload;
+		if (ep->nremote_ips > sizeof(ep_offload.remote_ips) / sizeof(__u32)){
+			TRN_LOG_ERROR("Store offloaded endpoint mapping failed for exceeding TRAN_MAX_REMOTES_OFFLOAD");
+			return 1;
+		}
+		
 		ep_offload.eptype = ep->eptype;
 		ep_offload.nremote_ips = ep->nremote_ips;
 		memcpy(ep_offload.remote_ips, ep->remote_ips, sizeof(ep_offload.remote_ips));
@@ -323,7 +333,12 @@ int trn_update_vpc(struct user_metadata_t *md, struct vpc_key_t *vpckey,
 	}
 
 	if (md->xdp_flags == XDP_FLAGS_HW_MODE){
-		struct vpc_t_offload vpc_offload;
+		struct vpc_offload_t vpc_offload;
+		if (vpc->nrouters > sizeof(vpc_offload.routers_ips) / sizeof(__u32)){
+			TRN_LOG_ERROR("Store offloaded vpc mapping failed for exceeding TRAN_MAX_NROUTER_OFFLOAD");
+			return 1;
+		}
+		
 		vpc_offload.nrouters = vpc->nrouters;
 		memcpy(vpc_offload.routers_ips, vpc->routers_ips, sizeof(vpc_offload.routers_ips));
 		err = bpf_map_update_elem(md->vpc_map_offload_fd, vpckey, &vpc_offload, 0);
@@ -691,29 +706,17 @@ int trn_user_metadata_init(struct user_metadata_t *md, char *itf,
 int trn_user_metadata_init_offload(struct user_metadata_t *md, char *itf,
 			   char *kern_path, int xdp_flags)
 {
-	// use original xdp_transit as xdp2 and load it as the same way
 	int rc;
-	// rc = trn_user_metadata_init(md, itf, kern_path, xdp_flags);
-	// if (rc != 0) {
-	// 	return rc;
-	// }
-	
-	// continue to load xdp1 with hardcode
-	// kern_path = "/trn_xdp/trn_transit_xdp1_ebpf.o";
 	struct rlimit r = { RLIM_INFINITY, RLIM_INFINITY };
 	struct bpf_prog_load_attr prog_load_attr = { .prog_type =
 							     BPF_PROG_TYPE_XDP,
 						     .file = kern_path };
 	__u32 info_len = sizeof(md->info_offload);
-	// md->xdp_flags = 8; // XDP_OFFLOAD = "8"
 
 	if (setrlimit(RLIMIT_MEMLOCK, &r)) {
 		TRN_LOG_ERROR("setrlimit(RLIMIT_MEMLOCK)");
 		return 1;
 	}
-
-	// snprintf(md->pcapfile, sizeof(md->pcapfile),
-	// 	 "/sys/fs/bpf/%s_transit_pcap", itf);
 
 	md->ifindex = if_nametoindex(itf);
 	prog_load_attr.ifindex = md->ifindex;
@@ -765,7 +768,7 @@ int trn_user_metadata_init_offload(struct user_metadata_t *md, char *itf,
 	}
 	md->prog_offload_id = md->info_offload.id;
 
-	// as the config of xdp2 already has the itf_idx, set xdp1 as the same config
+	//As the config of original Transit Program already has the itf_idx, set Offload Program as the same config
 	int k = 0;
 
 	rc = bpf_map_update_elem(md->interface_config_map_offload_fd, &k, &md->eth, 0);
