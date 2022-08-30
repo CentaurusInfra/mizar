@@ -400,6 +400,7 @@ static void do_lo_xdp_load(void)
 	xdp_intf.interface = itf;
 	xdp_intf.xdp_path = xdp_path;
 	xdp_intf.pcapfile = pcapfile;
+	xdp_intf.xdp_flag = XDP_FLAGS_SKB_MODE;
 
 	int *rc;
 	expect_function_call(__wrap_bpf_map_update_elem);
@@ -461,7 +462,7 @@ static void test_update_vpc_1_svc(void **state)
 	};
 
 	int *rc;
-	expect_function_calls(__wrap_bpf_map_update_elem, 2);
+	expect_function_call(__wrap_bpf_map_update_elem);
 	rc = update_vpc_1_svc(&vpc1, NULL);
 	assert_int_equal(*rc, 0);
 }
@@ -483,7 +484,7 @@ static void test_update_net_1_svc(void **state)
 	};
 
 	int *rc;
-	expect_function_calls(__wrap_bpf_map_update_elem, 2);
+	expect_function_call(__wrap_bpf_map_update_elem);
 	rc = update_net_1_svc(&net1, NULL);
 	assert_int_equal(*rc, 0);
 }
@@ -511,7 +512,7 @@ static void test_update_ep_1_svc(void **state)
 	memcpy(ep1.mac, mac, sizeof(char) * 6);
 
 	int *rc;
-	expect_function_calls(__wrap_bpf_map_update_elem, 3);
+	expect_function_calls(__wrap_bpf_map_update_elem, 2);
 	rc = update_ep_1_svc(&ep1, NULL);
 	assert_int_equal(*rc, 0);
 }
