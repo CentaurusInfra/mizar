@@ -440,20 +440,29 @@ def support_offload_xdp_itf_names():
     According to the list of NIC names, corresponding logic interface names are returned.
     """
     logical_itf_names = []
-    ret, data = run_cmd("lshw -class network")
-    if ret is not None:
-        return logical_itf_names
-    lines = [i for i in data.split('\n') if i]
     with open("/var/mizar/supported_xdp_offload_nics.yaml", "r", encoding="utf-8") as f:
             supported_nic_names = yaml.load(f, Loader=yaml.FullLoader)
-    for target_nic in supported_nic_names["xdp_offload_nic_names"]:
-        find_itf_name_flag = False
-        for line in lines:
-            if target_nic.lower() in line.lower() and find_itf_name_flag is False:
-                find_itf_name_flag = True
-            elif find_itf_name_flag is True and "logical name" in line:
-                logical_itf_names.append(line[line.index(":")+2:])
-                find_itf_name_flag = False
+
+    ret, data = run_cmd("ls -l /sys/class/net")
+    if ret is not None:
+        logging.info("Failure running cmd: ls -l /sys/class/net")
+        return logical_itf_names
+    
+    lines = [i for i in data.split('\n') if i]
+    for line in lines[1:]:
+        temp = [i for i in line.split('/') if i]
+        if len(temp) > 3:
+            pci_num = temp[-3]
+            ret, data = run_cmd("lspci -s %s" % pci_num)
+            if ret is not None:
+                continue
+            else:
+                for vender_name in supported_nic_names.keys():
+                    if vender_name.lower() in data.lower():
+                        for model_name in supported_nic_names[vender_name]:
+                            if model_name.lower() in data.lower():
+                                logical_itf_names.append(temp[-1])
+
     return logical_itf_names
 
 def get_default_itf():
@@ -466,10 +475,13 @@ def get_default_itf():
     default_itf="eth0"
     ret, data = run_cmd("ip route")
     data = [i for i in data.split('\n') if i]
-    for offload_xdp_itf in support_offload_xdp_itf_names():
-        for line in data:
-            if offload_xdp_itf in line:
-                return offload_xdp_itf
+
+    if os.getenv('FEATUREGATE_OFFLOAD_XDP', 'false').lower() in ('true', '1'):
+        for offload_xdp_itf in support_offload_xdp_itf_names():
+            for line in data:
+                if offload_xdp_itf in line and "linkdown" not in line:
+                    return offload_xdp_itf
+
     for line in data:
         if line.startswith('default'):
             logging.info("default_itf from ip route: {}".format(line.split()[4]))

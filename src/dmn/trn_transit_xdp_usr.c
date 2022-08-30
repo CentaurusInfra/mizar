@@ -221,9 +221,9 @@ int trn_update_network(struct user_metadata_t *md, struct network_key_t *netkey,
 		return 1;
 	}
 
-	if (md->xdp_flags == XDP_FLAGS_HW_MODE){
+	if (md->xdp_flags == XDP_FLAGS_HW_MODE) {
 		struct network_offload_t net_offload;
-		if (net->nswitches > sizeof(net_offload.switches_ips) / sizeof(__u32)){
+		if (net->nswitches > TRAN_MAX_NSWITCH_OFFLOAD) {
 			TRN_LOG_ERROR("Store offloaded network mapping failed for exceeding TRAN_MAX_NSWITCH_OFFLOAD");
 			return 1;
 		}
@@ -300,9 +300,9 @@ int trn_update_endpoint(struct user_metadata_t *md,
 		return 1;
 	}
 
-	if (md->xdp_flags == XDP_FLAGS_HW_MODE){
+	if (md->xdp_flags == XDP_FLAGS_HW_MODE) {
 		struct endpoint_offload_t ep_offload;
-		if (ep->nremote_ips > sizeof(ep_offload.remote_ips) / sizeof(__u32)){
+		if (ep->nremote_ips > TRAN_MAX_REMOTES_OFFLOAD) {
 			TRN_LOG_ERROR("Store offloaded endpoint mapping failed for exceeding TRAN_MAX_REMOTES_OFFLOAD");
 			return 1;
 		}
@@ -332,9 +332,9 @@ int trn_update_vpc(struct user_metadata_t *md, struct vpc_key_t *vpckey,
 		return 1;
 	}
 
-	if (md->xdp_flags == XDP_FLAGS_HW_MODE){
+	if (md->xdp_flags == XDP_FLAGS_HW_MODE) {
 		struct vpc_offload_t vpc_offload;
-		if (vpc->nrouters > sizeof(vpc_offload.routers_ips) / sizeof(__u32)){
+		if (vpc->nrouters > TRAN_MAX_NROUTER_OFFLOAD) {
 			TRN_LOG_ERROR("Store offloaded vpc mapping failed for exceeding TRAN_MAX_NROUTER_OFFLOAD");
 			return 1;
 		}
@@ -546,9 +546,18 @@ int trn_delete_network(struct user_metadata_t *md, struct network_key_t *netkey)
 	netkey->prefixlen += 64; /* tunid size */
 	int err = bpf_map_delete_elem(md->networks_map_fd, netkey);
 	if (err) {
-		TRN_LOG_ERROR("Deleting network mapping failed (err:%d).", err);
+		TRN_LOG_ERROR("Deleting offload network mapping failed (err:%d).", err);
 		return 1;
 	}
+
+	if (md->xdp_flags == XDP_FLAGS_HW_MODE) {
+		err = bpf_map_delete_elem(md->networks_map_fd, netkey);
+		if (err) {
+			TRN_LOG_ERROR("Deleting offload network mapping failed (err:%d).", err);
+			return 1;
+		}
+	}
+
 	return 0;
 }
 
@@ -576,6 +585,15 @@ int trn_delete_endpoint(struct user_metadata_t *md,
 		return 1;
 	}
 
+	if (md->xdp_flags == XDP_FLAGS_HW_MODE) {
+		err = bpf_map_delete_elem(md->endpoints_map_offload_fd, epkey);
+		if (err) {
+			TRN_LOG_ERROR("Deleting offload endpoint mapping failed (err:%d).",
+					err);
+			return 1;
+		}
+	}
+
 	return 0;
 }
 
@@ -586,6 +604,15 @@ int trn_delete_vpc(struct user_metadata_t *md, struct vpc_key_t *vpckey)
 		TRN_LOG_ERROR("Deleting vpc mapping failed (err:%d).", err);
 		return 1;
 	}
+
+	if (md->xdp_flags == XDP_FLAGS_HW_MODE) {
+		err = bpf_map_delete_elem(md->vpc_map_offload_fd, vpckey);
+		if (err) {
+			TRN_LOG_ERROR("Deleting offload vpc mapping failed (err:%d).", err);
+			return 1;
+		}
+	}
+
 	return 0;
 }
 
