@@ -546,7 +546,7 @@ int trn_delete_network(struct user_metadata_t *md, struct network_key_t *netkey)
 	netkey->prefixlen += 64; /* tunid size */
 	int err = bpf_map_delete_elem(md->networks_map_fd, netkey);
 	if (err) {
-		TRN_LOG_ERROR("Deleting offload network mapping failed (err:%d).", err);
+		TRN_LOG_ERROR("Deleting network mapping failed (err:%d).", err);
 		return 1;
 	}
 
