@@ -18,6 +18,7 @@ package app
 
 import (
 	"fmt"
+	"net"
 	"strings"
 
 	"centaurusinfra.io/mizar/pkg/object"
@@ -25,7 +26,7 @@ import (
 	"centaurusinfra.io/mizar/pkg/util/netutil"
 	"centaurusinfra.io/mizar/pkg/util/netvariablesutil"
 
-	cniTypesVer "github.com/containernetworking/cni/pkg/types/current"
+	cni "github.com/containernetworking/cni/pkg/types/current"
 )
 
 func DoInit(netVariables *object.NetVariables) (string, error) {
@@ -33,16 +34,15 @@ func DoInit(netVariables *object.NetVariables) (string, error) {
 	return netvariablesutil.MountNetNSIfNeeded(netVariables)
 }
 
-func DoCmdAdd(netVariables *object.NetVariables, stdinData []byte) (cniTypesVer.Result, string, error) {
+func DoCmdAdd(netVariables *object.NetVariables, stdinData []byte) (cni.Result, string, error) {
 	tracelog := strings.Builder{}
-	result := cniTypesVer.Result{
-		CNIVersion: netVariables.CniVersion,
-	}
+	result := cni.Result{}
 
 	if err := netvariablesutil.LoadCniConfig(netVariables, stdinData); err != nil {
 		return result, tracelog.String(), err
 	}
 	tracelog.WriteString(fmt.Sprintf("CNI_ADD: Args: '%s'\n", netVariables))
+	result.CNIVersion = netVariables.CniVersion
 
 	interfaces, err := grpcclientutil.ConsumeInterfaces(*netVariables)
 	if err != nil {
@@ -51,8 +51,11 @@ func DoCmdAdd(netVariables *object.NetVariables, stdinData []byte) (cniTypesVer.
 	if len(interfaces) == 0 {
 		return result, tracelog.String(), fmt.Errorf("No interfaces found for Pod '%s/%s'", netVariables.K8sPodNamespace, netVariables.K8sPodName)
 	}
+	if len(interfaces) > 1 {
+		return result, tracelog.String(), fmt.Errorf("Unsupported - multiple interfaces found for Pod '%s/%s'", netVariables.K8sPodNamespace, netVariables.K8sPodName)
+	}
 
-	for index, intf := range interfaces {
+	for idx, intf := range interfaces {
 		tracelog.WriteString(fmt.Sprintf("CNI_ADD: Activating interface: '%s'\n", intf))
 		activateIfLog, err := netutil.ActivateInterface(
 			netVariables.IfName,
@@ -62,42 +65,39 @@ func DoCmdAdd(netVariables *object.NetVariables, stdinData []byte) (cniTypesVer.
 			intf.Address.IpAddress,
 			intf.Address.GatewayIp)
 		if activateIfLog != "" {
-			tracelog.WriteString(fmt.Sprintf("CNI_ADD: Activate interface result: '%s'\n", activateIfLog))
+			tracelog.WriteString(fmt.Sprintf("CNI_ADD: Activate interface log: '%s'\n", activateIfLog))
 		}
 		if err != nil {
 			return result, tracelog.String(), err
 		}
 
-		result.Interfaces = append(result.Interfaces, &cniTypesVer.Interface{
-			Name:    intf.InterfaceId.Interface,
-			Mac:     intf.Address.Mac,
-			Sandbox: netVariables.NetNS,
-		})
-
-		_, ipnet, err := netutil.ParseCIDR(intf.Address.IpAddress)
-		if err != nil {
-			return result, tracelog.String(), err
-		}
-		result.IPs = append(result.IPs, &cniTypesVer.IPConfig{
-			Version:   intf.Address.Version,
-			Address:   *ipnet,
-			Gateway:   netutil.ParseIP(intf.Address.GatewayIp),
-			Interface: cniTypesVer.Int(index),
-		})
+		result.Interfaces = append(result.Interfaces,
+			&cni.Interface{
+				Name:    netVariables.IfName,
+				Mac:     intf.Address.Mac,
+				Sandbox: netVariables.NetNS,
+			})
+		ipAddr, ipNet, _ := net.ParseCIDR(fmt.Sprintf("%s/%s", intf.Address.IpAddress, intf.Address.IpPrefix))
+		result.IPs = append(result.IPs,
+			&cni.IPConfig{
+				Version:   intf.Address.Version,
+				Interface: &idx,
+				Address:   net.IPNet{IP: ipAddr, Mask: ipNet.Mask},
+				Gateway:   net.ParseIP(intf.Address.GatewayIp),
+			})
 	}
 
 	return result, tracelog.String(), nil
 }
 
-func DoCmdDel(netVariables *object.NetVariables, stdinData []byte) (cniTypesVer.Result, string, error) {
+func DoCmdDel(netVariables *object.NetVariables, stdinData []byte) (cni.Result, string, error) {
 	tracelog := strings.Builder{}
-	result := cniTypesVer.Result{
-		CNIVersion: netVariables.CniVersion,
-	}
+	result := cni.Result{}
 
 	if err := netvariablesutil.LoadCniConfig(netVariables, stdinData); err != nil {
 		return result, tracelog.String(), err
 	}
+	result.CNIVersion = netVariables.CniVersion
 	tracelog.WriteString(fmt.Sprintf("CNI_DEL: Deleting NetNS: '%s'\n", netVariables.NetNS))
 	netutil.DeleteNetNS(netVariables.NetNS)
 
