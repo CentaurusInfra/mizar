@@ -134,8 +134,8 @@ func Test_DoCmdAdd(t *testing.T) {
 
 		Convey("Given ParseCIDR error, got expected result", func() {
 			expectedInfo := "Expected Info"
-			expectedErrorStr "invalid CIDR address: /"
-			expectedError errors.New(expectedErrorStr)
+			expectedErrorStr := "invalid CIDR address"
+			expectedError := errors.New(expectedErrorStr)
 			patches := ApplyFunc(netvariablesutil.LoadCniConfig, func(_ *object.NetVariables, _ []byte) error {
 				return nil
 			})
@@ -166,12 +166,12 @@ func Test_DoCmdAdd(t *testing.T) {
 			So(tracelog, ShouldContainSubstring, "CNI_ADD: Args: ")
 			So(tracelog, ShouldContainSubstring, "Activating interface")
 			So(tracelog, ShouldContainSubstring, expectedInfo)
-			So(err.Error(), ShouldEqual, expectedErrorStr)
+			So(err.Error(), ShouldContainSubstring, expectedErrorStr)
 		})
 
 		Convey("Given no error, got expected result", func() {
 			expectedInfo := "Expected Info"
-			expectedErrorStr "invalid CIDR address: /"
+			expectedErrorStr := "invalid CIDR address"
 			patches := ApplyFunc(netvariablesutil.LoadCniConfig, func(_ *object.NetVariables, _ []byte) error {
 				return nil
 			})
@@ -203,7 +203,7 @@ func Test_DoCmdAdd(t *testing.T) {
 			So(tracelog, ShouldContainSubstring, "CNI_ADD: Args: ")
 			So(tracelog, ShouldContainSubstring, "Activating interface")
 			So(tracelog, ShouldContainSubstring, expectedInfo)
-			So(err.Error(), ShouldEqual, expectedErrorStr)
+			So(err.Error(), ShouldContainSubstring, expectedErrorStr)
 		})
 	})
 }
