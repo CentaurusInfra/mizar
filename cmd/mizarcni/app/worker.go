@@ -77,7 +77,10 @@ func DoCmdAdd(netVariables *object.NetVariables, stdinData []byte) (cni.Result, 
 				Mac:     intf.Address.Mac,
 				Sandbox: netVariables.NetNS,
 			})
-		ipAddr, ipNet, _ := net.ParseCIDR(fmt.Sprintf("%s/%s", intf.Address.IpAddress, intf.Address.IpPrefix))
+		ipAddr, ipNet, err := net.ParseCIDR(fmt.Sprintf("%s/%s", intf.Address.IpAddress, intf.Address.IpPrefix))
+		if err != nil {
+			return result, tracelog.String(), err
+		}
 		result.IPs = append(result.IPs,
 			&cni.IPConfig{
 				Version:   intf.Address.Version,
