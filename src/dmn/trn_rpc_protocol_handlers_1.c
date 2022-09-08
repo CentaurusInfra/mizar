@@ -1159,6 +1159,11 @@ int *update_agent_md_1_svc(rpc_trn_agent_metadata_t *agent_md,
 	amd.ep.hosted_iface = amd.eth.iface_index;
 	memcpy(amd.ep.mac, agent_md->ep.mac, 6 * sizeof(amd.ep.mac[0]));
 
+	amd.dst_mac_override = 0;
+	unsigned char *dst_mac = (unsigned char *)&amd.dst_mac_override;
+	memcpy(dst_mac, agent_md->dst_mac_override, 6 * sizeof(unsigned char));
+	TRN_LOG_DEBUG("Override MAC: [%lx]", amd.dst_mac_override);
+
 	rc = trn_agent_update_agent_metadata(md, &amd, eth_md);
 
 	if (rc != 0) {

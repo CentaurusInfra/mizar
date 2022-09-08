@@ -161,9 +161,13 @@ static __inline int trn_encapsulate(struct transit_packet *pkt,
 		}
 
 		d_mac = r_ep->mac;
-
 	} else {
 		return XDP_DROP;
+	}
+
+	if (metadata->dst_mac_override != 0) {
+		__builtin_memcpy(d_mac, (unsigned char *)&metadata->dst_mac_override,
+			 6 * sizeof(unsigned char));
 	}
 
 	struct packet_metadata_key_t packet_metadata_key;

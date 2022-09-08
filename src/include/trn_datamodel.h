@@ -149,6 +149,7 @@ struct agent_metadata_t {
 	struct network_t net;
 	struct endpoint_key_t epkey;
 	struct endpoint_t ep;
+	__u64 dst_mac_override;
 } __attribute__((packed, aligned(4)));
 
 struct ipv4_tuple_t {
