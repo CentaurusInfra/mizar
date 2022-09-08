@@ -47,41 +47,41 @@
 
 int _version SEC("version") = 1;
 
-struct bpf_map_def SEC("maps") networks_map = {
+struct bpf_map_def SEC("maps") networks_offload_map = {
 	.type = BPF_MAP_TYPE_HASH,
 	.key_size = sizeof(struct network_key_t),
 	.value_size = sizeof(struct network_offload_t),
 	.max_entries = 1000001,
 	.map_flags = 0,
 };
-BPF_ANNOTATE_KV_PAIR(networks_map, struct network_key_t, struct network_offload_t);
+BPF_ANNOTATE_KV_PAIR(networks_offload_map, struct network_key_t, struct network_offload_t);
 
-struct bpf_map_def SEC("maps") vpc_map = {
+struct bpf_map_def SEC("maps") vpc_offload_map = {
 	.type = BPF_MAP_TYPE_HASH,
 	.key_size = sizeof(struct vpc_key_t),
 	.value_size = sizeof(struct vpc_offload_t),
 	.max_entries = 1000001,
 	.map_flags = 0,
 };
-BPF_ANNOTATE_KV_PAIR(vpc_map, struct vpc_key_t, struct vpc_offload_t);
+BPF_ANNOTATE_KV_PAIR(vpc_offload_map, struct vpc_key_t, struct vpc_offload_t);
 
-struct bpf_map_def SEC("maps") endpoints_map = {
+struct bpf_map_def SEC("maps") endpoints_offload_map = {
 	.type = BPF_MAP_TYPE_HASH,
 	.key_size = sizeof(struct endpoint_key_t),
 	.value_size = sizeof(struct endpoint_offload_t),
 	.max_entries = 1000001,
 	.map_flags = 0,
 };
-BPF_ANNOTATE_KV_PAIR(endpoints_map, struct endpoint_key_t, struct endpoint_offload_t);
+BPF_ANNOTATE_KV_PAIR(endpoints_offload_map, struct endpoint_key_t, struct endpoint_offload_t);
 
-struct bpf_map_def SEC("maps") interface_config_map = {
+struct bpf_map_def SEC("maps") interface_config_offload_map = {
 	.type = BPF_MAP_TYPE_ARRAY,
 	.key_size = sizeof(int),
 	.value_size = sizeof(struct tunnel_iface_t),
 	.max_entries = 1,
 	.map_flags = 0,
 };
-BPF_ANNOTATE_KV_PAIR(interface_config_map, int, struct tunnel_iface_t);
+BPF_ANNOTATE_KV_PAIR(interface_config_offload_map, int, struct tunnel_iface_t);
 
 static __inline int trn_rewrite_remote_mac(struct transit_packet *pkt)
 {
@@ -96,7 +96,7 @@ static __inline int trn_rewrite_remote_mac(struct transit_packet *pkt)
 	epkey.tunip[1] = 0;
 	epkey.tunip[2] = pkt->ip->daddr;
 	/* Get the remote_mac address based on the value of the outer dest IP */
-	remote_ep = bpf_map_lookup_elem(&endpoints_map, &epkey);
+	remote_ep = bpf_map_lookup_elem(&endpoints_offload_map, &epkey);
 
 	if (!remote_ep) {
 		return XDP_DROP;
@@ -126,7 +126,7 @@ static __inline int trn_router_handle_pkt(struct transit_packet *pkt,
 	nkey.prefixlen = 80;//需要修改
 	__builtin_memcpy(&nkey.nip[0], &tunnel_id, sizeof(tunnel_id));
 	nkey.nip[2] = inner_dst_ip % 65536;
-	net = bpf_map_lookup_elem(&networks_map, &nkey);
+	net = bpf_map_lookup_elem(&networks_offload_map, &nkey);
 
 	if (net) {
 		//trn_update_ep_host_cache(pkt, tunnel_id, inner_src_ip);
@@ -159,7 +159,7 @@ static __inline int trn_router_handle_pkt(struct transit_packet *pkt,
 	struct vpc_offload_t *vpc;
 
 	vpckey.tunnel_id = tunnel_id;
-	vpc = bpf_map_lookup_elem(&vpc_map, &vpckey);
+	vpc = bpf_map_lookup_elem(&vpc_offload_map, &vpckey);
 
 	if (!vpc) {
 		return XDP_DROP;
@@ -169,7 +169,6 @@ static __inline int trn_router_handle_pkt(struct transit_packet *pkt,
 	__u32 routeridx = 0;
 
 	if (routeridx > TRAN_MAX_NROUTER - 1) {
-
 		return XDP_DROP;
 	}
 
@@ -192,7 +191,7 @@ static __inline int trn_switch_handle_pkt(struct transit_packet *pkt,
 	epkey.tunip[2] = inner_dst_ip;
 
 	/* Get the remote_ip based on the value of the inner dest IP and VNI*/
-	ep = bpf_map_lookup_elem(&endpoints_map, &epkey);
+	ep = bpf_map_lookup_elem(&endpoints_offload_map, &epkey);
 
 	if (!ep) {
 		if (pkt->scaled_ep_opt->type == TRN_GNV_SCALED_EP_OPT_TYPE &&
@@ -217,7 +216,6 @@ static __inline int trn_switch_handle_pkt(struct transit_packet *pkt,
 	}
 
 	if (ep->nremote_ips == 0) {
-
 		return XDP_DROP;
 	}
 
@@ -232,7 +230,6 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 	__u32 ipproto;
 
 	if (pkt->inner_ip + 1 > pkt->data_end) {
-
 		return XDP_ABORTED;
 	}
 
@@ -250,7 +247,6 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 		pkt->inner_tcp = (void *)pkt->inner_ip + sizeof(*pkt->inner_ip);
 
 		if (pkt->inner_tcp + 1 > pkt->data_end) {
-
 			return XDP_ABORTED;
 		}
 
@@ -262,7 +258,6 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 		pkt->inner_udp = (void *)pkt->inner_ip + sizeof(*pkt->inner_ip);
 
 		if (pkt->inner_udp + 1 > pkt->data_end) {
-
 			return XDP_ABORTED;
 		}
 
@@ -277,7 +272,7 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 	struct endpoint_key_t src_epkey;
 	__builtin_memcpy(&src_epkey.tunip[0], &tunnel_id, sizeof(tunnel_id));
 	src_epkey.tunip[2] = pkt->inner_ip->saddr;
-	src_ep = bpf_map_lookup_elem(&endpoints_map, &src_epkey);
+	src_ep = bpf_map_lookup_elem(&endpoints_offload_map, &src_epkey);
 
 	/* If this is not the source endpoint's host,
 	skip reverse flow modification, or scaled endpoint modify handling */
@@ -320,52 +315,44 @@ static __inline int trn_process_inner_arp(struct transit_packet *pkt)
 	pkt->inner_arp = (void *)pkt->inner_eth + sizeof(*pkt->inner_eth);
 
 	if (pkt->inner_arp + 1 > pkt->data_end) {
-
 		return XDP_ABORTED;
 	}
 
 	if (pkt->inner_arp->ar_pro != bpf_htons(ETH_P_IP) ||
 	    pkt->inner_arp->ar_hrd != bpf_htons(ARPHRD_ETHER)) {
-
 		return XDP_DROP;
 	}
 
 	if (pkt->inner_arp->ar_op != bpf_htons(ARPOP_REPLY) &&
 	    pkt->inner_arp->ar_op != bpf_htons(ARPOP_REQUEST)) {
-
 		return XDP_DROP;
 	}
 
 	if ((unsigned char *)(pkt->inner_arp + 1) > pkt->data_end) {
-
 		return XDP_ABORTED;
 	}
 
 	sha = (unsigned char *)(pkt->inner_arp + 1);
 
 	if (sha + ETH_ALEN > pkt->data_end) {
-
 		return XDP_ABORTED;
 	}
 
 	sip = (__u32 *)(sha + ETH_ALEN);
 
 	if (sip + 1 > pkt->data_end) {
-
 		return XDP_ABORTED;
 	}
 
 	tha = (unsigned char *)sip + sizeof(__u32);
 
 	if (tha + ETH_ALEN > pkt->data_end) {
-
 		return XDP_ABORTED;
 	}
 
 	tip = (__u32 *)(tha + ETH_ALEN);
 
 	if ((void *)tip + sizeof(__u32) > pkt->data_end) {
-
 		return XDP_ABORTED;
 	}
 
@@ -373,12 +360,11 @@ static __inline int trn_process_inner_arp(struct transit_packet *pkt)
 
 	__builtin_memcpy(&epkey.tunip[0], &tunnel_id, sizeof(tunnel_id));
 	epkey.tunip[2] = *tip;
-	ep = bpf_map_lookup_elem(&endpoints_map, &epkey);
+	ep = bpf_map_lookup_elem(&endpoints_offload_map, &epkey);
 
 	/* Don't respond to arp if endpoint is not found, or it is local to host */
 	if (!ep || ep->hosted_iface != -1 ||
 	    pkt->inner_arp->ar_op != bpf_htons(ARPOP_REQUEST)) {
-
 		return trn_switch_handle_pkt(pkt, *sip, *tip, *sip);
 	}
 
@@ -399,10 +385,9 @@ static __inline int trn_process_inner_arp(struct transit_packet *pkt)
 		epkey.tunip[0] = 0;
 		epkey.tunip[1] = 0;
 		epkey.tunip[2] = ep->remote_ips[0];
-		remote_ep = bpf_map_lookup_elem(&endpoints_map, &epkey);
+		remote_ep = bpf_map_lookup_elem(&endpoints_offload_map, &epkey);
 
 		if (!remote_ep) {
-
 			return XDP_DROP;
 		}
 
@@ -411,13 +396,12 @@ static __inline int trn_process_inner_arp(struct transit_packet *pkt)
 		__builtin_memcpy(pkt->rts_opt->rts_data.host.mac,
 				 remote_ep->mac, 6 * sizeof(unsigned char));
 	} else {
-
 		trn_reset_rts_opt(pkt);
 	}
 
 	/* We need to lookup the endpoint again, since tip has changed */
 	epkey.tunip[2] = *tip;
-	ep = bpf_map_lookup_elem(&endpoints_map, &epkey);
+	ep = bpf_map_lookup_elem(&endpoints_offload_map, &epkey);
 
 	return trn_switch_handle_pkt(pkt, *sip, *tip, *sip);
 }
@@ -428,18 +412,15 @@ static __inline int trn_process_inner_eth(struct transit_packet *pkt)
 	pkt->inner_eth_off = sizeof(*pkt->inner_eth);
 
 	if (pkt->inner_eth + 1 > pkt->data_end) {
-
 		return XDP_ABORTED;
 	}
 
 	/* ARP */
 	if (pkt->inner_eth->h_proto == bpf_htons(ETH_P_ARP)) {
-
 		return trn_process_inner_arp(pkt);
 	}
 
 	if (pkt->eth->h_proto != bpf_htons(ETH_P_IP)) {
-
 		return XDP_DROP;
 	}
 
@@ -450,12 +431,10 @@ static __inline int trn_process_geneve(struct transit_packet *pkt)
 {
 	pkt->geneve = (void *)pkt->udp + sizeof(*pkt->udp);
 	if (pkt->geneve + 1 > pkt->data_end) {
-
 		return XDP_ABORTED;
 	}
 
 	if (pkt->geneve->proto_type != bpf_htons(ETH_P_TEB)) {
-
 		return XDP_PASS;
 	}
 
@@ -464,12 +443,10 @@ static __inline int trn_process_geneve(struct transit_packet *pkt)
 	pkt->rts_opt = (void *)&pkt->geneve->options[0];
 
 	if (pkt->rts_opt + 1 > pkt->data_end) {
-
 		return XDP_ABORTED;
 	}
 
 	if (pkt->rts_opt->opt_class != TRN_GNV_OPT_CLASS) {
-
 		return XDP_ABORTED;
 	}
 
@@ -477,12 +454,10 @@ static __inline int trn_process_geneve(struct transit_packet *pkt)
 	pkt->scaled_ep_opt = (void *)pkt->rts_opt + sizeof(*pkt->rts_opt);
 
 	if (pkt->scaled_ep_opt + 1 > pkt->data_end) {
-
 		return XDP_ABORTED;
 	}
 
 	if (pkt->scaled_ep_opt->opt_class != TRN_GNV_OPT_CLASS) {
-
 		return XDP_ABORTED;
 	}
 
@@ -495,12 +470,10 @@ static __inline int trn_process_udp(struct transit_packet *pkt)
 	pkt->udp = (void *)pkt->ip + sizeof(*pkt->ip);
 
 	if (pkt->udp + 1 > pkt->data_end) {
-
 		return XDP_ABORTED;
 	}
 
 	if (pkt->udp->dest != GEN_DSTPORT) {
-
 		return XDP_PASS;
 	}
 
@@ -513,7 +486,6 @@ static __inline int trn_process_ip(struct transit_packet *pkt)
 	pkt->ip = (void *)pkt->eth + pkt->eth_off;
 
 	if (pkt->ip + 1 > pkt->data_end) {
-
 		return XDP_ABORTED;
 	}
 
@@ -521,14 +493,14 @@ static __inline int trn_process_ip(struct transit_packet *pkt)
 		return XDP_PASS;
 	}
 
-	if (!pkt->ip->ttl)
+	if (!pkt->ip->ttl) {
 		return XDP_DROP;
+	}
 
 	/* Only process packets designated to this interface!
 	 * In functional tests - relying on docker0 - we see such packets!
 	 */
 	if (pkt->ip->daddr != pkt->itf_ipv4) {
-
 		return XDP_DROP;
 	}
 
@@ -541,7 +513,6 @@ static __inline int trn_process_eth(struct transit_packet *pkt)
 	pkt->eth_off = sizeof(*pkt->eth);
 
 	if (pkt->data + pkt->eth_off > pkt->data_end) {
-
 		return XDP_ABORTED;
 	}
 
@@ -563,10 +534,8 @@ int _transit(struct xdp_md *ctx)
 	struct tunnel_iface_t *itf;
 
 	int k = 0;
-	itf = bpf_map_lookup_elem(&interface_config_map, &k);
-
+	itf = bpf_map_lookup_elem(&interface_config_offload_map, &k);
 	if (!itf) {
-
 		return XDP_ABORTED;
 	}
 
@@ -574,7 +543,6 @@ int _transit(struct xdp_md *ctx)
 	pkt.itf_idx = itf->iface_index;
 
 	return trn_process_eth(&pkt);
-	
 }
 
 char _license[] SEC("license") = "GPL";

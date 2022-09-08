@@ -127,7 +127,7 @@ def init(benchmark=False):
 
     # Offload XDP program removes codes about debuging for size limitation.
     if os.getenv('FEATUREGATE_OFFLOAD_XDP', 'false').lower() in ('true', '1'):
-        if default_itf in support_offload_xdp_itf_names():
+        if default_itf in supported_offload_xdp_itf_names():
             config = {
                 "xdp_path": "/trn_xdp/trn_transit_xdp_hardware_offload_ebpf.o",
                 "pcapfile": "/bpffs/transit_xdp_offload.pcap",
