@@ -435,33 +435,32 @@ def conf_list_has_max_elements(conf, conf_list):
         return True
     return False
 
-def support_offload_xdp_itf_names():
+def supported_offload_xdp_itf_names():
     """
     According to the list of NIC names, corresponding logic interface names are returned.
     """
     logical_itf_names = []
     with open("/var/mizar/supported_xdp_offload_nics.yaml", "r", encoding="utf-8") as f:
-            supported_nic_names = yaml.load(f, Loader=yaml.FullLoader)
+        supported_nic_names = yaml.load(f, Loader=yaml.FullLoader)
 
-    ret, data = run_cmd("ls -l /sys/class/net")
+    ret, data = run_cmd("lspci -mm | grep 'Ethernet controller'")
     if ret is not None:
-        logging.info("Failure running cmd: ls -l /sys/class/net")
+        logging.info("Failure running cmd: lspci -mm | grep 'Ethernet controller'")
         return logical_itf_names
-    
-    lines = [i for i in data.split('\n') if i]
-    for line in lines[1:]:
-        temp = [i for i in line.split('/') if i]
-        if len(temp) > 3:
-            pci_num = temp[-3]
-            ret, data = run_cmd("lspci -s %s" % pci_num)
-            if ret is not None:
-                continue
-            else:
-                for vender_name in supported_nic_names.keys():
-                    if vender_name.lower() in data.lower():
-                        for model_name in supported_nic_names[vender_name]:
-                            if model_name.lower() in data.lower():
-                                logical_itf_names.append(temp[-1])
+
+    eth_crtls = [i for i in data.split('\n') if i]
+    for eth_crtl in eth_crtls:
+        for vender_name in supported_nic_names.keys():
+            for model_name in supported_nic_names[vender_name]:
+                if vender_name.lower() in eth_crtl.lower() and model_name.lower() in eth_crtl.lower():
+                    pci_num = eth_crtl.split()[0]
+                    ret, data = run_cmd("ls -l /sys/class/net | grep %s" % pci_num)
+                    if ret is not None:
+                        continue
+                    else:
+                        logical_itfs = [i for i in data.split('\n') if i]
+                        for logical_itf in logical_itfs:
+                            logical_itf_names.append(logical_itf.split('/')[-1])
 
     return logical_itf_names
 
@@ -477,7 +476,7 @@ def get_default_itf():
     data = [i for i in data.split('\n') if i]
 
     if os.getenv('FEATUREGATE_OFFLOAD_XDP', 'false').lower() in ('true', '1'):
-        for offload_xdp_itf in support_offload_xdp_itf_names():
+        for offload_xdp_itf in supported_offload_xdp_itf_names():
             for line in data:
                 if offload_xdp_itf in line and "linkdown" not in line:
                     return offload_xdp_itf
