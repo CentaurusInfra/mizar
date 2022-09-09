@@ -611,10 +611,24 @@ int trn_cli_parse_agent_md(const cJSON *jsonobj,
 	cJSON *ep = cJSON_GetObjectItem(jsonobj, "ep");
 	cJSON *net = cJSON_GetObjectItem(jsonobj, "net");
 	cJSON *eth = cJSON_GetObjectItem(jsonobj, "eth");
+	cJSON *mac_override = cJSON_GetObjectItem(jsonobj, "dst_mac_override");
 	int err_ep, err_net, err_eth;
 	err_ep = trn_cli_parse_ep(ep, &agent_md->ep);
 	err_net = trn_cli_parse_net(net, &agent_md->net);
 	err_eth = trn_cli_parse_tun_intf(eth, &agent_md->eth);
+
+	if (mac_override != NULL && cJSON_IsString(mac_override)) {
+		if (6 == sscanf(mac_override->valuestring,
+				"%hhx:%hhx:%hhx:%hhx:%hhx:%hhx%*c",
+				&agent_md->dst_mac_override[0], &agent_md->dst_mac_override[1],
+				&agent_md->dst_mac_override[2], &agent_md->dst_mac_override[3],
+				&agent_md->dst_mac_override[4], &agent_md->dst_mac_override[5])) {
+		} else {
+			/* invalid mac override */
+			print_err("Error: Invalid MAC Override\n");
+			return -EINVAL;
+		}
+	}
 
 	if (err_ep || err_net || err_eth) {
 		return -EINVAL;
