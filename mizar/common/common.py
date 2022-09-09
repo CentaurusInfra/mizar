@@ -474,13 +474,6 @@ def get_default_itf():
     default_itf="eth0"
     ret, data = run_cmd("ip route")
     data = [i for i in data.split('\n') if i]
-
-    if os.getenv('FEATUREGATE_OFFLOAD_XDP', 'false').lower() in ('true', '1'):
-        for offload_xdp_itf in supported_offload_xdp_itf_names():
-            for line in data:
-                if offload_xdp_itf in line and "linkdown" not in line:
-                    return offload_xdp_itf
-
     for line in data:
         if line.startswith('default'):
             logging.info("default_itf from ip route: {}".format(line.split()[4]))
