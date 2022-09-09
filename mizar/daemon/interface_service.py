@@ -613,9 +613,10 @@ class LocalTransitRpc:
                 "ip": interface.droplet.ip_address,
                 "mac": interface.droplet.mac,
                 "iface": default_itf
-            },
-            "dst_mac_override": dst_mac
+            }
         }
+        if dst_mac != "":
+            jsonconf["dst_mac_override"] = dst_mac
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_update_agent_metadata} -i \'{itf}\' -j \'{jsonconf}\''''
         logger.info("update_agent_metadata: {}".format(cmd))
