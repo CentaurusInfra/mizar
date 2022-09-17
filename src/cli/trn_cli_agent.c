@@ -214,6 +214,7 @@ int trn_cli_update_agent_md_subcmd(CLIENT *clnt, int argc, char *argv[])
 
 	char eth_itf[20];
 	agent_md.eth.interface = eth_itf;
+	memset(agent_md.dst_mac_override, 0, sizeof(agent_md.dst_mac_override));
 	int err = trn_cli_parse_agent_md(json_str, &agent_md);
 	cJSON_Delete(json_str);
 

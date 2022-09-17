@@ -170,6 +170,7 @@ struct rpc_trn_agent_metadata_t {
        rpc_trn_tun_intf_t eth;
        rpc_trn_endpoint_t ep;
        rpc_trn_network_t net;
+       unsigned char dst_mac_override[6];
 };
 
 enum rpc_trn_pipeline_stage {
