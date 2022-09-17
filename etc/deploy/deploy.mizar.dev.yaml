@@ -523,6 +523,8 @@ spec:
       - name: mizar-daemon
         image: mizarnet/dropletd:dev
         env:
+        - name: FEATUREGATE_KUBEMARK_NETWORK_PERF
+          value: 'false'
         - name: FEATUREGATE_BWQOS
           value: 'false'
         securityContext:
@@ -567,6 +569,8 @@ spec:
       - name: mizar-operator
         image: mizarnet/endpointopr:dev
         env:
+        - name: FEATUREGATE_KUBEMARK_NETWORK_PERF
+          value: 'false'
         - name: FEATUREGATE_BWQOS
           value: 'false'
         securityContext:

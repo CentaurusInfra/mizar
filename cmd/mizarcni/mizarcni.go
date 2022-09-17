@@ -65,6 +65,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		klog.Infof("CNI_ADD: Success - interface added for pod '%s/%s'\n",
 				netVariables.K8sPodNamespace, netVariables.K8sPodName)
 	}
+	klog.Infof("CNI_ADD: RESULT= '%+v'\n", result)
 	klog.Infof("CNI_ADD: <<<<\n--------------------------------\n")
 	result.Print()
 	return err
@@ -84,6 +85,7 @@ func cmdDel(args *skel.CmdArgs) error {
 		klog.Infof("CNI_DEL: Success - interface deleted for pod '%s/%s'\n",
 				netVariables.K8sPodNamespace, netVariables.K8sPodName)
 	}
+	klog.Infof("CNI_DEL: RESULT= '%+v'\n", result)
 	klog.Infof("CNI_DEL: <<<<\n--------------------------------\n")
 	result.Print()
 	return err
