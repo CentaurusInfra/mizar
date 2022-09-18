@@ -616,7 +616,25 @@ int *load_transit_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf, struct svc_req *rqstp)
 	struct user_metadata_t empty_md;
 	struct user_metadata_t *md = trn_itf_table_find(itf);
 
-	if (xdp_flag == XDP_FLAGS_SKB_MODE) {
+	if (xdp_flag == XDP_FLAGS_HW_MODE) {
+		if (!md) {
+			TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
+			result = RPC_TRN_FATAL;
+			return &result;
+		}
+
+		// Metadata has been initialized in XDP_FLAGS_SKB_MODE
+		rc = trn_user_metadata_init_offload(md, itf, kern_path, xdp_flag);
+		if (rc != 0) {
+			TRN_LOG_ERROR(
+				"Failure initializing or loading transit XDP offload program for interface %s",
+				itf);
+			result = RPC_TRN_FATAL;
+			return &result;
+		}
+
+		TRN_LOG_INFO("Successfully loaded transit XDP offload on interface %s", itf);
+	} else {
 		if (md) {
 			TRN_LOG_INFO("Transit XDP for interface %s already exist.", itf);
 			return &result;
@@ -664,25 +682,6 @@ int *load_transit_xdp_1_svc(rpc_trn_xdp_intf_t *xdp_intf, struct svc_req *rqstp)
 		}
 
 		TRN_LOG_INFO("Successfully loaded transit XDP on interface %s", itf);
-	} else if (xdp_flag == XDP_FLAGS_HW_MODE) {
-		// Metadata has been initialized in XDP_FLAGS_SKB_MODE
-		if (!md) {
-			TRN_LOG_ERROR("Cannot find interface metadata for %s", itf);
-			result = RPC_TRN_FATAL;
-			return &result;
-		}
-
-		rc = trn_user_metadata_init_offload(md, itf, kern_path, xdp_flag);
-
-		if (rc != 0) {
-			TRN_LOG_ERROR(
-				"Failure initializing or loading transit XDP offload program for interface %s",
-				itf);
-			result = RPC_TRN_FATAL;
-			return &result;
-		}
-
-		TRN_LOG_INFO("Successfully loaded transit XDP offload on interface %s", itf);
 	}
 
 	return &result;
@@ -1179,6 +1178,11 @@ int *update_agent_md_1_svc(rpc_trn_agent_metadata_t *agent_md,
 
 	amd.ep.hosted_iface = amd.eth.iface_index;
 	memcpy(amd.ep.mac, agent_md->ep.mac, 6 * sizeof(amd.ep.mac[0]));
+
+	amd.dst_mac_override = 0;
+	unsigned char *dst_mac = (unsigned char *)&amd.dst_mac_override;
+	memcpy(dst_mac, agent_md->dst_mac_override, 6 * sizeof(unsigned char));
+	TRN_LOG_DEBUG("Override MAC: [%lx]", amd.dst_mac_override);
 
 	rc = trn_agent_update_agent_metadata(md, &amd, eth_md);
 

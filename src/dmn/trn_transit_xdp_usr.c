@@ -231,9 +231,8 @@ int trn_update_network(struct user_metadata_t *md, struct network_key_t *netkey,
 		net_offload.prefixlen = net->prefixlen;
 		memcpy(net_offload.nip, net->nip, sizeof(net_offload.nip));
 		net_offload.nswitches = net->nswitches;
-		memcpy(net_offload.switches_ips, net->switches_ips, sizeof(net_offload.switches_ips));
-
-		err = bpf_map_update_elem(md->networks_map_offload_fd, netkey, &net_offload, 0);
+		memcpy(net_offload.switches_ips, net->switches_ips, net->nswitches * sizeof(net_offload.switches_ips[0]));
+		err = bpf_map_update_elem(md->networks_offload_map_fd, netkey, &net_offload, 0);
 		if (err) {
 			TRN_LOG_ERROR("Store offloaded network mapping failed (err:%d)", err);
 			return 1;
@@ -309,11 +308,10 @@ int trn_update_endpoint(struct user_metadata_t *md,
 		
 		ep_offload.eptype = ep->eptype;
 		ep_offload.nremote_ips = ep->nremote_ips;
-		memcpy(ep_offload.remote_ips, ep->remote_ips, sizeof(ep_offload.remote_ips));
+		memcpy(ep_offload.remote_ips, ep->remote_ips, ep->nremote_ips * sizeof(ep_offload.remote_ips[0]));
 		ep_offload.hosted_iface = ep->hosted_iface;
 		memcpy(ep_offload.mac, ep->mac, sizeof(ep->mac));
-		err = bpf_map_update_elem(md->endpoints_map_offload_fd, epkey, &ep_offload, 0);
-
+		err = bpf_map_update_elem(md->endpoints_offload_map_fd, epkey, &ep_offload, 0);
 		if (err) {
 			TRN_LOG_ERROR("Store offloaded endpoint mapping failed (err:%d).", err);
 			return 1;
@@ -340,9 +338,8 @@ int trn_update_vpc(struct user_metadata_t *md, struct vpc_key_t *vpckey,
 		}
 		
 		vpc_offload.nrouters = vpc->nrouters;
-		memcpy(vpc_offload.routers_ips, vpc->routers_ips, sizeof(vpc_offload.routers_ips));
-		err = bpf_map_update_elem(md->vpc_map_offload_fd, vpckey, &vpc_offload, 0);
-
+		memcpy(vpc_offload.routers_ips, vpc->routers_ips, vpc->nrouters * sizeof(vpc_offload.routers_ips[0]));
+		err = bpf_map_update_elem(md->vpc_offload_map_fd, vpckey, &vpc_offload, 0);
 		if (err) {
 			TRN_LOG_ERROR("Store offloaded vpc mapping failed (err:%d).", err);
 			return 1;
@@ -586,7 +583,7 @@ int trn_delete_endpoint(struct user_metadata_t *md,
 	}
 
 	if (md->xdp_flags == XDP_FLAGS_HW_MODE) {
-		err = bpf_map_delete_elem(md->endpoints_map_offload_fd, epkey);
+		err = bpf_map_delete_elem(md->endpoints_offload_map_fd, epkey);
 		if (err) {
 			TRN_LOG_ERROR("Deleting offload endpoint mapping failed (err:%d).",
 					err);
@@ -606,7 +603,7 @@ int trn_delete_vpc(struct user_metadata_t *md, struct vpc_key_t *vpckey)
 	}
 
 	if (md->xdp_flags == XDP_FLAGS_HW_MODE) {
-		err = bpf_map_delete_elem(md->vpc_map_offload_fd, vpckey);
+		err = bpf_map_delete_elem(md->vpc_offload_map_fd, vpckey);
 		if (err) {
 			TRN_LOG_ERROR("Deleting offload vpc mapping failed (err:%d).", err);
 			return 1;
@@ -755,14 +752,13 @@ int trn_user_metadata_init_offload(struct user_metadata_t *md, char *itf,
 	md->eth.ip = trn_get_interface_ipv4(md->ifindex);
 	md->eth.iface_index = md->ifindex;
 
-	//TODO:offload_xdp cannot reuse the pinned maps(network policy), need recreate new maps here
-
+	// offload_xdp cannot reuse the pinned maps(network policy)
 	if (bpf_prog_load_xattr(&prog_load_attr, &md->obj_offload, &md->prog_offload_fd)) {
 		TRN_LOG_ERROR("Error loading bpf: %s", kern_path);
 		return 1;
 	}
 
-	//map_init
+	// map_init
 	md->networks_offload_map = bpf_map__next(NULL, md->obj_offload);
 	md->vpc_offload_map = bpf_map__next(md->networks_offload_map, md->obj_offload);
 	md->endpoints_offload_map = bpf_map__next(md->vpc_offload_map, md->obj_offload);
@@ -772,11 +768,11 @@ int trn_user_metadata_init_offload(struct user_metadata_t *md, char *itf,
 		TRN_LOG_ERROR("Failure finding offloaded maps objects.");
 		return 1;
 	}
-	md->networks_map_offload_fd = bpf_map__fd(md->networks_offload_map);
-	md->vpc_map_offload_fd = bpf_map__fd(md->vpc_offload_map);
-	md->endpoints_map_offload_fd = bpf_map__fd(md->endpoints_offload_map);
-	md->interface_config_map_offload_fd = bpf_map__fd(md->interface_config_offload_map);
-	//map_init done
+	md->networks_offload_map_fd = bpf_map__fd(md->networks_offload_map);
+	md->vpc_offload_map_fd = bpf_map__fd(md->vpc_offload_map);
+	md->endpoints_offload_map_fd = bpf_map__fd(md->endpoints_offload_map);
+	md->interface_config_offload_map_fd = bpf_map__fd(md->interface_config_offload_map);
+	// map_init done
 
 	if (!md->prog_offload_fd) {
 		TRN_LOG_ERROR("load_bpf_file: %s.", strerror(errno));
@@ -795,17 +791,15 @@ int trn_user_metadata_init_offload(struct user_metadata_t *md, char *itf,
 	}
 	md->prog_offload_id = md->info_offload.id;
 
-	//As the config of original Transit Program already has the itf_idx, set Offload Program as the same config
+	// As the config of original Transit Program already has the itf_idx, set Offload Program as the same config
 	int k = 0;
-
-	rc = bpf_map_update_elem(md->interface_config_map_offload_fd, &k, &md->eth, 0);
+	rc = bpf_map_update_elem(md->interface_config_offload_map_fd, &k, &md->eth, 0);
 	if (rc != 0) {
 		TRN_LOG_ERROR("Failed to store interface data.");
 		return 1;
 	}
 
-	md->xdp_flags = xdp_flags;  //overwrite xdp_flags with XDP_OFFLOAD
-
+	md->xdp_flags = xdp_flags;  // overwrite xdp_flags with XDP_OFFLOAD
 	return 0;
 }
 

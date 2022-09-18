@@ -576,6 +576,23 @@ class LocalTransitRpc:
         bouncers = []
         for bouncer in interface.bouncers:
             bouncers.append(bouncer.ip_address)
+        dst_mac = ""
+        if os.getenv('FEATUREGATE_KUBEMARK_NETWORK_PERF', 'false').lower() in ('true', '1'):
+            cmd = "cat /proc/1/sched | head -n 1"
+            r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+            outstr = r.stdout.read().decode().strip()
+            if not "systemd" in outstr:
+                logger.info("Overriding default-gateway/bouncer MAC address for kubemark virtual node")
+                cmd = "ip route show default | awk \'{print $3}\'"
+                r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+                default_gw_ip = r.stdout.read().decode().strip()
+                logger.info("Default gateway IP: {}".format(default_gw_ip))
+                cmd = 'arp ' + f'''{default_gw_ip}''' + ' | grep ' + f'''{default_gw_ip}''' + ' | awk \'{print $3}\''
+                r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+                default_gw_mac = r.stdout.read().decode().strip()
+                logger.info("Default gateway MAC: {}".format(default_gw_mac))
+                dst_mac = default_gw_mac
+                logger.info("Override MAC: {}".format(dst_mac))
         jsonconf = {
             "ep": {
                 "tunnel_id": interface.address.tunnel_id,
@@ -598,6 +615,8 @@ class LocalTransitRpc:
                 "iface": default_itf
             }
         }
+        if dst_mac != "":
+            jsonconf["dst_mac_override"] = dst_mac
         jsonconf = json.dumps(jsonconf)
         cmd = f'''{self.trn_cli_update_agent_metadata} -i \'{itf}\' -j \'{jsonconf}\''''
         logger.info("update_agent_metadata: {}".format(cmd))
