@@ -95,7 +95,6 @@ def init(benchmark=False):
     logging.info("Removed existing XDP program: {}".format(output))
 
     cmd = "nsenter -t 1 -m -u -n -i ip link set dev " + f'''{default_itf}''' + " xdpoffload off"
-
     r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     output = r.stdout.read().decode().strip()
     logging.info("Removed existing offload XDP program: {}".format(output))
@@ -139,7 +138,7 @@ def init(benchmark=False):
             output = r.stdout.read().decode().strip()
             logging.info("Running load-transit-xdp with offload mode: {}".format(output))
         else:
-            logging.info("NIC cannot support offload XDP with the iterface: {}".format(default_itf))
+            logging.info("Offloading transit XDP functionality not supported for interface {}".format(default_itf))
     else:
         logging.info("Offload XDP feature is disabled.")
 
