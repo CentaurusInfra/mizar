@@ -548,7 +548,7 @@ int trn_delete_network(struct user_metadata_t *md, struct network_key_t *netkey)
 	}
 
 	if (md->xdp_flags == XDP_FLAGS_HW_MODE) {
-		err = bpf_map_delete_elem(md->networks_map_fd, netkey);
+		err = bpf_map_delete_elem(md->networks_offload_map_fd, netkey);
 		if (err) {
 			TRN_LOG_ERROR("Deleting offload network mapping failed (err:%d).", err);
 			return 1;
