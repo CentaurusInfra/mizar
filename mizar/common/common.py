@@ -443,9 +443,9 @@ def supported_offload_xdp_itf_names():
     with open("/var/mizar/supported_xdp_offload_nics.yaml", "r", encoding="utf-8") as f:
         supported_nic_names = yaml.load(f, Loader=yaml.FullLoader)
 
-    ret, data = run_cmd("lspci -mm | grep 'Ethernet controller'")
-    if ret is not None:
-        logging.info("Failure running cmd: lspci -mm | grep 'Ethernet controller'")
+    rc, data = run_cmd("lspci -mm | grep 'Ethernet controller'")
+    if rc is not None:
+        logging.info("Failure running \"lspci -mm | grep 'Ethernet controller'\" with rc:" + f'''{rc}''')
         return logical_itf_names
 
     eth_crtls = [i for i in data.split('\n') if i]
@@ -454,8 +454,8 @@ def supported_offload_xdp_itf_names():
             for model_name in supported_nic_names[vender_name]:
                 if vender_name.lower() in eth_crtl.lower() and model_name.lower() in eth_crtl.lower():
                     pci_num = eth_crtl.split()[0]
-                    ret, data = run_cmd("ls -l /sys/class/net | grep %s" % pci_num)
-                    if ret is not None:
+                    rc, data = run_cmd("ls -l /sys/class/net | grep %s" % pci_num)
+                    if rc is not None:
                         continue
                     else:
                         logical_itfs = [i for i in data.split('\n') if i]
