@@ -450,9 +450,9 @@ def supported_offload_xdp_itf_names():
 
     eth_crtls = [i for i in data.split('\n') if i]
     for eth_crtl in eth_crtls:
-        for vender_name in supported_nic_names.keys():
-            for model_name in supported_nic_names[vender_name]:
-                if vender_name.lower() in eth_crtl.lower() and model_name.lower() in eth_crtl.lower():
+        for vendor_name in supported_nic_names.keys():
+            for model_name in supported_nic_names[vendor_name]:
+                if vendor_name.lower() in eth_crtl.lower() and model_name.lower() in eth_crtl.lower():
                     pci_num = eth_crtl.split()[0]
                     rc, data = run_cmd("ls -l /sys/class/net | grep %s" % pci_num)
                     if rc is not None:
