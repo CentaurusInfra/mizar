@@ -97,7 +97,6 @@ static __inline int trn_rewrite_remote_mac(struct transit_packet *pkt)
 	epkey.tunip[2] = pkt->ip->daddr;
 	/* Get the remote_mac address based on the value of the outer dest IP */
 	remote_ep = bpf_map_lookup_elem(&endpoints_offload_map, &epkey);
-
 	if (!remote_ep) {
 		return XDP_DROP;
 	}
@@ -123,19 +122,17 @@ static __inline int trn_router_handle_pkt(struct transit_packet *pkt,
 
 	struct network_key_t nkey;
 	struct network_offload_t *net;
-	nkey.prefixlen = 80;//需要修改
+	/* SmartNIC does not supporting BPF_MAP_TYPE_LPM_TRIE here, so match with a exact length (80). */
+	nkey.prefixlen = 80;
 	__builtin_memcpy(&nkey.nip[0], &tunnel_id, sizeof(tunnel_id));
-	nkey.nip[2] = inner_dst_ip % 65536;
+	/* Obtain the network number by the mask. The subnet prefix length is 16. */
+	nkey.nip[2] = inner_dst_ip & 0xFFFF;
 	net = bpf_map_lookup_elem(&networks_offload_map, &nkey);
 
 	if (net) {
-		//trn_update_ep_host_cache(pkt, tunnel_id, inner_src_ip);
 		pkt->rts_opt->rts_data.host.ip = pkt->ip->daddr;
 		__builtin_memcpy(pkt->rts_opt->rts_data.host.mac,
 				 pkt->eth->h_dest, 6 * sizeof(unsigned char));
-	}
-
-	if (net) {
 
 		if (net->nip[0] != nkey.nip[0] || net->nip[1] != nkey.nip[1]) {
 			return XDP_DROP;
@@ -143,11 +140,6 @@ static __inline int trn_router_handle_pkt(struct transit_packet *pkt,
 		
 		/* Only send to the first switch. */
 		__u32 swidx = 0;
-
-		if (swidx > TRAN_MAX_NSWITCH - 1) {
-			return XDP_DROP;
-		}
-
 		trn_set_src_dst_ip_csum(pkt, pkt->ip->daddr,
 					net->switches_ips[swidx]);
 
@@ -167,11 +159,6 @@ static __inline int trn_router_handle_pkt(struct transit_packet *pkt,
 
 	/* Only send to the first router. */
 	__u32 routeridx = 0;
-
-	if (routeridx > TRAN_MAX_NROUTER - 1) {
-		return XDP_DROP;
-	}
-
 	trn_set_src_dst_ip_csum(pkt, pkt->ip->daddr,
 				vpc->routers_ips[routeridx]);
 
@@ -192,7 +179,6 @@ static __inline int trn_switch_handle_pkt(struct transit_packet *pkt,
 
 	/* Get the remote_ip based on the value of the inner dest IP and VNI*/
 	ep = bpf_map_lookup_elem(&endpoints_offload_map, &epkey);
-
 	if (!ep) {
 		if (pkt->scaled_ep_opt->type == TRN_GNV_SCALED_EP_OPT_TYPE &&
 		    pkt->scaled_ep_opt->scaled_ep_data.msg_type ==
@@ -245,7 +231,6 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 
 	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_TCP) {
 		pkt->inner_tcp = (void *)pkt->inner_ip + sizeof(*pkt->inner_ip);
-
 		if (pkt->inner_tcp + 1 > pkt->data_end) {
 			return XDP_ABORTED;
 		}
@@ -285,18 +270,8 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 
 	/* Check if we need to apply a reverse flow update */
 	struct ipv4_tuple_t inner;
-	struct scaled_endpoint_remote_t *inner_mod;
 	__builtin_memcpy(&inner, &pkt->inner_ipv4_tuple,
 			 sizeof(struct ipv4_tuple_t));
-
-	//inner_mod = bpf_map_lookup_elem(&rev_flow_mod_cache, &inner);
-	if (inner_mod) {
-		/* Modify the inner packet accordingly */
-		trn_set_src_dst_port(pkt, inner_mod->sport, inner_mod->dport);
-		trn_set_src_dst_inner_ip_csum(pkt, inner_mod->saddr,
-					      inner_mod->daddr);
-		trn_set_src_mac(pkt->inner_eth, inner_mod->h_source);
-	}
 
 	return trn_switch_handle_pkt(pkt, pkt->inner_ip->saddr,
 				     pkt->inner_ip->daddr, orig_src_ip);
@@ -333,25 +308,21 @@ static __inline int trn_process_inner_arp(struct transit_packet *pkt)
 	}
 
 	sha = (unsigned char *)(pkt->inner_arp + 1);
-
 	if (sha + ETH_ALEN > pkt->data_end) {
 		return XDP_ABORTED;
 	}
 
 	sip = (__u32 *)(sha + ETH_ALEN);
-
 	if (sip + 1 > pkt->data_end) {
 		return XDP_ABORTED;
 	}
 
 	tha = (unsigned char *)sip + sizeof(__u32);
-
 	if (tha + ETH_ALEN > pkt->data_end) {
 		return XDP_ABORTED;
 	}
 
 	tip = (__u32 *)(tha + ETH_ALEN);
-
 	if ((void *)tip + sizeof(__u32) > pkt->data_end) {
 		return XDP_ABORTED;
 	}
@@ -361,7 +332,6 @@ static __inline int trn_process_inner_arp(struct transit_packet *pkt)
 	__builtin_memcpy(&epkey.tunip[0], &tunnel_id, sizeof(tunnel_id));
 	epkey.tunip[2] = *tip;
 	ep = bpf_map_lookup_elem(&endpoints_offload_map, &epkey);
-
 	/* Don't respond to arp if endpoint is not found, or it is local to host */
 	if (!ep || ep->hosted_iface != -1 ||
 	    pkt->inner_arp->ar_op != bpf_htons(ARPOP_REQUEST)) {
@@ -386,7 +356,6 @@ static __inline int trn_process_inner_arp(struct transit_packet *pkt)
 		epkey.tunip[1] = 0;
 		epkey.tunip[2] = ep->remote_ips[0];
 		remote_ep = bpf_map_lookup_elem(&endpoints_offload_map, &epkey);
-
 		if (!remote_ep) {
 			return XDP_DROP;
 		}
@@ -410,7 +379,6 @@ static __inline int trn_process_inner_eth(struct transit_packet *pkt)
 {
 	pkt->inner_eth = (void *)pkt->geneve + pkt->gnv_hdr_len;
 	pkt->inner_eth_off = sizeof(*pkt->inner_eth);
-
 	if (pkt->inner_eth + 1 > pkt->data_end) {
 		return XDP_ABORTED;
 	}
@@ -441,7 +409,6 @@ static __inline int trn_process_geneve(struct transit_packet *pkt)
 	pkt->gnv_opt_len = pkt->geneve->opt_len * 4;
 	pkt->gnv_hdr_len = sizeof(*pkt->geneve) + pkt->gnv_opt_len;
 	pkt->rts_opt = (void *)&pkt->geneve->options[0];
-
 	if (pkt->rts_opt + 1 > pkt->data_end) {
 		return XDP_ABORTED;
 	}
@@ -452,7 +419,6 @@ static __inline int trn_process_geneve(struct transit_packet *pkt)
 
 	// TODO: process options
 	pkt->scaled_ep_opt = (void *)pkt->rts_opt + sizeof(*pkt->rts_opt);
-
 	if (pkt->scaled_ep_opt + 1 > pkt->data_end) {
 		return XDP_ABORTED;
 	}
@@ -468,7 +434,6 @@ static __inline int trn_process_udp(struct transit_packet *pkt)
 {
 	/* Get the UDP header */
 	pkt->udp = (void *)pkt->ip + sizeof(*pkt->ip);
-
 	if (pkt->udp + 1 > pkt->data_end) {
 		return XDP_ABORTED;
 	}
@@ -484,7 +449,6 @@ static __inline int trn_process_ip(struct transit_packet *pkt)
 {
 	/* Get the IP header */
 	pkt->ip = (void *)pkt->eth + pkt->eth_off;
-
 	if (pkt->ip + 1 > pkt->data_end) {
 		return XDP_ABORTED;
 	}
@@ -511,7 +475,6 @@ static __inline int trn_process_eth(struct transit_packet *pkt)
 {
 	pkt->eth = pkt->data;
 	pkt->eth_off = sizeof(*pkt->eth);
-
 	if (pkt->data + pkt->eth_off > pkt->data_end) {
 		return XDP_ABORTED;
 	}
