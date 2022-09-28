@@ -241,7 +241,6 @@ static __inline int trn_process_inner_ip(struct transit_packet *pkt)
 
 	if (pkt->inner_ipv4_tuple.protocol == IPPROTO_UDP) {
 		pkt->inner_udp = (void *)pkt->inner_ip + sizeof(*pkt->inner_ip);
-
 		if (pkt->inner_udp + 1 > pkt->data_end) {
 			return XDP_ABORTED;
 		}
