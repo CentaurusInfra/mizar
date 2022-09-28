@@ -126,7 +126,7 @@ static __inline int trn_router_handle_pkt(struct transit_packet *pkt,
 	nkey.prefixlen = 80;
 	__builtin_memcpy(&nkey.nip[0], &tunnel_id, sizeof(tunnel_id));
 	/* Obtain the network number by the mask. The subnet prefix length is 16. */
-	nkey.nip[2] = inner_dest_ip & 0xFFFF;
+	nkey.nip[2] = inner_dst_ip & 0xFFFF;
 	net = bpf_map_lookup_elem(&networks_offload_map, &nkey);
 
 	if (net) {
