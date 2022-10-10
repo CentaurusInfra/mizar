@@ -152,7 +152,6 @@ static __inline int trn_router_handle_pkt(struct transit_packet *pkt,
 
 	vpckey.tunnel_id = tunnel_id;
 	vpc = bpf_map_lookup_elem(&vpc_offload_map, &vpckey);
-
 	if (!vpc) {
 		return XDP_DROP;
 	}
@@ -287,7 +286,6 @@ static __inline int trn_process_inner_arp(struct transit_packet *pkt)
 	__u64 csum = 0;
 
 	pkt->inner_arp = (void *)pkt->inner_eth + sizeof(*pkt->inner_eth);
-
 	if (pkt->inner_arp + 1 > pkt->data_end) {
 		return XDP_ABORTED;
 	}
@@ -492,9 +490,7 @@ int _transit(struct xdp_md *ctx)
 	pkt.data = (void *)(long)ctx->data;
 	pkt.data_end = (void *)(long)ctx->data_end;
 	pkt.xdp = ctx;
-
 	struct tunnel_iface_t *itf;
-
 	int k = 0;
 	itf = bpf_map_lookup_elem(&interface_config_offload_map, &k);
 	if (!itf) {
