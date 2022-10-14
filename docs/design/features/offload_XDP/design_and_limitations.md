@@ -9,10 +9,10 @@ Peng Yang               (@yangpenger)
 Netronome SmartNIC has following limitations:
 
 - Only supports maps of type BPF_MAP_TYPE_ARRAY/BPF_MAP_TYPE_HASH.
-- Constrains the size of maps:
+- Constraints on the size of the maps:
   - Sum of map entries on the NIC should be less than 3,072,000;
   - A maximum limit of 64 bytes per entry.
-- Constrains the size of program: the maximum number of instructions on the SmartNIC is only 2800.
+- Constraints on the size of the program: the maximum number of instructions on the SmartNIC is only 2800.
 - Does not support XDP_REDIRECT.
 
 

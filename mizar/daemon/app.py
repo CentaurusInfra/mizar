@@ -124,7 +124,7 @@ def init(benchmark=False):
     output = r.stdout.read().decode().strip()
     logging.info("Running load-transit-xdp: {}".format(output))
 
-    # Offload XDP program removes codes about debuging for size limitation.
+    # Offload XDP program removes codes about debugging for size limitation.
     if os.getenv('FEATUREGATE_OFFLOAD_XDP', 'false').lower() in ('true', '1'):
         if default_itf in supported_offload_xdp_itf_names():
             config = {
