@@ -1,0 +1,5 @@
+# The list of NICs that with offload XDP support
+# vender_name:
+# - "model_name" 
+Netronome:
+- "Device 4000"

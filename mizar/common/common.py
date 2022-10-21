@@ -28,6 +28,7 @@ import kopf
 import datetime
 import json
 import dateutil.parser
+import yaml
 from kubernetes import watch, client, config
 from kubernetes.client.rest import ApiException
 from ctypes.util import find_library
@@ -433,6 +434,35 @@ def conf_list_has_max_elements(conf, conf_list):
     if (counter + item_len > CONSTANTS.MAX_CLI_CHAR_LENGTH):
         return True
     return False
+
+def supported_offload_xdp_itf_names():
+    """
+    According to the list of NIC names, corresponding logic interface names are returned.
+    """
+    logical_itf_names = []
+    with open("/var/mizar/supported_xdp_offload_nics.yaml", "r", encoding="utf-8") as f:
+        supported_nic_names = yaml.load(f, Loader=yaml.FullLoader)
+
+    rc, data = run_cmd("lspci -mm | grep 'Ethernet controller'")
+    if rc is not None:
+        logging.info("Failure running \"lspci -mm | grep 'Ethernet controller'\" with rc:" + f'''{rc}''')
+        return logical_itf_names
+
+    eth_crtls = [i for i in data.split('\n') if i]
+    for eth_crtl in eth_crtls:
+        for vendor_name in supported_nic_names.keys():
+            for model_name in supported_nic_names[vendor_name]:
+                if vendor_name.lower() in eth_crtl.lower() and model_name.lower() in eth_crtl.lower():
+                    pci_num = eth_crtl.split()[0]
+                    rc, data = run_cmd("ls -l /sys/class/net | grep %s" % pci_num)
+                    if rc is not None:
+                        continue
+                    else:
+                        logical_itfs = [i for i in data.split('\n') if i]
+                        for logical_itf in logical_itfs:
+                            logical_itf_names.append(logical_itf.split('/')[-1])
+
+    return logical_itf_names
 
 def get_default_itf():
     """

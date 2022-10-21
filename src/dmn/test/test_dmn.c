@@ -400,9 +400,27 @@ static void do_lo_xdp_load(void)
 	xdp_intf.interface = itf;
 	xdp_intf.xdp_path = xdp_path;
 	xdp_intf.pcapfile = pcapfile;
+	xdp_intf.xdp_flag = XDP_FLAGS_SKB_MODE;
 
 	int *rc;
 	expect_function_call(__wrap_bpf_map_update_elem);
+	expect_function_call(__wrap_bpf_map_update_elem);
+	rc = load_transit_xdp_1_svc(&xdp_intf, NULL);
+	assert_int_equal(*rc, 0);
+}
+
+static void do_lo_offload_xdp_load(void)
+{
+	rpc_trn_xdp_intf_t xdp_intf;
+	char itf[] = "lo";
+	char xdp_path[] = "/path/to/xdp/object/file";
+	char pcapfile[] = "/path/to/bpf/pinned/map";
+	xdp_intf.interface = itf;
+	xdp_intf.xdp_path = xdp_path;
+	xdp_intf.pcapfile = pcapfile;
+	xdp_intf.xdp_flag = XDP_FLAGS_HW_MODE;
+
+	int *rc;
 	expect_function_call(__wrap_bpf_map_update_elem);
 	rc = load_transit_xdp_1_svc(&xdp_intf, NULL);
 	assert_int_equal(*rc, 0);
@@ -466,6 +484,27 @@ static void test_update_vpc_1_svc(void **state)
 	assert_int_equal(*rc, 0);
 }
 
+static void test_update_offload_vpc_1_svc(void **state)
+{
+	UNUSED(state);
+
+	char itf[] = "lo";
+	uint32_t routers[] = { 0x100000a, 0x200000a };
+
+	struct rpc_trn_vpc_t vpc1 = {
+		.interface = itf,
+		.tunid = 3,
+		.routers_ips = { .routers_ips_len = 2,
+				 .routers_ips_val = routers }
+
+	};
+
+	int *rc;
+	expect_function_calls(__wrap_bpf_map_update_elem, 2);
+	rc = update_vpc_1_svc(&vpc1, NULL);
+	assert_int_equal(*rc, 0);
+}
+
 static void test_update_net_1_svc(void **state)
 {
 	UNUSED(state);
@@ -484,6 +523,28 @@ static void test_update_net_1_svc(void **state)
 
 	int *rc;
 	expect_function_call(__wrap_bpf_map_update_elem);
+	rc = update_net_1_svc(&net1, NULL);
+	assert_int_equal(*rc, 0);
+}
+
+static void test_update_offload_net_1_svc(void **state)
+{
+	UNUSED(state);
+
+	char itf[] = "lo";
+	uint32_t switches[] = { 0x100000a, 0x200000a };
+
+	struct rpc_trn_network_t net1 = {
+		.interface = itf,
+		.prefixlen = 16,
+		.tunid = 3,
+		.netip = 0xa,
+		.switches_ips = { .switches_ips_len = 2,
+				  .switches_ips_val = switches }
+	};
+
+	int *rc;
+	expect_function_calls(__wrap_bpf_map_update_elem, 2);
 	rc = update_net_1_svc(&net1, NULL);
 	assert_int_equal(*rc, 0);
 }
@@ -512,6 +573,34 @@ static void test_update_ep_1_svc(void **state)
 
 	int *rc;
 	expect_function_calls(__wrap_bpf_map_update_elem, 2);
+	rc = update_ep_1_svc(&ep1, NULL);
+	assert_int_equal(*rc, 0);
+}
+
+static void test_update_offload_ep_1_svc(void **state)
+{
+	UNUSED(state);
+
+	char itf[] = "lo";
+	char vitf[] = "veth0";
+	char hosted_itf[] = "veth";
+	uint32_t remote[] = { 0x200000a };
+	char mac[6] = { 1, 2, 3, 4, 5, 6 };
+
+	struct rpc_trn_endpoint_t ep1 = {
+		.interface = itf,
+		.ip = 0x100000a,
+		.eptype = 1,
+		.remote_ips = { .remote_ips_len = 1, .remote_ips_val = remote },
+		.hosted_interface = hosted_itf,
+		.veth = vitf,
+		.tunid = 3,
+	};
+
+	memcpy(ep1.mac, mac, sizeof(char) * 6);
+
+	int *rc;
+	expect_function_calls(__wrap_bpf_map_update_elem, 3);
 	rc = update_ep_1_svc(&ep1, NULL);
 	assert_int_equal(*rc, 0);
 }
@@ -1487,6 +1576,32 @@ static void test_delete_vpc_1_svc(void **state)
 	assert_int_equal(*rc, RPC_TRN_ERROR);
 }
 
+static void test_delete_offload_vpc_1_svc(void **state)
+{
+	UNUSED(state);
+	char itf[] = "lo";
+	struct rpc_trn_vpc_key_t vpc_key = { .interface = itf, .tunid = 3 };
+	int *rc;
+
+	/* Test delete_vpc_1 with valid vp_ckey */
+	will_return(__wrap_bpf_map_delete_elem, TRUE);
+	will_return(__wrap_bpf_map_delete_elem, TRUE);
+	expect_function_calls(__wrap_bpf_map_delete_elem, 2);
+	rc = delete_vpc_1_svc(&vpc_key, NULL);
+	assert_int_equal(*rc, 0);
+
+	/* Test delete_vpc_1 with invalid vpc_key */
+	will_return(__wrap_bpf_map_delete_elem, FALSE);
+	expect_function_call(__wrap_bpf_map_delete_elem);
+	rc = delete_vpc_1_svc(&vpc_key, NULL);
+	assert_int_equal(*rc, RPC_TRN_FATAL);
+
+	/* Test delete_vpc_1 with invalid interface*/
+	vpc_key.interface = "";
+	rc = delete_vpc_1_svc(&vpc_key, NULL);
+	assert_int_equal(*rc, RPC_TRN_ERROR);
+}
+
 static void test_delete_net_1_svc(void **state)
 {
 	UNUSED(state);
@@ -1517,6 +1632,38 @@ static void test_delete_net_1_svc(void **state)
 	assert_int_equal(*rc, RPC_TRN_ERROR);
 }
 
+static void test_delete_offload_net_1_svc(void **state)
+{
+	UNUSED(state);
+	char itf[] = "lo";
+	struct rpc_trn_network_key_t net_key = {
+		.interface = itf,
+		.prefixlen = 16,
+		.tunid = 3,
+		.netip = 0xa,
+	};
+	int *rc;
+
+	/* Test delete_net_1 with valid net_key */
+	will_return(__wrap_bpf_map_delete_elem, TRUE);
+	will_return(__wrap_bpf_map_delete_elem, TRUE);
+	expect_function_calls(__wrap_bpf_map_delete_elem, 2);
+	rc = delete_net_1_svc(&net_key, NULL);
+	assert_int_equal(*rc, 0);
+
+	/* Test delete_net_1 with invalid net_key */
+	will_return(__wrap_bpf_map_delete_elem, FALSE);
+	expect_function_call(__wrap_bpf_map_delete_elem);
+	rc = delete_net_1_svc(&net_key, NULL);
+	assert_int_equal(*rc, RPC_TRN_ERROR);
+
+	/* Test delete_net_1 with invalid interface*/
+	net_key.interface = "";
+	rc = delete_net_1_svc(&net_key, NULL);
+	assert_int_equal(*rc, RPC_TRN_ERROR);
+}
+
+
 static void test_delete_ep_1_svc(void **state)
 {
 	UNUSED(state);
@@ -1546,6 +1693,56 @@ static void test_delete_ep_1_svc(void **state)
 	will_return(__wrap_bpf_map_delete_elem, TRUE);
 	expect_function_call(__wrap_bpf_map_lookup_elem);
 	expect_function_call(__wrap_bpf_map_delete_elem);
+	rc = delete_ep_1_svc(&ep_key, NULL);
+	assert_int_equal(*rc, 0);
+
+	/* Test delete_ep_1 with invalid ep_key */
+	will_return(__wrap_bpf_map_lookup_elem, &ep_val);
+	will_return(__wrap_bpf_map_lookup_elem, NULL);
+	will_return(__wrap_bpf_map_lookup_elem, NULL);
+	will_return(__wrap_bpf_map_lookup_elem, NULL);
+	will_return(__wrap_bpf_map_delete_elem, FALSE);
+	expect_function_call(__wrap_bpf_map_lookup_elem);
+	expect_function_call(__wrap_bpf_map_delete_elem);
+	rc = delete_ep_1_svc(&ep_key, NULL);
+	assert_int_equal(*rc, RPC_TRN_ERROR);
+
+	/* Test delete_ep_1 with invalid interface*/
+	ep_key.interface = "";
+	rc = delete_ep_1_svc(&ep_key, NULL);
+	assert_int_equal(*rc, RPC_TRN_ERROR);
+}
+
+static void test_delete_offload_ep_1_svc(void **state)
+{
+	UNUSED(state);
+	char itf[] = "lo";
+	struct rpc_trn_endpoint_key_t ep_key = {
+		.interface = itf,
+		.ip = 0x100000a,
+		.tunid = 3,
+	};
+	int *rc;
+
+	uint32_t remote[] = { 0x200000a };
+	char mac[6] = { 1, 2, 3, 4, 5, 6 };
+
+	struct endpoint_t ep_val;
+	ep_val.eptype = 1;
+	ep_val.nremote_ips = 1;
+	ep_val.remote_ips[0] = remote[0];
+	ep_val.hosted_iface = 1;
+	memcpy(ep_val.mac, mac, sizeof(mac));
+
+	/* Test delete_ep_1 with valid ep_key */
+	will_return(__wrap_bpf_map_lookup_elem, &ep_val);
+	will_return(__wrap_bpf_map_lookup_elem, NULL);
+	will_return(__wrap_bpf_map_lookup_elem, NULL);
+	will_return(__wrap_bpf_map_lookup_elem, NULL);
+	will_return(__wrap_bpf_map_delete_elem, TRUE);
+	will_return(__wrap_bpf_map_delete_elem, TRUE);
+	expect_function_call(__wrap_bpf_map_lookup_elem);
+	expect_function_calls(__wrap_bpf_map_delete_elem, 2);
 	rc = delete_ep_1_svc(&ep_key, NULL);
 	assert_int_equal(*rc, 0);
 
@@ -1656,6 +1853,16 @@ static int groupSetup(void **state)
 	return 0;
 }
 
+static int offload_groupSetup(void **state)
+{
+	UNUSED(state);
+	TRN_LOG_INIT("transitd_offload_unit");
+	trn_itf_table_init();
+	do_lo_xdp_load();
+	do_lo_offload_xdp_load();
+	return 0;
+}
+
 /**
  * This is run once after all group tests
  */
@@ -1709,7 +1916,18 @@ int main()
 		cmocka_unit_test(test_delete_agent_network_policy_protocol_port_1_svc)
 	};
 
+	const struct CMUnitTest offload_tests[] = {
+		cmocka_unit_test(test_update_offload_vpc_1_svc),
+		cmocka_unit_test(test_update_offload_net_1_svc),
+		cmocka_unit_test(test_update_offload_ep_1_svc),
+		cmocka_unit_test(test_delete_offload_vpc_1_svc),
+		cmocka_unit_test(test_delete_offload_net_1_svc),
+		cmocka_unit_test(test_delete_offload_ep_1_svc)
+	};
+
 	int result = cmocka_run_group_tests(tests, groupSetup, groupTeardown);
+
+	result = cmocka_run_group_tests(offload_tests, offload_groupSetup, groupTeardown);
 
 	return result;
 }

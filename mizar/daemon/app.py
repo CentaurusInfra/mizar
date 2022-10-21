@@ -94,6 +94,11 @@ def init(benchmark=False):
     output = r.stdout.read().decode().strip()
     logging.info("Removed existing XDP program: {}".format(output))
 
+    cmd = "nsenter -t 1 -m -u -n -i ip link set dev " + f'''{default_itf}''' + " xdpoffload off"
+    r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    output = r.stdout.read().decode().strip()
+    logging.info("Removed existing offload XDP program: {}".format(output))
+
     cmd = "nsenter -t 1 -m -u -n -i /trn_bin/transitd >transitd.log &"
     r = subprocess.Popen(cmd, shell=True)
     logging.info("Running transitd")
@@ -118,6 +123,24 @@ def init(benchmark=False):
     r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     output = r.stdout.read().decode().strip()
     logging.info("Running load-transit-xdp: {}".format(output))
+
+    # Offload XDP program removes codes about debugging for size limitation.
+    if os.getenv('FEATUREGATE_OFFLOAD_XDP', 'false').lower() in ('true', '1'):
+        if default_itf in supported_offload_xdp_itf_names():
+            config = {
+                "xdp_path": "/trn_xdp/trn_transit_xdp_hardware_offload_ebpf.o",
+                "pcapfile": "/bpffs/transit_xdp_offload.pcap",
+                "xdp_flag": CONSTANTS.XDP_OFFLOAD
+            }
+            config = json.dumps(config)
+            cmd = (f'''nsenter -t 1 -m -u -n -i /trn_bin/transit -s {nodeip} load-transit-xdp -i {default_itf} -j '{config}' ''')
+            r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+            output = r.stdout.read().decode().strip()
+            logging.info("Running load-transit-xdp with offload mode: {}".format(output))
+        else:
+            logging.info("Offloading transit XDP functionality not supported for interface {}".format(default_itf))
+    else:
+        logging.info("Offload XDP feature is disabled.")
 
     if os.getenv('FEATUREGATE_BWQOS', 'false').lower() in ('false', '0'):
         logging.info("Bandwidth QoS feature is disabled.")
